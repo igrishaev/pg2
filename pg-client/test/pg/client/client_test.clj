@@ -15,6 +15,8 @@
    java.util.Date
    java.util.concurrent.ExecutionException)
   (:require
+   [pg.client.integration :refer [*CONFIG*
+                                  fix-multi-port]]
    [less.awful.ssl :as ssl]
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
@@ -24,14 +26,18 @@
    [pg.oid :as oid]))
 
 
+(use-fixtures :each fix-multi-port)
+
 ;; TODO: SSL tests
 
+#_
 (def ssl-context
   (ssl/ssl-context "../certs/client.key"
                    "../certs/client.crt"
                    "../certs/root.crt"))
 
 
+#_
 (def ^:dynamic *CONFIG*
   {:host "127.0.0.1"
    :port 10130
