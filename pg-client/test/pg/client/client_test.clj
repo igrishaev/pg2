@@ -16,6 +16,7 @@
    java.util.concurrent.ExecutionException)
   (:require
    [pg.client.integration :refer [*CONFIG*
+                                  *PORT*
                                   fix-multi-port]]
    [less.awful.ssl :as ssl]
    [clojure.data.csv :as csv]
@@ -31,6 +32,7 @@
 
 (defn gen-table []
   (format "table_%s" (System/nanoTime)))
+
 
 (defn gen-type []
   (format "type_%s" (System/nanoTime)))
@@ -71,10 +73,8 @@
 
 (deftest test-client-conn-str-print
   (pg/with-connection [conn *CONFIG*]
-
     (let [repr
-          "<PG connection test@127.0.0.1:10130/test>"]
-
+          (format "<PG connection test@127.0.0.1:%s/test>" *PORT*)]
       (is (= repr (str conn)))
       (is (= repr (with-out-str
                     (print conn)))))))
@@ -88,11 +88,9 @@
 
 
 (deftest test-client-ok
-
   (let [result
         (pg/with-connection [conn *CONFIG*]
           (pg/execute conn "select 1 as foo, 'hello' as bar"))]
-
     (is (= [{:foo 1 :bar "hello"}]
            result))))
 
@@ -480,17 +478,17 @@
 
           (pg/execute conn2 "")
 
-          (is (= [{:msg :NoticeResponse
-                   :pid pid1
-                   :channel "foo"
-                   :message "message1"}
+          (is (= (set [{:msg :NoticeResponse
+                         :pid pid1
+                         :channel "foo"
+                         :message "message1"}
 
-                  {:msg :NoticeResponse
-                   :pid pid1
-                   :channel "foo"
-                   :message "message2"}]
+                        {:msg :NoticeResponse
+                         :pid pid1
+                         :channel "foo"
+                         :message "message2"}])
 
-                 @capture!)))))))
+                 (set @capture!))))))))
 
 
 (deftest test-client-broken-query
@@ -1464,18 +1462,27 @@ drop table %1$s;
 (deftest test-conn-params
   (pg/with-connection [conn *CONFIG*]
     (let [params (pg/get-parameters conn)]
-      (is (= {"DateStyle" "ISO, MDY",
-              "server_encoding" "UTF8",
-              "TimeZone" "Etc/UTC",
-              "application_name" "pg2",
-              "is_superuser" "on",
-              "standard_conforming_strings" "on",
-              "client_encoding" "UTF8",
-              "IntervalStyle" "postgres",
-              "server_version" "13.12 (Debian 13.12-1.pgdg120+1)",
-              "session_authorization" "test",
-              "integer_datetimes" "on"}
-             params)))))
+      (is (= {"IntervalStyle" "postgres"
+              "client_encoding" "UTF8"
+              "TimeZone" "Etc/UTC"
+              "session_authorization" "test"
+              "integer_datetimes" "on"
+              "standard_conforming_strings" "on"
+              "application_name" "pg2"
+              "is_superuser" "on"
+              "server_encoding" "UTF8"
+              "DateStyle" "ISO, MDY"}
+             (select-keys params
+                          ["IntervalStyle"
+                           "client_encoding"
+                           "TimeZone"
+                           "session_authorization"
+                           "integer_datetimes"
+                           "standard_conforming_strings"
+                           "application_name"
+                           "is_superuser"
+                           "server_encoding"
+                           "DateStyle"]))))))
 
 
 (deftest test-two-various-params
@@ -1849,8 +1856,8 @@ drop table %1$s;
       (is false)
       (catch ExecutionException e-future
         (let [e (ex-cause e-future)]
-          (is (= "ErrorResponse: {severity=ERROR, code=57014, file=postgres.c, line=3224, function=ProcessInterrupts, message=canceling statement due to user request, verbosity=ERROR}"
-                 (ex-message e))))))
+          (is (str/includes? (ex-message e)
+                             "message=canceling statement due to user request")))))
 
     (is (= [{:res 42}] res2))))
 

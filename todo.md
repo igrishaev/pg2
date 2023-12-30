@@ -1,7 +1,7 @@
 
-- common test fixture
 - ssl test fixture
 - bench namespace
+- isolation level enum?
 
 - with query timeout
 

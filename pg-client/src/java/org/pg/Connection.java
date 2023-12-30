@@ -2,6 +2,8 @@ package org.pg;
 
 import clojure.lang.Agent;
 import clojure.lang.IFn;
+import clojure.lang.IPersistentMap;
+import clojure.lang.PersistentHashMap;
 import org.pg.auth.MD5;
 import org.pg.auth.ScramSha256;
 import org.pg.codec.DecoderBin;
@@ -142,8 +144,8 @@ public class Connection implements Closeable {
     }
 
     @SuppressWarnings("unused")
-    public synchronized Map<String, String> getParams () {
-        return Collections.unmodifiableMap(params);
+    public synchronized IPersistentMap getParams () {
+        return PersistentHashMap.create(params);
     }
 
     private void setParam (final String param, final String value) {
