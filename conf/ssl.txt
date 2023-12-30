@@ -1,0 +1,18 @@
+
+;; pg_hba.conf
+
+# TYPE    DATABASE  USER      ADDRESS      METHOD
+hostssl   all       all	      all          cert
+local     all       all                    trust
+
+;; postgresql.conf
+
+ssl=on
+ssl_cert_file='/Users/ivan/work/pg/certs/server.crt'
+ssl_key_file='/Users/ivan/work/pg/certs/server.key'
+ssl_ca_file = '/Users/ivan/work/pg/certs/root.crt'
+
+;; psql
+
+create user test with password 'test';
+create database test;
