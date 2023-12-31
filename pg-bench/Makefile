@@ -4,5 +4,5 @@ main: repl
 repl:
 	lein repl
 
-run:
+bench:
 	lein run

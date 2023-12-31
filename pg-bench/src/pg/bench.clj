@@ -14,8 +14,6 @@
 
 
 (def USER "ivan")
-;;(def USER "test")
-
 (def PORT 15432)
 
 
@@ -75,8 +73,14 @@
    :user USER
    :password USER
    :database USER
-   :binary-encode? true
-   :binary-decode? true})
+
+   ;; :binary-encode? true
+   ;; :binary-decode? true
+
+   ;; :so-recv-buf-size (int 0xFFFF)
+   ;; :so-send-buf-size (int 0xFFFF)
+
+   })
 
 
 (def jdbc-config
@@ -88,34 +92,88 @@
 
 
 (def QUERY_SELECT_JSON
-  "select '[1, 2, 3]'::jsonb from generate_series(1,50000)")
+  "select row_to_json(row(1, random(), 2, random()))
+   from generate_series(1,50000);")
 
 (def QUERY_SELECT_RANDOM_VAL
   "select random() as x from generate_series(1,50000)")
 
+(def QUERY_INSERT_PG
+  "insert into aaa(id, name, created_at) values ($1, $2, $3)")
 
-#_["select * from generate_series(1,50000)"]
+(def QUERY_INSERT_JDBC
+  "insert into aaa(id, name, created_at) values (?, ?, ?)")
+
+(def QUERY_TABLE
+  "create table if not exists aaa (id integer not null, name text not null, created_at timestamp not null)")
+
+
+(defn title [line]
+  (println "-----------------------")
+  (println line)
+  (println "-----------------------"))
+
 
 (defn -main [& args]
 
-  (println "pg JSON select")
-
+  #_
+  (title "pg JSON select")
+  #_
   (pg/with-connection [conn pg-config]
     (with-progress-reporting
       (quick-bench
        (pg/execute conn
-                   QUERY_SELECT_RANDOM_VAL
-                   #_QUERY_SELECT_JSON
+                   #_QUERY_SELECT_RANDOM_VAL
+                   QUERY_SELECT_JSON
                    ))))
 
-  (println "next.JDBC JSON select")
-
+  #_
+  (title "next.JDBC JSON select")
+  #_
   (with-open [conn (jdbc/get-connection
                     jdbc-config)]
 
     (with-progress-reporting
       (quick-bench
        (jdbc/execute! conn
-                      [QUERY_SELECT_RANDOM_VAL]
-                      #_[QUERY_SELECT_JSON]
-                      {:as rs/as-unqualified-maps})))))
+                      #_[QUERY_SELECT_RANDOM_VAL]
+                      [QUERY_SELECT_JSON]
+                      {:as rs/as-unqualified-maps}))))
+
+
+
+  (title "pg insert values")
+
+  (pg/with-connection [conn pg-config]
+    (pg/execute conn QUERY_TABLE)
+    (pg/with-statement [stmt
+                        conn
+                        QUERY_INSERT_PG]
+      (with-progress-reporting
+        (quick-bench
+         (let [x (rand-int 10000000)]
+           (pg/execute-statement conn
+                                 stmt
+                                 {:params [x,
+                                           (format "name%s" x)
+                                           (java.time.LocalDateTime/now)]}))))))
+
+  (title "next.JDBC insert values")
+
+  (with-open [conn (jdbc/get-connection
+                    jdbc-config)]
+
+    (jdbc/execute! conn [QUERY_TABLE])
+
+    (with-progress-reporting
+      (quick-bench
+       (let [x (rand-int 10000000)]
+         (jdbc/execute! conn
+                        [QUERY_INSERT_JDBC
+                         x,
+                         (format "name%s" x)
+                         (java.time.LocalDateTime/now)])))))
+
+
+
+  )
