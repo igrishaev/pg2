@@ -19,3 +19,22 @@
    ;; :use-ssl? true
    ;; :ssl-context ssl-context
    })
+
+
+(def PORT_SSL
+  (some-> "PG_PORT_SSL"
+          System/getenv
+          Integer/parseInt))
+
+
+(def OVERRIDES
+  {PORT_SSL
+   {:ssl? true
+    :ssl-context
+    (ssl/context {:key-file "../certs/client.key"
+                  :cert-file "../certs/client.crt"
+                  :ca-cert-file "../certs/root.crt"})}})
+
+
+(defn isSSL? []
+  (and PORT_SSL (= *PORT* PORT_SSL)))

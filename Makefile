@@ -17,6 +17,9 @@ toc-install:
 toc-build:
 	node_modules/.bin/markdown-toc -i README.md
 
+install:
+	lein sub with-profile uberjar install
+
 # https://gist.github.com/achesco/b893fb55b90651cf5f4cc803b78e19fd
 certs-generate:
 	mkdir -p certs

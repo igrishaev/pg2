@@ -10,24 +10,9 @@
 (def P15 10150)
 (def P16 10160)
 
-(def PORT_SSL
-  (some-> "PG_PORT_SSL"
-          System/getenv
-          Integer/parseInt))
-
-
-#_
-(def OVERRIDES
-  {PORT_SSL
-   {:ssl? true
-    :ssl-context
-    (ssl/context {:key-file "../certs/client.key"
-                  :cert-file "../certs/client.crt"
-                  :ca-cert-file "../certs/root.crt"})}})
-
 
 (def PORTS
-  [P11 P12 P13 P14 P15 P16 PORT_SSL])
+  [P11 P12 P13 P14 P15 P16])
 
 
 (def HOST "127.0.0.1")
@@ -59,10 +44,7 @@
               port
 
               *CONFIG*
-              (-> *CONFIG*
-                  (assoc :port port)
-                  #_
-                  (coll/deep-merge (get OVERRIDES port)))
+              (assoc *CONFIG* :port port)
 
               *DB-SPEC*
               (assoc *DB-SPEC* :port port)]
@@ -88,7 +70,3 @@
 
 (defn is16? []
   (= *PORT* P16))
-
-#_
-(defn isSSL? []
-  (and PORT_SSL (= *PORT* PORT_SSL)))

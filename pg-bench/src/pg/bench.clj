@@ -1,4 +1,4 @@
-(ns pg.client.bench
+(ns pg.bench
   (:import
    org.pg.Connection
    org.pg.ConnConfig$Builder
@@ -13,13 +13,13 @@
    [next.jdbc.result-set :as rs]))
 
 
-(def USER "wzhivga")
-;; (def USER "ivan")
-
+;; (def USER "wzhivga")
+(def USER "ivan")
 
 
 ;; :decode-key-fn here specifies that JSON-keys will become keywords:
-(def mapper (json/object-mapper {:decode-key-fn keyword}))
+(def mapper
+  (json/object-mapper {:decode-key-fn keyword}))
 
 (def ->json json/write-value-as-string)
 
