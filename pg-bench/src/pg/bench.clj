@@ -74,11 +74,11 @@
    :password USER
    :database USER
 
-   ;; :binary-encode? true
-   ;; :binary-decode? true
+   :binary-encode? true
+   :binary-decode? true
 
-   ;; :so-recv-buf-size (int 0xFFFF)
-   ;; :so-send-buf-size (int 0xFFFF)
+   :so-recv-buf-size (int 0xFFFF)
+   :so-send-buf-size (int 0xFFFF)
 
    })
 
@@ -116,6 +116,7 @@
 
 (defn -main [& args]
 
+
   #_
   (title "pg JSON select")
   #_
@@ -123,7 +124,8 @@
     (with-progress-reporting
       (quick-bench
        (pg/execute conn
-                   #_QUERY_SELECT_RANDOM_VAL
+                   QUERY_SELECT_RANDOM_VAL
+                   #_
                    QUERY_SELECT_JSON
                    ))))
 
@@ -136,11 +138,10 @@
     (with-progress-reporting
       (quick-bench
        (jdbc/execute! conn
-                      #_[QUERY_SELECT_RANDOM_VAL]
+                      [QUERY_SELECT_RANDOM_VAL]
+                      #_
                       [QUERY_SELECT_JSON]
                       {:as rs/as-unqualified-maps}))))
-
-
 
   (title "pg insert values")
 
@@ -172,8 +173,7 @@
                         [QUERY_INSERT_JDBC
                          x,
                          (format "name%s" x)
-                         (java.time.LocalDateTime/now)])))))
+                         (java.time.LocalDateTime/now)
+                         ])))))
 
-
-
-  )
+)

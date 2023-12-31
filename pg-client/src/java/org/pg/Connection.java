@@ -309,13 +309,8 @@ public class Connection implements Closeable {
             logger.log(level, " <- {0}", msg);
         }
         final ByteBuffer buf = msg.encode(codecParams.clientCharset);
-        try {
-            outStream.write(buf.array());
-            outStream.flush();
-        }
-        catch (IOException e) {
-            throw new PGError(e, "could not write bb to the out stream");
-        }
+        IOTool.write(outStream, buf.array());
+        IOTool.flush(outStream);
     }
 
     private String generateStatement () {
