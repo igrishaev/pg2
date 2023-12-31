@@ -20,6 +20,7 @@
    ["maven.compiler.source" ~MIN_JAVA_VERSION]
    ["maven.compiler.target" ~MIN_JAVA_VERSION]]
 
+  :source-paths ["src/clj"]
   :java-source-paths ["src/java"]
   :javac-options ["-Xlint:unchecked"
                   "-Xlint:preview"

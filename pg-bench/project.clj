@@ -10,6 +10,7 @@
 
   :dependencies
   [[com.github.igrishaev/pg2-client]
+   [metosin/jsonista]
    [com.github.seancorfield/next.jdbc]
    [org.postgresql/postgresql]
    [criterium]]
