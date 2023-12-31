@@ -15,6 +15,8 @@
    [org.postgresql/postgresql]
    [criterium]]
 
+  :main pg.bench
+
   :parent-project
   {:path "../project.clj"
    :inherit [:deploy-repositories
