@@ -1,12 +1,16 @@
 (ns pg.bench
   (:import
+   org.postgresql.copy.CopyManager
    org.pg.Connection
    org.pg.ConnConfig$Builder
    org.postgresql.util.PGobject
-   java.sql.PreparedStatement)
+   java.sql.PreparedStatement
+   java.time.LocalDateTime)
   (:use criterium.core)
   (:require
    [pg.client :as pg]
+   [clojure.data.csv :as csv]
+   [clojure.java.io :as io]
    [next.jdbc.prepare :as prepare]
    [jsonista.core :as json]
    [next.jdbc :as jdbc]
@@ -108,6 +112,18 @@
   "create table if not exists aaa (id integer not null, name text not null, created_at timestamp not null)")
 
 
+(defn generate-csv []
+  (let [rows
+        (for [x (range 0 1000000)]
+          [x
+           (str "name" x)
+           (LocalDateTime/now)])]
+    (with-open [writer (-> "foo.csv"
+                           io/file
+                           io/writer)]
+      (csv/write-csv writer rows))))
+
+
 (defn title [line]
   (println "-----------------------")
   (println line)
@@ -116,6 +132,8 @@
 
 (defn -main [& args]
 
+  #_
+  (generate-csv)
 
   #_
   (title "pg JSON select")
@@ -143,8 +161,9 @@
                       [QUERY_SELECT_JSON]
                       {:as rs/as-unqualified-maps}))))
 
+  #_
   (title "pg insert values")
-
+  #_
   (pg/with-connection [conn pg-config]
     (pg/execute conn QUERY_TABLE)
     (pg/with-statement [stmt
@@ -157,10 +176,11 @@
                                  stmt
                                  {:params [x,
                                            (format "name%s" x)
-                                           (java.time.LocalDateTime/now)]}))))))
+                                           (LocalDateTime/now)]}))))))
 
+  #_
   (title "next.JDBC insert values")
-
+  #_
   (with-open [conn (jdbc/get-connection
                     jdbc-config)]
 
@@ -173,7 +193,37 @@
                         [QUERY_INSERT_JDBC
                          x,
                          (format "name%s" x)
-                         (java.time.LocalDateTime/now)
+                         (LocalDateTime/now)
                          ])))))
+
+
+  (title "PG COPY in from a stream")
+
+  (pg/with-connection [conn pg-config]
+    (with-progress-reporting
+      (quick-bench
+       (pg/copy-in conn
+                   "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
+                   (-> "foo.csv" io/file io/input-stream)))))
+
+  (title "JDBC COPY in from a stream")
+
+  (with-open [conn (jdbc/get-connection
+                    jdbc-config)]
+
+    (jdbc/execute! conn [QUERY_TABLE])
+
+    (with-progress-reporting
+      (quick-bench
+       (let [copy
+             (new CopyManager conn)]
+
+         (.copyIn copy
+                  "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
+                  (-> "foo.csv" io/file io/input-stream)))
+
+)))
+
+
 
 )

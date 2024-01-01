@@ -18,3 +18,5 @@ package-lock.json
 package.json
 .idea
 .lein-failures
+
+foo.csv
