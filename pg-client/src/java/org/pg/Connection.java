@@ -291,19 +291,29 @@ public class Connection implements Closeable {
         );
     }
 
+    // Send bytes into the output stream. Do not flush the buffer,
+    // must be done manually.
     private void sendBytes (final byte[] buf) {
         if (isDebug) {
             logger.log(level," <- {0}", Arrays.toString(buf));
         }
         IOTool.write(outStream, buf);
-        // IOTool.flush(outStream);
     }
 
+    // Like sendBytes above but taking boundaries into account.
     private void sendBytes (final byte[] buf, final int offset, final int len) {
         IOTool.write(outStream, buf, offset, len);
-        IOTool.flush(outStream);
     }
 
+    private void sendBytesCopy(final byte[] bytes) {
+        final ByteBuffer bb = ByteBuffer.allocate(5);
+        bb.put((byte)'d');
+        bb.putInt(4 + bytes.length);
+        sendBytes(bb.array());
+        sendBytes(bytes);
+    }
+
+    // Send a message into the output stream. Flushes the stream forcibly.
     private void sendMessage (final IMessage msg) {
         if (isDebug) {
             logger.log(level, " <- {0}", msg);
@@ -377,6 +387,10 @@ public class Connection implements Closeable {
         final char tag = (char) bbHeader.get();
         final int bodySize = bbHeader.getInt() - 4;
 
+        // skipMode means there has been an exception before. There is no need
+        // to parse data-heavy messages as we're going to throw an exception
+        // at the end anyway. If there is a DataRow or a CopyData message,
+        // just skip it.
         if (skipMode) {
             if (tag == 'D' || tag == 'd') {
                 IOTool.skip(inStream, bodySize);
@@ -748,7 +762,7 @@ public class Connection implements Closeable {
         }
     }
 
-    private void handleCopyInResponseData (final Accum acc, final List<List<Object>> rows) {
+    private void handleCopyInResponseData (final Accum acc, final Iterator<List<Object>> rows) {
         final ExecuteParams executeParams = acc.executeParams;
         final CopyFormat format = executeParams.copyFormat();
         Throwable e = null;
@@ -756,39 +770,33 @@ public class Connection implements Closeable {
         switch (format) {
 
             case CSV:
-                // TODO: find a way to reduce mem allocation
                 String line;
-                for (final List<Object> row: rows) {
+                while (rows.hasNext()) {
                     try {
-                        line = Copy.encodeRowCSV(row, executeParams, codecParams);
+                        line = Copy.encodeRowCSV(rows.next(), executeParams, codecParams);
                     }
                     catch (Throwable caught) {
                         e = caught;
                         break;
                     }
                     final byte[] bytes = line.getBytes(StandardCharsets.UTF_8);
-                    final ByteBuffer bb = ByteBuffer.allocate(5);
-                    bb.put((byte)'d');
-                    bb.putInt(4 + bytes.length);
-                    sendBytes(bb.array());
-                    sendBytes(bytes);
-                    // sendCopyData(line.getBytes(StandardCharsets.UTF_8));
+                    sendBytesCopy(bytes);
                 }
                 break;
 
             case BIN:
                 ByteBuffer buf;
+                // TODO: use sendBytes
                 sendCopyData(Copy.COPY_BIN_HEADER);
-                // TODO: find a way to reduce mem allocation
-                for (final List<Object> row: rows) {
+                while (rows.hasNext()) {
                     try {
-                        buf = Copy.encodeRowBin(row, executeParams, codecParams);
+                        buf = Copy.encodeRowBin(rows.next(), executeParams, codecParams);
                     }
                     catch (Throwable caught) {
                         e = caught;
                         break;
                     }
-                    sendCopyData(buf.array());
+                    sendBytesCopy(buf.array());
                 }
                 if (e == null) {
                     sendBytes(Copy.MSG_COPY_BIN_TERM);
@@ -810,25 +818,29 @@ public class Connection implements Closeable {
     }
 
     private void handleCopyInResponseRows (final Accum acc) {
-//        final Iterator<List<Object>> iterator = acc.executeParams.copyInRows()
-//                .stream()
-//                .filter(Objects::nonNull)
-//                .iterator();
-        handleCopyInResponseData(acc, acc.executeParams.copyInRows());
+        final Iterator<List<Object>> iterator = acc.executeParams.copyInRows()
+                .stream()
+                .filter(Objects::nonNull)
+                .iterator();
+        handleCopyInResponseData(acc, iterator);
     }
 
     private void handleCopyInResponseMaps(final Accum acc) {
-//        final List<Object> keys = acc.executeParams.copyMapKeys();
-//        final Iterator<List<Object>> iterator = acc.executeParams.copyInMaps()
-//                .stream()
-//                .filter(Objects::nonNull)
-//                .map(map -> mapToRow(map, keys))
-//                .iterator();
-        // handleCopyInResponseData(acc, iterator);
+        final List<Object> keys = acc.executeParams.copyMapKeys();
+        final Iterator<List<Object>> iterator = acc.executeParams.copyInMaps()
+                .stream()
+                .filter(Objects::nonNull)
+                .map(map -> mapToRow(map, keys))
+                .iterator();
+        handleCopyInResponseData(acc, iterator);
     }
 
     private void handleCopyInResponse(Accum acc) {
 
+        // These three methods only send data but do not read.
+        // Thus, we rely on sendBytes which doesn't trigger flushing
+        // the output stream. Flushing is expensive and thus must be called
+        // manually when all the data has been sent.
         if (acc.executeParams.copyInRows() != null) {
             handleCopyInResponseRows(acc);
         }
@@ -837,6 +849,8 @@ public class Connection implements Closeable {
         } else {
             handleCopyInResponseStream(acc);
         }
+        // Finally, we flush the output stream so all unsent bytes get sent.
+        IOTool.flush(outStream);
     }
 
     private void handlePortalSuspended(final PortalSuspended msg, final Accum acc) {

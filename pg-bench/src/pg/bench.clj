@@ -1,20 +1,23 @@
 (ns pg.bench
   (:import
-   org.postgresql.copy.CopyManager
-   org.pg.Connection
-   org.pg.ConnConfig$Builder
-   org.postgresql.util.PGobject
+   java.io.ByteArrayOutputStream
+   java.io.InputStream
    java.sql.PreparedStatement
-   java.time.LocalDateTime)
+   java.time.LocalDateTime
+   org.pg.ConnConfig$Builder
+   org.pg.Connection
+   org.postgresql.copy.CopyManager
+   org.postgresql.util.PGobject)
   (:use criterium.core)
   (:require
-   [pg.client :as pg]
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
-   [next.jdbc.prepare :as prepare]
    [jsonista.core :as json]
    [next.jdbc :as jdbc]
-   [next.jdbc.result-set :as rs]))
+   [next.jdbc.prepare :as prepare]
+   [next.jdbc.result-set :as rs]
+   [pg.client :as pg]
+   [pg.oid :as oid]))
 
 
 (def USER "ivan")
@@ -111,6 +114,15 @@
 (def QUERY_TABLE
   "create table if not exists aaa (id integer not null, name text not null, created_at timestamp not null)")
 
+(def QUERY_IN_STREAM
+  "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)")
+
+(def QUERY_IN_STREAM_BIN
+  "copy aaa (id, name, created_at) from STDIN WITH (FORMAT BINARY)")
+
+(def SAMPLE_CSV
+  "sample.csv")
+
 
 (defn generate-csv []
   (let [rows
@@ -118,178 +130,156 @@
           [x
            (str "name" x)
            (LocalDateTime/now)])]
-    (with-open [writer (-> "foo.csv"
+    (with-open [writer (-> SAMPLE_CSV
                            io/file
                            io/writer)]
       (csv/write-csv writer rows))))
 
 
-(defn title [line]
-  (println "-----------------------")
-  (println line)
-  (println "-----------------------"))
+(def GEN_LIMIT 100000)
+
+(defn generate-rows []
+  (for [x (range GEN_LIMIT)]
+    [x
+     (str "name" x)
+     (LocalDateTime/now)]))
+
+
+(defn generate-maps []
+  (for [x (range GEN_LIMIT)]
+    {:id x
+     :name (str "name" x)
+     :created_at (LocalDateTime/now)}))
+
+
+(defmacro with-title [line & body]
+  `(do
+     (println "-----------------------")
+     (println ~line)
+     (println "-----------------------")
+     ~@body))
+
 
 
 (defn -main [& args]
-
-  #_
-  (generate-csv)
-
-  #_
-  (title "pg JSON select")
-  #_
-  (pg/with-connection [conn pg-config]
-    (with-progress-reporting
+#_
+  (with-title "generating CSV"
+    (generate-csv))
+#_
+  (with-title "pg random value select"
+    (pg/with-connection [conn pg-config]
       (quick-bench
        (pg/execute conn
-                   QUERY_SELECT_RANDOM_VAL
-                   #_
-                   QUERY_SELECT_JSON
-                   ))))
+                   QUERY_SELECT_RANDOM_VAL))))
+#_
+  (with-title "next.JDBC random value select"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
 
-  #_
-  (title "next.JDBC JSON select")
-  #_
-  (with-open [conn (jdbc/get-connection
-                    jdbc-config)]
-
-    (with-progress-reporting
       (quick-bench
        (jdbc/execute! conn
                       [QUERY_SELECT_RANDOM_VAL]
-                      #_
+                      {:as rs/as-unqualified-maps}))))
+#_
+  (with-title "pg random JSON select"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/execute conn
+                   QUERY_SELECT_JSON))))
+#_
+  (with-title "next.JDBC random JSON select"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+
+      (quick-bench
+       (jdbc/execute! conn
                       [QUERY_SELECT_JSON]
                       {:as rs/as-unqualified-maps}))))
-
-  #_
-  (title "pg insert values")
-  #_
-  (pg/with-connection [conn pg-config]
-    (pg/execute conn QUERY_TABLE)
-    (pg/with-statement [stmt
-                        conn
-                        QUERY_INSERT_PG]
-      (with-progress-reporting
+#_
+  (with-title "pg insert values"
+    (pg/with-connection [conn pg-config]
+      (pg/with-statement [stmt
+                          conn
+                          QUERY_INSERT_PG]
         (quick-bench
-         (let [x (rand-int 10000000)]
+         (let [x (rand-int 10000)]
            (pg/execute-statement conn
                                  stmt
                                  {:params [x,
                                            (format "name%s" x)
                                            (LocalDateTime/now)]}))))))
+#_
+  (with-title "next.JDBC insert values"
 
-  #_
-  (title "next.JDBC insert values")
-  #_
-  (with-open [conn (jdbc/get-connection
-                    jdbc-config)]
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
 
-    (jdbc/execute! conn [QUERY_TABLE])
-
-    (with-progress-reporting
       (quick-bench
-       (let [x (rand-int 10000000)]
+       (let [x (rand-int 10000)]
          (jdbc/execute! conn
                         [QUERY_INSERT_JDBC
                          x,
                          (format "name%s" x)
-                         (LocalDateTime/now)
-                         ])))))
-
+                         (LocalDateTime/now)])))))
 #_
-  (title "PG COPY in from a stream")
-#_
-  (pg/with-connection [conn pg-config]
-    (with-progress-reporting
+  (with-title "PG COPY in from a stream"
+    (pg/with-connection [conn pg-config]
       (quick-bench
        (pg/copy-in conn
-                   "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
-                   (-> "foo.csv" io/file io/input-stream)))))
-#_
-  (title "JDBC COPY in from a stream")
-#_
-  (with-open [conn (jdbc/get-connection
-                    jdbc-config)]
+                   QUERY_IN_STREAM
+                   (-> SAMPLE_CSV io/file io/input-stream)))))
 
-    (with-progress-reporting
+#_
+  (with-title "JDBC COPY in from a stream"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
       (quick-bench
        (let [copy
              (new CopyManager conn)]
 
          (.copyIn copy
-                  "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
-                  (-> "foo.csv" io/file io/input-stream)))
+                  QUERY_IN_STREAM
+                  (-> SAMPLE_CSV io/file io/input-stream))))))
 
-)))
-
-  (title "PG COPY in from rows")
-
-  (let [-rows
-        (vec
-         (for [x (range 1000000)]
-           [x
-            (str "name" x)
-            (LocalDateTime/now)]))]
-
+  (with-title "PG COPY in from rows BIN"
     (pg/with-connection [conn pg-config]
-      (with-progress-reporting
-        (quick-bench
+      (quick-bench
+       (pg/copy-in-rows conn
+                        QUERY_IN_STREAM_BIN
+                        (generate-rows)
+                        {:copy-bin? true
+                         :oids [oid/int4 oid/text oid/timestamp]}))))
 
-         (let [buf
-               (new java.io.ByteArrayOutputStream)
+  (with-title "PG COPY in from maps BIN"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/copy-in-maps conn
+                        QUERY_IN_STREAM_BIN
+                        (generate-maps)
+                        [:id :name :created_at]
+                        {:copy-bin? true
+                         :oids [oid/int4 oid/text oid/timestamp]}))))
 
-               rows
-               (for [x (range 1000000)]
-                 [x
-                  (str "name" x)
-                  (LocalDateTime/now)])]
 
-           (with-open [writer (-> buf
-                                  io/writer)]
-             (csv/write-csv writer rows))
-
-           (pg/copy-in conn
-                   "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
-                   (-> buf (.toByteArray) io/input-stream)))
-
-         #_
-         (pg/copy-in-rows conn
-                          "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
-                          -rows)))))
-
-  (title "JDBC COPY in from rows")
-
-  (with-open [conn (jdbc/get-connection
-                    jdbc-config)]
-
-    (with-progress-reporting
+  (with-title "JDBC COPY in from rows"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
       (quick-bench
        (let [copy
              (new CopyManager conn)
 
-             buf
+             ^ByteArrayOutputStream buf
              (new java.io.ByteArrayOutputStream)
 
              rows
-             (for [x (range 1000000)]
-               [x
-                (str "name" x)
-                (LocalDateTime/now)])]
+             (generate-rows)]
 
-         (with-open [writer (-> buf
-                                io/writer)]
+         (with-open [writer (io/writer buf)]
            (csv/write-csv writer rows))
 
          (.copyIn copy
-                  "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
-                  (-> buf (.toByteArray) io/input-stream))))))
+                  ^String QUERY_IN_STREAM
+                  ^InputStream (-> buf (.toByteArray) io/input-stream))))))
 
 
-
-
-
-
-
-
-
-)
+  )

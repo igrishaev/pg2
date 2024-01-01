@@ -38,3 +38,21 @@
 
 (defn isSSL? []
   (and PORT_SSL (= *PORT* PORT_SSL)))
+
+
+(let [buf
+               (new java.io.ByteArrayOutputStream)
+
+               rows
+               (for [x (range 100000)]
+                 [x
+                  (str "name" x)
+                  (LocalDateTime/now)])]
+
+           (with-open [writer (-> buf
+                                  io/writer)]
+             (csv/write-csv writer rows))
+
+           (pg/copy-in conn
+                       "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
+                       (-> buf (.toByteArray) io/input-stream)))
