@@ -296,7 +296,7 @@ public class Connection implements Closeable {
             logger.log(level," <- {0}", Arrays.toString(buf));
         }
         IOTool.write(outStream, buf);
-        IOTool.flush(outStream);
+        // IOTool.flush(outStream);
     }
 
     private void sendBytes (final byte[] buf, final int offset, final int len) {
@@ -748,7 +748,7 @@ public class Connection implements Closeable {
         }
     }
 
-    private void handleCopyInResponseData (final Accum acc, final Iterator<List<Object>> iterator) {
+    private void handleCopyInResponseData (final Accum acc, final List<List<Object>> rows) {
         final ExecuteParams executeParams = acc.executeParams;
         final CopyFormat format = executeParams.copyFormat();
         Throwable e = null;
@@ -758,15 +758,21 @@ public class Connection implements Closeable {
             case CSV:
                 // TODO: find a way to reduce mem allocation
                 String line;
-                while (iterator.hasNext()) {
+                for (final List<Object> row: rows) {
                     try {
-                        line = Copy.encodeRowCSV(iterator.next(), executeParams, codecParams);
+                        line = Copy.encodeRowCSV(row, executeParams, codecParams);
                     }
                     catch (Throwable caught) {
                         e = caught;
                         break;
                     }
-                    sendCopyData(line.getBytes(StandardCharsets.UTF_8));
+                    final byte[] bytes = line.getBytes(StandardCharsets.UTF_8);
+                    final ByteBuffer bb = ByteBuffer.allocate(5);
+                    bb.put((byte)'d');
+                    bb.putInt(4 + bytes.length);
+                    sendBytes(bb.array());
+                    sendBytes(bytes);
+                    // sendCopyData(line.getBytes(StandardCharsets.UTF_8));
                 }
                 break;
 
@@ -774,9 +780,9 @@ public class Connection implements Closeable {
                 ByteBuffer buf;
                 sendCopyData(Copy.COPY_BIN_HEADER);
                 // TODO: find a way to reduce mem allocation
-                while (iterator.hasNext()) {
+                for (final List<Object> row: rows) {
                     try {
-                        buf = Copy.encodeRowBin(iterator.next(), executeParams, codecParams);
+                        buf = Copy.encodeRowBin(row, executeParams, codecParams);
                     }
                     catch (Throwable caught) {
                         e = caught;
@@ -804,21 +810,21 @@ public class Connection implements Closeable {
     }
 
     private void handleCopyInResponseRows (final Accum acc) {
-        final Iterator<List<Object>> iterator = acc.executeParams.copyInRows()
-                .stream()
-                .filter(Objects::nonNull)
-                .iterator();
-        handleCopyInResponseData(acc, iterator);
+//        final Iterator<List<Object>> iterator = acc.executeParams.copyInRows()
+//                .stream()
+//                .filter(Objects::nonNull)
+//                .iterator();
+        handleCopyInResponseData(acc, acc.executeParams.copyInRows());
     }
 
     private void handleCopyInResponseMaps(final Accum acc) {
-        final List<Object> keys = acc.executeParams.copyMapKeys();
-        final Iterator<List<Object>> iterator = acc.executeParams.copyInMaps()
-                .stream()
-                .filter(Objects::nonNull)
-                .map(map -> mapToRow(map, keys))
-                .iterator();
-        handleCopyInResponseData(acc, iterator);
+//        final List<Object> keys = acc.executeParams.copyMapKeys();
+//        final Iterator<List<Object>> iterator = acc.executeParams.copyInMaps()
+//                .stream()
+//                .filter(Objects::nonNull)
+//                .map(map -> mapToRow(map, keys))
+//                .iterator();
+        // handleCopyInResponseData(acc, iterator);
     }
 
     private void handleCopyInResponse(Accum acc) {

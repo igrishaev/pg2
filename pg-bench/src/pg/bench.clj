@@ -196,22 +196,20 @@
                          (LocalDateTime/now)
                          ])))))
 
-
+#_
   (title "PG COPY in from a stream")
-
+#_
   (pg/with-connection [conn pg-config]
     (with-progress-reporting
       (quick-bench
        (pg/copy-in conn
                    "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
                    (-> "foo.csv" io/file io/input-stream)))))
-
+#_
   (title "JDBC COPY in from a stream")
-
+#_
   (with-open [conn (jdbc/get-connection
                     jdbc-config)]
-
-    (jdbc/execute! conn [QUERY_TABLE])
 
     (with-progress-reporting
       (quick-bench
@@ -223,6 +221,74 @@
                   (-> "foo.csv" io/file io/input-stream)))
 
 )))
+
+  (title "PG COPY in from rows")
+
+  (let [-rows
+        (vec
+         (for [x (range 1000000)]
+           [x
+            (str "name" x)
+            (LocalDateTime/now)]))]
+
+    (pg/with-connection [conn pg-config]
+      (with-progress-reporting
+        (quick-bench
+
+         (let [buf
+               (new java.io.ByteArrayOutputStream)
+
+               rows
+               (for [x (range 1000000)]
+                 [x
+                  (str "name" x)
+                  (LocalDateTime/now)])]
+
+           (with-open [writer (-> buf
+                                  io/writer)]
+             (csv/write-csv writer rows))
+
+           (pg/copy-in conn
+                   "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
+                   (-> buf (.toByteArray) io/input-stream)))
+
+         #_
+         (pg/copy-in-rows conn
+                          "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
+                          -rows)))))
+
+  (title "JDBC COPY in from rows")
+
+  (with-open [conn (jdbc/get-connection
+                    jdbc-config)]
+
+    (with-progress-reporting
+      (quick-bench
+       (let [copy
+             (new CopyManager conn)
+
+             buf
+             (new java.io.ByteArrayOutputStream)
+
+             rows
+             (for [x (range 1000000)]
+               [x
+                (str "name" x)
+                (LocalDateTime/now)])]
+
+         (with-open [writer (-> buf
+                                io/writer)]
+           (csv/write-csv writer rows))
+
+         (.copyIn copy
+                  "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
+                  (-> buf (.toByteArray) io/input-stream))))))
+
+
+
+
+
+
 
 
 
