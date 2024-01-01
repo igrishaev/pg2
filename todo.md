@@ -3,6 +3,7 @@
 - isolation level enum?
 
 - with query timeout
+- fix so send & recv buf size
 
 - arrays
   - decode txt
