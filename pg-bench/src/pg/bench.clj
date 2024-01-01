@@ -162,16 +162,16 @@
 
 
 (defn -main [& args]
-#_
+
   (with-title "generating CSV"
     (generate-csv))
-#_
+
   (with-title "pg random value select"
     (pg/with-connection [conn pg-config]
       (quick-bench
        (pg/execute conn
                    QUERY_SELECT_RANDOM_VAL))))
-#_
+
   (with-title "next.JDBC random value select"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -180,13 +180,13 @@
        (jdbc/execute! conn
                       [QUERY_SELECT_RANDOM_VAL]
                       {:as rs/as-unqualified-maps}))))
-#_
+
   (with-title "pg random JSON select"
     (pg/with-connection [conn pg-config]
       (quick-bench
        (pg/execute conn
                    QUERY_SELECT_JSON))))
-#_
+
   (with-title "next.JDBC random JSON select"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -195,7 +195,7 @@
        (jdbc/execute! conn
                       [QUERY_SELECT_JSON]
                       {:as rs/as-unqualified-maps}))))
-#_
+
   (with-title "pg insert values"
     (pg/with-connection [conn pg-config]
       (pg/with-statement [stmt
@@ -208,7 +208,7 @@
                                  {:params [x,
                                            (format "name%s" x)
                                            (LocalDateTime/now)]}))))))
-#_
+
   (with-title "next.JDBC insert values"
 
     (with-open [conn (jdbc/get-connection
@@ -221,7 +221,7 @@
                          x,
                          (format "name%s" x)
                          (LocalDateTime/now)])))))
-#_
+
   (with-title "PG COPY in from a stream"
     (pg/with-connection [conn pg-config]
       (quick-bench
@@ -229,7 +229,6 @@
                    QUERY_IN_STREAM
                    (-> SAMPLE_CSV io/file io/input-stream)))))
 
-#_
   (with-title "JDBC COPY in from a stream"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -259,7 +258,6 @@
                         [:id :name :created_at]
                         {:copy-bin? true
                          :oids [oid/int4 oid/text oid/timestamp]}))))
-
 
   (with-title "JDBC COPY in from rows"
     (with-open [conn (jdbc/get-connection
