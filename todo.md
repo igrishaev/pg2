@@ -7,6 +7,9 @@
 
 - empty prep stmt name?
 
+- set tx level
+- set tx read only methods
+
 - arrays
   - decode txt
   - decode bin
