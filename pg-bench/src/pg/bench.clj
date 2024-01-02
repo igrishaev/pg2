@@ -2,6 +2,7 @@
   (:import
    java.io.ByteArrayOutputStream
    java.io.InputStream
+   java.io.OutputStream
    java.sql.PreparedStatement
    java.time.LocalDateTime
    org.pg.ConnConfig$Builder
@@ -120,6 +121,9 @@
 (def QUERY_IN_STREAM_BIN
   "copy aaa (id, name, created_at) from STDIN WITH (FORMAT BINARY)")
 
+(def QUERY_OUT_STREAM
+  "copy (select random() from generate_series(0, 999999)) TO STDIN WITH (FORMAT CSV)")
+
 (def SAMPLE_CSV
   "sample.csv")
 
@@ -153,12 +157,12 @@
 
 
 (defmacro with-title [line & body]
-  `(do
-     (println "-----------------------")
-     (println ~line)
-     (println "-----------------------")
+  `(let [line# ~line
+         border# (.repeat "-" (count line#))]
+     (println border#)
+     (println line#)
+     (println border#)
      ~@body))
-
 
 
 (defn -main [& args]
@@ -279,5 +283,21 @@
                   ^String QUERY_IN_STREAM
                   ^InputStream (-> buf (.toByteArray) io/input-stream))))))
 
+  (with-title "PG COPY out"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/copy-out conn
+                    QUERY_OUT_STREAM
+                    (OutputStream/nullOutputStream)))))
 
-  )
+
+  (with-title "JDBC COPY out"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+       (let [copy
+             (new CopyManager conn)]
+
+         (.copyOut copy
+                  ^String QUERY_OUT_STREAM
+                  ^OutputStream (OutputStream/nullOutputStream)))))))

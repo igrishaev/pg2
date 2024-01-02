@@ -5,6 +5,8 @@
 - with query timeout
 - fix so send & recv buf size
 
+- empty prep stmt name?
+
 - arrays
   - decode txt
   - decode bin
