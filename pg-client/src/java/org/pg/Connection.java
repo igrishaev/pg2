@@ -529,7 +529,6 @@ public class Connection implements Closeable {
                 portal,
                 statement,
                 bytes,
-                OIDs,
                 paramsFormat,
                 columnFormat
         );

@@ -4,14 +4,12 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import org.pg.enums.Format;
-import org.pg.enums.OID;
 import org.pg.Payload;
 
 public record Bind (
         String portal,
         String statement,
         byte[][] values,
-        OID[] OIDs,
         Format paramsFormat,
         Format columnFormat
 ) implements IMessage {
