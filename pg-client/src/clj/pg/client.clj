@@ -503,6 +503,16 @@
        [nil e#])))
 
 
+;;
+;; Transactions
+;;
+
+(def ^TxLevel TX_SERIALIZABLE     TxLevel/SERIALIZABLE)
+(def ^TxLevel TX_REPEATABLE_READ  TxLevel/REPEATABLE_READ)
+(def ^TxLevel TX_READ_COMMITTED   TxLevel/READ_COMMITTED)
+(def ^TxLevel TX_READ_UNCOMMITTED TxLevel/READ_UNCOMMITTED)
+
+
 (defn ->tx-level ^TxLevel [level]
   (case level
 
@@ -519,6 +529,14 @@
     TxLevel/READ_UNCOMMITTED))
 
 
+(defn set-tx-level [^Connection conn level]
+  (.setTxLevel conn (->tx-level level)))
+
+
+(defn set-read-only [^Connection conn]
+  (.setTxReadOnly conn))
+
+
 (defmacro with-tx
   [[conn {:as opt :keys [isolation-level
                          read-only?
@@ -532,10 +550,10 @@
        (.begin ~bind)
 
        ~@(when isolation-level
-           [`(.setTxLevel ~bind (->tx-level ~isolation-level))])
+           [`(set-tx-level ~bind ~isolation-level)])
 
        ~@(when read-only?
-           [`(.setTxReadOnly ~bind)])
+           [`(set-read-only ~bind)])
 
        (let [[result# e#]
              (with-safe ~@body)]

@@ -4,9 +4,12 @@ public class Const {
     public static final int PROTOCOL_VERSION = 196608;
     public static final int CANCEL_CODE = 80877102;
     public static final int SSL_CODE = 80877103;
-    public static final int COPY_BUFFER_SIZE = 2048;
+    public static final int COPY_BUFFER_SIZE = 0xFFFF;
     public static final String COPY_FAIL_EXCEPTION_MSG = "Terminated due to an exception on the client side";
     public static final int PG_PORT = 5432;
+    public static final int SOTimeout = 15 * 1000;
+    public static final int SOReceiveBufSize = 0xFFFF;
+    public static final int SOSendBufSize = 0xFFFF;
     public static final String PG_HOST = "127.0.0.1";
     public static final int IN_STREAM_BUF_SIZE = 0xFFFF;
     public static final int OUT_STREAM_BUF_SIZE = 0xFFFF;

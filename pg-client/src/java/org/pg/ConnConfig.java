@@ -54,9 +54,9 @@ public record ConnConfig(
         private boolean useSSL = false;
         private boolean SOKeepAlive = true;
         private boolean SOTCPnoDelay = true;
-        private int SOTimeout = 15 * 1000;
-        int SOReceiveBufSize = 25188;
-        int SOSendBufSize = 65536;
+        private int SOTimeout = Const.SOTimeout;
+        int SOReceiveBufSize = Const.SOReceiveBufSize;
+        int SOSendBufSize = Const.SOSendBufSize;
         private int inStreamBufSize = Const.IN_STREAM_BUF_SIZE;
         private int outStreamBufSize = Const.OUT_STREAM_BUF_SIZE;
         private IFn fnNotification = new core$println();

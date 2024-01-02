@@ -21,7 +21,7 @@
    [pg.oid :as oid]))
 
 
-(def USER "ivan")
+(def USER "test")
 (def PORT 15432)
 
 
@@ -81,14 +81,8 @@
    :user USER
    :password USER
    :database USER
-
    :binary-encode? true
-   :binary-decode? true
-
-   :so-recv-buf-size (int 0xFFFF)
-   :so-send-buf-size (int 0xFFFF)
-
-   })
+   :binary-decode? true})
 
 
 (def jdbc-config
@@ -170,6 +164,9 @@
   (with-title "generating CSV"
     (generate-csv))
 
+  (pg/with-connection [conn pg-config]
+    (pg/execute conn QUERY_TABLE))
+
   (with-title "pg random value select"
     (pg/with-connection [conn pg-config]
       (quick-bench
@@ -241,8 +238,8 @@
              (new CopyManager conn)]
 
          (.copyIn copy
-                  QUERY_IN_STREAM
-                  (-> SAMPLE_CSV io/file io/input-stream))))))
+                  ^String QUERY_IN_STREAM
+                  ^InputStream (-> SAMPLE_CSV io/file io/input-stream))))))
 
   (with-title "PG COPY in from rows BIN"
     (pg/with-connection [conn pg-config]
