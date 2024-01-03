@@ -212,8 +212,7 @@ public record ExecuteParams (
             return this;
         }
 
-        // TODO: rename to copyBufSize
-        public Builder bufSize (final int bufSize) {
+        public Builder copyBufSize (final int bufSize) {
             this.copyBufSize = bufSize;
             return this;
         }

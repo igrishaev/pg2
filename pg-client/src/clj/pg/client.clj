@@ -168,7 +168,7 @@
       (.copyFormat copy-format)
 
       copy-buf-size
-      (.bufSize copy-buf-size)
+      (.copyBufSize copy-buf-size)
 
       copy-in-rows
       (.copyInRows copy-in-rows)
