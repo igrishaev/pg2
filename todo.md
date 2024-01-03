@@ -1,4 +1,8 @@
 
+
+COPY_BUFFER_SIZE -> config & benchmarks
+- batch execute?
+
 - ssl test fixture
 - with query timeout
 - default handles use logger?

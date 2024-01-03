@@ -532,7 +532,17 @@ public class Connection implements Closeable {
                 paramsFormat,
                 columnFormat
         );
+
+//        for (byte[] buf: msg.foo()) {
+//            sendBytes(buf);
+//        }
+//        IOTool.flush(outStream);
+
         sendMessage(msg);
+    }
+
+    private void flush () {
+        IOTool.flush(outStream);
     }
 
     public synchronized Object executeStatement (
