@@ -725,8 +725,11 @@ public class Connection implements Closeable {
 
     private void handleCopyInResponseStream(Accum acc) {
 
-        final int contentSize = acc.executeParams.copyBufSize();
-        final byte[] buf = new byte[5 + contentSize];
+        final int bufSize = acc.executeParams.copyBufSize();
+        final byte[] buf = new byte[bufSize];
+
+        final ByteBuffer bbLead = ByteBuffer.allocate(5);
+        bbLead.put((byte)'d');
 
         InputStream inputStream = acc.executeParams.inputStream();
 
@@ -735,7 +738,7 @@ public class Connection implements Closeable {
 
         while (true) {
             try {
-                read = inputStream.read(buf, 5, contentSize);
+                read = inputStream.read(buf);
             }
             catch (Throwable caught) {
                 e = caught;
@@ -746,10 +749,11 @@ public class Connection implements Closeable {
                 break;
             }
 
-            final ByteBuffer bb = ByteBuffer.wrap(buf);
-            bb.put((byte)'d');
-            bb.putInt(4 + read);
-            sendBytes(buf, 0, 5 + read);
+            bbLead.position(1);
+            bbLead.putInt(4 + read);
+
+            sendBytes(bbLead.array());
+            sendBytes(buf, 0, read);
         }
 
         if (e == null) {
@@ -901,6 +905,7 @@ public class Connection implements Closeable {
         outputStream.write(bytes);
     }
 
+    @SuppressWarnings("unused")
     public synchronized Object copy (final String sql, final ExecuteParams executeParams) {
         sendQuery(sql);
         final Accum acc = interact(Phase.COPY, executeParams);
