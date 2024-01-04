@@ -3,9 +3,7 @@ package org.pg.pool;
 import org.pg.ConnConfig;
 import org.pg.Connection;
 import org.pg.PGError;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import org.pg.util.TryLock;
 
 import java.io.Closeable;
 import java.util.Deque;
@@ -23,7 +21,7 @@ public class Pool implements Closeable {
     private boolean isClosed = false;
     private final static System.Logger.Level level = System.Logger.Level.INFO;
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
-    private final Lock lock = new ReentrantLock();
+    private final TryLock lock = new TryLock();
 
     public Pool (final ConnConfig connConfig) {
         this(connConfig, PoolConfig.standard());
@@ -63,14 +61,11 @@ public class Pool implements Closeable {
 
     @SuppressWarnings("unused")
     public Connection borrowConnection () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return _borrowConnection_unlocked();
         }
-        finally {
-            lock.unlock();
-        }
     }
+
     @SuppressWarnings("unused")
     private Connection _borrowConnection_unlocked () {
 
@@ -136,12 +131,8 @@ public class Pool implements Closeable {
     }
 
     public void returnConnection (final Connection conn, final boolean forceClose) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             _returnConnection_unlocked(conn, forceClose);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -186,12 +177,8 @@ public class Pool implements Closeable {
     }
 
     public void close () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             _close_unlocked();
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -206,49 +193,33 @@ public class Pool implements Closeable {
     }
 
     public boolean isClosed() {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return isClosed;
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public int usedCount () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return connsUsed.size();
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public int freeCount () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return connsFree.size();
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     public String toString () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return String.format(
                     "<PG pool, min: %s, max: %s, lifetime: %s>",
                     poolConfig.minSize(),
                     poolConfig.maxSize(),
                     poolConfig.maxLifetime()
             );
-        }
-        finally {
-            lock.unlock();
         }
     }
 }

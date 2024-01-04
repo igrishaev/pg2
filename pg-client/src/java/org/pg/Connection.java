@@ -18,9 +18,7 @@ import org.pg.type.OIDHint;
 import org.pg.util.BBTool;
 import org.pg.util.IOTool;
 import org.pg.util.SQL;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import org.pg.util.TryLock;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -57,7 +55,7 @@ public class Connection implements Closeable {
     private boolean isSSL = false;
     private final static System.Logger.Level level = System.Logger.Level.INFO;
     private final System.Logger logger = System.getLogger(Connection.class.getCanonicalName());
-    private final Lock lock = new ReentrantLock();
+    private final TryLock lock = new TryLock();
 
     public Connection(final String host,
                       final int port,
@@ -117,14 +115,9 @@ public class Connection implements Closeable {
     }
 
     public int getPid () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return pid;
         }
-        finally {
-            lock.unlock();
-        }
-
     }
 
     public UUID getId() {
@@ -137,56 +130,36 @@ public class Connection implements Closeable {
     }
 
     public Boolean isClosed () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return socket.isClosed();
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public TXStatus getTxStatus () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return txStatus;
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public boolean isSSL () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return isSSL;
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public String getParam (final String param) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return params.get(param);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public IPersistentMap getParams () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return PersistentHashMap.create(params);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -320,12 +293,8 @@ public class Connection implements Closeable {
     }
 
     private void connect () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             _connect_unlocked();
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -495,37 +464,19 @@ public class Connection implements Closeable {
     }
 
     public Object query(final String sql) {
-        lock.lock();
-        try {
-            return _query_unlocked(sql, ExecuteParams.INSTANCE);
-        }
-        finally {
-            lock.unlock();
-        }
+        return query(sql, ExecuteParams.INSTANCE);
     }
 
     public Object query(final String sql, final ExecuteParams executeParams) {
-        lock.lock();
-        try {
-            return _query_unlocked(sql, executeParams);
+        try (TryLock ignored = lock.get()) {
+            sendQuery(sql);
+            return interact(Phase.QUERY, executeParams).getResult();
         }
-        finally {
-            lock.unlock();
-        }
-    }
-
-    private Object _query_unlocked(final String sql, final ExecuteParams executeParams) {
-        sendQuery(sql);
-        return interact(Phase.QUERY, executeParams).getResult();
     }
 
     public PreparedStatement prepare (final String sql, final ExecuteParams executeParams) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return _prepare_unlocked(sql, executeParams);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -622,12 +573,8 @@ public class Connection implements Closeable {
             final PreparedStatement stmt,
             final ExecuteParams executeParams
     ) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return _executeStatement_unlocked(stmt, executeParams);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -654,15 +601,11 @@ public class Connection implements Closeable {
     }
 
     public Object execute (final String sql, final ExecuteParams executeParams) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             final PreparedStatement stmt = prepare(sql, executeParams);
             final Object res = executeStatement(stmt, executeParams);
             closeStatement(stmt);
             return res;
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -681,15 +624,11 @@ public class Connection implements Closeable {
     }
 
     public void closeStatement (final String statement) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             sendCloseStatement(statement);
             sendSync();
             sendFlush();
             interact(Phase.CLOSE);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -1019,14 +958,10 @@ public class Connection implements Closeable {
 
     @SuppressWarnings("unused")
     public Object copy (final String sql, final ExecuteParams executeParams) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             sendQuery(sql);
             final Accum acc = interact(Phase.COPY, executeParams);
             return acc.getResult();
-        }
-        finally {
-            lock.unlock();
         }
     }
 
@@ -1132,118 +1067,84 @@ public class Connection implements Closeable {
 
     @SuppressWarnings("unused")
     public void begin () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             sendQuery("BEGIN");
             interact(Phase.QUERY);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public void commit () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             sendQuery("COMMIT");
             interact(Phase.QUERY);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public void rollback () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             sendQuery("ROLLBACK");
             interact(Phase.QUERY);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public boolean isIdle () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return txStatus == TXStatus.IDLE;
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public boolean isTxError () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return txStatus == TXStatus.ERROR;
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public boolean isTransaction () {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             return txStatus == TXStatus.TRANSACTION;
         }
-        finally {
-            lock.unlock();
+    }
+
+    @SuppressWarnings("unused")
+    public void setTxLevel (final TxLevel level) {
+        try (TryLock ignored = lock.get()) {
+            sendQuery(SQL.SQLSetTxLevel(level));
+            interact(Phase.QUERY);
         }
     }
 
-    // TODO: lock
-    @SuppressWarnings("unused")
-    public void setTxLevel (final TxLevel level) {
-        sendQuery(SQL.SQLSetTxLevel(level));
-        interact(Phase.QUERY);
-    }
-
-    // TODO: lock
     @SuppressWarnings("unused")
     public void setTxReadOnly () {
-        sendQuery(SQL.SQLSetTxReadOnly);
-        interact(Phase.QUERY);
+        try (TryLock ignored = lock.get()) {
+            sendQuery(SQL.SQLSetTxReadOnly);
+            interact(Phase.QUERY);
+        }
     }
 
     @SuppressWarnings("unused")
     public void listen (final String channel) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             query(String.format("listen %s", SQL.quoteChannel(channel)));
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public void unlisten (final String channel) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             query(String.format("unlisten %s", SQL.quoteChannel(channel)));
-        }
-        finally {
-            lock.unlock();
         }
     }
 
     @SuppressWarnings("unused")
     public void notify (final String channel, final String message) {
-        lock.lock();
-        try {
+        try (TryLock ignored = lock.get()) {
             final List<Object> params = List.of(channel, message);
             execute("select pg_notify($1, $2)", params);
-        }
-        finally {
-            lock.unlock();
         }
     }
 
