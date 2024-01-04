@@ -2041,7 +2041,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (let [in-stream
           (proxy [InputStream] []
-            (read [buf off len]
+            (read [buf]
               (throw (new Exception "BOOM"))))]
 
       (try

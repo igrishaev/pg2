@@ -90,6 +90,7 @@ public class Connection implements Closeable {
     public void close () {
         if (!isClosed()) {
             sendTerminate();
+            flush();
             IOTool.close(socket);
         }
     }
@@ -313,14 +314,12 @@ public class Connection implements Closeable {
         sendBytes(bytes);
     }
 
-    // Send a message into the output stream. Flushes the stream forcibly.
     private void sendMessage (final IMessage msg) {
         if (isDebug) {
             logger.log(level, " <- {0}", msg);
         }
         final ByteBuffer buf = msg.encode(codecParams.clientCharset);
         IOTool.write(outStream, buf.array());
-        IOTool.flush(outStream);
     }
 
     private String generateStatement () {
@@ -533,12 +532,9 @@ public class Connection implements Closeable {
                 columnFormat
         );
 
-//        for (byte[] buf: msg.foo()) {
-//            sendBytes(buf);
-//        }
-//        IOTool.flush(outStream);
-
-        sendMessage(msg);
+        for (byte[] buf: msg.toByteArrays()) {
+            sendBytes(buf);
+        }
     }
 
     private void flush () {
@@ -596,6 +592,7 @@ public class Connection implements Closeable {
     }
 
     private Accum interact(final Phase phase, final ExecuteParams executeParams) {
+        flush();
         final Accum acc = new Accum(phase, executeParams);
         while (true) {
             final Object msg = readMessage(acc.hasException());
@@ -707,6 +704,7 @@ public class Connection implements Closeable {
             );
             acc.scramPipeline.step1 = step1;
             sendMessage(msgSASL);
+            flush();
         }
 
         if (msg.isScramSha256Plus()) {
@@ -723,6 +721,7 @@ public class Connection implements Closeable {
         acc.scramPipeline.step3 = step3;
         final SASLResponse msgSASL = new SASLResponse(step3.clientFinalMessage());
         sendMessage(msgSASL);
+        flush();
     }
 
     private void handleAuthenticationSASLFinal(final AuthenticationSASLFinal msg, final Accum acc) {
@@ -863,7 +862,7 @@ public class Connection implements Closeable {
             handleCopyInResponseStream(acc);
         }
         // Finally, we flush the output stream so all unsent bytes get sent.
-        IOTool.flush(outStream);
+        flush();
     }
 
     private void handlePortalSuspended(final PortalSuspended msg, final Accum acc) {
@@ -895,6 +894,7 @@ public class Connection implements Closeable {
                 msg.salt()
         );
         sendPassword(hashed);
+        flush();
     }
 
     private void handleCopyOutResponse(final CopyOutResponse msg, final Accum acc) {
@@ -940,6 +940,7 @@ public class Connection implements Closeable {
 
     private void handleAuthenticationCleartextPassword() {
         sendPassword(config.password());
+        flush();
     }
 
     private void handleParameterStatus(final ParameterStatus msg) {

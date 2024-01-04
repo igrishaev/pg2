@@ -9,14 +9,16 @@ import org.pg.Payload;
 import org.pg.util.BBTool;
 
 public record Bind (
+
         String portal,
         String statement,
         byte[][] values,
         Format paramsFormat,
         Format columnFormat
+
 ) implements IMessage {
 
-    public byte[][] foo () {
+    public byte[][] toByteArrays () {
 
         int arrayCount = 2;
         int payloadLen = 0;

@@ -167,12 +167,6 @@
   (pg/with-connection [conn pg-config]
     (pg/execute conn QUERY_TABLE))
 
-  (with-title "pg random value select"
-    (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/execute conn
-                   QUERY_SELECT_RANDOM_VAL))))
-
   (with-title "next.JDBC random value select"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -182,11 +176,11 @@
                       [QUERY_SELECT_RANDOM_VAL]
                       {:as rs/as-unqualified-maps}))))
 
-  (with-title "pg random JSON select"
+  (with-title "pg random value select"
     (pg/with-connection [conn pg-config]
       (quick-bench
        (pg/execute conn
-                   QUERY_SELECT_JSON))))
+                   QUERY_SELECT_RANDOM_VAL))))
 
   (with-title "next.JDBC random JSON select"
     (with-open [conn (jdbc/get-connection
@@ -196,6 +190,12 @@
        (jdbc/execute! conn
                       [QUERY_SELECT_JSON]
                       {:as rs/as-unqualified-maps}))))
+
+  (with-title "pg random JSON select"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/execute conn
+                   QUERY_SELECT_JSON))))
 
   (with-title "pg insert values"
     (pg/with-connection [conn pg-config]
@@ -223,13 +223,6 @@
                          (format "name%s" x)
                          (LocalDateTime/now)])))))
 
-  (with-title "PG COPY in from a stream"
-    (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/copy-in conn
-                   QUERY_IN_STREAM
-                   (-> SAMPLE_CSV io/file io/input-stream)))))
-
   (with-title "JDBC COPY in from a stream"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -241,6 +234,13 @@
                   ^String QUERY_IN_STREAM
                   ^InputStream (-> SAMPLE_CSV io/file io/input-stream))))))
 
+  (with-title "PG COPY in from a stream"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/copy-in conn
+                   QUERY_IN_STREAM
+                   (-> SAMPLE_CSV io/file io/input-stream)))))
+
   (with-title "PG COPY in from rows BIN"
     (pg/with-connection [conn pg-config]
       (quick-bench
@@ -249,6 +249,13 @@
                         (generate-rows)
                         {:copy-bin? true
                          :oids [oid/int4 oid/text oid/timestamp]}))))
+
+  (with-title "PG COPY in from rows CSV"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/copy-in-rows conn
+                        QUERY_IN_STREAM
+                        (generate-rows)))))
 
   (with-title "PG COPY in from maps BIN"
     (pg/with-connection [conn pg-config]
@@ -260,25 +267,13 @@
                         {:copy-bin? true
                          :oids [oid/int4 oid/text oid/timestamp]}))))
 
-  (with-title "JDBC COPY in from rows"
-    (with-open [conn (jdbc/get-connection
-                      jdbc-config)]
+  (with-title "PG COPY in from maps CSV"
+    (pg/with-connection [conn pg-config]
       (quick-bench
-       (let [copy
-             (new CopyManager conn)
-
-             ^ByteArrayOutputStream buf
-             (new java.io.ByteArrayOutputStream)
-
-             rows
-             (generate-rows)]
-
-         (with-open [writer (io/writer buf)]
-           (csv/write-csv writer rows))
-
-         (.copyIn copy
-                  ^String QUERY_IN_STREAM
-                  ^InputStream (-> buf (.toByteArray) io/input-stream))))))
+       (pg/copy-in-maps conn
+                        QUERY_IN_STREAM
+                        (generate-maps)
+                        [:id :name :created_at]))))
 
   (with-title "PG COPY out"
     (pg/with-connection [conn pg-config]
