@@ -4,6 +4,9 @@ import org.pg.ConnConfig;
 import org.pg.Connection;
 import org.pg.PGError;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import java.io.Closeable;
 import java.util.Deque;
 import java.util.UUID;
@@ -20,6 +23,7 @@ public class Pool implements Closeable {
     private boolean isClosed = false;
     private final static System.Logger.Level level = System.Logger.Level.INFO;
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
+    private final Lock lock = new ReentrantLock();
 
     public Pool (final ConnConfig connConfig) {
         this(connConfig, PoolConfig.standard());
@@ -58,7 +62,17 @@ public class Pool implements Closeable {
     }
 
     @SuppressWarnings("unused")
-    public synchronized Connection borrowConnection () {
+    public Connection borrowConnection () {
+        lock.lock();
+        try {
+            return _borrowConnection_unlocked();
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+    @SuppressWarnings("unused")
+    private Connection _borrowConnection_unlocked () {
 
         if (isClosed()) {
             throw new PGError("Cannot get a connection: the pool has been closed");
@@ -91,7 +105,7 @@ public class Pool implements Closeable {
     }
 
     @SuppressWarnings("unused")
-    public synchronized void returnConnection (final Connection conn) {
+    public void returnConnection (final Connection conn) {
         returnConnection(conn, false);
     }
 
@@ -121,7 +135,17 @@ public class Pool implements Closeable {
         return conn;
     }
 
-    public synchronized void returnConnection (final Connection conn, final boolean forceClose) {
+    public void returnConnection (final Connection conn, final boolean forceClose) {
+        lock.lock();
+        try {
+            _returnConnection_unlocked(conn, forceClose);
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private void _returnConnection_unlocked (final Connection conn, final boolean forceClose) {
 
         if (!isUsed(conn)) {
             throw new PGError("connection %s doesn't belong to the pool", conn.getId());
@@ -161,7 +185,17 @@ public class Pool implements Closeable {
         connsFree.offer(conn);
     }
 
-    public synchronized void close () {
+    public void close () {
+        lock.lock();
+        try {
+            _close_unlocked();
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private void _close_unlocked () {
         for (final Connection conn: connsFree) {
             conn.close();
         }
@@ -171,26 +205,50 @@ public class Pool implements Closeable {
         isClosed = true;
     }
 
-    public synchronized boolean isClosed() {
-        return isClosed;
+    public boolean isClosed() {
+        lock.lock();
+        try {
+            return isClosed;
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized int usedCount () {
-        return connsUsed.size();
+    public int usedCount () {
+        lock.lock();
+        try {
+            return connsUsed.size();
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized int freeCount () {
-        return connsFree.size();
+    public int freeCount () {
+        lock.lock();
+        try {
+            return connsFree.size();
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
-    public synchronized String toString () {
-        return String.format(
-                "<PG pool, min: %s, max: %s, lifetime: %s>",
-                poolConfig.minSize(),
-                poolConfig.maxSize(),
-                poolConfig.maxLifetime()
-        );
+    public String toString () {
+        lock.lock();
+        try {
+            return String.format(
+                    "<PG pool, min: %s, max: %s, lifetime: %s>",
+                    poolConfig.minSize(),
+                    poolConfig.maxSize(),
+                    poolConfig.maxLifetime()
+            );
+        }
+        finally {
+            lock.unlock();
+        }
     }
 }

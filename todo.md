@@ -15,6 +15,10 @@ COPY_BUFFER_SIZE -> config & benchmarks
   - encode txt
   - encode bin
 
+- remove atomic int from Connection?
+- virtual threads test
+- Lock try/catch class: https://github.com/pgjdbc/pgjdbc/blob/b87d8b55b5451430347f545b0e4cb9bd98bdf552/pgjdbc/src/main/java/org/postgresql/jdbc/ResourceLock.java#L8
+
 - pg-component
 - pg-honey
 - input-stream available?

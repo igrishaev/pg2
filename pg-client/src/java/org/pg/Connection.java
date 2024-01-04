@@ -19,6 +19,9 @@ import org.pg.util.BBTool;
 import org.pg.util.IOTool;
 import org.pg.util.SQL;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import java.io.*;
@@ -54,6 +57,7 @@ public class Connection implements Closeable {
     private boolean isSSL = false;
     private final static System.Logger.Level level = System.Logger.Level.INFO;
     private final System.Logger logger = System.getLogger(Connection.class.getCanonicalName());
+    private final Lock lock = new ReentrantLock();
 
     public Connection(final String host,
                       final int port,
@@ -112,8 +116,15 @@ public class Connection implements Closeable {
         return aInt.incrementAndGet();
     }
 
-    public synchronized int getPid () {
-        return pid;
+    public int getPid () {
+        lock.lock();
+        try {
+            return pid;
+        }
+        finally {
+            lock.unlock();
+        }
+
     }
 
     public UUID getId() {
@@ -125,28 +136,58 @@ public class Connection implements Closeable {
         return createdAt;
     }
 
-    public synchronized Boolean isClosed () {
-        return socket.isClosed();
+    public Boolean isClosed () {
+        lock.lock();
+        try {
+            return socket.isClosed();
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized TXStatus getTxStatus () {
-        return txStatus;
+    public TXStatus getTxStatus () {
+        lock.lock();
+        try {
+            return txStatus;
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized boolean isSSL () {
-        return isSSL;
+    public boolean isSSL () {
+        lock.lock();
+        try {
+            return isSSL;
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized String getParam (final String param) {
-        return params.get(param);
+    public String getParam (final String param) {
+        lock.lock();
+        try {
+            return params.get(param);
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized IPersistentMap getParams () {
-        return PersistentHashMap.create(params);
+    public IPersistentMap getParams () {
+        lock.lock();
+        try {
+            return PersistentHashMap.create(params);
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     private void setParam (final String param, final String value) {
@@ -278,7 +319,17 @@ public class Connection implements Closeable {
         }
     }
 
-    private synchronized void connect () {
+    private void connect () {
+        lock.lock();
+        try {
+            _connect_unlocked();
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private void _connect_unlocked () {
         final int port = getPort();
         final String host = getHost();
         socket = IOTool.socket(host, port);
@@ -443,16 +494,42 @@ public class Connection implements Closeable {
         sendMessage(msg);
     }
 
-    public synchronized Object query(final String sql) {
-        return query(sql, ExecuteParams.INSTANCE);
+    public Object query(final String sql) {
+        lock.lock();
+        try {
+            return _query_unlocked(sql, ExecuteParams.INSTANCE);
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
-    public synchronized Object query(final String sql, final ExecuteParams executeParams) {
+    public Object query(final String sql, final ExecuteParams executeParams) {
+        lock.lock();
+        try {
+            return _query_unlocked(sql, executeParams);
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private Object _query_unlocked(final String sql, final ExecuteParams executeParams) {
         sendQuery(sql);
         return interact(Phase.QUERY, executeParams).getResult();
     }
 
-    public synchronized PreparedStatement prepare (final String sql, final ExecuteParams executeParams) {
+    public PreparedStatement prepare (final String sql, final ExecuteParams executeParams) {
+        lock.lock();
+        try {
+            return _prepare_unlocked(sql, executeParams);
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private PreparedStatement _prepare_unlocked (final String sql, final ExecuteParams executeParams) {
         final String statement = generateStatement();
 
         final List<OID> OIDsProvided = executeParams.OIDs();
@@ -541,7 +618,20 @@ public class Connection implements Closeable {
         IOTool.flush(outStream);
     }
 
-    public synchronized Object executeStatement (
+    public Object executeStatement (
+            final PreparedStatement stmt,
+            final ExecuteParams executeParams
+    ) {
+        lock.lock();
+        try {
+            return _executeStatement_unlocked(stmt, executeParams);
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private Object _executeStatement_unlocked (
             final PreparedStatement stmt,
             final ExecuteParams executeParams
     ) {
@@ -555,19 +645,25 @@ public class Connection implements Closeable {
         return interact(Phase.EXECUTE, executeParams).getResult();
     }
 
-    public synchronized Object execute (final String sql) {
+    public Object execute (final String sql) {
         return execute(sql, ExecuteParams.INSTANCE);
     }
 
-    public synchronized Object execute (final String sql, final List<Object> params) {
+    public Object execute (final String sql, final List<Object> params) {
         return execute(sql, ExecuteParams.builder().params(params).build());
     }
 
-    public synchronized Object execute (final String sql, final ExecuteParams executeParams) {
-        final PreparedStatement stmt = prepare(sql, executeParams);
-        final Object res = executeStatement(stmt, executeParams);
-        closeStatement(stmt);
-        return res;
+    public Object execute (final String sql, final ExecuteParams executeParams) {
+        lock.lock();
+        try {
+            final PreparedStatement stmt = prepare(sql, executeParams);
+            final Object res = executeStatement(stmt, executeParams);
+            closeStatement(stmt);
+            return res;
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     private void sendCloseStatement (final String statement) {
@@ -580,15 +676,21 @@ public class Connection implements Closeable {
         sendMessage(msg);
     }
 
-    public synchronized void closeStatement (final PreparedStatement statement) {
+    public void closeStatement (final PreparedStatement statement) {
         closeStatement(statement.parse().statement());
     }
 
-    public synchronized void closeStatement (final String statement) {
-        sendCloseStatement(statement);
-        sendSync();
-        sendFlush();
-        interact(Phase.CLOSE);
+    public void closeStatement (final String statement) {
+        lock.lock();
+        try {
+            sendCloseStatement(statement);
+            sendSync();
+            sendFlush();
+            interact(Phase.CLOSE);
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     private Accum interact(final Phase phase, final ExecuteParams executeParams) {
@@ -916,10 +1018,16 @@ public class Connection implements Closeable {
     }
 
     @SuppressWarnings("unused")
-    public synchronized Object copy (final String sql, final ExecuteParams executeParams) {
-        sendQuery(sql);
-        final Accum acc = interact(Phase.COPY, executeParams);
-        return acc.getResult();
+    public Object copy (final String sql, final ExecuteParams executeParams) {
+        lock.lock();
+        try {
+            sendQuery(sql);
+            final Accum acc = interact(Phase.COPY, executeParams);
+            return acc.getResult();
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     private static List<Object> mapToRow(final Map<?,?> map, final List<Object> keys) {
@@ -1023,44 +1131,82 @@ public class Connection implements Closeable {
     }
 
     @SuppressWarnings("unused")
-    public synchronized void begin () {
-        sendQuery("BEGIN");
-        interact(Phase.QUERY);
+    public void begin () {
+        lock.lock();
+        try {
+            sendQuery("BEGIN");
+            interact(Phase.QUERY);
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized void commit () {
-        sendQuery("COMMIT");
-        interact(Phase.QUERY);
+    public void commit () {
+        lock.lock();
+        try {
+            sendQuery("COMMIT");
+            interact(Phase.QUERY);
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized void rollback () {
-        sendQuery("ROLLBACK");
-        interact(Phase.QUERY);
+    public void rollback () {
+        lock.lock();
+        try {
+            sendQuery("ROLLBACK");
+            interact(Phase.QUERY);
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized boolean isIdle () {
-        return txStatus == TXStatus.IDLE;
+    public boolean isIdle () {
+        lock.lock();
+        try {
+            return txStatus == TXStatus.IDLE;
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized boolean isTxError () {
-        return txStatus == TXStatus.ERROR;
+    public boolean isTxError () {
+        lock.lock();
+        try {
+            return txStatus == TXStatus.ERROR;
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized boolean isTransaction () {
-        return txStatus == TXStatus.TRANSACTION;
+    public boolean isTransaction () {
+        lock.lock();
+        try {
+            return txStatus == TXStatus.TRANSACTION;
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
+    // TODO: lock
     @SuppressWarnings("unused")
     public void setTxLevel (final TxLevel level) {
         sendQuery(SQL.SQLSetTxLevel(level));
         interact(Phase.QUERY);
     }
 
+    // TODO: lock
     @SuppressWarnings("unused")
     public void setTxReadOnly () {
         sendQuery(SQL.SQLSetTxReadOnly);
@@ -1068,21 +1214,37 @@ public class Connection implements Closeable {
     }
 
     @SuppressWarnings("unused")
-    public synchronized void listen (final String channel) {
-        query(String.format("listen %s", SQL.quoteChannel(channel)));
+    public void listen (final String channel) {
+        lock.lock();
+        try {
+            query(String.format("listen %s", SQL.quoteChannel(channel)));
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized void unlisten (final String channel) {
-        query(String.format("unlisten %s", SQL.quoteChannel(channel)));
+    public void unlisten (final String channel) {
+        lock.lock();
+        try {
+            query(String.format("unlisten %s", SQL.quoteChannel(channel)));
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @SuppressWarnings("unused")
-    public synchronized void notify (final String channel, final String message) {
-        final ArrayList<Object> params = new ArrayList<>(2);
-        params.add(channel);
-        params.add(message);
-        execute("select pg_notify($1, $2)", params);
+    public void notify (final String channel, final String message) {
+        lock.lock();
+        try {
+            final List<Object> params = List.of(channel, message);
+            execute("select pg_notify($1, $2)", params);
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
 }
