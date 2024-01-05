@@ -32,7 +32,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Connection implements Closeable {
+public final class Connection implements Closeable {
 
     private static final boolean isDebug =
             System.getenv()

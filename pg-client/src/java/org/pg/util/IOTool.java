@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
-public class IOTool {
+public final class IOTool {
 
     public static void skip (final InputStream inputStream, final int len) {
         try {

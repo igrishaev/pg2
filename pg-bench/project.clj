@@ -14,6 +14,7 @@
    [com.github.seancorfield/next.jdbc]
    [org.postgresql/postgresql]
    [org.clojure/data.csv]
+   [hikari-cp]
    [criterium]]
 
   :main pg.bench

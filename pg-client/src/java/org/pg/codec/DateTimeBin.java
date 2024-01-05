@@ -5,7 +5,7 @@ import java.time.*;
 import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 
-public class DateTimeBin {
+public final class DateTimeBin {
 
     private static final Duration PG_DIFF;
 

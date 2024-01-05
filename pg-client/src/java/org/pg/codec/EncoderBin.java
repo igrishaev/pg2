@@ -16,7 +16,7 @@ import org.pg.enums.OID;
 import org.pg.util.BBTool;
 import org.pg.type.JSON;
 
-public class EncoderBin {
+public final class EncoderBin {
 
     public static ByteBuffer encode (Object x) {
         return encode(x, OID.DEFAULT, CodecParams.standard());

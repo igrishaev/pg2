@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 
-public class NumericBin {
+public final class NumericBin {
 
     private final static int NUMERIC_POS = 0x0000;
     private final static int NUMERIC_NEG = 0x4000;

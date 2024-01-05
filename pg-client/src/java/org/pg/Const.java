@@ -1,6 +1,6 @@
 package org.pg;
 
-public class Const {
+public final class Const {
     public static final int PROTOCOL_VERSION = 196608;
     public static final int CANCEL_CODE = 80877102;
     public static final int SSL_CODE = 80877103;

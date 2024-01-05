@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 
-public class DateTimeTxt {
+public final class DateTimeTxt {
 
     private static final DateTimeFormatter frmt_decode_timestamptz;
     private static final DateTimeFormatter frmt_decode_timestamp;

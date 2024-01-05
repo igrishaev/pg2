@@ -42,6 +42,7 @@
    [less-awful-ssl "1.0.6"]
    [com.github.seancorfield/next.jdbc "1.2.796"]
    [org.postgresql/postgresql "42.2.18"]
+   [hikari-cp "3.0.1"]
    [com.stuartsierra/component "1.1.0"]
    [org.clojure/data.csv "1.0.1"]
    [metosin/jsonista "0.3.8"]

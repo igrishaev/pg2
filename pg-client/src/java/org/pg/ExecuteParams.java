@@ -44,7 +44,7 @@ public record ExecuteParams (
         return new Builder().build();
     }
 
-    public static class Builder {
+    public final static class Builder {
 
         private List<Object> params = Collections.emptyList();
         private List<OID> OIDs = Collections.emptyList();

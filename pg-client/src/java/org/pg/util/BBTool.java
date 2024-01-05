@@ -3,7 +3,7 @@ package org.pg.util;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-public class BBTool {
+public final class BBTool {
 
     public static ByteBuffer ofShort (final short value) {
         final ByteBuffer buf = ByteBuffer.allocate(2);

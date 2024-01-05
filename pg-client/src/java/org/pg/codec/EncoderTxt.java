@@ -13,7 +13,7 @@ import org.pg.type.PGEnum;
 import org.pg.util.HexTool;
 import org.pg.type.JSON;
 
-public class EncoderTxt {
+public final class EncoderTxt {
 
     public static String encode(final Object x) {
         return encode(x, OID.DEFAULT, CodecParams.standard());

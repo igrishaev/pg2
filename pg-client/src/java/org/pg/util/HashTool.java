@@ -10,7 +10,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
-public class HashTool {
+public final class HashTool {
 
     public static MessageDigest getDigest (final String algorithm) {
         try {

@@ -5,7 +5,7 @@ import org.pg.util.HashTool;
 import org.pg.util.HexTool;
 import java.nio.charset.StandardCharsets;
 
-public class MD5 {
+public final class MD5 {
 
     public static String hashPassword (final String user,
                                        final String password,

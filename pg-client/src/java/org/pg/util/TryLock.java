@@ -3,7 +3,7 @@ package org.pg.util;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class TryLock implements AutoCloseable {
+public final class TryLock implements AutoCloseable {
 
     private final Lock lock = new ReentrantLock();
 

@@ -10,7 +10,7 @@ import org.pg.util.BBTool;
 import org.pg.type.JSON;
 
 
-public class DecoderBin {
+public final class DecoderBin {
 
     public static Object decode(final ByteBuffer buf, final OID oid) {
         return decode(buf, oid, CodecParams.standard());

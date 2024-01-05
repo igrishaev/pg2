@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 
-public class Payload {
+public final class Payload {
 
     private Integer size;
     private final ArrayList<Object> items;

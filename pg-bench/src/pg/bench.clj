@@ -1,12 +1,12 @@
 (ns pg.bench
   (:import
-   java.util.concurrent.Executors
-   java.util.concurrent.ExecutorService
    java.io.ByteArrayOutputStream
    java.io.InputStream
    java.io.OutputStream
    java.sql.PreparedStatement
    java.time.LocalDateTime
+   java.util.concurrent.ExecutorService
+   java.util.concurrent.Executors
    org.pg.ConnConfig$Builder
    org.pg.Connection
    org.postgresql.copy.CopyManager
@@ -15,11 +15,13 @@
   (:require
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
+   [hikari-cp.core :as cp]
    [jsonista.core :as json]
    [next.jdbc :as jdbc]
    [next.jdbc.prepare :as prepare]
    [next.jdbc.result-set :as rs]
    [pg.client :as pg]
+   [pg.pool :as pool]
    [pg.oid :as oid]))
 
 (set! *warn-on-reflection* true)
@@ -88,6 +90,15 @@
    :binary-decode? true})
 
 
+(def POOL_CONN_MIN 4)
+(def POOL_CONN_MAX 8)
+
+
+(def pool-config
+  {:min-size POOL_CONN_MIN
+   :max-size POOL_CONN_MAX})
+
+
 (def jdbc-config
   {:dbtype "postgres"
    :port PORT
@@ -96,12 +107,47 @@
    :password USER})
 
 
+(def cp-options
+  {:auto-commit        true
+   :read-only          false
+   :connection-timeout 30000
+   :validation-timeout 5000
+   :idle-timeout       600000
+   :max-lifetime       1800000
+   :minimum-idle       POOL_CONN_MIN
+   :maximum-pool-size  POOL_CONN_MAX
+   :pool-name          "bench-pool"
+   :adapter            "postgresql"
+   :username           USER
+   :password           USER
+   :database-name      USER
+   :server-name        "127.0.0.1"
+   :port-number        PORT
+   :register-mbeans    false})
+
+
 (def QUERY_SELECT_JSON
   "select row_to_json(row(1, random(), 2, random()))
    from generate_series(1,50000);")
 
 (def QUERY_SELECT_RANDOM_VAL
-  "select random() as x from generate_series(1,50000)")
+  "
+select
+
+  x::int4                  as int4,
+  x::int8                  as int8,
+  x::numeric               as numeric,
+  x::text || 'foobar'      as line,
+  x > 100500               as bool,
+  now()                    as ts,
+  now()::date              as date,
+  now()::time              as time,
+  null                     as nil
+
+from
+  generate_series(1,50000) as s(x)
+
+")
 
 (def QUERY_INSERT_PG
   "insert into aaa(id, name, created_at) values ($1, $2, $3)")
@@ -160,6 +206,15 @@
      (println line#)
      (println border#)
      ~@body))
+
+
+(defmacro with-virt-exe [[n] & body]
+  `(with-open [exe#
+               (Executors/newVirtualThreadPerTaskExecutor)]
+     (doseq [_# (range 0 ~n)]
+       (.submit exe# (reify Callable
+                       (call [_]
+                         ~@body))))))
 
 
 (defn -main [& args]
@@ -293,33 +348,39 @@
              (new CopyManager conn)]
 
          (.copyOut copy
-                  ^String QUERY_OUT_STREAM
-                  ^OutputStream (OutputStream/nullOutputStream))))))
+                   ^String QUERY_OUT_STREAM
+                   ^OutputStream (OutputStream/nullOutputStream))))))
 
 
   (with-title "PG virtual threads"
     (pg/with-connection [conn pg-config]
       (quick-bench
-       (with-open [^ExecutorService exe
-                   (Executors/newVirtualThreadPerTaskExecutor)]
-         (doseq [x (range 0 9)]
-           (.submit exe (reify Callable
-                          (call [_]
-                            (pg/execute conn QUERY_SELECT_JSON)))))))))
+       (with-virt-exe [8]
+         (pg/execute conn QUERY_SELECT_JSON)))))
 
   (with-title "JDBC virtual threads"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
       (quick-bench
-       (with-open [exe (Executors/newVirtualThreadPerTaskExecutor)]
-         (doseq [x (range 0 9)]
-           (.submit exe (reify Callable
-                          (call [_]
-                            (jdbc/execute! conn
-                                           [QUERY_SELECT_JSON]
-                                           {:as rs/as-unqualified-maps}))))))
-)))
+       (with-virt-exe [8]
+         (jdbc/execute! conn
+                        [QUERY_SELECT_JSON]
+                        {:as rs/as-unqualified-maps})))))
 
+  (with-title "JDBC pool"
+    (with-open [datasource
+                (cp/make-datasource cp-options)]
+      (quick-bench
+       (with-virt-exe [8]
+         (with-open [conn
+                     (jdbc/get-connection datasource)]
+           (jdbc/execute! conn [QUERY_SELECT_JSON]))))))
 
+  (with-title "PG pool"
+    (pool/with-pool [pool pg-config pool-config]
+      (quick-bench
+       (with-virt-exe [8]
+         (pool/with-connection [conn pool]
+           (pg/execute conn QUERY_SELECT_JSON))))))
 
   )

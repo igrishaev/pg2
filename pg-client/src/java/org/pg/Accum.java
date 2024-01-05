@@ -13,9 +13,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Accum {
+public final class Accum {
 
-     public static class Node {
+     public final static class Node {
 
          private CopyOutResponse copyOutResponse;
          private PortalSuspended portalSuspended;

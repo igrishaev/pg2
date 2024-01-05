@@ -1,6 +1,6 @@
 package org.pg.util;
 
-public class ByteTool {
+public final class ByteTool {
 
     public static byte[] concat (final byte[] a, final byte[] b) {
         final byte[] c = new byte[a.length + b.length];

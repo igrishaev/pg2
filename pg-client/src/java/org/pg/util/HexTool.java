@@ -3,7 +3,7 @@ package org.pg.util;
 import org.pg.PGError;
 import java.util.Arrays;
 
-public class HexTool {
+public final class HexTool {
 
 
     public static String formatHex(final byte[] input) {

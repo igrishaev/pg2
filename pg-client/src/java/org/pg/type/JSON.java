@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class JSON {
+public final class JSON {
 
     public record Wrapper (Object value) {}
 

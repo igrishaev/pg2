@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.math.BigDecimal;
 
-public class DecoderTxt {
+public final class DecoderTxt {
 
     public static Object decode(
             final String string,

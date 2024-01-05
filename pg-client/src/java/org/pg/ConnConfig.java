@@ -41,7 +41,7 @@ public record ConnConfig(
         return builder(user, database).build();
     }
 
-    public static class Builder {
+    public final static class Builder {
         private final String user;
         private final String database;
         private String password = "";

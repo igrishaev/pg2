@@ -2,7 +2,7 @@ package org.pg.type;
 
 import org.pg.enums.OID;
 
-public class OIDHint {
+public final class OIDHint {
 
     public static OID guessOID (Object x) {
         if (x == null) {

@@ -11,7 +11,7 @@ import org.pg.util.ByteTool;
 import org.pg.util.HashTool;
 import org.pg.util.NormTool;
 
-public class ScramSha256 {
+public final class ScramSha256 {
 
     public static byte[] Hi (
             final byte[] secret,

@@ -14,7 +14,7 @@ public record PoolConfig (
         return PoolConfig.builder().build();
     }
 
-    public static class Builder {
+    public final static class Builder {
 
         private int minSize = 2;
         private int maxSize = 8;

@@ -12,7 +12,7 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.HashMap;
 
-public class Pool implements Closeable {
+public final class Pool implements Closeable {
 
     private final ConnConfig connConfig;
     private final PoolConfig poolConfig;

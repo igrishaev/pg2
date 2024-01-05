@@ -1,7 +1,7 @@
 package org.pg;
 
 
-public class PGError extends Error {
+public final class PGError extends Error {
     public PGError (final String message) {
         super(message);
     }
