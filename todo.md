@@ -1,7 +1,6 @@
 
 - ssl test fixture
 - with query timeout
-- default handles use logger?
 - remove atomic int from Connection?
 - pool: use BlockingDeque
 

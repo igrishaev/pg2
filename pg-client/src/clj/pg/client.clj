@@ -2,6 +2,7 @@
   (:require
    [clojure.string :as str])
   (:import
+   java.lang.System$Logger$Level
    clojure.lang.Keyword
    java.io.InputStream
    java.io.OutputStream
@@ -183,6 +184,31 @@
       (.build))))
 
 
+(defn ->Level ^System$Logger$Level [^Keyword log-level]
+  (case log-level
+
+    :all
+    System$Logger$Level/ALL
+
+    :trace
+    System$Logger$Level/TRACE
+
+    :debug
+    System$Logger$Level/DEBUG
+
+    :info
+    System$Logger$Level/INFO
+
+    (:warn :warning)
+    System$Logger$Level/WARNING
+
+    :error
+    System$Logger$Level/ERROR
+
+    (:off false nil)
+    System$Logger$Level/OFF))
+
+
 (defn ->conn-config ^ConnConfig$Builder [params]
 
   (let [{:keys [user
@@ -205,7 +231,8 @@
                 so-tcp-no-delay?
                 so-timeout
                 so-recv-buf-size
-                so-send-buf-size]}
+                so-send-buf-size
+                log-level]}
         params]
 
     (cond-> (new ConnConfig$Builder user database)
@@ -266,6 +293,9 @@
 
       so-send-buf-size
       (.SOSendBufSize so-send-buf-size)
+
+      log-level
+      (.logLevel (->Level log-level))
 
       :finally
       (.build))))

@@ -1,7 +1,6 @@
 package org.pg;
 
 import clojure.lang.IFn;
-import clojure.core$println;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;
@@ -30,7 +29,8 @@ public record ConnConfig(
         IFn fnNotification,
         IFn fnProtocolVersion,
         IFn fnNotice,
-        SSLContext sslContext
+        SSLContext sslContext,
+        System.Logger.Level logLevel
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -59,10 +59,11 @@ public record ConnConfig(
         int SOSendBufSize = Const.SO_SEND_BUF_SIZE;
         private int inStreamBufSize = Const.IN_STREAM_BUF_SIZE;
         private int outStreamBufSize = Const.OUT_STREAM_BUF_SIZE;
-        private IFn fnNotification = new core$println();
-        private IFn fnProtocolVersion = new core$println();
-        private IFn fnNotice = new core$println();
+        private IFn fnNotification;
+        private IFn fnProtocolVersion;
+        private IFn fnNotice;
         private SSLContext sslContext = null;
+        private System.Logger.Level logLevel = System.Logger.Level.INFO;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user);
@@ -78,6 +79,11 @@ public record ConnConfig(
 
         public Builder protocolVersion(final int protocolVersion) {
             this.protocolVersion = protocolVersion;
+            return this;
+        }
+
+        public Builder logLevel(final System.Logger.Level level) {
+            this.logLevel = level;
             return this;
         }
 
@@ -192,7 +198,8 @@ public record ConnConfig(
                     this.fnNotification,
                     this.fnProtocolVersion,
                     this.fnNotice,
-                    this.sslContext
+                    this.sslContext,
+                    this.logLevel
             );
         }
     }

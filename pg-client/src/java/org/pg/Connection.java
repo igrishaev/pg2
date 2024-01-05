@@ -53,7 +53,6 @@ public final class Connection implements Closeable {
     private final Map<String, String> params;
     private final CodecParams codecParams;
     private boolean isSSL = false;
-    private final static System.Logger.Level level = System.Logger.Level.INFO;
     private final System.Logger logger = System.getLogger(Connection.class.getCanonicalName());
     private final TryLock lock = new TryLock();
 
@@ -316,7 +315,7 @@ public final class Connection implements Closeable {
     // must be done manually.
     private void sendBytes (final byte[] buf) {
         if (isDebug) {
-            logger.log(level," <- {0}", Arrays.toString(buf));
+            logger.log(config.logLevel()," <- {0}", Arrays.toString(buf));
         }
         IOTool.write(outStream, buf);
     }
@@ -336,7 +335,7 @@ public final class Connection implements Closeable {
 
     private void sendMessage (final IMessage msg) {
         if (isDebug) {
-            logger.log(level, " <- {0}", msg);
+            logger.log(config.logLevel(), " <- {0}", msg);
         }
         final ByteBuffer buf = msg.encode(codecParams.clientCharset);
         IOTool.write(outStream, buf.array());
@@ -638,7 +637,7 @@ public final class Connection implements Closeable {
         while (true) {
             final Object msg = readMessage(acc.hasException());
             if (isDebug) {
-                logger.log(level, " -> {0}", msg);
+                logger.log(config.logLevel(), " -> {0}", msg);
             }
             handleMessage(msg, acc);
             if (isEnough(msg, phase)) {
@@ -910,22 +909,27 @@ public final class Connection implements Closeable {
         acc.handlePortalSuspended(msg);
     }
 
-    private static void futureCall(final IFn f, final Object arg) {
-        Agent.soloExecutor.submit(() -> {
-            f.invoke(arg);
-        });
+    private void handlerCall(final IFn f, final Object arg) {
+        if (f == null) {
+            logger.log(config.logLevel(), arg);
+        }
+        else {
+            Agent.soloExecutor.submit(() -> {
+                f.invoke(arg);
+            });
+        }
     }
 
     private void handleNotificationResponse(final NotificationResponse msg) {
-        futureCall(config.fnNotification(), msg.toClojure());
+        handlerCall(config.fnNotification(), msg.toClojure());
     }
 
     private void handleNoticeResponse(final NoticeResponse msg) {
-        futureCall(config.fnNotice(), msg.toClojure());
+        handlerCall(config.fnNotice(), msg.toClojure());
     }
 
     private void handleNegotiateProtocolVersion(final NegotiateProtocolVersion msg) {
-        futureCall(config.fnProtocolVersion(), msg.toClojure());
+        handlerCall(config.fnProtocolVersion(), msg.toClojure());
     }
 
     private void handleAuthenticationMD5Password(final AuthenticationMD5Password msg) {
