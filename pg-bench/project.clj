@@ -20,7 +20,7 @@
   :main pg.bench
 
   :java-cmd
-  "/Users/ivan/work/jdk-21.jdk/Contents/Home/bin/java"
+  ~(System/getenv "JAVA_BIN")
 
   :parent-project
   {:path "../project.clj"

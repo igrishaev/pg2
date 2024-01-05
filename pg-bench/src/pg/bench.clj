@@ -87,7 +87,8 @@
    :password USER
    :database USER
    :binary-encode? true
-   :binary-decode? true})
+   :binary-decode? true
+   :log-level :info})
 
 
 (def POOL_CONN_MIN 4)
@@ -96,7 +97,8 @@
 
 (def pool-config
   {:min-size POOL_CONN_MIN
-   :max-size POOL_CONN_MAX})
+   :max-size POOL_CONN_MAX
+   :log-level :info})
 
 
 (def jdbc-config

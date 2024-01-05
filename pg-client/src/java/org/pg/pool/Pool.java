@@ -19,7 +19,6 @@ public final class Pool implements Closeable {
     private final Map<UUID, Connection> connsUsed;
     private final Deque<Connection> connsFree;
     private boolean isClosed = false;
-    private final static System.Logger.Level level = System.Logger.Level.INFO;
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
     private final TryLock lock = new TryLock();
 
@@ -85,7 +84,7 @@ public final class Pool implements Closeable {
                             connsUsed.size(),
                             poolConfig.maxSize()
                     );
-                    logger.log(level, message);
+                    logger.log(poolConfig.logLevel(), message);
                     throw new PGError(message);
                 }
             }
@@ -107,7 +106,7 @@ public final class Pool implements Closeable {
     private void utilizeConnection(final Connection conn) {
         conn.close();
         logger.log(
-                level,
+                poolConfig.logLevel(),
                 "the connection {0} has been closed, free: {1}, used: {2}, max: {3}",
                 conn.getId(),
                 connsFree.size(),
@@ -120,7 +119,7 @@ public final class Pool implements Closeable {
         final Connection conn = new Connection(connConfig);
         addUsed(conn);
         logger.log(
-                level,
+                poolConfig.logLevel(),
                 "connection {0} has been created, free: {1}, used: {2}, max: {3}",
                 conn.getId(),
                 connsFree.size(),

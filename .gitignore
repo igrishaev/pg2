@@ -19,4 +19,4 @@ package.json
 .idea
 .lein-failures
 
-foo.csv
+pg-bench/sample.csv
