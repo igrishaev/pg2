@@ -1,5 +1,7 @@
 (ns pg.bench
   (:import
+   java.util.concurrent.Executors
+   java.util.concurrent.ExecutorService
    java.io.ByteArrayOutputStream
    java.io.InputStream
    java.io.OutputStream
@@ -20,8 +22,9 @@
    [pg.client :as pg]
    [pg.oid :as oid]))
 
+(set! *warn-on-reflection* true)
 
-(def USER "test")
+(def USER "ivan")
 (def PORT 15432)
 
 
@@ -282,7 +285,6 @@
                     QUERY_OUT_STREAM
                     (OutputStream/nullOutputStream)))))
 
-
   (with-title "JDBC COPY out"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -292,4 +294,32 @@
 
          (.copyOut copy
                   ^String QUERY_OUT_STREAM
-                  ^OutputStream (OutputStream/nullOutputStream)))))))
+                  ^OutputStream (OutputStream/nullOutputStream))))))
+
+
+  (with-title "PG virtual threads"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (with-open [^ExecutorService exe
+                   (Executors/newVirtualThreadPerTaskExecutor)]
+         (doseq [x (range 0 9)]
+           (.submit exe (reify Callable
+                          (call [_]
+                            (pg/execute conn QUERY_SELECT_JSON)))))))))
+
+  (with-title "JDBC virtual threads"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+       (with-open [exe (Executors/newVirtualThreadPerTaskExecutor)]
+         (doseq [x (range 0 9)]
+           (.submit exe (reify Callable
+                          (call [_]
+                            (jdbc/execute! conn
+                                           [QUERY_SELECT_JSON]
+                                           {:as rs/as-unqualified-maps}))))))
+)))
+
+
+
+  )
