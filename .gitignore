@@ -20,3 +20,4 @@ package.json
 .lein-failures
 
 pg-bench/sample.csv
+pg-bench/foo.csv

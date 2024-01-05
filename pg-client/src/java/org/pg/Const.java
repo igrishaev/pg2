@@ -22,4 +22,7 @@ public final class Const {
     public static final String COPY_CSV_CELL_SEP = ",";
     public static final String COPY_CSV_CELL_QUOTE = "\"";
     public static final String COPY_CSV_LINE_SEP = "\r\n";
+    public static final int POOL_SIZE_MIN = 2;
+    public static final int POOL_SIZE_MAX = 8;
+    public static final int POOL_MAX_LIFETIME = 1000 * 60 * 15;
 }

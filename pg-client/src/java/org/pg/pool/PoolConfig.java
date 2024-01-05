@@ -1,5 +1,7 @@
 package org.pg.pool;
 
+import org.pg.Const;
+
 public record PoolConfig (
         int minSize,
         int maxSize,
@@ -17,9 +19,9 @@ public record PoolConfig (
 
     public final static class Builder {
 
-        private int minSize = 2;
-        private int maxSize = 8;
-        private int maxLifetime = 1000 * 60 * 60;
+        private int minSize = Const.POOL_SIZE_MIN;
+        private int maxSize = Const.POOL_SIZE_MAX;
+        private int maxLifetime = Const.POOL_MAX_LIFETIME;
         private System.Logger.Level logLevel = System.Logger.Level.INFO;
 
         @SuppressWarnings("unused")
@@ -56,5 +58,3 @@ public record PoolConfig (
         }
     }
 }
-
-
