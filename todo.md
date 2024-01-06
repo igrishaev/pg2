@@ -5,6 +5,7 @@
 - docstrings
 - readme
 - release
+- review clojure params
 
 - arrays
   - decode txt
