@@ -3,7 +3,12 @@ repl: cleanup
 	PG_DEBUG=1 lein with-profile +test repl
 
 test: cleanup
-	lein with-profile +test test
+	lein test
+
+ssl_port ?= $(error Please specify the ssl_port=... argument)
+
+test-ssl: cleanup
+	PG_SSL_PORT=${ssl_port} lein test pg.client.ssl-test
 
 cleanup:
 	rm -rf target

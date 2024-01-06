@@ -1,6 +1,5 @@
 (ns pg.client.client-test
   (:import
-   org.pg.PGError
    java.io.ByteArrayOutputStream
    java.io.InputStream
    java.io.OutputStream
@@ -11,19 +10,20 @@
    java.time.OffsetDateTime
    java.time.OffsetTime
    java.util.ArrayList
-   java.util.HashMap
    java.util.Date
-   java.util.concurrent.ExecutionException)
+   java.util.HashMap
+   java.util.concurrent.ExecutionException
+   org.pg.PGError)
   (:require
-   [pg.client.integration :refer [*CONFIG*
-                                  *PORT*
-                                  fix-multi-port]]
-   [less.awful.ssl :as ssl]
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures testing]]
+   [less.awful.ssl :as ssl]
    [pg.client :as pg]
+   [pg.client.integration :refer [*CONFIG*
+                                  *PORT*
+                                  fix-multi-port]]
    [pg.oid :as oid]))
 
 

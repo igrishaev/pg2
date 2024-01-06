@@ -1,7 +1,8 @@
 
-- ssl test fixture
+- ssl-context reader
 - with query timeout
 - remove atomic int from Connection?
+- prep stmt closeable?
 - docstrings
 - readme
 - release

@@ -1,16 +1,18 @@
 (ns pg.client
   (:require
-   [clojure.string :as str])
+   [clojure.string :as str]
+   [less.awful.ssl :as ssl])
   (:import
-   java.lang.System$Logger$Level
    clojure.lang.Keyword
    java.io.InputStream
    java.io.OutputStream
    java.io.Writer
+   java.lang.System$Logger$Level
    java.nio.ByteBuffer
    java.util.List
    java.util.Map
    java.util.UUID
+   javax.net.ssl.SSLContext
    org.pg.ConnConfig$Builder
    org.pg.Connection
    org.pg.ExecuteParams
@@ -693,3 +695,20 @@
 
 (defn ->enum ^PGEnum [x]
   (PGEnum/of x))
+
+
+;;
+;; SSL
+;;
+
+(defn ssl-context
+  ^SSLContext [{:keys [^String key-file
+                       ^String cert-file
+                       ^String ca-cert-file]}]
+  (if ca-cert-file
+    (ssl/ssl-context key-file cert-file ca-cert-file)
+    (ssl/ssl-context key-file cert-file)))
+
+
+(defn is-ssl? ^Boolean [^Connection conn]
+  (.isSSL conn))

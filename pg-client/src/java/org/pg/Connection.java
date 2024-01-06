@@ -270,6 +270,7 @@ public final class Connection implements Closeable {
         if (config.useSSL()) {
             final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
             sendMessage(msg);
+            flush();
             final boolean ssl = readSSLResponse();
             if (ssl) {
                 try {
