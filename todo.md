@@ -2,6 +2,9 @@
 - ssl test fixture
 - with query timeout
 - remove atomic int from Connection?
+- docstrings
+- readme
+- release
 
 - arrays
   - decode txt
