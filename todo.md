@@ -1,5 +1,4 @@
 
-- ssl-context reader
 - with query timeout
 - remove atomic int from Connection?
 - prep stmt closeable?

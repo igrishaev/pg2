@@ -25,10 +25,10 @@
 (deftest test-ssl-ok
 
   (let [ssl-context
-        (pg/ssl-context
-         {:key-file "../certs/client.key"
-          :cert-file "../certs/client.crt"
-          :ca-cert-file "../certs/root.crt"})
+        #pg/ssl-context
+        {:key-file "../certs/client.key"
+         :cert-file "../certs/client.crt"
+         :ca-cert-file "../certs/root.crt"}
 
         config
         (merge *CONFIG*

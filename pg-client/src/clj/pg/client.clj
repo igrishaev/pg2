@@ -712,3 +712,7 @@
 
 (defn is-ssl? ^Boolean [^Connection conn]
   (.isSSL conn))
+
+
+(defn ssl-context-reader [mapping]
+  `(ssl-context ~mapping))
