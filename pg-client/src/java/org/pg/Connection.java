@@ -70,6 +70,7 @@ public final class Connection implements Closeable {
     }
 
     public Connection(final ConnConfig config, final boolean sendStartup) {
+        final Connection conn = this;
         this.config = config;
         this.params = new HashMap<>();
         this.codecParams = CodecParams.standard();
@@ -176,6 +177,10 @@ public final class Connection implements Closeable {
             case "integer_datetimes" ->
                     codecParams.integerDatetime = value.equals("on");
         }
+    }
+
+    public ConnConfig getConfig () {
+        return config;
     }
 
     public Integer getPort () {

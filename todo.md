@@ -1,6 +1,5 @@
 
 - unify conn-config and pool-config
-- with query timeout
 - remove atomic int from Connection?
 - review clojure params
 - docstrings

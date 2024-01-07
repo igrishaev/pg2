@@ -30,7 +30,8 @@ public record ConnConfig(
         IFn fnProtocolVersion,
         IFn fnNotice,
         SSLContext sslContext,
-        System.Logger.Level logLevel
+        System.Logger.Level logLevel,
+        long msCancelTimeout
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -64,6 +65,7 @@ public record ConnConfig(
         private IFn fnNotice;
         private SSLContext sslContext = null;
         private System.Logger.Level logLevel = System.Logger.Level.INFO;
+        private long msCancelTimeout = Const.MS_CANCEL_TIMEOUT;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user);
@@ -74,6 +76,11 @@ public record ConnConfig(
 
         public Builder sslContext(final SSLContext sslContext) {
             this.sslContext = sslContext;
+            return this;
+        }
+
+        public Builder msCancelTimeout(final long msCancelTimeout) {
+            this.msCancelTimeout = msCancelTimeout;
             return this;
         }
 
@@ -199,7 +206,8 @@ public record ConnConfig(
                     this.fnProtocolVersion,
                     this.fnNotice,
                     this.sslContext,
-                    this.logLevel
+                    this.logLevel,
+                    this.msCancelTimeout
             );
         }
     }

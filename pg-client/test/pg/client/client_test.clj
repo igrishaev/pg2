@@ -1832,6 +1832,33 @@ drop table %1$s;
       (is (= (str x1) (str x2))))))
 
 
+(deftest test-with-timeout-no-cancell
+  (pg/with-connection [conn *CONFIG*]
+    (pg/with-timeout [conn 2000]
+      (let [res
+            (pg/query conn "select pg_sleep(1) as sleep")]
+        (is (= [{:sleep ""}] res))))
+    (testing "ensure it has been cancelled"
+      (let [res
+            (pg/query conn "select pg_sleep(2) as sleep")]
+        (is (= [{:sleep ""}] res))))))
+
+
+(deftest test-with-timeout-do-cancell
+  (pg/with-connection [conn *CONFIG*]
+    (pg/with-timeout [conn 100]
+      (try
+        (pg/query conn "select pg_sleep(999) as sleep")
+        (is false)
+        (catch PGError e
+          (is true)
+          (is (-> e ex-message (str/includes? "canceling statement due to user request"))))))
+    (testing "ensure it has been cancelled"
+      (let [res
+            (pg/query conn "select pg_sleep(1) as sleep")]
+        (is (= [{:sleep ""}] res))))))
+
+
 (deftest test-cancel-query
 
   (let [conn1

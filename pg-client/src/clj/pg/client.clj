@@ -13,6 +13,7 @@
    java.util.Map
    java.util.UUID
    javax.net.ssl.SSLContext
+   org.pg.CancelTimer
    org.pg.ConnConfig$Builder
    org.pg.Connection
    org.pg.ExecuteParams
@@ -227,6 +228,7 @@
                 fn-notification
                 fn-protocol-version
                 fn-notice
+                ms-cancel-timeout
                 use-ssl?
                 ssl-context
                 so-keep-alive?
@@ -298,6 +300,9 @@
 
       log-level
       (.logLevel (->Level log-level))
+
+      ms-cancel-timeout
+      (.msCancelTimeout ms-cancel-timeout)
 
       :finally
       (.build))))
@@ -413,6 +418,15 @@
 
   ([^Connection conn ^String sql ^Map opt]
    (.execute conn sql (->execute-params opt))))
+
+
+(defmacro with-timeout [[conn ms-timeout] & body]
+  (let [init
+        (if ms-timeout
+          `(new CancelTimer ~conn ~ms-timeout)
+          `(new CancelTimer ~conn))]
+    `(with-open [timer# ~init]
+       ~@body)))
 
 
 (defmacro with-statement
