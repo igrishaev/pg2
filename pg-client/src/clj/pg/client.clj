@@ -399,11 +399,11 @@
 
 (defn execute-statement
 
-  ([^Connection conn ^PreparedStatement stmt]
-   (.executeStatement conn stmt ExecuteParams/INSTANCE))
+  ([^PreparedStatement stmt]
+   (.executeStatement (.conn stmt) stmt ExecuteParams/INSTANCE))
 
-  ([^Connection conn ^PreparedStatement stmt ^Map opt]
-   (.executeStatement conn stmt (->execute-params opt))))
+  ([^PreparedStatement stmt ^Map opt]
+   (.executeStatement (.conn stmt) stmt (->execute-params opt))))
 
 
 (defn execute
@@ -417,20 +417,11 @@
 
 (defmacro with-statement
   [[bind conn sql oids] & body]
-
-  (let [CONN (gensym "CONN")]
-
-    `(let [~CONN ~conn
-
-           ~bind
-           ~(if oids
-              `(prepare ~CONN ~sql ~oids)
-              `(prepare ~CONN ~sql))]
-
-       (try
-         ~@body
-         (finally
-           (close-statement ~CONN ~bind))))))
+  `(with-open [~bind
+               ~(if oids
+                  `(prepare ~conn ~sql ~oids)
+                  `(prepare ~conn ~sql))]
+     ~@body))
 
 
 (defmacro with-connection

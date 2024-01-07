@@ -508,7 +508,7 @@ public final class Connection implements Closeable {
         sendFlush();
         final Accum acc = interact(Phase.PREPARE);
         final ParameterDescription paramDesc = acc.getParameterDescription();
-        return new PreparedStatement(parse, paramDesc);
+        return new PreparedStatement(parse, paramDesc, this);
     }
 
     private void sendBind (final String portal,
@@ -601,11 +601,11 @@ public final class Connection implements Closeable {
     }
 
     public Object execute (final String sql, final ExecuteParams executeParams) {
-        try (TryLock ignored = lock.get()) {
-            final PreparedStatement stmt = prepare(sql, executeParams);
-            final Object res = executeStatement(stmt, executeParams);
-            closeStatement(stmt);
-            return res;
+        try (
+                final TryLock ignored = lock.get();
+                final PreparedStatement stmt = prepare(sql, executeParams)
+        ) {
+            return executeStatement(stmt, executeParams);
         }
     }
 

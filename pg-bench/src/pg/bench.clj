@@ -26,7 +26,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def USER "ivan")
+(def USER "test")
 (def PORT 15432)
 
 
@@ -264,8 +264,7 @@ from
                           QUERY_INSERT_PG]
         (quick-bench
          (let [x (rand-int 10000)]
-           (pg/execute-statement conn
-                                 stmt
+           (pg/execute-statement stmt
                                  {:params [x,
                                            (format "name%s" x)
                                            (LocalDateTime/now)]}))))))
