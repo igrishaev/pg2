@@ -245,7 +245,7 @@
 (deftest test-pool-string-repr
   (pool/with-pool [pool *CONFIG*]
     (let [result
-          "<PG pool, min: 2, max: 8, lifetime: 3600000>"]
+          "<PG pool, min: 2, max: 8, lifetime: 900000>"]
       (is (= result (str pool)))
       (is (= result (with-out-str
                       (print pool)))))))
