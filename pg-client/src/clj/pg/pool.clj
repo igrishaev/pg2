@@ -14,7 +14,7 @@
 
   (let [{:keys [min-size
                 max-size
-                max-lifetime]}
+                ms-lifetime]}
         opt]
 
     (cond-> (PoolConfig/builder)
@@ -25,8 +25,8 @@
       max-size
       (.maxSize max-size)
 
-      max-lifetime
-      (.maxLifetime max-lifetime)
+      ms-lifetime
+      (.msLifetime ms-lifetime)
 
       :finally
       (.build))))

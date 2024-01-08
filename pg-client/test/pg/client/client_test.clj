@@ -125,7 +125,7 @@
 (deftest test-client-fn-column-kebab
   (let [result
         (pg/with-connection [conn *CONFIG*]
-          (pg/execute conn "select 1 as just_one" {:kebab? true}))]
+          (pg/execute conn "select 1 as just_one" {:kebab-keys? true}))]
     (is (= [{:just-one 1}] result))))
 
 
@@ -1243,7 +1243,7 @@ drop table %1$s;
       (pg/with-statement [stmt conn query]
 
         (let [result
-              (pg/execute-statement stmt {:row-count 1})]
+              (pg/execute-statement stmt {:max-rows 1})]
 
           (is (= [{:column1 1 :column2 2}]
                  result)))))))
@@ -1280,7 +1280,7 @@ drop table %1$s;
       (pg/with-statement [stmt conn query]
 
         (let [result
-              (pg/execute-statement stmt {:row-count 0xFFFFFFFF})]
+              (pg/execute-statement stmt {:max-rows 0xFFFFFFFF})]
 
           (is (= [{:column1 1 :column2 2}
                   {:column1 3 :column2 4}

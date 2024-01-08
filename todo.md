@@ -1,5 +1,4 @@
 
-- review clojure params
 - docstrings
 - pg-component
 - pg-honey

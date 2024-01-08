@@ -89,32 +89,51 @@
 
 
 (deftest test-pool-lifetime
-  (pool/with-pool [pool *CONFIG* {:min-size 2
-                                  :max-size 2
-                                  :max-lifetime 300}]
 
-    (is (= {:free 2 :used 0}
-           (pool/stats pool)))
+  (let [capture1
+        (atom nil)
 
-    (Thread/sleep 500)
+        capture2
+        (atom nil)
 
-    (is (= {:free 2 :used 0}
-           (pool/stats pool)))
+        capture3
+        (atom nil)]
 
-    (pool/with-connection [conn pool]
+    (pool/with-pool [pool *CONFIG* {:min-size 1
+                                    :max-size 1
+                                    :ms-lifetime 300}]
 
-      (is (= {:free 0 :used 1}
+      (is (= {:free 1 :used 0}
              (pool/stats pool)))
 
-      (pg/execute conn "select 1 as one"))
+      (pool/with-connection [conn pool]
+        (reset! capture1 (pg/id conn)))
 
-    (is (= {:free 1 :used 0}
-           (pool/stats pool)))))
+      (Thread/sleep 150)
+
+      (pool/with-connection [conn pool]
+        (reset! capture2 (pg/id conn)))
+
+      (Thread/sleep 200)
+
+      (pool/with-connection [conn pool]
+        (reset! capture3 (pg/id conn)))
+
+      (let [uuid1 @capture1
+            uuid2 @capture2
+            uuid3 @capture3]
+
+        (is (uuid? uuid1))
+        (is (uuid? uuid2))
+        (is (uuid? uuid3))
+
+        (is (= uuid1 uuid2))
+        (is (not= uuid2 uuid3))))))
 
 
 (deftest test-pool-in-transaction-state
   (pool/with-pool [pool *CONFIG* {:min-size 1
-                                   :max-size 1}]
+                                  :max-size 1}]
 
     (let [id1
           (promise)
