@@ -1,5 +1,4 @@
 
-- portal object closeable
 - review clojure params
 - docstrings
 - pg-component

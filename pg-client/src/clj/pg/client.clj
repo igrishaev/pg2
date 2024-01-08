@@ -44,7 +44,6 @@
 
 (defn ->execute-params ^ExecuteParams [^Map opt]
 
-  ;; TODO: refactor params?
   (let [{:keys [^List params
                 oids
 
