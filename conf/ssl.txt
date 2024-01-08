@@ -8,9 +8,9 @@ local     all       all                    trust
 ;; postgresql.conf
 
 ssl=on
-ssl_cert_file='/Users/ivan/work/pg/certs/server.crt'
-ssl_key_file='/Users/ivan/work/pg/certs/server.key'
-ssl_ca_file = '/Users/ivan/work/pg/certs/root.crt'
+ssl_cert_file='/Users/ivan/work/pg2/certs/server.crt'
+ssl_key_file='/Users/ivan/work/pg2/certs/server.key'
+ssl_ca_file = '/Users/ivan/work/pg2/certs/root.crt'
 
 ;; psql
 

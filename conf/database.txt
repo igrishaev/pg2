@@ -1,0 +1,2 @@
+create user test with password 'test';
+create database test with owner test;
