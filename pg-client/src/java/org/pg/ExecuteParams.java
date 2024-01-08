@@ -11,13 +11,12 @@ import java.util.*;
 
 import clojure.core$identity;
 import clojure.core$keyword;
-import org.pg.reducer.*;
 
 public record ExecuteParams (
         List<Object> params,
         List<OID> OIDs,
         IReducer reducer,
-        long rowCount,
+        long maxRows,
         IFn fnKeyTransform,
         OutputStream outputStream,
         InputStream inputStream,
@@ -49,7 +48,7 @@ public record ExecuteParams (
         private List<Object> params = Collections.emptyList();
         private List<OID> OIDs = Collections.emptyList();
         private IReducer reducer = Default.INSTANCE;
-        private long rowCount = 0;
+        private long maxRows = 0;
         private IFn fnKeyTransform = new core$keyword();
         private OutputStream outputStream = OutputStream.nullOutputStream();
         private InputStream inputStream = InputStream.nullInputStream();
@@ -157,8 +156,8 @@ public record ExecuteParams (
             return this;
         }
 
-        public Builder rowCount (final long rowCount) {
-            this.rowCount = rowCount;
+        public Builder maxRows (final long maxRows) {
+            this.maxRows = maxRows;
             return this;
         }
 
@@ -222,7 +221,7 @@ public record ExecuteParams (
                     params,
                     OIDs,
                     reducer,
-                    rowCount,
+                    maxRows,
                     fnKeyTransform,
                     outputStream,
                     inputStream,
@@ -244,6 +243,6 @@ public record ExecuteParams (
     public static void main(String[] args) {
         final IFn id = new core$identity();
         System.out.println(id.invoke(42));
-        System.out.println(new ExecuteParams.Builder().rowCount(3).build());
+        System.out.println(new ExecuteParams.Builder().maxRows(3).build());
     }
 }

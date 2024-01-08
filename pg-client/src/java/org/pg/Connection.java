@@ -462,8 +462,8 @@ public final class Connection implements AutoCloseable {
         sendMessage(msg);
     }
 
-    private void sendExecute (final String portal, final long rowCount) {
-        final Execute msg = new Execute(portal, rowCount);
+    private void sendExecute (final String portal, final long maxRows) {
+        final Execute msg = new Execute(portal, maxRows);
         sendMessage(msg);
     }
 
@@ -589,7 +589,7 @@ public final class Connection implements AutoCloseable {
         final String portal = generatePortal();
         sendBind(portal, stmt, executeParams);
         sendDescribePortal(portal);
-        sendExecute(portal, executeParams.rowCount());
+        sendExecute(portal, executeParams.maxRows());
         sendClosePortal(portal);
         sendSync();
         sendFlush();

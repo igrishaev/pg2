@@ -47,11 +47,11 @@
   (let [{:keys [^List params
                 oids
 
-                ;; misc
-                row-count
+                ;; portal
+                max-rows
 
-                ;; key
-                kebab?
+                ;; keys
+                kebab-keys?
                 fn-key
 
                 ;; streams
@@ -62,11 +62,12 @@
                 reducer
                 group-by
                 index-by
+                index-by-id?
                 matrix?
                 java?
                 fold
-                run
                 init
+                run
                 kv
                 first?
 
@@ -74,14 +75,14 @@
                 binary-encode?
                 binary-decode?
 
-                ;; csv
+                ;; copy csv
                 csv-null
                 csv-sep
                 csv-end
+
+                ;; copy general
                 copy-buf-size
                 ^CopyFormat copy-format
-
-                ;; copy
                 copy-csv?
                 copy-bin?
                 copy-tab?
@@ -101,8 +102,8 @@
       reducer
       (.reducer reducer)
 
-      row-count
-      (.rowCount row-count)
+      max-rows
+      (.maxRows max-rows)
 
       fn-key
       (.fnKeyTransform fn-key)
@@ -119,6 +120,9 @@
       index-by
       (.indexBy index-by)
 
+      index-by-id?
+      (.indexBy :id)
+
       run
       (.run run)
 
@@ -128,7 +132,7 @@
       java?
       (.asJava)
 
-      kebab?
+      kebab-keys?
       (.fnKeyTransform ->kebab)
 
       kv
@@ -213,29 +217,44 @@
 
 (defn ->conn-config ^ConnConfig$Builder [params]
 
-  (let [{:keys [user
+  (let [{:keys [;; general
+                user
                 database
                 host
                 port
                 password
-                protocol-version
                 pg-params
+
+                ;; enc/dec format
                 binary-encode?
                 binary-decode?
+
+                ;; copy in/out
                 in-stream-buf-size
                 out-stream-buf-size
+
+                ;; handlers
                 fn-notification
                 fn-protocol-version
                 fn-notice
-                ms-cancel-timeout
+
+                ;; ssl
                 use-ssl?
                 ssl-context
+
+                ;; socket
                 so-keep-alive?
                 so-tcp-no-delay?
                 so-timeout
                 so-recv-buf-size
                 so-send-buf-size
-                log-level]}
+
+                ;; logging
+                log-level
+
+                ;; misc
+                ms-cancel-timeout
+                protocol-version]}
         params]
 
     (cond-> (new ConnConfig$Builder user database)
