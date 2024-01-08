@@ -41,7 +41,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private boolean isExpired (final Connection conn) {
-        return System.currentTimeMillis() - conn.getCreatedAt() > poolConfig.maxLifetime();
+        return System.currentTimeMillis() - conn.getCreatedAt() > poolConfig.msLifetime();
     }
 
     private void addUsed (final Connection conn) {
@@ -216,7 +216,7 @@ public final class Pool implements AutoCloseable {
                     "<PG pool, min: %s, max: %s, lifetime: %s>",
                     poolConfig.minSize(),
                     poolConfig.maxSize(),
-                    poolConfig.maxLifetime()
+                    poolConfig.msLifetime()
             );
         }
     }

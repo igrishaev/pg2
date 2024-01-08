@@ -1,6 +1,5 @@
 
-- unify conn-config and pool-config
-- remove atomic int from Connection?
+- portal object closeable
 - review clojure params
 - docstrings
 - pg-component

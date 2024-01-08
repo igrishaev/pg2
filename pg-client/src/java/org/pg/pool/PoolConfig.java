@@ -5,7 +5,7 @@ import org.pg.Const;
 public record PoolConfig (
         int minSize,
         int maxSize,
-        int maxLifetime,
+        int msLifetime,
         System.Logger.Level logLevel
 ) {
 
@@ -21,7 +21,7 @@ public record PoolConfig (
 
         private int minSize = Const.POOL_SIZE_MIN;
         private int maxSize = Const.POOL_SIZE_MAX;
-        private int maxLifetime = Const.POOL_MAX_LIFETIME;
+        private int msLifetime = Const.POOL_MAX_LIFETIME;
         private System.Logger.Level logLevel = System.Logger.Level.INFO;
 
         @SuppressWarnings("unused")
@@ -43,8 +43,8 @@ public record PoolConfig (
         }
 
         @SuppressWarnings("unused")
-        public Builder maxLifetime(final int maxLifetime) {
-            this.maxLifetime = maxLifetime;
+        public Builder msLifetime(final int msLifetime) {
+            this.msLifetime = msLifetime;
             return this;
         }
 
@@ -52,7 +52,7 @@ public record PoolConfig (
             return new PoolConfig(
                     minSize,
                     maxSize,
-                    maxLifetime,
+                    msLifetime,
                     logLevel
             );
         }

@@ -30,7 +30,6 @@ import java.time.ZoneId;
 import java.util.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Connection implements AutoCloseable {
 
@@ -42,7 +41,7 @@ public final class Connection implements AutoCloseable {
     private final ConnConfig config;
     private final UUID id;
     private final long createdAt;
-    private final AtomicInteger aInt;
+    private int counter = 0;
 
     private int pid;
     private int secretKey;
@@ -75,7 +74,6 @@ public final class Connection implements AutoCloseable {
         this.codecParams = CodecParams.standard();
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
-        this.aInt = new AtomicInteger();
         connect();
         setSocketOptions();
         preSSLStage();
@@ -110,7 +108,9 @@ public final class Connection implements AutoCloseable {
     }
 
     private int nextInt() {
-        return aInt.incrementAndGet();
+        try (TryLock ignored = lock.get()) {
+            return ++counter;
+        }
     }
 
     public int getPid () {
