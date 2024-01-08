@@ -5,14 +5,13 @@ import org.pg.Connection;
 import org.pg.PGError;
 import org.pg.util.TryLock;
 
-import java.io.Closeable;
 import java.util.Deque;
 import java.util.UUID;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.HashMap;
 
-public final class Pool implements Closeable {
+public final class Pool implements AutoCloseable {
 
     private final ConnConfig connConfig;
     private final PoolConfig poolConfig;

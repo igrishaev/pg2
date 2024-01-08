@@ -1,11 +1,10 @@
 package org.pg;
 
-import java.io.Closeable;
 import java.util.Timer;
 import java.util.TimerTask;
 
 
-public final class CancelTimer implements Closeable {
+public final class CancelTimer implements AutoCloseable {
 
     private final Timer timer = new Timer();
 

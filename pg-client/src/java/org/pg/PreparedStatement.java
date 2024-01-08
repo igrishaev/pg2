@@ -3,14 +3,13 @@ package org.pg;
 import org.pg.msg.ParameterDescription;
 import org.pg.msg.Parse;
 
-import java.io.Closeable;
 import java.util.Arrays;
 
 public record PreparedStatement(
         Parse parse,
         ParameterDescription parameterDescription,
         Connection conn
-) implements Closeable {
+) implements AutoCloseable {
 
     @Override
     public void close () {

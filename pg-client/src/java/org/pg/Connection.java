@@ -32,7 +32,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class Connection implements Closeable {
+public final class Connection implements AutoCloseable {
 
     private static final boolean isDebug =
             System.getenv()
@@ -70,7 +70,6 @@ public final class Connection implements Closeable {
     }
 
     public Connection(final ConnConfig config, final boolean sendStartup) {
-        final Connection conn = this;
         this.config = config;
         this.params = new HashMap<>();
         this.codecParams = CodecParams.standard();
