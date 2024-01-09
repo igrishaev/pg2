@@ -417,11 +417,11 @@
   (.getParams conn))
 
 
-(defn id ^UUID
+(defn id
   "
   Get a unique ID of the connection.
   "
-  [^Connection conn]
+  ^UUID [^Connection conn]
   (.getId conn))
 
 
@@ -752,13 +752,6 @@
               (->execute-params)))))
 
 
-(defmacro with-safe [& body]
-  `(try
-     [(do ~@body) nil]
-     (catch Throwable e#
-       [nil e#])))
-
-
 ;;
 ;; Transactions
 ;;
@@ -840,19 +833,15 @@
        ~@(when read-only?
            [`(set-read-only ~bind)])
 
-       (let [[result# e#]
-             (with-safe ~@body)]
-
-         (if e#
-           (do
-             (.rollback ~bind)
-             (throw e#))
-
-           (do
-             ~(if rollback?
-                `(.rollback ~bind)
-                `(.commit ~bind))
-             result#))))))
+       (try
+         (let [result# (do ~@body)]
+           ~(if rollback?
+              `(.rollback ~bind)
+              `(.commit ~bind))
+           result#)
+         (catch Throwable e#
+           (.rollback ~bind)
+           (throw e#))))))
 
 
 (defn connection?

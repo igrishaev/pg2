@@ -1222,7 +1222,7 @@ drop table %1$s;
       (is (pg/prepared-statement? stmt))
 
       (let [result
-            (pg/close-statement conn stmt)]
+            (pg/close-statement stmt)]
 
         (is (nil? result))
 
