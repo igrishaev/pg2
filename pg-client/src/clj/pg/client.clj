@@ -679,6 +679,21 @@
 
 (defn copy-in
 
+  "
+  Transfer the data from the client to the server using
+  COPY protocol. The SQL expression must be something liek this:
+
+  `COPY ... FROM STDIN ...`
+
+  The `in` parameter is an instance of `InputStream`. The function
+  doesn't close the stream assuming you can reuse it.
+
+  The `opt` map is used to specify format, CSV delimiters, type hints
+  and other options (see README).
+
+  Return the number of rows processed by the server.
+  "
+
   ([^Connection conn ^String sql ^InputStream in]
    (copy-in conn sql in nil))
 
@@ -692,6 +707,12 @@
 
 (defn copy-in-rows
 
+  "
+  Like `copy-in` but accepts not an input stream but a list
+  of rows. Each row must be a list of values. The list might be
+  lazy. Return a number of rows processed.
+  "
+
   ([^Connection conn ^String sql ^List rows]
    (copy-in-rows conn sql rows nil))
 
@@ -704,6 +725,17 @@
 
 
 (defn copy-in-maps
+
+  "
+  Like `copy-in` but accepts a list of Clojure maps.
+
+  The `keys` argument is list of keys which is used to convert
+  each map into a tuple.
+
+  The `opt` argument is a map of options (COPY format, delimiters, etc).
+
+  Return the number of rows processed by the server.
+  "
 
   ([^Connection conn ^String sql ^List maps ^List keys]
    (copy-in-maps conn sql maps keys nil))
