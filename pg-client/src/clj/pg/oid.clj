@@ -1,4 +1,7 @@
 (ns pg.oid
+  "
+  A dedicated namespace with native (built-in) Postgres OID types.
+  "
   (:refer-clojure :exclude [char name time])
   (:import
    org.pg.enums.OID))

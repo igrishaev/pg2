@@ -1,4 +1,20 @@
 (ns pg.pool
+  "
+  A simple connection pool. Runs open connections in two
+  data structures: a queue of free connections and a map
+  of busy connections. The connections are taken from a tail
+  of the queue and put back into the head.
+
+  Every time the connection is borrowed, it's check for expiration.
+  An expired connection gets closed, and the one is produced.
+
+  Should all free connections are in use at the moment and the client
+  is going to borrow another one, an exception is triggered.
+
+  When a connection is put back, it's checked for expiration and for
+  the transaction status. Connections that are in the error state
+  are closed; Connections that are in a transaction are rolled back.
+  "
   (:require
    [pg.client :as pg])
   (:import

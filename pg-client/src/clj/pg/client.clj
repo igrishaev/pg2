@@ -1,4 +1,7 @@
 (ns pg.client
+  "
+  Common API to communicate with PostgreSQL server.
+  "
   (:require
    [clojure.string :as str]
    [less.awful.ssl :as ssl])
@@ -766,7 +769,12 @@
 (def ^TxLevel TX_READ_UNCOMMITTED TxLevel/READ_UNCOMMITTED)
 
 
-(defn ->tx-level ^TxLevel [level]
+(defn ->tx-level
+  "
+  Turn a keyword or a string into on instance of TxLevel.
+  "
+  ^TxLevel [level]
+
   (case level
 
     (:serializable "SERIALIZABLE")
@@ -782,15 +790,39 @@
     TxLevel/READ_UNCOMMITTED))
 
 
-(defn set-tx-level [^Connection conn level]
+(defn set-tx-level
+  "
+  Set transaction isolation level for the current transaction.
+  "
+  [^Connection conn level]
   (.setTxLevel conn (->tx-level level)))
 
 
-(defn set-read-only [^Connection conn]
+(defn set-read-only
+  "
+  Set the current transaction read-only.
+  "
+  [^Connection conn]
   (.setTxReadOnly conn))
 
 
 (defmacro with-tx
+  "
+  Wrap a block of code into a transaction, namely:
+
+  - run BEGIN before executing the code;
+  - capture all possible exceptions;
+  - should an exception was caught, ROLLBACK...
+  - and re-throw it;
+  - if no exception was caught, COMMIT.
+
+  Accepts a map of the following options:
+
+  - isolation-level: a keyword/string to set the isolation level;
+  - read-only?: to set the transaction read only;
+  - rollback?: to ROLLBACK a transaction even if it was successful.
+
+  "
   [[conn {:as opt :keys [isolation-level
                          read-only?
                          rollback?]}]
@@ -823,8 +855,11 @@
              result#))))))
 
 
-
-(defn connection? [x]
+(defn connection?
+  "
+  True of the passed option is a Connection instance.
+  "
+  [x]
   (instance? Connection x))
 
 
@@ -843,7 +878,7 @@
 
 (defn unlisten
   "
-  Unsbuscribe the connection from a given channel.
+  Unsubscribe the connection from a given channel.
   "
   [^Connection conn ^String channel]
   (.unlisten conn channel))
@@ -861,23 +896,43 @@
 ;; JSON
 ;;
 
-(defn json-wrap [x]
+(defn json-wrap
+  "
+  Wrap a value into a JSON.Wrapper class to force JSON encoding.
+  "
+  ^JSON$Wrapper [x]
   (new JSON$Wrapper x))
 
 
-(defn json-read-string [^String input]
+(defn json-read-string
+  "
+  Parse JSON from a string.
+  "
+  [^String input]
   (JSON/readValue input))
 
 
-(defn json-write-writer [value ^Writer writer]
+(defn json-write-writer
+  "
+  Parse JSON from a Writer instance.
+  "
+  [value ^Writer writer]
   (JSON/writeValue writer value))
 
 
-(defn json-write-stream [value ^OutputStream out]
+(defn json-write-stream
+  "
+  Encode JSON into the OutputStream.
+  "
+  [value ^OutputStream out]
   (JSON/writeValue out value))
 
 
-(defn json-write-string ^String [value]
+(defn json-write-string
+  "
+  Encode JSON into a string.
+  "
+  ^String [value]
   (JSON/writeValueToString value))
 
 
@@ -885,16 +940,27 @@
 ;; Encode/decode
 ;;
 
-(defn decode-bin [^ByteBuffer buf ^OID oid]
+(defn decode-bin
+  "
+  Decode a binary-encoded value from a ByteBuffer.
+  "
+  [^ByteBuffer buf ^OID oid]
   (.rewind buf)
   (DecoderBin/decode buf oid))
 
 
-(defn decode-txt [^String obj ^OID oid]
+(defn decode-txt
+  "
+  Decode a text-encoded value from a ByteBuffer.
+  "
+  [^String obj ^OID oid]
   (DecoderTxt/decode obj oid))
 
 
 (defn encode-bin
+  "
+  Binary-encode a value into a ByteBuffer.
+  "
   (^ByteBuffer [obj]
    (EncoderBin/encode obj))
 
@@ -903,6 +969,9 @@
 
 
 (defn encode-txt
+  "
+  Text-encode a value into a ByteBuffer.
+  "
   (^String [obj]
    (EncoderTxt/encode obj))
 
@@ -914,7 +983,11 @@
 ;; Enum
 ;;
 
-(defn ->enum ^PGEnum [x]
+(defn ->enum
+  "
+  Wrap a value with a PGEnum class for proper enum encoding
+  "
+  ^PGEnum [x]
   (PGEnum/of x))
 
 
@@ -923,6 +996,10 @@
 ;;
 
 (defn ssl-context
+  "
+  Build a SSLContext instance from a Clojure map.
+  All the keys point to local files.
+  "
   ^SSLContext [{:keys [^String key-file
                        ^String cert-file
                        ^String ca-cert-file]}]
@@ -931,7 +1008,11 @@
     (ssl/ssl-context key-file cert-file)))
 
 
-(defn is-ssl? ^Boolean [^Connection conn]
+(defn is-ssl?
+  "
+  True if the Connection is SSL-encrypted.
+  "
+  ^Boolean [^Connection conn]
   (.isSSL conn))
 
 
