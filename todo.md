@@ -1,5 +1,7 @@
 
-- refactor with-transaction https://gist.github.com/igrishaev/1050a5cfe03f8f3c3ca49734ae3053e1
+- rollback PreparedStatement (conn)
+- create PreparedStatement from a string;
+- execute by stmt name;
 - pg-honey
 - pg-component
 - merge conn-config and pool-config?
