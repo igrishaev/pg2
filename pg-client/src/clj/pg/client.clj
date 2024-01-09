@@ -38,11 +38,20 @@
 (def ^CopyFormat COPY_FORMAT_TAB CopyFormat/TAB)
 
 
-(defn ->kebab ^Keyword [^String column]
+(defn ->kebab
+  "
+  Turn a string column name into into  a kebab-case
+  formatted keyword.
+  "
+  ^Keyword [^String column]
   (-> column (str/replace #"_" "-") keyword))
 
 
-(defn ->execute-params ^ExecuteParams [^Map opt]
+(defn ->execute-params
+  "
+  Make an instance of ExecuteParams from a Clojure map.
+  "
+  ^ExecuteParams [^Map opt]
 
   (let [{:keys [^List params
                 oids
@@ -190,7 +199,11 @@
       (.build))))
 
 
-(defn ->Level ^System$Logger$Level [^Keyword log-level]
+(defn ->Level
+  "
+  Turn a keyword into an instance of System.Logger.Level enum.
+  "
+  ^System$Logger$Level [^Keyword log-level]
   (case log-level
 
     :all
@@ -215,7 +228,11 @@
     System$Logger$Level/OFF))
 
 
-(defn ->conn-config ^ConnConfig$Builder [params]
+(defn ->conn-config
+  "
+  Turn a Clojure map into an instance of ConnConfig.Builder.
+  "
+  ^ConnConfig$Builder [params]
 
   (let [{:keys [;; general
                 user
@@ -328,6 +345,13 @@
 
 (defn connect
 
+  "
+  Connect to the database. Given a Clojure config map,
+  establish a TCP connection with the server and run
+  the authentication pipeline. Returns an instance of
+  the Connection class.
+  "
+
   (^Connection [config]
    (new Connection (->conn-config config)))
 
@@ -340,51 +364,93 @@
        TXStatus/TRANSACTION :T
        TXStatus/ERROR :E}]
 
-  (defn status ^Keyword [^Connection conn]
+  (defn status
+    "
+    Return the current transaction status, one of :I, :T, or :E.
+    "
+    ^Keyword [^Connection conn]
     (get -mapping (.getTxStatus conn))))
 
 
-(defn idle? ^Boolean [^Connection conn]
+(defn idle?
+  "
+  True if the connection is in the idle state.
+  "
+  ^Boolean [^Connection conn]
   (.isIdle conn))
 
 
-(defn in-transaction? ^Boolean [^Connection conn]
+(defn in-transaction?
+  "
+  True if the connection is in transaction at the moment.
+  "
+  ^Boolean [^Connection conn]
   (.isTransaction conn))
 
 
-(defn tx-error? ^Boolean [^Connection conn]
+(defn tx-error?
+  "
+  True if the transaction has failed but hasn't been
+  rolled back yet.
+  "
+  ^Boolean [^Connection conn]
   (.isTxError conn))
 
 
 (defn get-parameter
+  "
+  Return a certain connection parameter by its name, e.g.
+  'server_encoding', 'application_name', etc.
+  "
   ^String [^Connection conn ^String param]
   (.getParam conn param))
 
 
 (defn get-parameters
+  "
+  Return a {String->String} map of all the connection parameters.
+  "
   ^Map [^Connection conn]
   (.getParams conn))
 
 
-(defn id ^UUID [^Connection conn]
+(defn id ^UUID
+  "
+  Get a unique ID of the connection.
+  "
+  [^Connection conn]
   (.getId conn))
 
 
-(defn pid ^Integer [^Connection conn]
+(defn pid
+  "
+  Get PID of the connection on the server.
+  "
+  ^Integer [^Connection conn]
   (.getPid conn))
 
 
 (defn created-at
+  "
+  Get the creation time as Unix timestamp (ms).
+  "
   ^Long [^Connection conn]
   (.getCreatedAt conn))
 
 
 (defn close-statement
-  [^Connection conn ^PreparedStatement stmt]
-  (.closeStatement conn stmt))
+  "
+  Close the prepared statement.
+  "
+  [^PreparedStatement stmt]
+  (.closeStatement (.conn stmt) stmt))
 
 
-(defn close [^Connection conn]
+(defn close
+  "
+  Close the connection to the database.
+  "
+  [^Connection conn]
   (.close conn))
 
 
@@ -400,7 +466,11 @@
 ;; Prepared statement
 ;;
 
-(defn prepared-statement? [x]
+(defn prepared-statement?
+  "
+  True if it's an instance of the PreparedStatement class.
+  "
+  [x]
   (instance? PreparedStatement x))
 
 
@@ -410,6 +480,16 @@
 
 
 (defn prepare
+
+  "
+  Get a new prepared statement from a raw SQL string.
+  The SQL might have parameters. There is an third
+  optional parameter `oids` to specify the non-default types
+  of the parameters. Must be a List of OID enum.
+
+  The function returns an instance of the `PreparedStatement`
+  class bound to the current connection.
+  "
 
   (^PreparedStatement
    [^Connection conn ^String sql]
@@ -422,6 +502,11 @@
 
 (defn execute-statement
 
+  "
+  Execute the given prepared statement and get the result.
+  The way the result is processed heavily depends on the options.
+  "
+
   ([^PreparedStatement stmt]
    (.executeStatement (.conn stmt) stmt ExecuteParams/INSTANCE))
 
@@ -431,6 +516,19 @@
 
 (defn execute
 
+  "
+  Execute a SQL expression and return the result.
+
+  This function is a series of steps:
+  - prepare a statement;
+  - bind parameters and obtain a portal;
+  - describe the portal;
+  - get the data from the portal;
+  - close the portal;
+  - close the statement;
+  - process the result of the fly.
+  "
+
   ([^Connection conn ^String sql]
    (.execute conn sql ExecuteParams/INSTANCE))
 
@@ -438,7 +536,15 @@
    (.execute conn sql (->execute-params opt))))
 
 
-(defmacro with-timeout [[conn ms-timeout] & body]
+(defmacro with-timeout
+  "
+  Set a timeout in which, if a query has not been executed in time,
+  a cancellation request is sent to the server. Wrap a query with
+  that macro when there is a chance for a server to freeze completely
+  due to a non-optimized SQL. The `ms-timeout` is amount of milliseconds
+  in which the cancel request will be sent.
+  "
+  [[conn ms-timeout] & body]
   (let [init
         (if ms-timeout
           `(new CancelTimer ~conn ~ms-timeout)
@@ -448,6 +554,12 @@
 
 
 (defmacro with-statement
+  "
+  Execute the body while the `bind` symbol is bound to the
+  new PreparedStatement instance. The statement gets created
+  from the SQL expression and optional list of OIDs. It gets
+  closed when exiting the macro.
+  "
   [[bind conn sql oids] & body]
   `(with-open [~bind
                ~(if oids
@@ -457,6 +569,11 @@
 
 
 (defmacro with-connection
+  "
+  Execute the body while the `bind` symbol is bound to the
+  new Connection instance. The connection gets closed when
+  exiting the macro.
+  "
   [[bind config] & body]
   `(let [~bind (connect ~config)]
      (try
@@ -465,11 +582,20 @@
          (close ~bind)))))
 
 
-(defn closed? [^Connection conn]
+(defn closed?
+  "
+  True if the connection has been closed.
+  "
+  [^Connection conn]
   (.isClosed conn))
 
 
 (defn query
+
+  "
+  Run a SQL expression WITH NO parameters. The result
+  gets sent back in text mode always by the server.
+  "
 
   ([^Connection conn ^String sql]
    (.query conn sql ExecuteParams/INSTANCE))
@@ -478,28 +604,68 @@
    (.query conn sql (->execute-params opt))))
 
 
-(defn begin [^Connection conn]
+(defn begin
+  "
+  Open a new transaction.
+  "
+  [^Connection conn]
   (.begin conn))
 
 
-(defn commit [^Connection conn]
+(defn commit
+  "
+  Commit the current transaction.
+  "
+  [^Connection conn]
   (.commit conn))
 
 
-(defn rollback [^Connection conn]
+(defn rollback
+  "
+  Rollback the current transaction.
+  "
+  [^Connection conn]
   (.rollback conn))
 
 
-(defn clone ^Connection [^Connection conn]
+(defn clone
+  "
+  Create a new Connection from a configuration of the given connection.
+  "
+  ^Connection [^Connection conn]
   (Connection/clone conn))
 
 
-(defn cancel-request [^Connection conn]
+(defn cancel-request
+  "
+  Send a cancellation request to the server. MUST be called
+  in another thread! The cancellation is meant to interrupt
+  a query that has frozen the server. There is no 100% guarantee
+  it will work.
+
+  Not recommended to use directly. See the `with-timeout` macro.
+  "
+  [^Connection conn]
   (Connection/cancelRequest conn))
 
 
 (defn copy-out
+  "
+  Transfer the data from the server to the client using
+  COPY protocol. The SQL expression must be something like this:
 
+  `COPY ... TO STDOUT ...`
+
+  The `out` parameter must be an instance of OutputStream.
+
+  The function doesn't close the stream assuming you can reuse it
+  for multiple COPY OUT sessions.
+
+  The `opt` map allows to specify the data format, CSV delimiters
+  other options (see the docs in README).
+
+  Return the number of rows read from the server.
+  "
   ([^Connection conn ^String sql ^OutputStream out]
    (copy-out conn sql out nil))
 
