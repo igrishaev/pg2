@@ -13,7 +13,8 @@
    java.util.Date
    java.util.HashMap
    java.util.concurrent.ExecutionException
-   org.pg.PGError)
+   org.pg.PGError
+   org.pg.PGErrorResponse)
   (:require
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
@@ -59,8 +60,8 @@
     (try
       (pg/query conn "selekt 1")
       (is false)
-      (catch PGError _
-        nil))
+      (catch PGErrorResponse _
+        (is true)))
 
     (is (= :E (pg/status conn)))
 
@@ -236,8 +237,8 @@
         (pg/with-tx [conn {:read-only? true}]
           (pg/execute conn "create temp table foo123 (id integer)"))
         (is false "Must have been an error")
-        (catch PGError e
-          (is (-> e ex-message (str/starts-with? "ErrorResponse"))))))))
+        (catch PGErrorResponse e
+          (is (-> e ex-message (str/includes? "cannot execute CREATE TABLE in a read-only transaction"))))))))
 
 
 (deftest test-exeplain-analyze
@@ -496,8 +497,9 @@
     (try
       (pg/execute conn "selekt 1")
       (is false "must have been an error")
-      (catch PGError e
-        (is (-> e ex-message (str/starts-with? "ErrorResponse")))))
+      (catch PGErrorResponse e
+        (is true)
+        (is (-> e ex-message (str/includes? "syntax error")))))
     (testing "still can recover"
       (is (= [{:one 1}]
              (pg/execute conn "select 1 as one"))))))
@@ -506,9 +508,33 @@
 (deftest test-client-error-response
   (let [config
         (assoc *CONFIG* :pg-params {"pg_foobar" "111"})]
-    (is (thrown? PGError
-                 (pg/with-connection [conn config]
-                   42)))))
+    (try
+      (pg/with-connection [conn config]
+        42)
+      (is false)
+      (catch PGErrorResponse e
+        (is true)
+        (is (-> e ex-message (str/includes? "unrecognized configuration parameter")))))))
+
+
+(deftest test-pg-error-response-fields
+  (let [config
+        (assoc *CONFIG* :pg-params {"pg_foobar" "111"})]
+    (try
+      (pg/with-connection [conn config]
+        42)
+      (is false)
+      (catch PGErrorResponse e
+        (let [fields
+              (pg/get-error-fields e)]
+          (is (= {:verbosity "FATAL"
+                  :severity "FATAL"
+                  :code "42704"
+                  :message "unrecognized configuration parameter \"pg_foobar\""}
+                 (dissoc fields
+                         :file
+                         :line
+                         :function))))))))
 
 
 (deftest test-client-wrong-startup-params
@@ -631,7 +657,7 @@
       (pg/with-connection [conn config]
         (pg/execute conn "select 1 as foo"))
       (is false)
-      (catch PGError e
+      (catch PGErrorResponse e
         (is true)
         (is (-> e ex-message (str/includes? "unsupported frontend protocol")))))))
 
@@ -1229,7 +1255,7 @@ drop table %1$s;
         (try
           (pg/execute-statement conn stmt)
           (is false)
-          (catch PGError e
+          (catch PGErrorResponse e
             (is true)
             (is (-> e ex-message (str/includes? "does not exist")))))))))
 
@@ -1848,7 +1874,7 @@ drop table %1$s;
       (try
         (pg/query conn "select pg_sleep(999) as sleep")
         (is false)
-        (catch PGError e
+        (catch PGErrorResponse e
           (is true)
           (is (-> e ex-message (str/includes? "canceling statement due to user request"))))))
     (testing "ensure it has been cancelled"
@@ -2230,7 +2256,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                     in-stream
                     {:copy-buf-size 1})
         (is false)
-        (catch PGError e
+        (catch PGErrorResponse e
           (is true)
           (is (-> e ex-message (str/includes? "missing data for column")))))
 

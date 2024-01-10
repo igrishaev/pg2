@@ -21,6 +21,7 @@
    org.pg.Connection
    org.pg.ExecuteParams
    org.pg.ExecuteParams$Builder
+   org.pg.PGErrorResponse
    org.pg.PreparedStatement
    org.pg.codec.DecoderBin
    org.pg.codec.DecoderTxt
@@ -1014,3 +1015,12 @@
 
 (defn ssl-context-reader [mapping]
   `(ssl-context ~mapping))
+
+
+;;
+;; Errors
+;;
+
+(defn get-error-fields [^PGErrorResponse e]
+  (when (instance? PGErrorResponse e)
+    (.getErrorFields e)))

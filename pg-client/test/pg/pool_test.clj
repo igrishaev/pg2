@@ -1,6 +1,7 @@
 (ns pg.pool-test
   (:import
-   org.pg.PGError)
+   org.pg.PGError
+   org.pg.PGErrorResponse)
   (:require
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.client :as pg]
@@ -186,7 +187,7 @@
         (try
           (pg/execute conn "selekt 42")
           (is false)
-          (catch PGError e
+          (catch PGErrorResponse e
             (is (pg/tx-error? conn))))
         (deliver id2 (pg/id conn)))
 

@@ -196,7 +196,7 @@ public final class Accum {
                 throw new PGError(exception, "Unhandled exception: %s", exception.getMessage());
             }
             else {
-                throw new PGError("ErrorResponse: %s", errorResponse.fields());
+                throw new PGErrorResponse(errorResponse);
             }
         }
     }

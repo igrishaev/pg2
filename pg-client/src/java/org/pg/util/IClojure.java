@@ -1,7 +1,7 @@
 package org.pg.util;
 
-import clojure.lang.Associative;
+import clojure.lang.IPersistentCollection;
 
 public interface IClojure {
-    Associative toClojure();
+    IPersistentCollection toClojure();
 }
