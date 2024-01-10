@@ -765,7 +765,7 @@
   (pg/with-connection [conn *CONFIG*]
     (pg/with-statement [stmt conn "select $1::integer as foo, $2::integer as bar"]
       (try
-        (pg/execute-statement stmt {:params [1]})
+        (pg/execute-statement conn stmt {:params [1]})
         (is false)
         (catch PGError e
           (is (= "Wrong parameters count: 1 (must be 2)"
@@ -775,7 +775,7 @@
 (deftest test-statement-params-nil
   (pg/with-connection [conn *CONFIG*]
     (pg/with-statement [stmt conn "select 42 as answer"]
-      (let [res (pg/execute-statement stmt {:params nil})]
+      (let [res (pg/execute-statement conn stmt {:params nil})]
         (is (= [{:answer 42}] res))))))
 
 
@@ -786,10 +786,10 @@
     (pg/with-statement [stmt conn "select $1::integer as foo"]
 
       (let [res1
-            (pg/execute-statement stmt {:params [1]})
+            (pg/execute-statement conn stmt {:params [1]})
 
             res2
-            (pg/execute-statement stmt {:params [2]})]
+            (pg/execute-statement conn stmt {:params [2]})]
 
         (is (= [{:foo 1}] res1))
         (is (= [{:foo 2}] res2))))))
@@ -802,11 +802,11 @@
     (pg/with-statement [stmt conn "select $1::integer as foo"]
 
       (let [res1
-            (pg/execute-statement stmt {:params [1]
+            (pg/execute-statement conn stmt {:params [1]
                                              :fn-key str/upper-case})
 
             res2
-            (pg/execute-statement stmt {:params [2]
+            (pg/execute-statement conn stmt {:params [2]
                                              :first? true})]
 
         (is (= [{"FOO" 1}] res1))
@@ -1089,7 +1089,7 @@ drop table %1$s;
       (let [inst
             (Instant/parse "2022-01-01T20:59:59.123456Z")
             res
-            (pg/execute-statement stmt {:params [inst]})
+            (pg/execute-statement conn stmt {:params [inst]})
             obj
             (-> res first :obj)]
         (is (instance? OffsetDateTime obj))
@@ -1110,7 +1110,7 @@ drop table %1$s;
       (let [inst
             (Instant/parse "2022-01-01T20:59:59.000000123Z")
             res
-            (pg/execute-statement stmt {:params [inst]})]
+            (pg/execute-statement conn stmt {:params [inst]})]
 
         (is (= "2022-01-01T20:59:59"
                (-> res first :obj str)))))))
@@ -1222,12 +1222,12 @@ drop table %1$s;
       (is (pg/prepared-statement? stmt))
 
       (let [result
-            (pg/close-statement stmt)]
+            (pg/close-statement conn stmt)]
 
         (is (nil? result))
 
         (try
-          (pg/execute-statement stmt)
+          (pg/execute-statement conn stmt)
           (is false)
           (catch PGError e
             (is true)
@@ -1243,7 +1243,7 @@ drop table %1$s;
       (pg/with-statement [stmt conn query]
 
         (let [result
-              (pg/execute-statement stmt {:max-rows 1})]
+              (pg/execute-statement conn stmt {:max-rows 1})]
 
           (is (= [{:column1 1 :column2 2}]
                  result)))))))
@@ -1258,7 +1258,7 @@ drop table %1$s;
       (pg/with-statement [stmt conn query]
 
         (try
-          (pg/execute-statement stmt
+          (pg/execute-statement conn stmt
                                 {:run (fn [_]
                                         (/ 0 0))})
           (is false)
@@ -1280,7 +1280,7 @@ drop table %1$s;
       (pg/with-statement [stmt conn query]
 
         (let [result
-              (pg/execute-statement stmt {:max-rows 0xFFFFFFFF})]
+              (pg/execute-statement conn stmt {:max-rows 0xFFFFFFFF})]
 
           (is (= [{:column1 1 :column2 2}
                   {:column1 3 :column2 4}
@@ -1518,22 +1518,20 @@ drop table %1$s;
           (pg/prepare conn "select $1::int8 = $1::int4 as eq")]
 
       (try
-        (pg/execute-statement stmt {:params [(new Object)]})
+        (pg/execute-statement conn stmt {:params [(new Object)]})
         (is false)
         (catch PGError e
           (is (-> e ex-message (str/starts-with? "cannot text-encode a value")))))
 
       (let [res
-            (pg/execute-statement stmt {:params [1]})]
+            (pg/execute-statement conn stmt {:params [1]})]
         (is (= [{:eq true}] res))))))
 
 
 (deftest test-statement-repr
-  (pg/with-connection [conn *CONFIG*]
-    (let [repr
-          (format
-           "<Prepared statement, name: s1, param(s): 1, OIDs: [INT4], SQL: select $1::int4 as foo, conn: %s>"
-           conn)]
+  (let [repr
+        "<Prepared statement, name: s1, param(s): 1, OIDs: [INT4], SQL: select $1::int4 as foo>"]
+    (pg/with-connection [conn *CONFIG*]
       (pg/with-statement [stmt conn "select $1::int4 as foo"]
         (is (= repr (str stmt)))
         (is (= repr (with-out-str

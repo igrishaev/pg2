@@ -445,8 +445,8 @@
   "
   Close the prepared statement.
   "
-  [^PreparedStatement stmt]
-  (.closeStatement (.conn stmt) stmt))
+  [^Connection conn ^PreparedStatement stmt]
+  (.closeStatement conn stmt))
 
 
 (defn close
@@ -510,11 +510,11 @@
   The way the result is processed heavily depends on the options.
   "
 
-  ([^PreparedStatement stmt]
-   (.executeStatement (.conn stmt) stmt ExecuteParams/INSTANCE))
+  ([^Connection conn ^PreparedStatement stmt]
+   (.executeStatement conn stmt ExecuteParams/INSTANCE))
 
-  ([^PreparedStatement stmt ^Map opt]
-   (.executeStatement (.conn stmt) stmt (->execute-params opt))))
+  ([^Connection conn ^PreparedStatement stmt ^Map opt]
+   (.executeStatement conn stmt (->execute-params opt))))
 
 
 (defn execute
@@ -564,11 +564,18 @@
   closed when exiting the macro.
   "
   [[bind conn sql oids] & body]
-  `(with-open [~bind
-               ~(if oids
-                  `(prepare ~conn ~sql ~oids)
-                  `(prepare ~conn ~sql))]
-     ~@body))
+  (let [CONN (gensym "conn")]
+    `(let [~CONN
+           ~conn
+
+           ~bind
+           ~(if oids
+              `(prepare ~CONN ~sql ~oids)
+              `(prepare ~CONN ~sql))]
+       (try
+         ~@body
+         (finally
+           (close-statement ~CONN ~bind))))))
 
 
 (defmacro with-connection

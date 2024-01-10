@@ -15,10 +15,7 @@ import org.pg.copy.Copy;
 import org.pg.enums.*;
 import org.pg.msg.*;
 import org.pg.type.OIDHint;
-import org.pg.util.BBTool;
-import org.pg.util.IOTool;
-import org.pg.util.SQL;
-import org.pg.util.TryLock;
+import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -478,13 +475,20 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    public PreparedStatement prepare (final String sql) {
+        return prepare(sql, ExecuteParams.INSTANCE);
+    }
+
     public PreparedStatement prepare (final String sql, final ExecuteParams executeParams) {
         try (TryLock ignored = lock.get()) {
             return _prepare_unlocked(sql, executeParams);
         }
     }
 
-    private PreparedStatement _prepare_unlocked (final String sql, final ExecuteParams executeParams) {
+    private PreparedStatement _prepare_unlocked (
+            final String sql,
+            final ExecuteParams executeParams
+    ) {
         final String statement = generateStatement();
 
         final List<OID> OIDsProvided = executeParams.OIDs();
@@ -512,7 +516,8 @@ public final class Connection implements AutoCloseable {
         sendFlush();
         final Accum acc = interact(Phase.PREPARE);
         final ParameterDescription paramDesc = acc.getParameterDescription();
-        return new PreparedStatement(parse, paramDesc, this);
+        final RowDescription rowDescription = acc.getRowDescription();
+        return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
     private void sendBind (final String portal,
@@ -573,27 +578,24 @@ public final class Connection implements AutoCloseable {
         IOTool.flush(outStream);
     }
 
+    public Object executeStatement(final PreparedStatement stmt) {
+        return executeStatement(stmt, ExecuteParams.INSTANCE);
+    }
+
     public Object executeStatement (
             final PreparedStatement stmt,
             final ExecuteParams executeParams
     ) {
         try (TryLock ignored = lock.get()) {
-            return _executeStatement_unlocked(stmt, executeParams);
+            final String portal = generatePortal();
+            sendBind(portal, stmt, executeParams);
+            sendDescribePortal(portal);
+            sendExecute(portal, executeParams.maxRows());
+            sendClosePortal(portal);
+            sendSync();
+            sendFlush();
+            return interact(Phase.EXECUTE, executeParams).getResult();
         }
-    }
-
-    private Object _executeStatement_unlocked (
-            final PreparedStatement stmt,
-            final ExecuteParams executeParams
-    ) {
-        final String portal = generatePortal();
-        sendBind(portal, stmt, executeParams);
-        sendDescribePortal(portal);
-        sendExecute(portal, executeParams.maxRows());
-        sendClosePortal(portal);
-        sendSync();
-        sendFlush();
-        return interact(Phase.EXECUTE, executeParams).getResult();
     }
 
     public Object execute (final String sql) {
@@ -605,12 +607,23 @@ public final class Connection implements AutoCloseable {
     }
 
     public Object execute (final String sql, final ExecuteParams executeParams) {
-        try (
-                final TryLock ignored = lock.get();
-                final PreparedStatement stmt = prepare(sql, executeParams)
-        ) {
-            return executeStatement(stmt, executeParams);
+        try (final TryLock ignored = lock.get()) {
+            final PreparedStatement stmt = prepare(sql, executeParams);
+            final String portal = generatePortal();
+            sendBind(portal, stmt, executeParams);
+            sendDescribePortal(portal);
+            sendExecute(portal, executeParams.maxRows());
+            sendClosePortal(portal);
+            sendCloseStatement(stmt);
+            sendSync();
+            sendFlush();
+            return interact(Phase.EXECUTE, executeParams).getResult();
         }
+    }
+
+    private void sendCloseStatement (final PreparedStatement stmt) {
+        final Close msg = new Close(SourceType.STATEMENT, stmt.parse().statement());
+        sendMessage(msg);
     }
 
     private void sendCloseStatement (final String statement) {

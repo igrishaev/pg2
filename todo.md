@@ -1,7 +1,5 @@
 
-- rollback PreparedStatement (conn)
-- create PreparedStatement from a string;
-- execute by stmt name;
+- PGErrorResponse?
 - pg-honey
 - pg-component
 - merge conn-config and pool-config?

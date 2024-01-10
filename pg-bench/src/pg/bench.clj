@@ -264,7 +264,8 @@ from
                           QUERY_INSERT_PG]
         (quick-bench
          (let [x (rand-int 10000)]
-           (pg/execute-statement stmt
+           (pg/execute-statement conn
+                                 stmt
                                  {:params [x,
                                            (format "name%s" x)
                                            (LocalDateTime/now)]}))))))

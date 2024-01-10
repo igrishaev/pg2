@@ -2,29 +2,24 @@ package org.pg;
 
 import org.pg.msg.ParameterDescription;
 import org.pg.msg.Parse;
+import org.pg.msg.RowDescription;
 
 import java.util.Arrays;
 
-public record PreparedStatement(
+public record PreparedStatement (
         Parse parse,
         ParameterDescription parameterDescription,
-        Connection conn
-) implements AutoCloseable {
-
-    @Override
-    public void close () {
-        conn.closeStatement(this);
-    }
+        RowDescription rowDescription
+) {
 
     @Override
     public String toString() {
         return String.format(
-                "<Prepared statement, name: %s, param(s): %s, OIDs: %s, SQL: %s, conn: %s>",
+                "<Prepared statement, name: %s, param(s): %s, OIDs: %s, SQL: %s>",
                 parse.statement(),
                 parameterDescription.paramCount(),
                 Arrays.toString(parameterDescription.OIDs()),
-                parse.query(),
-                conn
+                parse.query()
         );
     }
 }

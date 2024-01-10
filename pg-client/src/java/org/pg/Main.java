@@ -1,5 +1,7 @@
 package org.pg;
 
+import java.util.List;
+
 public final class Main {
 
     public static void main (final String[] args) {
@@ -61,12 +63,11 @@ public final class Main {
 
         // System.out.println(conn.execute(""));
 
-//        PreparedStatement ps = conn.prepare("select $1::int as foo");
-//        ArrayList<Object> params = new ArrayList<>();
-//        params.add(1);
-//        Object res2 = conn.executeStatement(ps, params);
-//        conn.closeStatement(ps);
-//        System.out.println(res2);
+        PreparedStatement ps = conn.prepare("select $1::int as foo");
+        List<Object> params = List.of(1);
+        Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(params).build());
+        conn.closeStatement(ps);
+        System.out.println(res2);
 
           Object res3 = conn.execute("select 'ёёёё'::char as char");
           System.out.println(res3);
