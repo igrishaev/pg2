@@ -40,4 +40,5 @@
   :profiles
   {:test
    {:dependencies
-    [[org.clojure/data.csv]]}})
+    [[org.clojure/data.csv]
+     [com.github.igrishaev/pg2-honey]]}})

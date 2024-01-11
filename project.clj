@@ -33,10 +33,12 @@
   []
 
   :sub
-  ["pg-client"]
+  ["pg-client"
+   "pg-honey"]
 
   :managed-dependencies
   [[com.github.igrishaev/pg2-client :version]
+   [com.github.igrishaev/pg2-honey :version]
    [org.clojure/clojure "1.11.1"]
    [com.github.seancorfield/honeysql "2.4.1078"]
    [less-awful-ssl "1.0.6"]

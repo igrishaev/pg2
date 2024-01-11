@@ -1,5 +1,4 @@
 
-- pg-honey
 - pg-component
 - merge conn-config and pool-config?
 - readme

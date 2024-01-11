@@ -1,0 +1,27 @@
+(defproject com.github.igrishaev/pg2-honey "0.1.0-SNAPSHOT"
+
+  :description
+  "HoneySQL wrapper for PG2"
+
+  :plugins
+  [[lein-parent "0.3.8"]]
+
+  :dependencies
+  [[com.github.igrishaev/pg2-client]
+   [com.github.seancorfield/honeysql]]
+
+  :parent-project
+  {:path "../project.clj"
+   :inherit [:deploy-repositories
+             :license
+             :release-tasks
+             :managed-dependencies
+             :plugins
+             :repositories
+             :url
+             [:profiles :dev]]}
+
+  :profiles
+  {:test
+   {:dependencies
+    []}})
