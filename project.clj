@@ -34,7 +34,8 @@
 
   :sub
   ["pg-client"
-   "pg-honey"]
+   "pg-honey"
+   "pg-component"]
 
   :managed-dependencies
   [[com.github.igrishaev/pg2-client :version]
