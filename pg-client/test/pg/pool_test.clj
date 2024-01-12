@@ -98,11 +98,15 @@
         (atom nil)
 
         capture3
-        (atom nil)]
+        (atom nil)
 
-    (pool/with-pool [pool *CONFIG* {:min-size 1
-                                    :max-size 1
-                                    :ms-lifetime 300}]
+        config
+        (assoc *CONFIG*
+               :min-size 1
+               :max-size 1
+               :ms-lifetime 300)]
+
+    (pool/with-pool [pool config]
 
       (is (= {:free 1 :used 0}
              (pool/stats pool)))

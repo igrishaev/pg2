@@ -1,6 +1,5 @@
 
-- pg-component
-- merge conn-config and pool-config?
+- rename pool keys?
 - readme
 - release
 

@@ -48,15 +48,10 @@
       (.build))))
 
 
-(defn pool
-
-  (^Pool [^Map conn-config]
-   (new Pool (pg/->conn-config conn-config)))
-
-  (^Pool [^Map conn-config ^Map pool-config]
-   (new Pool
-        (pg/->conn-config conn-config)
-        (->pool-config pool-config))))
+(defn pool ^Pool [^Map opt]
+  (new Pool
+       (pg/->conn-config opt)
+       (->pool-config opt)))
 
 
 (defn close [^Pool pool]
@@ -72,8 +67,8 @@
 
 
 (defmacro with-pool
-  [[bind conn-config pool-config] & body]
-  `(with-open [~bind (pool ~conn-config ~pool-config)]
+  [[bind config] & body]
+  `(with-open [~bind (pool ~config)]
      ~@body))
 
 

@@ -95,18 +95,17 @@
 (def POOL_CONN_MAX 8)
 
 
-(def pool-config
-  {:min-size POOL_CONN_MIN
-   :max-size POOL_CONN_MAX
-   :log-level :info})
-
-
 (def jdbc-config
   {:dbtype "postgres"
    :port PORT
    :dbname USER
    :user USER
-   :password USER})
+   :password USER
+
+   ;; pool
+   :min-size POOL_CONN_MIN
+   :max-size POOL_CONN_MAX
+   :log-level :info})
 
 
 (def cp-options
@@ -379,7 +378,7 @@ from
            (jdbc/execute! conn [QUERY_SELECT_JSON]))))))
 
   (with-title "PG pool"
-    (pool/with-pool [pool pg-config pool-config]
+    (pool/with-pool [pool pg-config]
       (quick-bench
        (with-virt-exe [8]
          (pool/with-connection [conn pool]

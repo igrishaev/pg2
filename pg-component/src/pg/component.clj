@@ -8,20 +8,29 @@
    [pg.pool :as pool]))
 
 
-(defn connection [config]
+(defn connection [opt]
   (with-meta
-   {`component/start
-    (fn start [this]
-      (pg/connect this))}))
+    opt
+    {`component/start
+     (fn start [this]
+       (pg/connect this))}))
 
-#_
-(extend Connection
 
+(extend-type Connection
   component/Lifecycle
+  (stop [this]
+    (.close this)))
 
-  (start [this]
-         ;; cannot be started?
-         )
 
+(defn pool [opt]
+  (with-meta
+    opt
+    {`component/start
+     (fn start [this]
+       (pool/pool this))}))
+
+
+(extend-type Pool
+  component/Lifecycle
   (stop [this]
     (.close this)))
