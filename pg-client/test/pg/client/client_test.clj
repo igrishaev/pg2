@@ -76,6 +76,41 @@
     (is (= :I (pg/status conn)))))
 
 
+(def QUERY_SELECT_RANDOM_COMPLEX
+  "
+select
+  x::int4                  as int4,
+  x::int8                  as int8,
+  x::numeric               as numeric,
+  x::text || 'foobar'      as line,
+  x > 100500               as bool,
+  now()                    as ts,
+  now()::date              as date,
+  now()::time              as time,
+  '2024-01-13 21:08:57.593323+05:30'::timestamptz,
+  '2024-01-13 21:08:57.593323+05:30'::timestamp,
+  null                     as nil
+from
+  generate_series(1,2) as s(x)
+")
+
+
+(deftest test-client-complex-txt
+  (pg/with-connection [conn *CONFIG*]
+    (let [res
+          (pg/query conn QUERY_SELECT_RANDOM_COMPLEX)]
+      (is true))))
+
+
+(deftest test-client-complex-bin
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true)]
+    (let [res
+          (pg/query conn QUERY_SELECT_RANDOM_COMPLEX)]
+      (is true))))
+
+
 (deftest test-client-conn-str-print
   (pg/with-connection [conn *CONFIG*]
     (let [repr

@@ -121,6 +121,9 @@ select
   x::numeric               as numeric,
   x::text || 'foobar'      as line,
   x > 100500               as bool,
+  now()::date              as date,
+  now()::time              as time,
+  '2024-01-13 21:08:57.593323+05:30'::timestamptz,
   null                     as nil
 
 from
@@ -142,7 +145,7 @@ from
   (fn handler [request]
     (let [data
           (pool/with-connection [conn pool]
-            (pg/query conn QUERY_SELECT_JSON))]
+            (pg/query conn QUERY_SELECT_RANDOM_COMPLEX))]
       {:status 200
        :body data})))
 
@@ -152,9 +155,18 @@ from
     (let [data
           (with-open [conn
                       (jdbc/get-connection datasource)]
-            (jdbc/execute! conn [QUERY_SELECT_JSON]))]
+            (jdbc/execute! conn [QUERY_SELECT_RANDOM_COMPLEX]))]
       {:status 200
        :body data})))
+
+
+(defn wrap-ex [handler]
+  (fn [request]
+    (try
+      (handler request)
+      (catch Throwable e
+        {:status 200
+         :body (str e)}))))
 
 
 (defn -main-pg [& _]
@@ -163,7 +175,8 @@ from
           (make-pg-handler pool)]
       (jetty/run-jetty
        (-> handler
-           (wrap-json-response))
+           (wrap-json-response)
+           (wrap-ex))
        JETTY))))
 
 
