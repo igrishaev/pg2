@@ -15,7 +15,9 @@
    [org.postgresql/postgresql]
    [org.clojure/data.csv]
    [hikari-cp]
-   [criterium]]
+   [criterium]
+   [ring/ring-json]
+   [ring/ring-jetty-adapter]]
 
   :main pg.bench
 

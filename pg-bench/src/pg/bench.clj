@@ -1,5 +1,6 @@
 (ns pg.bench
   (:import
+   com.zaxxer.hikari.HikariDataSource
    java.io.ByteArrayOutputStream
    java.io.InputStream
    java.io.OutputStream
@@ -21,8 +22,8 @@
    [next.jdbc.prepare :as prepare]
    [next.jdbc.result-set :as rs]
    [pg.client :as pg]
-   [pg.pool :as pool]
-   [pg.oid :as oid]))
+   [pg.oid :as oid]
+   [pg.pool :as pool]))
 
 (set! *warn-on-reflection* true)
 
@@ -130,7 +131,15 @@
   "select row_to_json(row(1, random(), 2, random()))
    from generate_series(1,50000);")
 
-(def QUERY_SELECT_RANDOM_VAL
+(def QUERY_SELECT_RANDOM_SIMPLE
+  "
+select x
+from
+  generate_series(1,50000) as s(x)
+")
+
+
+(def QUERY_SELECT_RANDOM_COMPLEX
   "
 select
 
@@ -225,20 +234,35 @@ from
   (pg/with-connection [conn pg-config]
     (pg/execute conn QUERY_TABLE))
 
-  (with-title "next.JDBC random value select"
+  (with-title "next.JDBC simple value select"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
 
       (quick-bench
        (jdbc/execute! conn
-                      [QUERY_SELECT_RANDOM_VAL]
+                      [QUERY_SELECT_RANDOM_SIMPLE]
                       {:as rs/as-unqualified-maps}))))
 
-  (with-title "pg random value select"
+  (with-title "pg complex simple select"
     (pg/with-connection [conn pg-config]
       (quick-bench
        (pg/execute conn
-                   QUERY_SELECT_RANDOM_VAL))))
+                   QUERY_SELECT_RANDOM_SIMPLE))))
+
+  (with-title "next.JDBC complex value select"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+
+      (quick-bench
+       (jdbc/execute! conn
+                      [QUERY_SELECT_RANDOM_COMPLEX]
+                      {:as rs/as-unqualified-maps}))))
+
+  (with-title "pg complex value select"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/execute conn
+                   QUERY_SELECT_RANDOM_COMPLEX))))
 
   (with-title "next.JDBC random JSON select"
     (with-open [conn (jdbc/get-connection
@@ -368,7 +392,7 @@ from
                         {:as rs/as-unqualified-maps})))))
 
   (with-title "JDBC pool"
-    (with-open [datasource
+    (with-open [^HikariDataSource datasource
                 (cp/make-datasource cp-options)]
       (quick-bench
        (with-virt-exe [8]

@@ -26,8 +26,19 @@
    org.pg.pool.PoolConfig$Builder))
 
 
-(defn ->pool-config ^PoolConfig [opt]
+(defn pool?
+  "
+  True if a value is a Pool instance.
+  "
+  [x]
+  (instance? Pool x))
 
+
+(defn ->pool-config
+  "
+  Build a PoolConfig instance from a Clojure map.
+  "
+  ^PoolConfig [opt]
   (let [{:keys [pool-min-size
                 pool-max-size
                 pool-ms-lifetime
@@ -52,48 +63,90 @@
       (.build))))
 
 
-(defn pool ^Pool [^Map opt]
+(defn pool
+  "
+  Run a new Pool from a config map.
+  "
+  ^Pool [^Map opt]
   (new Pool
        (pg/->conn-config opt)
        (->pool-config opt)))
 
 
-(defn close [^Pool pool]
+(defn close
+  "
+  Close the pool by terminating all the connections,
+  both free and used.
+  "
+  [^Pool pool]
   (.close pool))
 
 
-(defn used-count ^Integer [^Pool pool]
+(defn used-count
+  "
+  Return the current number of busy connections.
+  "
+  ^Integer [^Pool pool]
   (.usedCount pool))
 
 
-(defn free-count ^Integer [^Pool pool]
+(defn free-count
+  "
+  Return the current number of free connections.
+  "
+  ^Integer [^Pool pool]
   (.freeCount pool))
 
 
 (defmacro with-pool
+  "
+  Execute the body while the `bind` symbol is bound
+  to a new Pool instance. Close the pool afterwards.
+  "
   [[bind config] & body]
   `(with-open [~bind (pool ~config)]
      ~@body))
 
 
-(defmacro with-connection [[bind pool] & body]
-  `(let [pool#
-         ~pool
+(defmacro with-connection
+  "
+  Execute the body while the `bind` symbol is bound
+  to a borrowed Connection instance. The connection
+  is marked is busy and won't be available for other
+  consumers. Return the connection to the pool when
+  exiting the macro.
 
-         ~(with-meta bind {:tag `Connection})
-         (.borrowConnection pool#)]
-     (try
-       ~@body
-       (finally
-         (.returnConnection pool# ~bind)))))
+  When no connections available, throw an exception.
+  "
+  [[bind pool] & body]
+  (let [POOL
+        (with-meta (gensym "POOL")
+                   {:tag `Pool})]
+    `(let [~POOL
+           ~pool
+
+           ~(with-meta bind {:tag `Connection})
+           (.borrowConnection ~POOL)]
+       (try
+         ~@body
+         (finally
+           (.returnConnection ~POOL ~bind))))))
 
 
-(defn stats [^Pool pool]
+(defn stats
+  "
+  Return both free and used connection amount as a map.
+  "
+  [^Pool pool]
   {:free (free-count pool)
    :used (used-count pool)})
 
 
-(defn closed? ^Boolean [^Pool pool]
+(defn closed?
+  "
+  True if the pool has been closed before.
+  "
+  ^Boolean [^Pool pool]
   (.isClosed pool))
 
 

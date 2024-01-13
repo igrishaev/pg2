@@ -20,13 +20,16 @@
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures testing]]
+   [com.stuartsierra.component :as component]
    [less.awful.ssl :as ssl]
    [pg.client :as pg]
    [pg.client.integration :refer [*CONFIG*
                                   *PORT*
                                   fix-multi-port]]
+   [pg.component :as pgc]
    [pg.honey :as pgh]
-   [pg.oid :as oid]))
+   [pg.oid :as oid]
+   [pg.pool :as pool]))
 
 
 (use-fixtures :each fix-multi-port)
@@ -2612,3 +2615,44 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
       (is (= {:inserted 3} res1))
       (is (= [{:id 2 :title "test2"}] res2)))))
+
+
+(deftest test-component-connection
+
+  (let [c-init
+        (pgc/connection *CONFIG*)
+
+        c-started
+        (component/start c-init)
+
+        res
+        (pg/query c-started "select 1 as one" {:first? true})
+
+        c-stopped
+        (component/stop c-started)]
+
+    (is (map? c-init))
+    (is (pg/connection? c-started))
+    (is (= {:one 1} res))
+    (is (nil? c-stopped))))
+
+
+(deftest test-component-pool
+
+  (let [c-init
+        (pgc/pool *CONFIG*)
+
+        c-started
+        (component/start c-init)
+
+        res
+        (pool/with-connection [conn c-started]
+          (pg/query conn "select 1 as one" {:first? true}))
+
+        c-stopped
+        (component/stop c-started)]
+
+    (is (map? c-init))
+    (is (pool/pool? c-started))
+    (is (= {:one 1} res))
+    (is (nil? c-stopped))))

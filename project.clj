@@ -40,6 +40,7 @@
   :managed-dependencies
   [[com.github.igrishaev/pg2-client :version]
    [com.github.igrishaev/pg2-honey :version]
+   [com.github.igrishaev/pg2-component :version]
    [org.clojure/clojure "1.11.1"]
    [com.github.seancorfield/honeysql "2.4.1078"]
    [less-awful-ssl "1.0.6"]
@@ -49,7 +50,9 @@
    [com.stuartsierra/component "1.1.0"]
    [org.clojure/data.csv "1.0.1"]
    [metosin/jsonista "0.3.8"]
-   [criterium "0.4.6"]]
+   [criterium "0.4.6"]
+   [ring/ring-json "0.5.1"]
+   [ring/ring-jetty-adapter "1.7.1"]]
 
   :profiles
   {:dev

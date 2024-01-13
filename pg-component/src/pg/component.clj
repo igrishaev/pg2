@@ -13,11 +13,20 @@
     opt
     {`component/start
      (fn start [this]
-       (pg/connect this))}))
+       (pg/connect this))
+
+     `component/stop
+     (fn stop [this]
+       this)}))
 
 
 (extend-type Connection
+
   component/Lifecycle
+
+  (start [this]
+    this)
+
   (stop [this]
     (.close this)))
 
@@ -27,10 +36,19 @@
     opt
     {`component/start
      (fn start [this]
-       (pool/pool this))}))
+       (pool/pool this))
+
+     `component/stop
+     (fn stop [this]
+       this)}))
 
 
 (extend-type Pool
+
   component/Lifecycle
+
+  (start [this]
+    this)
+
   (stop [this]
     (.close this)))
