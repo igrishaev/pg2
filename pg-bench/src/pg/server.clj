@@ -1,11 +1,14 @@
 (ns pg.server
   (:import
+   org.postgresql.util.PGobject
+   java.sql.PreparedStatement
    (java.util.concurrent Executors)
    (org.eclipse.jetty.util.thread QueuedThreadPool)
    com.zaxxer.hikari.HikariDataSource
    org.eclipse.jetty.server.Server)
   (:require
    [hikari-cp.core :as cp]
+   [jsonista.core :as json]
    [next.jdbc :as jdbc]
    [next.jdbc.prepare :as prepare]
    [next.jdbc.result-set :as rs]
@@ -13,6 +16,52 @@
    [pg.client :as pg]
    [ring.middleware.json :refer [wrap-json-response]]
    [ring.adapter.jetty :as jetty]))
+
+
+(def mapper
+  (json/object-mapper {:decode-key-fn keyword}))
+
+
+(def ->json json/write-value-as-string)
+
+
+(defn <-json [x]
+  (json/read-value x mapper))
+
+
+(defn ->pgobject [x]
+  (let [pgtype (or (:pgtype (meta x)) "jsonb")]
+    (doto (PGobject.)
+      (.setType pgtype)
+      (.setValue (->json x)))))
+
+
+(defn <-pgobject
+  [^org.postgresql.util.PGobject v]
+  (let [type  (.getType v)
+        value (.getValue v)]
+    (if (#{"jsonb" "json"} type)
+      (when value
+        (with-meta (<-json value) {:pgtype type}))
+      value)))
+
+
+(extend-protocol prepare/SettableParameter
+  clojure.lang.IPersistentMap
+  (set-parameter [m ^PreparedStatement s i]
+    (.setObject s i (->pgobject m)))
+
+  clojure.lang.IPersistentVector
+  (set-parameter [v ^PreparedStatement s i]
+    (.setObject s i (->pgobject v))))
+
+
+(extend-protocol rs/ReadableColumn
+  org.postgresql.util.PGobject
+  (read-column-by-label [^org.postgresql.util.PGobject v _]
+    (<-pgobject v))
+  (read-column-by-index [^org.postgresql.util.PGobject v _2 _3]
+    (<-pgobject v)))
 
 
 (def USER "test")
@@ -80,6 +129,11 @@ from
 ")
 
 
+(def QUERY_SELECT_JSON
+  "select row_to_json(row(1, random(), 2, random()))
+   from generate_series(1,500);")
+
+
 (def JETTY {:port 18080
             :join? true})
 
@@ -88,7 +142,7 @@ from
   (fn handler [request]
     (let [data
           (pool/with-connection [conn pool]
-            (pg/query conn QUERY_SELECT_RANDOM_COMPLEX))]
+            (pg/query conn QUERY_SELECT_JSON))]
       {:status 200
        :body data})))
 
@@ -98,7 +152,7 @@ from
     (let [data
           (with-open [conn
                       (jdbc/get-connection datasource)]
-            (jdbc/execute! conn [QUERY_SELECT_RANDOM_COMPLEX]))]
+            (jdbc/execute! conn [QUERY_SELECT_JSON]))]
       {:status 200
        :body data})))
 
