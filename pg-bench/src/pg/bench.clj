@@ -80,6 +80,10 @@
     (<-pgobject v)))
 
 
+(def POOL_CONN_MIN 4)
+(def POOL_CONN_MAX 8)
+
+
 (def pg-config
   {:host "127.0.0.1"
    :port PORT
@@ -88,11 +92,11 @@
    :database USER
    :binary-encode? true
    :binary-decode? true
-   :log-level :info})
-
-
-(def POOL_CONN_MIN 4)
-(def POOL_CONN_MAX 8)
+   :log-level :info
+   :pool-min-size POOL_CONN_MIN
+   :pool-max-size POOL_CONN_MAX
+   :pool-ms-lifetime 100000
+   :pool-log-level :info})
 
 
 (def jdbc-config
@@ -100,12 +104,7 @@
    :port PORT
    :dbname USER
    :user USER
-   :password USER
-
-   ;; pool
-   :min-size POOL_CONN_MIN
-   :max-size POOL_CONN_MAX
-   :log-level :info})
+   :password USER})
 
 
 (def cp-options

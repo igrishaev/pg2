@@ -1,5 +1,4 @@
 
-- rename pool keys?
 - readme
 - release
 

@@ -30,3 +30,9 @@ certs-generate:
 	cd certs && umask u=rw,go= && openssl req -days 3650 -new -nodes -subj '/C=US/ST=Test/L=Test/O=Personal/OU=Personal/emailAddress=test@test.com/CN=test' -keyout client.key -out client.csr
 	cd certs && umask u=rw,go= && openssl x509 -days 3650 -req  -CAcreateserial -in client.csr -CA root.crt -CAkey server.key -out client.crt
 	cd certs && rm client.csr
+
+test:
+	lein sub install
+	lein sub test
+
+.phony: test

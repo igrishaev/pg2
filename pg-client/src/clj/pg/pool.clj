@@ -28,21 +28,25 @@
 
 (defn ->pool-config ^PoolConfig [opt]
 
-  (let [{:keys [min-size
-                max-size
-                ms-lifetime]}
+  (let [{:keys [pool-min-size
+                pool-max-size
+                pool-ms-lifetime
+                pool-log-level]}
         opt]
 
     (cond-> (PoolConfig/builder)
 
-      min-size
-      (.minSize min-size)
+      pool-min-size
+      (.minSize pool-min-size)
 
-      max-size
-      (.maxSize max-size)
+      pool-max-size
+      (.maxSize pool-max-size)
 
-      ms-lifetime
-      (.msLifetime ms-lifetime)
+      pool-ms-lifetime
+      (.msLifetime pool-ms-lifetime)
+
+      pool-log-level
+      (.logLevel (pg/->LogLevel pool-log-level))
 
       :finally
       (.build))))

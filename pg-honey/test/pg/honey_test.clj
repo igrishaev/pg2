@@ -7,11 +7,11 @@
 (deftest test-sql-format-ok
 
   (let [result
-        (pgh/sql-format {:select [:foo :bar :baz]
-                         :from [[:users :u]]
-                         :where [:and
-                                 [:= :name "Ivan"]
-                                 [:= :age 37]]})]
+        (pgh/format {:select [:foo :bar :baz]
+                     :from [[:users :u]]
+                     :where [:and
+                             [:= :name "Ivan"]
+                             [:= :age 37]]})]
 
     (is (= ["SELECT foo, bar, baz FROM users AS u WHERE (name = $1) AND (age = $2)"
             "Ivan" 37]
@@ -21,7 +21,7 @@
 (deftest test-sql-format-params
 
   (let [result
-        (pgh/sql-format
+        (pgh/format
          {:select [:foo :bar :baz]
           :from [[:users :u]]
           :where [:and

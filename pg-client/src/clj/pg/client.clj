@@ -203,7 +203,7 @@
       (.build))))
 
 
-(defn ->Level
+(defn ->LogLevel
   "
   Turn a keyword into an instance of System.Logger.Level enum.
   "
@@ -338,7 +338,7 @@
       (.SOSendBufSize so-send-buf-size)
 
       log-level
-      (.logLevel (->Level log-level))
+      (.logLevel (->LogLevel log-level))
 
       ms-cancel-timeout
       (.msCancelTimeout ms-cancel-timeout)

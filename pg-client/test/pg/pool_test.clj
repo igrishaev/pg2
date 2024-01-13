@@ -24,7 +24,8 @@
 
 
 (deftest test-pool-basic-features
-  (pool/with-pool [pool *CONFIG* {:max-size 2}]
+  (pool/with-pool [pool (assoc *CONFIG*
+                               :pool-max-size 2)]
 
     (let [t1-conn-id
           (promise)
@@ -102,9 +103,9 @@
 
         config
         (assoc *CONFIG*
-               :min-size 1
-               :max-size 1
-               :ms-lifetime 300)]
+               :pool-min-size 1
+               :pool-max-size 1
+               :pool-ms-lifetime 300)]
 
     (pool/with-pool [pool config]
 
@@ -137,8 +138,9 @@
 
 
 (deftest test-pool-in-transaction-state
-  (pool/with-pool [pool *CONFIG* {:min-size 1
-                                  :max-size 1}]
+  (pool/with-pool [pool (assoc *CONFIG*
+                               :pool-min-size 1
+                               :pool-max-size 1)]
 
     (let [id1
           (promise)
@@ -171,8 +173,9 @@
 
 
 (deftest test-pool-in-error-state
-  (pool/with-pool [pool *CONFIG* {:min-size 1
-                                   :max-size 1}]
+  (pool/with-pool [pool (assoc *CONFIG*
+                               :pool-min-size 1
+                               :pool-max-size 1)]
 
     (let [id1
           (promise)
@@ -227,10 +230,12 @@
         id5
         (promise)
 
-        pool-config
-        {:min-size 0 :max-size 1}]
+        config
+        (assoc *CONFIG*
+               :pool-min-size 0
+               :pool-max-size 1)]
 
-    (with-open [pool (pool/pool *CONFIG* pool-config)]
+    (with-open [pool (pool/pool config)]
 
       (pool/with-connection [conn pool]
         (deliver id1 (pg/id conn)))
