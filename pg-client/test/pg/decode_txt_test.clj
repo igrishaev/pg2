@@ -276,3 +276,27 @@
                [(OffsetDateTime/parse "2023-09-13T09:13:47.708253+06:00")
                 (OffsetDateTime/parse "2023-09-13T09:13:47.708253+07:00")]]]
              res)))))
+
+
+(deftest decode-timestamptz-txt-zone
+
+  (let [string
+        "2024-01-13 21:08:57.593323+05:30"
+
+        res
+        (pg/decode-txt string oid/timestamptz)]
+
+    (is (= (OffsetDateTime/parse "2024-01-13T21:08:57.593323+05:30")
+           res))))
+
+
+(deftest decode-timetz-txt-zone
+
+  (let [string
+        "21:08:57.593323+05:30"
+
+        res
+        (pg/decode-txt string oid/timetz)]
+
+    (is (= (OffsetTime/parse string)
+           res))))

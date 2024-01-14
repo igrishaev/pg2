@@ -1,6 +1,6 @@
 
-- com.fasterxml.jackson.core.JsonGenerationException: Cannot JSON encode object of class: class java.time.LocalDate: 2024-01-13
-- Text '2024-01-13 21:08:57.593323+05:30' could not be parsed, unparsed text found at index 29
+- json namespace
+- ring middleware
 
 - readme
 - release

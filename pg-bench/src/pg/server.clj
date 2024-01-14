@@ -7,6 +7,7 @@
    com.zaxxer.hikari.HikariDataSource
    org.eclipse.jetty.server.Server)
   (:require
+   [clojure.pprint :as pprint]
    [hikari-cp.core :as cp]
    [jsonista.core :as json]
    [next.jdbc :as jdbc]
@@ -166,7 +167,9 @@ from
       (handler request)
       (catch Throwable e
         {:status 200
-         :body (str e)}))))
+         :body
+         (with-out-str
+           (-> e Throwable->map pprint/pprint))}))))
 
 
 (defn -main-pg [& _]

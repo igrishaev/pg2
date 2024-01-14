@@ -24,7 +24,7 @@ public final class DateTimeTxt {
         frmt_decode_timestamptz = new DateTimeFormatterBuilder()
                 .appendPattern("yyyy-MM-dd HH:mm:ss")
                 .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
-                .appendPattern("x")
+                .appendPattern("XXX")
                 .toFormatter()
                 .withZone(ZoneOffset.UTC);
 
@@ -40,7 +40,7 @@ public final class DateTimeTxt {
         frmt_decode_timetz = new DateTimeFormatterBuilder()
                 .appendPattern("HH:mm:ss")
                 .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
-                .appendPattern("x")
+                .appendPattern("XXX")
                 .toFormatter()
                 .withZone(ZoneOffset.UTC);
 
