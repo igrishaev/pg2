@@ -146,7 +146,7 @@ from
   (fn handler [request]
     (let [data
           (pool/with-connection [conn pool]
-            (pg/query conn QUERY_SELECT_RANDOM_COMPLEX))]
+            (pg/query conn QUERY_SELECT_JSON))]
       {:status 200
        :body data})))
 
@@ -156,7 +156,7 @@ from
     (let [data
           (with-open [conn
                       (jdbc/get-connection datasource)]
-            (jdbc/execute! conn [QUERY_SELECT_RANDOM_COMPLEX]))]
+            (jdbc/execute! conn [QUERY_SELECT_JSON]))]
       {:status 200
        :body data})))
 

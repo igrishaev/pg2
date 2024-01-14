@@ -1,17 +1,18 @@
 (ns pg.decode-txt-test
   (:import
-   org.pg.PGError
-   java.time.OffsetTime
-   java.time.LocalTime
+   java.math.BigDecimal
    java.time.LocalDate
-   java.time.OffsetDateTime
    java.time.LocalDateTime
+   java.time.LocalTime
+   java.time.OffsetDateTime
+   java.time.OffsetTime
    java.util.UUID
-   java.math.BigDecimal)
+   org.pg.PGError)
   (:require
+   [clojure.string :as str]
+   [clojure.test :refer [deftest is testing]]
    [pg.client :as pg]
-   [pg.oid :as oid]
-   [clojure.test :refer [deftest is testing]]))
+   [pg.oid :as oid]))
 
 
 (deftest test-bytea
@@ -280,27 +281,48 @@
 
 (deftest decode-timestamptz-txt-zone
 
-  ;; TODO: Z, +05
+  (doseq [string ["2024-01-13 21:08:57+00:00"
+                  "2024-01-13 21:08:57.1Z"
+                  "2024-01-13 21:08:57.12+03"
+                  "2024-01-13 21:08:57.123-03"
+                  "2024-01-13 21:08:57.1234-03:59"
+                  "2024-01-13 21:08:57.12345Z"
+                  "2024-01-13 21:08:57.12346-12"]]
 
-  (let [string
-        "2024-01-13 21:08:57.593323+05:30"
+    (let [res
+          (pg/decode-txt string oid/timestamptz)]
 
-        res
-        (pg/decode-txt string oid/timestamptz)]
-
-    (is (= (OffsetDateTime/parse "2024-01-13T21:08:57.593323+05:30")
-           res))))
+      (testing string
+        (is (= (OffsetDateTime/parse (str/replace string #" " "T"))
+               res))))))
 
 
 (deftest decode-timetz-txt-zone
 
-  ;; TODO: Z, +05
+  (doseq [[input output]
+          {"21:08:57+00:00"
+           "21:08:57Z"
 
-  (let [string
-        "21:08:57.593323+05:30"
+           "21:08:57.1Z"
+           "21:08:57.100Z"
 
-        res
-        (pg/decode-txt string oid/timetz)]
+           "21:08:57.12+03"
+           "21:08:57.120+03:00"
 
-    (is (= (OffsetTime/parse string)
-           res))))
+           "21:08:57.123-03"
+           "21:08:57.123-03:00"
+
+           "21:08:57.1234-03:59"
+           "21:08:57.123400-03:59"
+
+           "21:08:57.12345Z"
+           "21:08:57.123450Z"
+
+           "21:08:57.123456-12"
+           "21:08:57.123456-12:00"}]
+
+    (let [res
+          (pg/decode-txt input oid/timetz)]
+
+      (testing input
+        (is (= output (str res)))))))

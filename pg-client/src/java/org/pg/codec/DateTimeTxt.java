@@ -20,11 +20,11 @@ public final class DateTimeTxt {
     private static final DateTimeFormatter frmt_encode_timetz;
     private static final DateTimeFormatter frmt_encode_time;
 
+    private static final String patternMsTz = "[.[SSSSSS][SSSSS][SSSS][SSS][SS][S]][[XXX][XX][X]]";
+
     static {
         frmt_decode_timestamptz = new DateTimeFormatterBuilder()
-                .appendPattern("yyyy-MM-dd HH:mm:ss")
-                .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
-                .appendPattern("XXX")
+                .appendPattern("yyyy-MM-dd HH:mm:ss" + patternMsTz)
                 .toFormatter()
                 .withZone(ZoneOffset.UTC);
 
@@ -38,9 +38,7 @@ public final class DateTimeTxt {
                 .toFormatter();
 
         frmt_decode_timetz = new DateTimeFormatterBuilder()
-                .appendPattern("HH:mm:ss")
-                .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
-                .appendPattern("XXX")
+                .appendPattern("HH:mm:ss" + patternMsTz)
                 .toFormatter()
                 .withZone(ZoneOffset.UTC);
 
