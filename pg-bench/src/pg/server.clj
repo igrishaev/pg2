@@ -161,12 +161,22 @@ from
        :body data})))
 
 
+(defn wrap-pg-json [handler]
+  (fn [request]
+    (let [response (handler request)]
+      (if (-> response :body coll?)
+        (-> response
+            (update :body pg/json-write-string)
+            (assoc-in [:headers "content-type"] "application/json"))
+        response))))
+
+
 (defn wrap-ex [handler]
   (fn [request]
     (try
       (handler request)
       (catch Throwable e
-        {:status 200
+        {:status 500
          :body
          (with-out-str
            (-> e Throwable->map pprint/pprint))}))))
@@ -178,7 +188,7 @@ from
           (make-pg-handler pool)]
       (jetty/run-jetty
        (-> handler
-           (wrap-json-response)
+           (wrap-pg-json)
            (wrap-ex))
        JETTY))))
 
@@ -190,7 +200,8 @@ from
           (make-jdbc-handler datasource)]
       (jetty/run-jetty
        (-> handler
-           (wrap-json-response))
+           (wrap-json-response)
+           (wrap-ex))
        JETTY))))
 
 

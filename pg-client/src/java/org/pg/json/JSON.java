@@ -1,4 +1,4 @@
-package org.pg.type;
+package org.pg.json;
 
 import clojure.lang.Keyword;
 import clojure.lang.PersistentVector;
@@ -16,12 +16,10 @@ import jsonista.jackson.SymbolSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.temporal.Temporal;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +41,7 @@ public final class JSON {
         module.addDeserializer(Map.class, new PersistentHashMapDeserializer());
         module.addSerializer(Keyword.class, new KeywordSerializer(false));
         module.addKeySerializer(Keyword.class, new KeywordSerializer(true));
+        module.addSerializer(Temporal.class, new TemporalSerializer());
         module.addKeyDeserializer(Object.class, new KeywordKeyDeserializer());
         module.addSerializer(Ratio.class, new RatioSerializer());
         module.addSerializer(Symbol.class, new SymbolSerializer());
@@ -61,7 +60,28 @@ public final class JSON {
     public static Object readValue (final String input) {
         try {
             return mapper.readValue(input, Object.class);
-        } catch (JsonProcessingException e) {
+        }
+        catch (IOException e) {
+            return decodeError(e);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static Object readValue (final InputStream inputStream) {
+        try {
+            return mapper.readValue(inputStream, Object.class);
+        }
+        catch (IOException e) {
+            return decodeError(e);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static Object readValue (final Reader reader) {
+        try {
+            return mapper.readValue(reader, Object.class);
+        }
+        catch (IOException e) {
             return decodeError(e);
         }
     }
@@ -135,7 +155,7 @@ public final class JSON {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         writeValue(out, vector);
         System.out.println(out.toString(StandardCharsets.UTF_8));
-        System.out.println(readValue(out.toString(StandardCharsets.UTF_8)));
+        // System.out.println(readValue(out.toString(StandardCharsets.UTF_8)));
 
     }
 

@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.pg.PGError;
 import org.pg.enums.OID;
 import org.pg.util.BBTool;
-import org.pg.type.JSON;
+import org.pg.json.JSON;
 
 
 public final class DecoderBin {

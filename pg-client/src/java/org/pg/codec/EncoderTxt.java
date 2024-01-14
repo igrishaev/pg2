@@ -11,7 +11,7 @@ import java.io.StringWriter;
 
 import org.pg.type.PGEnum;
 import org.pg.util.HexTool;
-import org.pg.type.JSON;
+import org.pg.json.JSON;
 
 public final class EncoderTxt {
 
@@ -101,7 +101,7 @@ public final class EncoderTxt {
                 default -> txtEncodingError(x, oid);
             };
 
-            case "org.pg.type.JSON.Wrapper" -> switch (oid) {
+            case "org.pg.json.JSON.Wrapper" -> switch (oid) {
                 case JSON, JSONB, DEFAULT -> {
                     // TODO: maybe return bytes?
                     // TODO: guess the initial size?

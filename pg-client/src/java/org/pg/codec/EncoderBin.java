@@ -14,7 +14,7 @@ import org.pg.Const;
 import org.pg.PGError;
 import org.pg.enums.OID;
 import org.pg.util.BBTool;
-import org.pg.type.JSON;
+import org.pg.json.JSON;
 
 public final class EncoderBin {
 
@@ -167,7 +167,7 @@ public final class EncoderBin {
                 default -> binEncodingError(x, oid);
             };
 
-            case "org.pg.type.JSON.Wrapper" -> switch (oid) {
+            case "org.pg.json.JSON.Wrapper" -> switch (oid) {
                 case JSON, JSONB, DEFAULT -> {
                     // TODO; guess the size?
                     ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);

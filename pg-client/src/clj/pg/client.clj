@@ -9,6 +9,7 @@
    clojure.lang.Keyword
    java.io.InputStream
    java.io.OutputStream
+   java.io.Reader
    java.io.Writer
    java.lang.System$Logger$Level
    java.nio.ByteBuffer
@@ -31,9 +32,9 @@
    org.pg.enums.OID
    org.pg.enums.TXStatus
    org.pg.enums.TxLevel
+   org.pg.json.JSON
+   org.pg.json.JSON$Wrapper
    org.pg.reducer.IReducer
-   org.pg.type.JSON
-   org.pg.type.JSON$Wrapper
    org.pg.type.PGEnum))
 
 
@@ -906,6 +907,22 @@
   Parse JSON from a string.
   "
   [^String input]
+  (JSON/readValue input))
+
+
+(defn json-read-input-stream
+  "
+  Parse JSON from an input stream.
+  "
+  [^InputStream input]
+  (JSON/readValue input))
+
+
+(defn json-read-reader
+  "
+  Parse JSON from a reader.
+  "
+  [^Reader input]
   (JSON/readValue input))
 
 
