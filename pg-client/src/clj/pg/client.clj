@@ -902,54 +902,6 @@
   (new JSON$Wrapper x))
 
 
-(defn json-read-string
-  "
-  Parse JSON from a string.
-  "
-  [^String input]
-  (JSON/readValue input))
-
-
-(defn json-read-input-stream
-  "
-  Parse JSON from an input stream.
-  "
-  [^InputStream input]
-  (JSON/readValue input))
-
-
-(defn json-read-reader
-  "
-  Parse JSON from a reader.
-  "
-  [^Reader input]
-  (JSON/readValue input))
-
-
-(defn json-write-writer
-  "
-  Parse JSON from a Writer instance.
-  "
-  [value ^Writer writer]
-  (JSON/writeValue writer value))
-
-
-(defn json-write-stream
-  "
-  Encode JSON into the OutputStream.
-  "
-  [value ^OutputStream out]
-  (JSON/writeValue out value))
-
-
-(defn json-write-string
-  "
-  Encode JSON into a string.
-  "
-  ^String [value]
-  (JSON/writeValueToString value))
-
-
 ;;
 ;; Encode/decode
 ;;

@@ -1,11 +1,7 @@
 
-- json namespace
-
-tests:
-- json-read-stream
-- json-read-reader
-
+- pg.client -> pg.core
 - ring middleware
+- bool flags for rows & maps in CSV
 
 - readme
 - release

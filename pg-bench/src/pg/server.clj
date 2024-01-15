@@ -13,6 +13,7 @@
    [next.jdbc :as jdbc]
    [next.jdbc.prepare :as prepare]
    [next.jdbc.result-set :as rs]
+   [pg.json :as pg.json]
    [pg.pool :as pool]
    [pg.client :as pg]
    [ring.middleware.json :refer [wrap-json-response]]
@@ -166,7 +167,7 @@ from
     (let [response (handler request)]
       (if (-> response :body coll?)
         (-> response
-            (update :body pg/json-write-string)
+            (update :body pg.json/write-string)
             (assoc-in [:headers "content-type"] "application/json"))
         response))))
 
