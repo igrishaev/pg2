@@ -7,7 +7,7 @@
   [[lein-parent "0.3.8"]]
 
   :dependencies
-  [[com.github.igrishaev/pg2-client]
+  [[com.github.igrishaev/pg2-core]
    [com.github.seancorfield/honeysql]]
 
   :parent-project

@@ -9,7 +9,7 @@
   [[lein-parent "0.3.8"]]
 
   :dependencies
-  [[com.github.igrishaev/pg2-client]
+  [[com.github.igrishaev/pg2-core]
    [metosin/jsonista]
    [com.github.seancorfield/next.jdbc]
    [org.postgresql/postgresql]

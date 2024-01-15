@@ -33,12 +33,12 @@
   []
 
   :sub
-  ["pg-client"
+  ["pg-core"
    "pg-honey"
    "pg-component"]
 
   :managed-dependencies
-  [[com.github.igrishaev/pg2-client :version]
+  [[com.github.igrishaev/pg2-core :version]
    [com.github.igrishaev/pg2-honey :version]
    [com.github.igrishaev/pg2-component :version]
    [org.clojure/clojure "1.11.1"]
