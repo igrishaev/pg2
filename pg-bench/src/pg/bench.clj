@@ -21,7 +21,7 @@
    [next.jdbc :as jdbc]
    [next.jdbc.prepare :as prepare]
    [next.jdbc.result-set :as rs]
-   [pg.client :as pg]
+   [pg.core :as pg]
    [pg.oid :as oid]
    [pg.pool :as pool]))
 

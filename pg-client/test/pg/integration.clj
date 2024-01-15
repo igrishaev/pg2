@@ -1,4 +1,4 @@
-(ns pg.client.integration
+(ns pg.integration
   (:require
    [clojure.test :refer [testing]]))
 

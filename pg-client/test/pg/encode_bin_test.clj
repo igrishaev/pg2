@@ -15,7 +15,7 @@
    java.math.BigInteger)
   (:require
    [clojure.string :as str]
-   [pg.client :as pg]
+   [pg.core :as pg]
    [pg.oid :as oid]
    [pg.bb :refer [bb==]]
    [clojure.test :refer [deftest is testing]]))

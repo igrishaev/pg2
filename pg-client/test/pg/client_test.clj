@@ -1,4 +1,4 @@
-(ns pg.client.client-test
+(ns pg.client-test
   (:import
    java.io.ByteArrayOutputStream
    java.io.InputStream
@@ -22,10 +22,10 @@
    [clojure.test :refer [deftest is use-fixtures testing]]
    [com.stuartsierra.component :as component]
    [less.awful.ssl :as ssl]
-   [pg.client :as pg]
-   [pg.client.integration :refer [*CONFIG*
-                                  *PORT*
-                                  fix-multi-port]]
+   [pg.core :as pg]
+   [pg.integration :refer [*CONFIG*
+                           *PORT*
+                           fix-multi-port]]
    [pg.component :as pgc]
    [pg.honey :as pgh]
    [pg.oid :as oid]

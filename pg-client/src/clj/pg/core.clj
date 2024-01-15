@@ -1,4 +1,4 @@
-(ns pg.client
+(ns pg.core
   "
   Common API to communicate with PostgreSQL server.
   "

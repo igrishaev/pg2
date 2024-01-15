@@ -1,11 +1,11 @@
-(ns pg.client.ssl-test
+(ns pg.ssl-test
   (:require
-   [pg.client :as pg]
+   [pg.core :as pg]
    [clojure.test :refer [is
                          report
                          deftest
                          use-fixtures]]
-   [pg.client.integration :refer [*CONFIG*]]))
+   [pg.integration :refer [*CONFIG*]]))
 
 
 (defn fix-if-ssl-set [t]

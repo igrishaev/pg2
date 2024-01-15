@@ -11,7 +11,7 @@
   (:require
    [clojure.test :refer [deftest is]]
    [pg.bb :as bb]
-   [pg.client :as pg]
+   [pg.core :as pg]
    [pg.json :as json]
    [pg.oid :as oid]))
 

@@ -11,7 +11,7 @@
    java.math.BigDecimal)
   (:require
    [pg.bb :refer [->bb]]
-   [pg.client :as pg]
+   [pg.core :as pg]
    [pg.oid :as oid]
    [clojure.test :refer [deftest is testing]]))
 

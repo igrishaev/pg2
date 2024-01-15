@@ -16,7 +16,7 @@
   are closed; Connections that are in a transaction are rolled back.
   "
   (:require
-   [pg.client :as pg])
+   [pg.core :as pg])
   (:import
    java.io.Writer
    java.util.Map

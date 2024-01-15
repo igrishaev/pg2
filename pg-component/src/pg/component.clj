@@ -4,7 +4,7 @@
    org.pg.pool.Pool)
   (:require
    [com.stuartsierra.component :as component]
-   [pg.client :as pg]
+   [pg.core :as pg]
    [pg.pool :as pool]))
 
 

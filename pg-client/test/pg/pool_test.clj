@@ -4,7 +4,7 @@
    org.pg.PGErrorResponse)
   (:require
    [clojure.test :refer [deftest is use-fixtures testing]]
-   [pg.client :as pg]
+   [pg.core :as pg]
    [pg.pool :as pool]))
 
 

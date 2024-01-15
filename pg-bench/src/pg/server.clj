@@ -15,7 +15,7 @@
    [next.jdbc.result-set :as rs]
    [pg.json :as pg.json]
    [pg.pool :as pool]
-   [pg.client :as pg]
+   [pg.core :as pg]
    [ring.middleware.json :refer [wrap-json-response]]
    [ring.adapter.jetty :as jetty]))
 

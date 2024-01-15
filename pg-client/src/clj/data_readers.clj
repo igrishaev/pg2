@@ -1,1 +1,1 @@
-{pg/ssl-context pg.client/ssl-context-reader}
+{pg/ssl-context pg.core/ssl-context-reader}

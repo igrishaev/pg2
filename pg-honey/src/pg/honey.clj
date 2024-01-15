@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [format])
   (:require
    [honey.sql :as sql]
-   [pg.client :as pg]))
+   [pg.core :as pg]))
 
 
 (def HONEY_OVERRIDES
@@ -23,7 +23,7 @@
 
 (defn query
   "
-  Like `pg.client/query` but accepts a HoneySQL map
+  Like `pg.core/query` but accepts a HoneySQL map
   which gets rendered into a SQL string.
 
   Arguments:
@@ -32,7 +32,7 @@
   - opt: query options; pass the `:honey` key for HoneySQL params.
 
   Result:
-  - the same as `pg.client/query`.
+  - the same as `pg.core/query`.
   "
 
   ([conn sql-map]
@@ -47,7 +47,7 @@
 
 (defn execute
   "
-  Like `pg.client/execute` but accepts a HoneySQL map
+  Like `pg.core/execute` but accepts a HoneySQL map
   which gets rendered into SQL vector and split on a query
   and parameters.
 
@@ -57,7 +57,7 @@
   - opt: query options; pass the `:honey` key for HoneySQL params.
 
   Result:
-  - same as `pg.client/execute`.
+  - same as `pg.core/execute`.
   "
 
   ([conn sql-map]
