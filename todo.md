@@ -1,7 +1,6 @@
 
 - pg.client -> pg.core
 - ring middleware
-- bool flags for rows & maps in CSV
 
 - readme
 - release

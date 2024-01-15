@@ -896,7 +896,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handleCopyInResponseMaps(final Accum acc) {
-        final List<Object> keys = acc.executeParams.copyMapKeys();
+        final List<Object> keys = acc.executeParams.copyInKeys();
         final Iterator<List<Object>> iterator = acc.executeParams.copyInMaps()
                 .stream()
                 .filter(Objects::nonNull)
@@ -911,10 +911,10 @@ public final class Connection implements AutoCloseable {
         // Thus, we rely on sendBytes which doesn't trigger flushing
         // the output stream. Flushing is expensive and thus must be called
         // manually when all the data has been sent.
-        if (acc.executeParams.copyInRows() != null) {
+        if (acc.executeParams.isCopyInRows()) {
             handleCopyInResponseRows(acc);
         }
-        else if (acc.executeParams.copyInMaps() != null) {
+        else if (acc.executeParams.isCopyInMaps()) {
             handleCopyInResponseMaps(acc);
         } else {
             handleCopyInResponseStream(acc);
