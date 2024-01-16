@@ -1,5 +1,6 @@
 
-- ring middleware
+- ring.json tests
+- ring.json docstrings
 
 - readme
 - release
