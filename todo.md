@@ -1,5 +1,4 @@
 
-- pg-client -> pg-core
 - ring middleware
 
 - readme
