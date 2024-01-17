@@ -1,6 +1,6 @@
 
-- readme
 - release
+- readme
 
 - arrays
   - decode txt
