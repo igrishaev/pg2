@@ -1,4 +1,7 @@
 
+release:
+	lein release
+
 docker-up:
 	docker-compose up
 
