@@ -40,11 +40,16 @@ classes are supported for reading and writing.
 <!-- toc -->
 
 - [Installation](#installation)
-- [Quick start](#quick-start)
+- [Quick start (Demo)](#quick-start-demo)
 - [Benchmarks](#benchmarks)
-- [Connecting to the server](#connecting-to-the-server)
 - [Authentication](#authentication)
+- [Connecting the server](#connecting-the-server)
 - [Query and Execute](#query-and-execute)
+- [Prepared Statements](#prepared-statements)
+- [Transactions](#transactions)
+- [Cloning a Connectin](#cloning-a-connectin)
+- [Cancelling a Query](#cancelling-a-query)
+- [Thread Safety](#thread-safety)
 - [Result reducers](#result-reducers)
 - [COPY IN/OUT](#copy-inout)
 - [SSL](#ssl)
@@ -57,6 +62,7 @@ classes are supported for reading and writing.
 - [HoneySQL integration](#honeysql-integration)
 - [Component integration](#component-integration)
 - [Ring middleware](#ring-middleware)
+- [Debugging](#debugging)
 - [Running tests](#running-tests)
 - [Running benchmarks](#running-benchmarks)
 
@@ -64,15 +70,25 @@ classes are supported for reading and writing.
 
 ## Installation
 
-## Quick start
+## Quick start (Demo)
 
 ## Benchmarks
 
-## Connecting to the server
-
 ## Authentication
 
+## Connecting the server
+
 ## Query and Execute
+
+## Prepared Statements
+
+## Transactions
+
+## Cloning a Connectin
+
+## Cancelling a Query
+
+## Thread Safety
 
 ## Result reducers
 
@@ -97,6 +113,8 @@ classes are supported for reading and writing.
 ## Component integration
 
 ## Ring middleware
+
+## Debugging
 
 ## Running tests
 
