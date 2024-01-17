@@ -830,7 +830,8 @@
                          rollback?]}]
    & body]
 
-  (let [bind (gensym "CONN")]
+  (let [bind (with-meta (gensym "CONN")
+               {:tag `Connection})]
 
     `(let [~bind ~conn]
 

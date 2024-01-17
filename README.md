@@ -33,7 +33,7 @@ It **supports java.time.** classes. The ordinary JDBC clients still use
 `Timestamp` class for dates, which is horrible. In PG2, all the java.time.*
 classes are supported for reading and writing.
 
-...And plenty of more features.
+...And plenty of other features.
 
 ## Table of Contents
 
@@ -70,7 +70,125 @@ classes are supported for reading and writing.
 
 ## Installation
 
+**Core functionality**: the client and the connection pool, type encoding and
+decoding, COPY IN/OUT, SSL:
+
+~~~clojure
+;; lein
+[com.github.igrishaev/pg2-core "0.1.0"]
+
+;; deps
+com.github.igrishaev/pg2-core {:mvn/version "0.1.0"}
+~~~
+
+**HoneySQL integration**: special version of `query` and `execute` that accept
+not a string of SQL but a map that gets formatted to SQL under the hood.
+
+~~~clojure
+;; lein
+[com.github.igrishaev/pg2-honey "0.1.0"]
+
+;; deps
+com.github.igrishaev/pg2-honey {:mvn/version "0.1.0"}
+~~~
+
+[component]: https://github.com/stuartsierra/component
+
+**Component integration**: a package that extends the `Connection` and `Pool`
+objects with the `Lifecycle` protocol from the [Component][component] library.
+
+~~~clojure
+;; lein
+[com.github.igrishaev/pg2-component "0.1.0"]
+
+;; deps
+com.github.igrishaev/pg2-component {:mvn/version "0.1.0"}
+~~~
+
 ## Quick start (Demo)
+
+This is a very brief passage through the library:
+
+~~~clojure
+(ns pg.demo
+  (:require
+   [pg.core :as pg]))
+
+;; declare a minimal config
+(def config
+  {:host "127.0.0.1"
+   :port 10140
+   :user "test"
+   :password "test"
+   :database "test"})
+
+
+;; connect to the database
+(def conn
+  (pg/connect config))
+
+
+;; a trivial query
+(pg/query conn "select 1 as one")
+;; [{:one 1}]
+
+
+;; let's create a table
+(pg/query conn "
+create table demo (
+  id serial primary key,
+  title text not null,
+  created_at timestamp with time zone default now()
+)")
+;; {:command "CREATE TABLE"}
+
+
+;; Insert three rows returning all the columns.
+;; Pay attention that PG2 uses not question marks (?)
+;; but numered dollars for parameters:
+(pg/execute conn
+            "insert into demo (title) values ($1), ($2), ($3)
+             returning *"
+            {:params ["test1" "test2" "test3"]})
+
+
+;; The result: pay attention we got java.time.OffsetDateTime for timestamptz column:
+[{:title "test1",
+  :id 4,
+  :created_at
+  #object[java.time.OffsetDateTime 0x31340eb6 "2024-01-17T21:57:58.660012+03:00"]}
+ {:title "test2",
+  :id 5,
+  :created_at
+  #object[java.time.OffsetDateTime 0x11a5aab5 "2024-01-17T21:57:58.660012+03:00"]}
+ {:title "test3",
+  :id 6,
+  :created_at
+  #object[java.time.OffsetDateTime 0x3ee200bc "2024-01-17T21:57:58.660012+03:00"]}]
+
+
+;; Try two expressions in a single transaction
+(pg/with-tx [conn]
+  (pg/execute conn
+              "delete from demo where id = $1"
+              {:params [3]})
+  (pg/execute conn
+              "insert into demo (title) values ($1)"
+              {:params ["test4"]}))
+;; {:inserted 1}
+
+
+;; Check out the database log:
+
+;; LOG:  statement: BEGIN
+;; LOG:  execute s3/p4: delete from demo where id = $1
+;; DETAIL:  parameters: $1 = '3'
+;; LOG:  execute s5/p6: insert into demo (title) values ($1)
+;; DETAIL:  parameters: $1 = 'test4'
+;; LOG:  statement: COMMIT
+
+~~~
+
 
 ## Benchmarks
 

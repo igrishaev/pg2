@@ -1,6 +1,7 @@
 
-- release
 - readme
+- archieve pg
+- bench: transactions
 
 - arrays
   - decode txt

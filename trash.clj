@@ -56,3 +56,22 @@
            (pg/copy-in conn
                        "copy aaa (id, name, created_at) from STDIN WITH (FORMAT CSV)"
                        (-> buf (.toByteArray) io/input-stream)))
+
+[{:title "test1",
+  :id 4,
+  :created_at
+  #object[java.time.OffsetDateTime 0x31340eb6 "2024-01-17T21:57:58.660012+03:00"]}
+ {:title "test2",
+  :id 5,
+  :created_at
+  #object[java.time.OffsetDateTime 0x11a5aab5 "2024-01-17T21:57:58.660012+03:00"]}
+ {:title "test3",
+  :id 6,
+  :created_at
+  #object[java.time.OffsetDateTime 0x3ee200bc "2024-01-17T21:57:58.660012+03:00"]}]
+
+
+{:title "test2",
+ :id 5,
+ :created_at
+ #object[java.time.OffsetDateTime 0x21782713 "2024-01-17T21:57:58.660012+03:00"]}
