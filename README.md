@@ -8,6 +8,7 @@
 - [Quick start](#quick-start)
 - [Benchmarks](#benchmarks)
 - [Connecting to the server](#connecting-to-the-server)
+- [Authentication](#authentication)
 - [Query and Execute](#query-and-execute)
 - [Result reducers](#result-reducers)
 - [COPY IN/OUT](#copy-inout)
@@ -16,6 +17,7 @@
 - [JSON support](#json-support)
 - [Arrays support](#arrays-support)
 - [Notify/Listen (PubSub)](#notifylisten-pubsub)
+- [Notices](#notices)
 - [Connection Pool](#connection-pool)
 - [HoneySQL integration](#honeysql-integration)
 - [Component integration](#component-integration)
@@ -33,6 +35,8 @@
 
 ## Connecting to the server
 
+## Authentication
+
 ## Query and Execute
 
 ## Result reducers
@@ -48,6 +52,8 @@
 ## Arrays support
 
 ## Notify/Listen (PubSub)
+
+## Notices
 
 ## Connection Pool
 
