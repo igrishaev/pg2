@@ -1,8 +1,4 @@
 
-- ring.json tests
-- ring.json docstrings
-- server: reuse ring.json
-
 - readme
 - release
 

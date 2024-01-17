@@ -7,13 +7,13 @@
    com.zaxxer.hikari.HikariDataSource
    org.eclipse.jetty.server.Server)
   (:require
+   pg.ring.json
    [clojure.pprint :as pprint]
    [hikari-cp.core :as cp]
    [jsonista.core :as json]
    [next.jdbc :as jdbc]
    [next.jdbc.prepare :as prepare]
    [next.jdbc.result-set :as rs]
-   [pg.json :as pg.json]
    [pg.pool :as pool]
    [pg.core :as pg]
    [ring.middleware.json :refer [wrap-json-response]]
@@ -162,16 +162,6 @@ from
        :body data})))
 
 
-(defn wrap-pg-json [handler]
-  (fn [request]
-    (let [response (handler request)]
-      (if (-> response :body coll?)
-        (-> response
-            (update :body pg.json/write-string)
-            (assoc-in [:headers "content-type"] "application/json"))
-        response))))
-
-
 (defn wrap-ex [handler]
   (fn [request]
     (try
@@ -189,7 +179,7 @@ from
           (make-pg-handler pool)]
       (jetty/run-jetty
        (-> handler
-           (wrap-pg-json)
+           (pg.ring.json/wrap-json-response)
            (wrap-ex))
        JETTY))))
 
