@@ -279,18 +279,46 @@ from
        (pg/execute conn
                    QUERY_SELECT_JSON))))
 
-  (with-title "pg insert values"
+  (with-title "pg insert values in TRANSACTION"
     (pg/with-connection [conn pg-config]
       (pg/with-statement [stmt
                           conn
                           QUERY_INSERT_PG]
         (quick-bench
          (let [x (rand-int 10000)]
-           (pg/execute-statement conn
-                                 stmt
-                                 {:params [x,
-                                           (format "name%s" x)
-                                           (LocalDateTime/now)]}))))))
+           (pg/with-tx [conn]
+             (pg/execute-statement conn
+                                   stmt
+                                   {:params [x,
+                                             (format "name%s" x)
+                                             (LocalDateTime/now)]})))))))
+
+  (with-title "next.JDBC insert values in TRANSACTION"
+
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+
+      (quick-bench
+       (let [x (rand-int 10000)]
+         (jdbc/with-transaction [tx conn]
+           (jdbc/execute! tx
+                          [QUERY_INSERT_JDBC
+                           x,
+                           (format "name%s" x)
+                           (LocalDateTime/now)]))))))
+
+  (with-title "pg insert values"
+    (pg/with-connection [conn pg-config]
+      (pg/with-statement [stmt
+                          conn
+                          QUERY_INSERT_PG]
+        (quick-bench
+            (let [x (rand-int 10000)]
+              (pg/execute-statement conn
+                                    stmt
+                                    {:params [x,
+                                              (format "name%s" x)
+                                              (LocalDateTime/now)]}))))))
 
   (with-title "next.JDBC insert values"
 
