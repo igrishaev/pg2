@@ -17,7 +17,7 @@ public class Java implements IReducer {
         return result;
     }
 
-    public Object initiate() {
+    public Object initiate(final Object[] ignored) {
         return new ArrayList<>();
     }
 

@@ -1505,7 +1505,8 @@ drop table %1$s;
           res
           (pg/execute conn query {:matrix? true})]
 
-      (is (= [[1 2]
+      (is (= [[:a :b]
+              [1 2]
               [3 4]
               [5 6]]
              res)))))

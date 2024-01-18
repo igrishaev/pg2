@@ -16,7 +16,7 @@ public class GroupBy extends MapMixin implements IReducer {
         this.f = Objects.requireNonNull(f);
     }
 
-    public Object initiate () {
+    public Object initiate (final Object[] ignored) {
         return PersistentHashMap.EMPTY;
     }
 

@@ -90,7 +90,7 @@ public final class Accum {
                 map.put(oldKey, 1);
             }
             else {
-                final String newKey = oldKey + "_" + String.valueOf(idx);
+                final String newKey = oldKey + "_" + idx;
                 newKeys[i] = newKey;
                 map.put(oldKey, idx + 1);
             }
@@ -143,7 +143,6 @@ public final class Accum {
     }
 
     public void handleRowDescription(final RowDescription msg) {
-        current.acc = executeParams.reducer().initiate();
         current.rowDescription = msg;
         final IFn fnKeyTransform = executeParams.fnKeyTransform();
         final String[] names = unifyKeys(msg.getColumnNames());
@@ -152,6 +151,7 @@ public final class Accum {
             keys[i] = fnKeyTransform.invoke(names[i]);
         }
         current.keys = keys;
+        current.acc = executeParams.reducer().initiate(keys);
     }
 
     public void handleCommandComplete (final CommandComplete msg) {

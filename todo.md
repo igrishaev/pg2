@@ -1,7 +1,6 @@
 
 - readme
 - archieve pg
-- matrix: add header with keys
 
 - arrays
   - decode txt

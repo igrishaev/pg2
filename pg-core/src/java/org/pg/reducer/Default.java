@@ -8,7 +8,7 @@ public class Default extends MapMixin implements IReducer {
 
     public static IReducer INSTANCE = new Default();
 
-    public Object initiate() {
+    public Object initiate(final Object[] ignored) {
         return PersistentVector.EMPTY.asTransient();
     }
 

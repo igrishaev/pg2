@@ -8,7 +8,7 @@ public class Dummy implements IReducer {
         return null;
     }
 
-    public Object initiate() {
+    public Object initiate(final Object[] ignored) {
         return null;
     }
 

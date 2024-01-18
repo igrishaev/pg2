@@ -15,7 +15,7 @@ public class Fold extends MapMixin implements IReducer {
         this.init = init;
     }
 
-    public Object initiate () {
+    public Object initiate (final Object[] ignored) {
         return init;
     }
 

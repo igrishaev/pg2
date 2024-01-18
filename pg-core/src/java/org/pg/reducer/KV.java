@@ -17,7 +17,7 @@ public class KV extends MapMixin implements IReducer {
         this.fv = Objects.requireNonNull(fv);
     }
 
-    public Object initiate () {
+    public Object initiate (final Object[] ignored) {
         return PersistentHashMap.EMPTY.asTransient();
     }
 
