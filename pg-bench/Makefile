@@ -2,7 +2,7 @@
 main: repl
 
 repl:
-	lein repl
+	export JAVA_BIN=${java_home}/bin/java && lein repl
 
 java_home ?= $(error Please specify the java_home=... argument)
 
