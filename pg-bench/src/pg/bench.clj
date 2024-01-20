@@ -301,7 +301,7 @@ from
           (.prepareStatement conn QUERY_SELECT_RANDOM_SIMPLE)]
       (quick-bench
        (let [^ResultSet rs (.executeQuery stmt)
-             ^ArrayList l (new ArrayList)]
+             ^ArrayList l (new ArrayList 50000)]
          (while (.next rs)
            (let [^HashMap m (new HashMap)]
              (.put m "x" (.getString rs "x"))
