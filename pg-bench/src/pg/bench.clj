@@ -506,6 +506,4 @@ from
       (quick-bench
        (with-virt-exe [8]
          (pool/with-connection [conn pool]
-           (pg/execute conn QUERY_SELECT_JSON))))))
-
-  )
+           (pg/execute conn QUERY_SELECT_JSON)))))))
