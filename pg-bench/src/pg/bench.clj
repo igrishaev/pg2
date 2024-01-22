@@ -9,6 +9,8 @@
    java.io.ByteArrayOutputStream
    java.io.InputStream
    java.io.OutputStream
+   java.io.ByteArrayOutputStream
+   java.io.ByteArrayInputStream
    java.sql.PreparedStatement
    java.time.LocalDateTime
    java.util.concurrent.ExecutorService
@@ -246,6 +248,14 @@ from
   (assoc acc x (assoc row :extra 42)))
 
 
+(defn rows->csv-input-stream ^InputStream [rows]
+  (let [out
+        (new ByteArrayOutputStream)]
+    (with-open [writer (io/writer out)]
+      (csv/write-csv writer rows))
+    (-> out .toByteArray io/input-stream)))
+
+
 (defn -main [& args]
 
   (with-title "generating CSV"
@@ -367,7 +377,6 @@ from
                                              (LocalDateTime/now)]})))))))
 
   (with-title "next.JDBC insert values in TRANSACTION"
-
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
 
@@ -379,6 +388,8 @@ from
                            x,
                            (format "name%s" x)
                            (LocalDateTime/now)]))))))
+
+  ;; ---
 
   (with-title "pg insert values"
     (pg/with-connection [conn pg-config]
@@ -394,10 +405,8 @@ from
                                            (LocalDateTime/now)]}))))))
 
   (with-title "next.JDBC insert values"
-
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
-
       (quick-bench
        (let [x (rand-int 10000)]
          (jdbc/execute! conn
@@ -405,6 +414,8 @@ from
                          x,
                          (format "name%s" x)
                          (LocalDateTime/now)])))))
+
+  ;; ---
 
   (with-title "JDBC COPY in from a stream"
     (with-open [conn (jdbc/get-connection
@@ -424,39 +435,60 @@ from
                    QUERY_IN_STREAM
                    (-> SAMPLE_CSV io/file io/input-stream)))))
 
-  (with-title "PG COPY in from rows BIN"
-    (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/copy-in-rows conn
-                        QUERY_IN_STREAM_BIN
-                        (generate-rows)
-                        {:copy-bin? true
-                         :oids [oid/int4 oid/text oid/timestamp]}))))
+  ;; ---
+
+  (with-title "JDBC COPY in from rows CSV"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (let [rows (generate-rows)]
+        (quick-bench
+         (let [input-stream
+               (rows->csv-input-stream rows)
+
+               copy
+               (new CopyManager conn)]
+
+           (.copyIn copy
+                    ^String QUERY_IN_STREAM
+                    ^InputStream input-stream))))))
 
   (with-title "PG COPY in from rows CSV"
     (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/copy-in-rows conn
-                        QUERY_IN_STREAM
-                        (generate-rows)))))
+      (let [rows (generate-rows)]
+        (quick-bench
+         (pg/copy-in-rows conn
+                          QUERY_IN_STREAM
+                          rows)))))
+
+  (with-title "PG COPY in from rows BIN"
+    (pg/with-connection [conn pg-config]
+      (let [rows (generate-rows)]
+        (quick-bench
+         (pg/copy-in-rows conn
+                          QUERY_IN_STREAM_BIN
+                          rows
+                          {:copy-bin? true
+                           :oids [oid/int4 oid/text oid/timestamp]})))))
 
   (with-title "PG COPY in from maps BIN"
     (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/copy-in-maps conn
-                        QUERY_IN_STREAM_BIN
-                        (generate-maps)
-                        [:id :name :created_at]
-                        {:copy-bin? true
-                         :oids [oid/int4 oid/text oid/timestamp]}))))
+      (let [rows (generate-maps)]
+        (quick-bench
+         (pg/copy-in-maps conn
+                          QUERY_IN_STREAM_BIN
+                          rows
+                          [:id :name :created_at]
+                          {:copy-bin? true
+                           :oids [oid/int4 oid/text oid/timestamp]})))))
 
   (with-title "PG COPY in from maps CSV"
     (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/copy-in-maps conn
-                        QUERY_IN_STREAM
-                        (generate-maps)
-                        [:id :name :created_at]))))
+      (let [rows (generate-maps)]
+        (quick-bench
+         (pg/copy-in-maps conn
+                          QUERY_IN_STREAM
+                          rows
+                          [:id :name :created_at])))))
 
   (with-title "PG COPY out"
     (pg/with-connection [conn pg-config]
