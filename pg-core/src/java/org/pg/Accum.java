@@ -23,7 +23,7 @@ public final class Accum {
          private CommandComplete commandComplete;
          private ParseComplete parseComplete;
          private ParameterDescription parameterDescription;
-         private Object[] keys;
+         public Object[] keys;
          private Object acc;
 
          private boolean isComplete() {
@@ -75,7 +75,7 @@ public final class Accum {
     public final ExecuteParams executeParams;
     private final ArrayList<Node> nodes;
     private ErrorResponse errorResponse;
-    private Node current;
+    public Node current;
     private Throwable exception;
     public ScramSha256.Pipeline scramPipeline;
 
@@ -174,10 +174,9 @@ public final class Accum {
         };
     }
 
-    public void setCurrentValues (final Object[] values) {
+    public void addClojureRow (final ClojureRow clojureRow) {
         final IReducer reducer = executeParams.reducer();
-        final Object row = reducer.compose(current.keys, values);
-        current.acc = reducer.append(current.acc, row);
+        current.acc = reducer.append(current.acc, clojureRow);
     }
 
     private void addNode() {

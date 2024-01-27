@@ -2,9 +2,11 @@
 package org.pg.reducer;
 
 import clojure.lang.IFn;
+import org.pg.msg.ClojureRow;
+
 import java.util.Objects;
 
-public class Run extends MapMixin implements IReducer {
+public class Run implements IReducer {
 
     private final IFn f;
 
@@ -16,7 +18,7 @@ public class Run extends MapMixin implements IReducer {
         return 0;
     }
 
-    public Object append (final Object acc, final Object row) {
+    public Object append (final Object acc, final ClojureRow row) {
         f.invoke(row);
         return (Integer) acc + 1;
     }

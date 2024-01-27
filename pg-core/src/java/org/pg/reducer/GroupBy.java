@@ -5,10 +5,11 @@ import clojure.lang.RT;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.IFn;
 import clojure.lang.PersistentVector;
+import org.pg.msg.ClojureRow;
 
 import java.util.Objects;
 
-public class GroupBy extends MapMixin implements IReducer {
+public class GroupBy implements IReducer {
 
     private final IFn f;
 
@@ -20,7 +21,7 @@ public class GroupBy extends MapMixin implements IReducer {
         return PersistentHashMap.EMPTY;
     }
 
-    public Object append (final Object acc, final Object row) {
+    public Object append (final Object acc, final ClojureRow row) {
         final Object key = f.invoke(row);
         if (RT.contains(acc, key) == Boolean.FALSE) {
             return RT.assoc(acc, key, PersistentVector.EMPTY.cons(row));
