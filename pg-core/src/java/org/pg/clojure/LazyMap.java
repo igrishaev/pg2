@@ -34,6 +34,11 @@ public final class LazyMap extends APersistentMap {
         this.parsedValues = new HashMap<>(keys.length);
     }
 
+    @SuppressWarnings("unused")
+    public LazyVector toLazyVector () {
+        return new LazyVector(dataRow, rowDescription, codecParams);
+    }
+
     private IPersistentMap toMap () {
         IPersistentMap result = PersistentHashMap.EMPTY;
         for (final Object key: keys) {
