@@ -1,8 +1,11 @@
 
 - readme
-- archieve pg
 
+- rename ClojureRow
+- update matrix reducer
 - remove java reducer?
+- ensure tests pass
+- benchmark and post
 
 - arrays
   - decode txt
