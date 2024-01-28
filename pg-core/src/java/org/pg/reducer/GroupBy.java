@@ -5,7 +5,7 @@ import clojure.lang.RT;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.IFn;
 import clojure.lang.PersistentVector;
-import org.pg.msg.ClojureRow;
+import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
@@ -21,7 +21,7 @@ public class GroupBy implements IReducer {
         return PersistentHashMap.EMPTY;
     }
 
-    public Object append (final Object acc, final ClojureRow row) {
+    public Object append (final Object acc, final LazyMap row) {
         final Object key = f.invoke(row);
         if (RT.contains(acc, key) == Boolean.FALSE) {
             return RT.assoc(acc, key, PersistentVector.EMPTY.cons(row));

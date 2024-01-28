@@ -1,19 +1,17 @@
-package org.pg.msg;
+package org.pg.clojure;
 
 import clojure.lang.*;
-import org.pg.PGError;
 import org.pg.codec.CodecParams;
 import org.pg.codec.DecoderBin;
 import org.pg.codec.DecoderTxt;
+import org.pg.msg.DataRow;
+import org.pg.msg.RowDescription;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
-public final class ClojureRow implements IPersistentMap {
+public final class LazyMap extends APersistentMap {
 
     private final DataRow dataRow;
     private final RowDescription rowDescription;
@@ -22,11 +20,11 @@ public final class ClojureRow implements IPersistentMap {
     private final Map<Object, Object> parsedValues;
     private final Map<Object, Short> keysIndex;
 
-    public ClojureRow (final DataRow dataRow,
-                       final RowDescription rowDescription,
-                       final Object[] keys,
-                       final Map<Object, Short> keysIndex,
-                       final CodecParams codecParams
+    public LazyMap(final DataRow dataRow,
+                   final RowDescription rowDescription,
+                   final Object[] keys,
+                   final Map<Object, Short> keysIndex,
+                   final CodecParams codecParams
     ) {
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
@@ -78,14 +76,17 @@ public final class ClojureRow implements IPersistentMap {
 
     @Override
     public String toString () {
-        // TODO
-        return String.format("<ClojureRow, keys: %s>", Arrays.toString(keys));
+        return String.format("<LazyMap, keys: %s, evaluated values: %s>",
+                Arrays.toString(keys),
+                parsedValues
+        );
     }
 
     @Override
     public boolean containsKey(final Object key) {
         return keysIndex.containsKey(key);
     }
+
 
     @Override
     public IMapEntry entryAt(final Object key) {
@@ -129,19 +130,8 @@ public final class ClojureRow implements IPersistentMap {
     }
 
     @Override
-    public IPersistentCollection cons(Object o) {
-        throw new PGError("cons is not implemented");
-    }
-
-    // TODO: return an empty map?
-    @Override
     public IPersistentCollection empty() {
-        return toMap().empty();
-    }
-
-    @Override
-    public boolean equiv(final Object o) {
-        return toMap().equiv(o);
+        return PersistentHashMap.EMPTY;
     }
 
     @Override

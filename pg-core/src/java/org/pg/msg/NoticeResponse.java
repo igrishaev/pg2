@@ -1,7 +1,7 @@
 package org.pg.msg;
 
 import clojure.lang.*;
-import org.pg.util.IClojure;
+import org.pg.clojure.IClojure;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

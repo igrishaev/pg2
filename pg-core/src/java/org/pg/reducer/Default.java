@@ -3,7 +3,7 @@ package org.pg.reducer;
 import clojure.core$persistent_BANG_;
 import clojure.core$conj_BANG_;
 import clojure.lang.PersistentVector;
-import org.pg.msg.ClojureRow;
+import org.pg.clojure.LazyMap;
 
 public class Default implements IReducer {
 
@@ -13,7 +13,7 @@ public class Default implements IReducer {
         return PersistentVector.EMPTY.asTransient();
     }
 
-    public Object append(final Object acc, final ClojureRow row) {
+    public Object append(final Object acc, final LazyMap row) {
         return core$conj_BANG_.invokeStatic(acc, row);
     }
 

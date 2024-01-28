@@ -6,6 +6,7 @@ import clojure.lang.IPersistentMap;
 import clojure.lang.PersistentHashMap;
 import org.pg.auth.MD5;
 import org.pg.auth.ScramSha256;
+import org.pg.clojure.LazyMap;
 import org.pg.codec.EncoderBin;
 import org.pg.codec.CodecParams;
 import org.pg.codec.EncoderTxt;
@@ -1018,8 +1019,8 @@ public final class Connection implements AutoCloseable {
         final RowDescription rowDescription = acc.getRowDescription();
         final Object[] keys = acc.getCurrentKeys();
         final Map<Object, Short> keysIndex = acc.getCurrentKeysIndex();
-        final ClojureRow clojureRow = new ClojureRow(msg, rowDescription, keys, keysIndex, codecParams);
-        acc.addClojureRow(clojureRow);
+        final LazyMap lazyMap = new LazyMap(msg, rowDescription, keys, keysIndex, codecParams);
+        acc.addClojureRow(lazyMap);
     }
 
     private void handleDataRow(final DataRow msg, final Accum acc) {

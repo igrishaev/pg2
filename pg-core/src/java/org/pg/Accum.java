@@ -4,6 +4,7 @@ import clojure.lang.IFn;
 import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import org.pg.auth.ScramSha256;
+import org.pg.clojure.LazyMap;
 import org.pg.enums.Phase;
 import org.pg.msg.*;
 import org.pg.reducer.IReducer;
@@ -186,9 +187,9 @@ public final class Accum {
         };
     }
 
-    public void addClojureRow (final ClojureRow clojureRow) {
+    public void addClojureRow (final LazyMap lazyMap) {
         final IReducer reducer = executeParams.reducer();
-        current.acc = reducer.append(current.acc, clojureRow);
+        current.acc = reducer.append(current.acc, lazyMap);
     }
 
     private void addNode() {

@@ -1,6 +1,6 @@
 package org.pg.reducer;
 
-import org.pg.msg.ClojureRow;
+import org.pg.clojure.LazyMap;
 
 public class First implements IReducer {
 
@@ -10,7 +10,7 @@ public class First implements IReducer {
         return new Object[1];
     }
 
-    public Object append (final Object obj, final ClojureRow row) {
+    public Object append (final Object obj, final LazyMap row) {
         final Object[] acc = (Object[]) obj;
         if (acc[0] == null) {
             acc[0] = row;

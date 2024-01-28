@@ -2,7 +2,7 @@
 package org.pg.reducer;
 
 import clojure.lang.IFn;
-import org.pg.msg.ClojureRow;
+import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
@@ -18,7 +18,7 @@ public class Run implements IReducer {
         return 0;
     }
 
-    public Object append (final Object acc, final ClojureRow row) {
+    public Object append (final Object acc, final LazyMap row) {
         f.invoke(row);
         return (Integer) acc + 1;
     }

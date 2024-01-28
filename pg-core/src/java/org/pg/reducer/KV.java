@@ -5,7 +5,7 @@ import clojure.core$assoc_BANG_;
 import clojure.core$persistent_BANG_;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.IFn;
-import org.pg.msg.ClojureRow;
+import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
@@ -22,7 +22,7 @@ public class KV implements IReducer {
         return PersistentHashMap.EMPTY.asTransient();
     }
 
-    public Object append (final Object acc, final ClojureRow row) {
+    public Object append (final Object acc, final LazyMap row) {
         return core$assoc_BANG_.invokeStatic(acc, fk.invoke(row), fv.invoke(row));
     }
 

@@ -1,6 +1,6 @@
 package org.pg.reducer;
 
-import org.pg.msg.ClojureRow;
+import org.pg.clojure.LazyMap;
 
 // TODO: remove it?
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ public class Java implements IReducer {
         return new ArrayList<>();
     }
 
-    public Object append(final Object acc, final ClojureRow row) {
+    public Object append(final Object acc, final LazyMap row) {
         @SuppressWarnings("unchecked") final List<Object> _acc = (List<Object>) acc;
         _acc.add(row);
         return _acc;
