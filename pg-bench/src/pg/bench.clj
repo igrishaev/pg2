@@ -257,19 +257,19 @@ from
 
 (defn -main [& args]
 
-  (with-title "JDBC pool"
-    (with-open [^HikariDataSource datasource
-                (cp/make-datasource cp-options)]
-      (quick-bench
-       (with-open [conn
-                   (jdbc/get-connection datasource)]
-         (jdbc/execute! conn [QUERY_SELECT_JSON])))))
+  ;; (with-title "JDBC pool"
+  ;;   (with-open [^HikariDataSource datasource
+  ;;               (cp/make-datasource cp-options)]
+  ;;     (quick-bench
+  ;;      (with-open [conn
+  ;;                  (jdbc/get-connection datasource)]
+  ;;        (jdbc/execute! conn [QUERY_SELECT_JSON])))))
 
-  (with-title "PG pool"
-    (pool/with-pool [pool pg-config]
-      (quick-bench
-       (pool/with-connection [conn pool]
-         (pg/execute conn QUERY_SELECT_JSON)))))
+  ;; (with-title "PG pool"
+  ;;   (pool/with-pool [pool pg-config]
+  ;;     (quick-bench
+  ;;      (pool/with-connection [conn pool]
+  ;;        (pg/execute conn QUERY_SELECT_JSON)))))
 
   ;; (with-title "generating CSV"
   ;;   (generate-csv))
@@ -330,20 +330,19 @@ from
   ;;            (.put m "x" (.getString rs "x"))
   ;;            (.add l m)))))))
 
-  ;; (with-title "next.JDBC simple value select"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
+  (with-title "next.JDBC simple value select"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+       (jdbc/execute! conn
+                      [QUERY_SELECT_RANDOM_SIMPLE]
+                      {:as rs/as-unqualified-maps}))))
 
-  ;;     (quick-bench
-  ;;      (jdbc/execute! conn
-  ;;                     [QUERY_SELECT_RANDOM_SIMPLE]
-  ;;                     {:as rs/as-unqualified-maps}))))
-
-  ;; (with-title "pg complex simple select"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;      (pg/execute conn
-  ;;                  QUERY_SELECT_RANDOM_SIMPLE))))
+  (with-title "pg simple select"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/execute conn
+                   QUERY_SELECT_RANDOM_SIMPLE))))
 
   ;; (with-title "next.JDBC complex value select"
   ;;   (with-open [conn (jdbc/get-connection

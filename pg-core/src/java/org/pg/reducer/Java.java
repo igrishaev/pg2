@@ -2,10 +2,9 @@ package org.pg.reducer;
 
 import org.pg.msg.ClojureRow;
 
+// TODO: remove it?
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Java implements IReducer {
 

@@ -2,6 +2,8 @@
 - readme
 - archieve pg
 
+- remove java reducer?
+
 - arrays
   - decode txt
   - decode bin

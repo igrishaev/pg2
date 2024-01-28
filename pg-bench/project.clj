@@ -21,9 +21,6 @@
 
   :main pg.bench
 
-  :java-cmd
-  ~(System/getenv "JAVA_BIN")
-
   :parent-project
   {:path "../project.clj"
    :inherit [:deploy-repositories

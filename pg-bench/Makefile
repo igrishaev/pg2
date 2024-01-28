@@ -1,13 +1,13 @@
 
+java_home ?= $(error Please specify the java_home=... argument)
+
 main: repl
 
 repl:
-	export JAVA_BIN=${java_home}/bin/java && lein repl
-
-java_home ?= $(error Please specify the java_home=... argument)
+	JAVA_HOME=${java_home} lein repl
 
 bench:
-	export JAVA_BIN=${java_home}/bin/java && lein run
+	JAVA_HOME=${java_home} lein run
 
 type ?= $(error Please specify the type=... argument: pg | jdbc)
 

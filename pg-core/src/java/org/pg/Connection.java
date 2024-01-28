@@ -1015,10 +1015,10 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handleDataRowUnsafe(final DataRow msg, final Accum acc) {
-        final short size = msg.valueCount();
-        final RowDescription rowDescription= acc.getRowDescription();
-
-        final ClojureRow clojureRow = new ClojureRow(msg, rowDescription, acc.current.keys, codecParams);
+        final RowDescription rowDescription = acc.getRowDescription();
+        final Object[] keys = acc.getCurrentKeys();
+        final Map<Object, Short> keysIndex = acc.getCurrentKeysIndex();
+        final ClojureRow clojureRow = new ClojureRow(msg, rowDescription, keys, keysIndex, codecParams);
         acc.addClojureRow(clojureRow);
     }
 
