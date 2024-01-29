@@ -31,6 +31,11 @@ public final class LazyMap extends APersistentMap {
         this.parsedValues = new HashMap<>(dataRow.valueCount());
     }
 
+    @SuppressWarnings("unused")
+    private boolean isFullyParsed () {
+        return parsedValues.size() == rowDescription.columnCount();
+    }
+
     public LazyVector toLazyVector () {
         return new LazyVector(this);
     }
@@ -67,7 +72,7 @@ public final class LazyMap extends APersistentMap {
             parsedValues.put(i, null);
             return null;
         }
-
+        
         final RowDescription.Column col = rowDescription.columns()[i];
 
         final Object value = switch (col.format()) {
@@ -89,15 +94,6 @@ public final class LazyMap extends APersistentMap {
         }
         final int i = keysIndex.get(key);
         return getValueByIndex(i);
-
-    }
-
-    @Override
-    public String toString () {
-        return String.format("<LazyMap, keys: %s, evaluated values: %s>",
-                keysIndex.keySet(),
-                parsedValues
-        );
     }
 
     @Override
