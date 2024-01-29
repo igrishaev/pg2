@@ -260,6 +260,26 @@ from
   (with-title "generating CSV"
     (generate-csv))
 
+  (with-title "next.JDBC simple value select with ASSOC"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+        (let [rows
+              (jdbc/execute! conn
+                             [QUERY_SELECT_RANDOM_SIMPLE]
+                             {:as rs/as-unqualified-maps})]
+          (doseq [row rows]
+            (assoc row :extra 42))))))
+
+  (with-title "pg simple select with ASSOC"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+        (let [rows
+              (pg/execute conn
+                          QUERY_SELECT_RANDOM_SIMPLE)]
+          (doseq [row rows]
+            (assoc row :extra 42))))))
+
   (with-title "JDBC pool"
     (with-open [^HikariDataSource datasource
                 (cp/make-datasource cp-options)]
