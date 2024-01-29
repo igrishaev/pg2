@@ -6,6 +6,8 @@
 - remove java reducer?
 - ensure tests pass
 - benchmark and post
+- try atom?
+- check if fully parsed
 
 - arrays
   - decode txt
