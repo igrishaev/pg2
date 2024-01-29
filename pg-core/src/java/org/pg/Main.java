@@ -63,7 +63,7 @@ public final class Main {
 
         // System.out.println(conn.execute(""));
 
-        PreparedStatement ps = conn.prepare("select $1::int as foo");
+        PreparedStatement ps = conn.prepare("select $1::int as foo, 'test' as string, 42 as num");
         List<Object> params = List.of(1);
         Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(params).build());
         conn.closeStatement(ps);

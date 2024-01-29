@@ -15,7 +15,7 @@ public class Matrix implements IReducer {
     }
 
     public Object append(final Object acc, final LazyMap row) {
-        return core$conj_BANG_.invokeStatic(acc, row);
+        return core$conj_BANG_.invokeStatic(acc, row.toLazyVector());
     }
 
     public Object finalize(final Object acc) {

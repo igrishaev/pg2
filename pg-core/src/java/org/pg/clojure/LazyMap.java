@@ -15,53 +15,56 @@ public final class LazyMap extends APersistentMap {
 
     private final DataRow dataRow;
     private final RowDescription rowDescription;
-    private final Object[] keys;
-    private final CodecParams codecParams;
-    private final Map<Object, Object> parsedValues;
     private final Map<Object, Short> keysIndex;
+    private final CodecParams codecParams;
+    private final Map<Integer, Object> parsedValues;
 
     public LazyMap(final DataRow dataRow,
                    final RowDescription rowDescription,
-                   final Object[] keys,
                    final Map<Object, Short> keysIndex,
                    final CodecParams codecParams
     ) {
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
-        this.keys = keys;
         this.keysIndex = keysIndex;
         this.codecParams = codecParams;
-        this.parsedValues = new HashMap<>(keys.length);
+        this.parsedValues = new HashMap<>(dataRow.valueCount());
     }
 
-    @SuppressWarnings("unused")
     public LazyVector toLazyVector () {
-        return new LazyVector(dataRow, rowDescription, codecParams);
+        return new LazyVector(this);
     }
 
-    private IPersistentMap toMap () {
+    private IPersistentMap toClojureMap() {
         IPersistentMap result = PersistentHashMap.EMPTY;
-        for (final Object key: keys) {
-            result = result.assoc(key, getValueByKey(key));
+        for (final Map.Entry<Object, Short> mapEntry: keysIndex.entrySet()) {
+            result = result.assoc(mapEntry.getKey(), getValueByIndex(mapEntry.getValue()));
         }
         return result;
     }
 
-    private Object getValueByKey (final Object key) {
+    public Map<Object, Object> toJavaMap() {
+        final Map<Object, Object> result = new HashMap<>(keysIndex.size());
+        for (final Map.Entry<Object, Short> mapEntry: keysIndex.entrySet()) {
+            result.put(mapEntry.getKey(), getValueByIndex(mapEntry.getValue()));
+        }
+        return result;
+    }
 
-        if (!keysIndex.containsKey(key)) {
+    public Object getValueByIndex (final int i) {
+
+        if (parsedValues.containsKey(i)) {
+            return parsedValues.get(i);
+        }
+
+        if (i < 0 || i >= dataRow.valueCount()) {
             return null;
         }
 
-        if (parsedValues.containsKey(key)) {
-            return parsedValues.get(key);
-        }
-
-        final int i = keysIndex.get(key);
         final ByteBuffer buf = dataRow.values()[i];
 
         if (buf == null) {
-            parsedValues.put(key, null);
+            parsedValues.put(i, null);
             return null;
         }
 
@@ -75,14 +78,24 @@ public final class LazyMap extends APersistentMap {
             case BIN -> DecoderBin.decode(buf, col.typeOid(), codecParams);
         };
 
-        parsedValues.put(key, value);
+        parsedValues.put(i, value);
         return value;
+    }
+
+
+    private Object getValueByKey (final Object key) {
+        if (!keysIndex.containsKey(key)) {
+            return null;
+        }
+        final int i = keysIndex.get(key);
+        return getValueByIndex(i);
+
     }
 
     @Override
     public String toString () {
         return String.format("<LazyMap, keys: %s, evaluated values: %s>",
-                Arrays.toString(keys),
+                keysIndex.keySet(),
                 parsedValues
         );
     }
@@ -92,7 +105,6 @@ public final class LazyMap extends APersistentMap {
         return keysIndex.containsKey(key);
     }
 
-
     @Override
     public IMapEntry entryAt(final Object key) {
         final Object value = getValueByKey(key);
@@ -101,17 +113,17 @@ public final class LazyMap extends APersistentMap {
 
     @Override
     public IPersistentMap assoc(final Object key, final Object val) {
-        return toMap().assoc(key, val);
+        return toClojureMap().assoc(key, val);
     }
 
     @Override
     public IPersistentMap assocEx(final Object key, final Object val) {
-        return toMap().assocEx(key, val);
+        return toClojureMap().assocEx(key, val);
     }
 
     @Override
     public IPersistentMap without(final Object key) {
-        return toMap().without(key);
+        return toClojureMap().without(key);
     }
 
     @Override
@@ -131,7 +143,7 @@ public final class LazyMap extends APersistentMap {
 
     @Override
     public int count() {
-        return keys.length;
+        return dataRow.valueCount();
     }
 
     @Override
@@ -141,13 +153,13 @@ public final class LazyMap extends APersistentMap {
 
     @Override
     public ISeq seq() {
-        return toMap().seq();
+        return toClojureMap().seq();
     }
 
     @Override
     @SuppressWarnings("rawtypes")
     public Iterator iterator() {
-        return toMap().iterator();
+        return toClojureMap().iterator();
     }
 
 }

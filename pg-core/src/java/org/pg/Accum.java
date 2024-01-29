@@ -24,7 +24,6 @@ public final class Accum {
          private CommandComplete commandComplete;
          private ParseComplete parseComplete;
          private ParameterDescription parameterDescription;
-         private Object[] keys;
          private Map<Object, Short> keysIndex;
          private Object acc;
 
@@ -144,10 +143,6 @@ public final class Accum {
         current.parseComplete = msg;
     }
 
-    public Object[] getCurrentKeys () {
-        return current.keys;
-    }
-
     public Map<Object, Short> getCurrentKeysIndex () {
         return current.keysIndex;
     }
@@ -163,7 +158,6 @@ public final class Accum {
             keys[i] = newKey;
             keysIndex.put(newKey, i);
         }
-        current.keys = keys;
         current.keysIndex = keysIndex;
         current.acc = executeParams.reducer().initiate(keys);
     }

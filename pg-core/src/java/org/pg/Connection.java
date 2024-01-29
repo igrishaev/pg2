@@ -1017,9 +1017,8 @@ public final class Connection implements AutoCloseable {
 
     private void handleDataRowUnsafe(final DataRow msg, final Accum acc) {
         final RowDescription rowDescription = acc.getRowDescription();
-        final Object[] keys = acc.getCurrentKeys();
         final Map<Object, Short> keysIndex = acc.getCurrentKeysIndex();
-        final LazyMap lazyMap = new LazyMap(msg, rowDescription, keys, keysIndex, codecParams);
+        final LazyMap lazyMap = new LazyMap(msg, rowDescription, keysIndex, codecParams);
         acc.addClojureRow(lazyMap);
     }
 
