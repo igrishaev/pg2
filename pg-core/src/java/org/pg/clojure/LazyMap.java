@@ -41,11 +41,11 @@ public final class LazyMap extends APersistentMap {
     }
 
     private IPersistentMap toClojureMap() {
-        IPersistentMap result = PersistentHashMap.EMPTY;
+        ITransientMap result = PersistentHashMap.EMPTY.asTransient();
         for (final Map.Entry<Object, Short> mapEntry: keysIndex.entrySet()) {
             result = result.assoc(mapEntry.getKey(), getValueByIndex(mapEntry.getValue()));
         }
-        return result;
+        return result.persistent();
     }
 
     public Map<Object, Object> toJavaMap() {

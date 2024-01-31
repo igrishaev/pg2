@@ -172,6 +172,19 @@ from
 
 ")
 
+
+(def QUERY_SELECT_RANDOM_MANY_FIELDS
+  "
+select
+   now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+  ,now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+  ,now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+  ,now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+  ,now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+from
+  generate_series(1,50000) as s(x)
+")
+
 (def QUERY_INSERT_PG
   "insert into aaa(id, name, created_at) values ($1, $2, $3)")
 
@@ -260,137 +273,160 @@ from
   (with-title "generating CSV"
     (generate-csv))
 
-  (with-title "next.JDBC simple value select with ASSOC"
+  (with-title "next.JDBC select with many fields"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
       (quick-bench
-        (let [rows
-              (jdbc/execute! conn
-                             [QUERY_SELECT_RANDOM_SIMPLE]
-                             {:as rs/as-unqualified-maps})]
-          (doseq [row rows]
-            (assoc row :extra 42))))))
+       (let [rows
+             (jdbc/execute! conn
+                            [QUERY_SELECT_RANDOM_MANY_FIELDS]
+                            {:as rs/as-unqualified-maps})]
+         #_
+         (doseq [row rows]
+           (assoc row :extra 42))))))
 
-  (with-title "pg simple select with ASSOC"
+  (with-title "pg select with many fields"
     (pg/with-connection [conn pg-config]
       (quick-bench
         (let [rows
               (pg/execute conn
-                          QUERY_SELECT_RANDOM_SIMPLE)]
+                          QUERY_SELECT_RANDOM_MANY_FIELDS)]
+          #_
           (doseq [row rows]
             (assoc row :extra 42))))))
 
-  (with-title "JDBC pool"
-    (with-open [^HikariDataSource datasource
-                (cp/make-datasource cp-options)]
-      (quick-bench
-       (with-open [conn
-                   (jdbc/get-connection datasource)]
-         (jdbc/execute! conn [QUERY_SELECT_JSON])))))
 
-  (with-title "PG pool"
-    (pool/with-pool [pool pg-config]
-      (quick-bench
-       (pool/with-connection [conn pool]
-         (pg/execute conn QUERY_SELECT_JSON)))))
+  ;; (with-title "next.JDBC simple value select with ASSOC"
+  ;;   (with-open [conn (jdbc/get-connection
+  ;;                     jdbc-config)]
+  ;;     (quick-bench
+  ;;      (let [rows
+  ;;            (jdbc/execute! conn
+  ;;                           [QUERY_SELECT_RANDOM_SIMPLE]
+  ;;                           {:as rs/as-unqualified-maps})]
+  ;;        (doseq [row rows]
+  ;;          (assoc row :extra 42))))))
 
-  (pg/with-connection [conn pg-config]
-    (pg/execute conn QUERY_TABLE))
+  ;; (with-title "pg simple select with ASSOC"
+  ;;   (pg/with-connection [conn pg-config]
+  ;;     (quick-bench
+  ;;       (let [rows
+  ;;             (pg/execute conn
+  ;;                         QUERY_SELECT_RANDOM_SIMPLE)]
+  ;;         (doseq [row rows]
+  ;;           (assoc row :extra 42))))))
 
-  (with-title "next.JDBC reduce run!"
-    (with-open [conn (jdbc/get-connection
-                      jdbc-config)]
-      (quick-bench
-       (let [result
-             (jdbc/plan conn [QUERY_SELECT_RANDOM_SIMPLE])]
-         (run! process-row result)))))
+  ;; (with-title "JDBC pool"
+  ;;   (with-open [^HikariDataSource datasource
+  ;;               (cp/make-datasource cp-options)]
+  ;;     (quick-bench
+  ;;      (with-open [conn
+  ;;                  (jdbc/get-connection datasource)]
+  ;;        (jdbc/execute! conn [QUERY_SELECT_JSON])))))
 
-  (with-title "pg reduce run!"
-    (pg/with-connection [conn pg-config]
-      (pg/with-statement [stmt
-                          conn
-                          QUERY_SELECT_RANDOM_SIMPLE]
-        (quick-bench
-         (pg/execute-statement conn
-                               stmt
-                               {:run process-row})))))
+  ;; (with-title "PG pool"
+  ;;   (pool/with-pool [pool pg-config]
+  ;;     (quick-bench
+  ;;      (pool/with-connection [conn pool]
+  ;;        (pg/execute conn QUERY_SELECT_JSON)))))
 
-  (with-title "pg reduce map"
-    (pg/with-connection [conn pg-config]
-      (pg/with-statement [stmt
-                          conn
-                          QUERY_SELECT_RANDOM_SIMPLE]
-        (quick-bench
-         (pg/execute-statement conn
-                               stmt
-                               {:fold fold-row
-                                :init {}})))))
+  ;; (pg/with-connection [conn pg-config]
+  ;;   (pg/execute conn QUERY_TABLE))
 
-  (with-title "next.JDBC reduce map"
-    (with-open [conn (jdbc/get-connection
-                      jdbc-config)]
+  ;; (with-title "next.JDBC reduce run!"
+  ;;   (with-open [conn (jdbc/get-connection
+  ;;                     jdbc-config)]
+  ;;     (quick-bench
+  ;;      (let [result
+  ;;            (jdbc/plan conn [QUERY_SELECT_RANDOM_SIMPLE])]
+  ;;        (run! process-row result)))))
 
-      (quick-bench
-       (let [result
-             (jdbc/plan conn [QUERY_SELECT_RANDOM_SIMPLE])]
-         (reduce fold-row
-                 {}
-                 result)))))
+  ;; (with-title "pg reduce run!"
+  ;;   (pg/with-connection [conn pg-config]
+  ;;     (pg/with-statement [stmt
+  ;;                         conn
+  ;;                         QUERY_SELECT_RANDOM_SIMPLE]
+  ;;       (quick-bench
+  ;;        (pg/execute-statement conn
+  ;;                              stmt
+  ;;                              {:run process-row})))))
 
-  (with-title "pure JDBC simple select"
-    (let [^java.sql.Connection conn
-          (DriverManager/getConnection JDBC-URL USER USER)
-          ^PreparedStatement stmt
-          (.prepareStatement conn QUERY_SELECT_RANDOM_SIMPLE)]
-      (quick-bench
-       (let [^ResultSet rs (.executeQuery stmt)
-             ^ArrayList l (new ArrayList 50000)]
-         (while (.next rs)
-           (let [^HashMap m (new HashMap)]
-             (.put m "x" (.getString rs "x"))
-             (.add l m)))))))
+  ;; (with-title "pg reduce map"
+  ;;   (pg/with-connection [conn pg-config]
+  ;;     (pg/with-statement [stmt
+  ;;                         conn
+  ;;                         QUERY_SELECT_RANDOM_SIMPLE]
+  ;;       (quick-bench
+  ;;        (pg/execute-statement conn
+  ;;                              stmt
+  ;;                              {:fold fold-row
+  ;;                               :init {}})))))
 
-  (with-title "next.JDBC simple value select"
-    (with-open [conn (jdbc/get-connection
-                      jdbc-config)]
-      (quick-bench
-       (jdbc/execute! conn
-                      [QUERY_SELECT_RANDOM_SIMPLE]
-                      {:as rs/as-unqualified-maps}))))
+  ;; (with-title "next.JDBC reduce map"
+  ;;   (with-open [conn (jdbc/get-connection
+  ;;                     jdbc-config)]
 
-  (with-title "pg simple select"
-    (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/execute conn
-                   QUERY_SELECT_RANDOM_SIMPLE))))
+  ;;     (quick-bench
+  ;;      (let [result
+  ;;            (jdbc/plan conn [QUERY_SELECT_RANDOM_SIMPLE])]
+  ;;        (reduce fold-row
+  ;;                {}
+  ;;                result)))))
 
-  (with-title "next.JDBC complex value select"
-    (with-open [conn (jdbc/get-connection
-                      jdbc-config)]
-      (quick-bench
-       (jdbc/execute! conn
-                      [QUERY_SELECT_RANDOM_COMPLEX]
-                      {:as rs/as-unqualified-maps}))))
+  ;; (with-title "pure JDBC simple select"
+  ;;   (let [^java.sql.Connection conn
+  ;;         (DriverManager/getConnection JDBC-URL USER USER)
+  ;;         ^PreparedStatement stmt
+  ;;         (.prepareStatement conn QUERY_SELECT_RANDOM_SIMPLE)]
+  ;;     (quick-bench
+  ;;      (let [^ResultSet rs (.executeQuery stmt)
+  ;;            ^ArrayList l (new ArrayList 50000)]
+  ;;        (while (.next rs)
+  ;;          (let [^HashMap m (new HashMap)]
+  ;;            (.put m "x" (.getString rs "x"))
+  ;;            (.add l m)))))))
 
-  (with-title "pg complex value select"
-    (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/execute conn
-                   QUERY_SELECT_RANDOM_COMPLEX))))
+  ;; (with-title "next.JDBC simple value select"
+  ;;   (with-open [conn (jdbc/get-connection
+  ;;                     jdbc-config)]
+  ;;     (quick-bench
+  ;;      (jdbc/execute! conn
+  ;;                     [QUERY_SELECT_RANDOM_SIMPLE]
+  ;;                     {:as rs/as-unqualified-maps}))))
 
-  (with-title "next.JDBC random JSON select"
-    (with-open [conn (jdbc/get-connection
-                      jdbc-config)]
-      (quick-bench
-       (jdbc/execute! conn
-                      [QUERY_SELECT_JSON]
-                      {:as rs/as-unqualified-maps}))))
+  ;; (with-title "pg simple select"
+  ;;   (pg/with-connection [conn pg-config]
+  ;;     (quick-bench
+  ;;      (pg/execute conn
+  ;;                  QUERY_SELECT_RANDOM_SIMPLE))))
 
-  (with-title "pg random JSON select"
-    (pg/with-connection [conn pg-config]
-      (quick-bench
-       (pg/execute conn
-                   QUERY_SELECT_JSON))))
+  ;; (with-title "next.JDBC complex value select"
+  ;;   (with-open [conn (jdbc/get-connection
+  ;;                     jdbc-config)]
+  ;;     (quick-bench
+  ;;      (jdbc/execute! conn
+  ;;                     [QUERY_SELECT_RANDOM_COMPLEX]
+  ;;                     {:as rs/as-unqualified-maps}))))
+
+  ;; (with-title "pg complex value select"
+  ;;   (pg/with-connection [conn pg-config]
+  ;;     (quick-bench
+  ;;      (pg/execute conn
+  ;;                  QUERY_SELECT_RANDOM_COMPLEX))))
+
+  ;; (with-title "next.JDBC random JSON select"
+  ;;   (with-open [conn (jdbc/get-connection
+  ;;                     jdbc-config)]
+  ;;     (quick-bench
+  ;;      (jdbc/execute! conn
+  ;;                     [QUERY_SELECT_JSON]
+  ;;                     {:as rs/as-unqualified-maps}))))
+
+  ;; (with-title "pg random JSON select"
+  ;;   (pg/with-connection [conn pg-config]
+  ;;     (quick-bench
+  ;;      (pg/execute conn
+  ;;                  QUERY_SELECT_JSON))))
 
   ;; (with-title "pg insert values in TRANSACTION"
   ;;   (pg/with-connection [conn pg-config]
