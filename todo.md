@@ -1,6 +1,10 @@
 
-- readme
+- merge and release
 - benchmark and post
+
+- readme
+
+- next.jdbc-compatible api
 
 - arrays
   - decode txt
