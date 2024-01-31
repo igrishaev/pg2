@@ -1,5 +1,6 @@
 package org.pg;
 
+import java.util.Collections;
 import java.util.List;
 
 public final class Main {
@@ -63,8 +64,11 @@ public final class Main {
 
         // System.out.println(conn.execute(""));
 
-        PreparedStatement ps = conn.prepare("select $1::int as foo, 'test' as string, 42 as num");
-        List<Object> params = List.of(1);
+        String query = "select '1 year 1 second'::interval as interval";
+        // "select $1::int as foo, 'test' as string, 42 as num, now() as now"
+        PreparedStatement ps = conn.prepare(query);
+        // List<Object> params = List.of(1);
+        List<Object> params = Collections.emptyList();
         Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(params).build());
         conn.closeStatement(ps);
         System.out.println(res2.toString());

@@ -270,8 +270,8 @@ from
 
 (defn -main [& args]
 
-  (with-title "generating CSV"
-    (generate-csv))
+  ;; (with-title "generating CSV"
+  ;;   (generate-csv))
 
   (with-title "next.JDBC select with many fields"
     (with-open [conn (jdbc/get-connection
@@ -281,7 +281,6 @@ from
              (jdbc/execute! conn
                             [QUERY_SELECT_RANDOM_MANY_FIELDS]
                             {:as rs/as-unqualified-maps})]
-         #_
          (doseq [row rows]
            (assoc row :extra 42))))))
 
@@ -291,7 +290,6 @@ from
         (let [rows
               (pg/execute conn
                           QUERY_SELECT_RANDOM_MANY_FIELDS)]
-          #_
           (doseq [row rows]
             (assoc row :extra 42))))))
 

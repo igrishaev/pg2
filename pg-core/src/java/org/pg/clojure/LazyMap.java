@@ -17,23 +17,21 @@ public final class LazyMap extends APersistentMap {
     private final RowDescription rowDescription;
     private final Map<Object, Short> keysIndex;
     private final CodecParams codecParams;
-    private final Map<Integer, Object> parsedValues;
+    private final Object[] parsedValues;
+    private final boolean[] parsedKeys;
 
     public LazyMap(final DataRow dataRow,
                    final RowDescription rowDescription,
                    final Map<Object, Short> keysIndex,
                    final CodecParams codecParams
     ) {
+        final int count = dataRow.count();
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
         this.keysIndex = keysIndex;
         this.codecParams = codecParams;
-        this.parsedValues = new HashMap<>(dataRow.valueCount());
-    }
-
-    @SuppressWarnings("unused")
-    private boolean isFullyParsed () {
-        return parsedValues.size() == rowDescription.columnCount();
+        this.parsedValues = new Object[count];
+        this.parsedKeys = new boolean[count];
     }
 
     public LazyVector toLazyVector () {
@@ -58,32 +56,42 @@ public final class LazyMap extends APersistentMap {
 
     public Object getValueByIndex (final int i) {
 
-        if (parsedValues.containsKey(i)) {
-            return parsedValues.get(i);
-        }
-
-        if (i < 0 || i >= dataRow.valueCount()) {
+        if (i < 0 || i >= parsedKeys.length) {
             return null;
         }
 
-        final ByteBuffer buf = dataRow.values()[i];
+        if (parsedKeys[i]) {
+            return parsedValues[i];
+        }
 
-        if (buf == null) {
-            parsedValues.put(i, null);
+        final int[][] ToC = dataRow.ToC();
+
+        final int offset = ToC[i][0];
+        final int length = ToC[i][1];
+
+        if (length == -1) {
+            parsedKeys[i] = true;
+            parsedValues[i] = null;
             return null;
         }
-        
+
+        final byte[] payload = dataRow.payload();
         final RowDescription.Column col = rowDescription.columns()[i];
 
         final Object value = switch (col.format()) {
             case TXT -> {
-                final String string = BBTool.getString(buf, codecParams.serverCharset);
+                final String string = new String(payload, offset, length, codecParams.serverCharset);
                 yield DecoderTxt.decode(string, col.typeOid());
             }
-            case BIN -> DecoderBin.decode(buf, col.typeOid(), codecParams);
+            case BIN -> {
+                final ByteBuffer buf = ByteBuffer.wrap(payload, offset, length);
+                yield DecoderBin.decode(buf, col.typeOid(), codecParams);
+            }
         };
 
-        parsedValues.put(i, value);
+        parsedKeys[i] = true;
+        parsedValues[i] = value;
+
         return value;
     }
 
@@ -139,7 +147,7 @@ public final class LazyMap extends APersistentMap {
 
     @Override
     public int count() {
-        return dataRow.valueCount();
+        return dataRow.count();
     }
 
     @Override
