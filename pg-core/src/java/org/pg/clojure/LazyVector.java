@@ -16,11 +16,8 @@ public class LazyVector extends APersistentVector {
     }
 
     private PersistentVector toVector() {
-        PersistentVector result = PersistentVector.EMPTY;
-        for (int i = 0; i < lazyMap.count(); i++) {
-            result = result.cons(lazyMap.getValueByIndex(i));
-        }
-        return result;
+        lazyMap.parseAll();
+        return PersistentVector.adopt(lazyMap.getParsedValues());
     }
 
     @Override

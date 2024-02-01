@@ -33,6 +33,18 @@ public final class LazyMap extends APersistentMap {
         this.parsedKeys = new boolean[count];
     }
 
+    public void parseAll () {
+        for (int i = 0; i < parsedKeys.length; i++) {
+            if (!parsedKeys[i]) {
+                getValueByIndex(i);
+            }
+        }
+    }
+
+    public Object[] getParsedValues () {
+        return parsedValues;
+    }
+
     public LazyVector toLazyVector () {
         return new LazyVector(this);
     }
