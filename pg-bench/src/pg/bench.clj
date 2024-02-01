@@ -273,7 +273,21 @@ from
   ;; (with-title "generating CSV"
   ;;   (generate-csv))
 
-  (with-title "next.JDBC select with many fields"
+  (with-title "next.JDBC select many fields NO ASSOC"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+       (jdbc/execute! conn
+                      [QUERY_SELECT_RANDOM_MANY_FIELDS]
+                      {:as rs/as-unqualified-maps}))))
+
+  (with-title "pg select many fields NO ASSOC"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/execute conn
+                   QUERY_SELECT_RANDOM_MANY_FIELDS))))
+
+  (with-title "next.JDBC select many fields WITH ASSOC"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
       (quick-bench
@@ -284,7 +298,7 @@ from
          (doseq [row rows]
            (assoc row :extra 42))))))
 
-  (with-title "pg select with many fields"
+  (with-title "pg select many fields WITH ASSOC"
     (pg/with-connection [conn pg-config]
       (quick-bench
         (let [rows
