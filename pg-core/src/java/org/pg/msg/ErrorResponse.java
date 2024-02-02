@@ -4,7 +4,7 @@ import clojure.lang.IPersistentCollection;
 import clojure.lang.ITransientAssociative;
 import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
-import org.pg.util.IClojure;
+import org.pg.clojure.IClojure;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

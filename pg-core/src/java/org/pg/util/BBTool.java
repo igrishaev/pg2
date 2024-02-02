@@ -59,7 +59,7 @@ public final class BBTool {
     }
 
     public static byte[] getRestBytes (final ByteBuffer buf) {
-        final int size = buf.limit();
+        final int size = buf.limit() - buf.position();
         final byte[] bytes = new byte[size];
         buf.get(bytes);
         return bytes;

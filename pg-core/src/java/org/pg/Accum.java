@@ -4,6 +4,7 @@ import clojure.lang.IFn;
 import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import org.pg.auth.ScramSha256;
+import org.pg.clojure.LazyMap;
 import org.pg.enums.Phase;
 import org.pg.msg.*;
 import org.pg.reducer.IReducer;
@@ -23,7 +24,7 @@ public final class Accum {
          private CommandComplete commandComplete;
          private ParseComplete parseComplete;
          private ParameterDescription parameterDescription;
-         private Object[] keys;
+         private Map<Object, Short> keysIndex;
          private Object acc;
 
          private boolean isComplete() {
@@ -142,15 +143,22 @@ public final class Accum {
         current.parseComplete = msg;
     }
 
+    public Map<Object, Short> getCurrentKeysIndex () {
+        return current.keysIndex;
+    }
+
     public void handleRowDescription(final RowDescription msg) {
         current.rowDescription = msg;
         final IFn fnKeyTransform = executeParams.fnKeyTransform();
         final String[] names = unifyKeys(msg.getColumnNames());
         final Object[] keys = new Object[names.length];
+        final Map<Object, Short> keysIndex = new HashMap<>(keys.length);
         for (short i = 0; i < keys.length; i ++) {
-            keys[i] = fnKeyTransform.invoke(names[i]);
+            final Object newKey = fnKeyTransform.invoke(names[i]);
+            keys[i] = newKey;
+            keysIndex.put(newKey, i);
         }
-        current.keys = keys;
+        current.keysIndex = keysIndex;
         current.acc = executeParams.reducer().initiate(keys);
     }
 
@@ -159,7 +167,6 @@ public final class Accum {
         addNode();
     }
 
-    // TODO: array?
     public Object getResult () {
         final ArrayList<Object> results = new ArrayList<>(1);
         for (Node node: nodes) {
@@ -174,10 +181,9 @@ public final class Accum {
         };
     }
 
-    public void setCurrentValues (final Object[] values) {
+    public void addClojureRow (final LazyMap lazyMap) {
         final IReducer reducer = executeParams.reducer();
-        final Object row = reducer.compose(current.keys, values);
-        current.acc = reducer.append(current.acc, row);
+        current.acc = reducer.append(current.acc, lazyMap);
     }
 
     private void addNode() {

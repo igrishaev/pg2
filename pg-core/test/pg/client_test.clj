@@ -14,7 +14,9 @@
    java.util.HashMap
    java.util.concurrent.ExecutionException
    org.pg.PGError
-   org.pg.PGErrorResponse)
+   org.pg.PGErrorResponse
+   org.pg.clojure.LazyMap
+   org.pg.clojure.LazyVector)
   (:require
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
@@ -22,12 +24,12 @@
    [clojure.test :refer [deftest is use-fixtures testing]]
    [com.stuartsierra.component :as component]
    [less.awful.ssl :as ssl]
+   [pg.component :as pgc]
    [pg.core :as pg]
+   [pg.honey :as pgh]
    [pg.integration :refer [*CONFIG*
                            *PORT*
                            fix-multi-port]]
-   [pg.component :as pgc]
-   [pg.honey :as pgh]
    [pg.oid :as oid]
    [pg.pool :as pool]))
 
@@ -200,6 +202,59 @@ from
           (pg/query conn "select 'hello' as bar")]
       (is (= [{:foo 1}] res1))
       (is (= [{:bar "hello"}] res2)))))
+
+
+(deftest test-client-lazy-map
+  (pg/with-connection [conn *CONFIG*]
+    (let [[row1]
+          (pg/query conn "select 42 as foo, 'test' as bar")]
+
+      (is (map? row1))
+      (is (instance? LazyMap row1))
+
+      (is (= [:bar :foo] (sort (keys row1))))
+      (is (= #{42 "test"} (set (vals row1))))
+
+      (is (= row1 {:foo 42 :bar "test"}))
+      (is (= {:foo 42 :bar "test"} row1))
+
+      (is (= {:foo 42 :x 3}
+             (-> row1
+                 (assoc :x 3)
+                 (dissoc :bar))))
+
+      (is (= {} (empty row1)))
+
+      (is (nil? (get row1 :aaa)))
+      (is (= :bbb (get row1 :aaa :bbb)))
+
+      (is (= #{[:bar "test"] [:foo 42]} (-> row1 seq set)))
+      (is (= 2 (count row1))))))
+
+
+(deftest test-client-lazy-vector
+  (pg/with-connection [conn *CONFIG*]
+    (let [[_ row1]
+          (pg/query conn
+                    "select 42 as foo, 'test' as bar, 43 as foo"
+                    {:matrix? true})]
+
+      (is (= [42 "test" 43] row1))
+      (is (= row1 [42 "test" 43]))
+
+      (is (instance? LazyVector row1))
+      (is (= 3 (count row1)))
+
+      (is (nil? (get row1 -1)))
+      (is (nil? (get row1 99)))
+
+      (is (= [42 "test" 43 3] (conj row1 3)))
+
+      (is (= [] (empty row1)))
+
+      (is (= [42 "test"] (pop row1)))
+      (is (= 43 (peek row1)))
+      (is (= (list 42 "test" 43) (seq row1))))))
 
 
 (deftest test-client-socket-opt

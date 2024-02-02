@@ -5,10 +5,11 @@ import clojure.core$assoc_BANG_;
 import clojure.core$persistent_BANG_;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.IFn;
+import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
-public class IndexBy extends MapMixin implements IReducer {
+public class IndexBy implements IReducer {
 
     private final IFn f;
 
@@ -20,7 +21,7 @@ public class IndexBy extends MapMixin implements IReducer {
         return PersistentHashMap.EMPTY.asTransient();
     }
 
-    public Object append (final Object acc, final Object row) {
+    public Object append (final Object acc, final LazyMap row) {
         return core$assoc_BANG_.invokeStatic(acc, f.invoke(row), row);
     }
 

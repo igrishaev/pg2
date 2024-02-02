@@ -1,18 +1,16 @@
 package org.pg.reducer;
 
+import org.pg.clojure.LazyMap;
+
 public class Dummy implements IReducer {
 
     public static IReducer INSTANCE = new Dummy();
-
-    public Object compose(final Object[] keys, final Object[] vals) {
-        return null;
-    }
 
     public Object initiate(final Object[] ignored) {
         return null;
     }
 
-    public Object append(final Object acc, final Object row) {
+    public Object append(final Object acc, final LazyMap row) {
         return acc;
     }
 

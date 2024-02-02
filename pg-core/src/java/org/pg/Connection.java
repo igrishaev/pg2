@@ -6,8 +6,7 @@ import clojure.lang.IPersistentMap;
 import clojure.lang.PersistentHashMap;
 import org.pg.auth.MD5;
 import org.pg.auth.ScramSha256;
-import org.pg.codec.DecoderBin;
-import org.pg.codec.DecoderTxt;
+import org.pg.clojure.LazyMap;
 import org.pg.codec.EncoderBin;
 import org.pg.codec.CodecParams;
 import org.pg.codec.EncoderTxt;
@@ -1017,27 +1016,10 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handleDataRowUnsafe(final DataRow msg, final Accum acc) {
-        final short size = msg.valueCount();
-        final RowDescription.Column[] cols = acc.getRowDescription().columns();
-        final ByteBuffer[] bufs = msg.values();
-        final Object[] values = new Object[size];
-        for (short i = 0; i < size; i++) {
-            final ByteBuffer buf = bufs[i];
-            if (buf == null) {
-                values[i] = null;
-                continue;
-            }
-            final RowDescription.Column col = cols[i];
-            final Object value = switch (col.format()) {
-                case TXT -> {
-                    final String string = BBTool.getString(buf, codecParams.serverCharset);
-                    yield DecoderTxt.decode(string, col.typeOid());
-                }
-                case BIN -> DecoderBin.decode(buf, col.typeOid(), codecParams);
-            };
-            values[i] = value;
-        }
-        acc.setCurrentValues(values);
+        final RowDescription rowDescription = acc.getRowDescription();
+        final Map<Object, Short> keysIndex = acc.getCurrentKeysIndex();
+        final LazyMap lazyMap = new LazyMap(msg, rowDescription, keysIndex, codecParams);
+        acc.addClojureRow(lazyMap);
     }
 
     private void handleDataRow(final DataRow msg, final Accum acc) {

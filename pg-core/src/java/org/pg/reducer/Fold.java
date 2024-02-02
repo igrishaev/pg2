@@ -2,10 +2,11 @@
 package org.pg.reducer;
 
 import clojure.lang.IFn;
+import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
-public class Fold extends MapMixin implements IReducer {
+public class Fold implements IReducer {
 
     private final IFn f;
     private final Object init;
@@ -19,7 +20,7 @@ public class Fold extends MapMixin implements IReducer {
         return init;
     }
 
-    public Object append (final Object acc, final Object row) {
+    public Object append (final Object acc, final LazyMap row) {
         return f.invoke(acc, row);
     }
 

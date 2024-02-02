@@ -1,6 +1,8 @@
 package org.pg.reducer;
 
-public class First extends MapMixin implements IReducer {
+import org.pg.clojure.LazyMap;
+
+public class First implements IReducer {
 
     public static IReducer INSTANCE = new First();
 
@@ -8,7 +10,7 @@ public class First extends MapMixin implements IReducer {
         return new Object[1];
     }
 
-    public Object append (final Object obj, final Object row) {
+    public Object append (final Object obj, final LazyMap row) {
         final Object[] acc = (Object[]) obj;
         if (acc[0] == null) {
             acc[0] = row;

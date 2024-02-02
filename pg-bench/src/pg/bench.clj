@@ -172,6 +172,19 @@ from
 
 ")
 
+
+(def QUERY_SELECT_RANDOM_MANY_FIELDS
+  "
+select
+   now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+  ,now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+  ,now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+  ,now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+  ,now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
+from
+  generate_series(1,50000) as s(x)
+")
+
 (def QUERY_INSERT_PG
   "insert into aaa(id, name, created_at) values ($1, $2, $3)")
 
@@ -257,24 +270,76 @@ from
 
 (defn -main [& args]
 
-  (with-title "generating CSV"
-    (generate-csv))
+  ;; (with-title "generating CSV"
+  ;;   (generate-csv))
 
-  (pg/with-connection [conn pg-config]
-    (pg/execute conn QUERY_TABLE))
-
-  (with-title "JDBC pool"
-    (with-open [^HikariDataSource datasource
-                (cp/make-datasource cp-options)]
+  (with-title "next.JDBC select many fields NO ASSOC"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
       (quick-bench
-       (with-open [conn (jdbc/get-connection datasource)]
-         :nothing))))
+       (jdbc/execute! conn
+                      [QUERY_SELECT_RANDOM_MANY_FIELDS]
+                      {:as rs/as-unqualified-maps}))))
 
-  (with-title "PG pool"
-    (pool/with-pool [pool pg-config]
+  (with-title "pg select many fields NO ASSOC"
+    (pg/with-connection [conn pg-config]
       (quick-bench
-       (pool/with-connection [conn pool]
-         :nothing))))
+       (pg/execute conn
+                   QUERY_SELECT_RANDOM_MANY_FIELDS))))
+  (with-title "next.JDBC select many fields WITH ASSOC"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+       (let [rows
+             (jdbc/execute! conn
+                            [QUERY_SELECT_RANDOM_MANY_FIELDS]
+                            {:as rs/as-unqualified-maps})]
+         (doseq [row rows]
+           (assoc row :extra 42))))))
+
+  (with-title "pg select many fields WITH ASSOC"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+        (let [rows
+              (pg/execute conn
+                          QUERY_SELECT_RANDOM_MANY_FIELDS)]
+          (doseq [row rows]
+            (assoc row :extra 42))))))
+
+
+  ;; (with-title "next.JDBC simple value select with ASSOC"
+  ;;   (with-open [conn (jdbc/get-connection
+  ;;                     jdbc-config)]
+  ;;     (quick-bench
+  ;;      (let [rows
+  ;;            (jdbc/execute! conn
+  ;;                           [QUERY_SELECT_RANDOM_SIMPLE]
+  ;;                           {:as rs/as-unqualified-maps})]
+  ;;        (doseq [row rows]
+  ;;          (assoc row :extra 42))))))
+
+  ;; (with-title "pg simple select with ASSOC"
+  ;;   (pg/with-connection [conn pg-config]
+  ;;     (quick-bench
+  ;;       (let [rows
+  ;;             (pg/execute conn
+  ;;                         QUERY_SELECT_RANDOM_SIMPLE)]
+  ;;         (doseq [row rows]
+  ;;           (assoc row :extra 42))))))
+
+  ;; (with-title "JDBC pool"
+  ;;   (with-open [^HikariDataSource datasource
+  ;;               (cp/make-datasource cp-options)]
+  ;;     (quick-bench
+  ;;      (with-open [conn
+  ;;                  (jdbc/get-connection datasource)]
+  ;;        (jdbc/execute! conn [QUERY_SELECT_JSON])))))
+
+  ;; (with-title "PG pool"
+  ;;   (pool/with-pool [pool pg-config]
+  ;;     (quick-bench
+  ;;      (pool/with-connection [conn pool]
+  ;;        (pg/execute conn QUERY_SELECT_JSON)))))
 
   (with-title "next.JDBC reduce run!"
     (with-open [conn (jdbc/get-connection
@@ -304,7 +369,6 @@ from
                                stmt
                                {:fold fold-row
                                 :init {}})))))
-
   (with-title "next.JDBC reduce map"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -328,7 +392,6 @@ from
            (let [^HashMap m (new HashMap)]
              (.put m "x" (.getString rs "x"))
              (.add l m)))))))
-
   (with-title "next.JDBC simple value select"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -343,7 +406,6 @@ from
       (quick-bench
        (pg/execute conn
                    QUERY_SELECT_RANDOM_SIMPLE))))
-
   (with-title "next.JDBC complex value select"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
