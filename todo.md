@@ -1,7 +1,4 @@
 
-- tests for LazyMap and LazyVector
-
-- merge and release
 - benchmark and post
 
 - readme
