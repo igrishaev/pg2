@@ -1,7 +1,15 @@
 
-## 0.1.2-SNAPSHOT
+## 0.1.3-SNAPSHOT
 
 - ?
+
+## 0.1.2
+
+- new benchmarks
+- Makefile java path
+- LazyMap and LazyVector
+- prg.pg.clojure package
+- reducers refactored
 
 ## 0.1.1
 
