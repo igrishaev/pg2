@@ -152,19 +152,18 @@ create table demo (
             {:params ["test1" "test2" "test3"]})
 
 
-;; The result: pay attention we got java.time.OffsetDateTime for timestamptz column:
+;; The result: pay attention we got the j.t.OffsetDateTime class
+;; for the timestamptz column (truncated):
+
 [{:title "test1",
   :id 4,
-  :created_at
-  #object[java.time.OffsetDateTime 0x31340eb6 "2024-01-17T21:57:58.660012+03:00"]}
+  :created_at #object[j.t.OffsetDateTime "2024-01-17T21:57:58..."]}
  {:title "test2",
   :id 5,
-  :created_at
-  #object[java.time.OffsetDateTime 0x11a5aab5 "2024-01-17T21:57:58.660012+03:00"]}
+  :created_at #object[j.t.OffsetDateTime "2024-01-17T21:57:58..."]}
  {:title "test3",
   :id 6,
-  :created_at
-  #object[java.time.OffsetDateTime 0x3ee200bc "2024-01-17T21:57:58.660012+03:00"]}]
+  :created_at #object[j.t.OffsetDateTime "2024-01-17T21:57:58..."]}]
 
 
 ;; Try two expressions in a single transaction
@@ -178,7 +177,7 @@ create table demo (
 ;; {:inserted 1}
 
 
-;; Check out the database log:
+;; Now check out the database log:
 
 ;; LOG:  statement: BEGIN
 ;; LOG:  execute s3/p4: delete from demo where id = $1
@@ -191,6 +190,16 @@ create table demo (
 
 
 ## Benchmarks
+
+[bench1]: https://grishaev.me/en/pg2-bench-1
+[bench2]: https://grishaev.me/en/pg2-bench-2
+[bench3]: https://grishaev.me/en/pg2-bench-3
+
+See the folling posts in my blog:
+
+- [PG2 early announce and benchmarks, part 1][bench1]
+- [PG2 benchmarks, part 2][bench2]
+- [PG2 release 0.1.2: more performance, benchmarks, part 3][bench3]
 
 ## Authentication
 
