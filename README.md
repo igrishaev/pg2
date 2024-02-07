@@ -44,7 +44,9 @@ classes are supported for reading and writing.
 - [Benchmarks](#benchmarks)
 - [Authentication](#authentication)
 - [Connecting the server](#connecting-the-server)
+- [Connection parameters](#connection-parameters)
 - [Query and Execute](#query-and-execute)
+- [Enum types](#enum-types)
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
 - [Cloning a Connectin](#cloning-a-connectin)
@@ -58,6 +60,8 @@ classes are supported for reading and writing.
 - [Arrays support](#arrays-support)
 - [Notify/Listen (PubSub)](#notifylisten-pubsub)
 - [Notices](#notices)
+- [Logging](#logging)
+- [Errors and Exceptions](#errors-and-exceptions)
 - [Connection Pool](#connection-pool)
 - [HoneySQL integration](#honeysql-integration)
 - [Component integration](#component-integration)
@@ -203,9 +207,24 @@ See the folling posts in my blog:
 
 ## Authentication
 
+The library suppors the following authentication types and pipelines:
+
+- No password (for trusted clients);
+
+- Clear text password (not used nowadays);
+
+- MD5 password with hash (default prior to Postgres ver. 15);
+
+- SASL with the SCRAM-SHA-256 algorithm (default since Postgres ver. 15). The
+  SCRAM-SHA-256-PLUS algorithm is not implemented.
+
 ## Connecting the server
 
+## Connection parameters
+
 ## Query and Execute
+
+## Enum types
 
 ## Prepared Statements
 
@@ -232,6 +251,10 @@ See the folling posts in my blog:
 ## Notify/Listen (PubSub)
 
 ## Notices
+
+## Logging
+
+## Errors and Exceptions
 
 ## Connection Pool
 
