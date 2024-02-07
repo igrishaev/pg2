@@ -223,6 +223,8 @@ To connect the server, define a config map and pass it into the `connect`
 function:
 
 ~~~clojure
+(require '[pg.core :as pg])
+
 (def config
   {:host "127.0.0.1"
    :port 5432
