@@ -192,7 +192,6 @@ create table demo (
 
 ~~~
 
-
 ## Benchmarks
 
 [bench1]: https://grishaev.me/en/pg2-bench-1
@@ -219,6 +218,56 @@ The library suppors the following authentication types and pipelines:
   SCRAM-SHA-256-PLUS algorithm is not implemented.
 
 ## Connecting the server
+
+To connect the server, define a config map and pass it into the `connect`
+function:
+
+~~~clojure
+(def config
+  {:host "127.0.0.1"
+   :port 5432
+   :user "test"
+   :password "test"
+   :database "test"})
+
+(def conn
+  (pg/connect config))
+~~~
+
+The `conn` is an instance of the `org.pg.Connection` class.
+
+The `:host`, `:port`, and `:password` config fields have default values and
+might be skipped (the password is an empty string by default). Only the `:user`
+and `:database` fields are required when connecting. See the list of possible
+fields and their values in a separate section.
+
+To close a connection, pass it into the `close` function:
+
+~~~clojure
+(pg/close conn)
+~~~
+
+You cannot open or use this connection again afterwards.
+
+To close the connection automatically, use either `with-connection` or
+`with-open` macro. The `with-connection` macro takes a binding symbol and a
+config map; the connection gets bound to the binding symbold while the body is
+executed:
+
+~~~clojure
+(pg/with-connection [conn config]
+  (pg/query conn "select 1 as one"))
+~~~
+
+The standard `with-open` macro calls the `(.close connection)` method on exit:
+
+~~~clojure
+(with-open [conn (pg/connect config)]
+  (pg/query conn "select 1 as one"))
+~~~
+
+Avoid situations when you close a connection manually. Use one of these two
+macros shown above.
 
 ## Connection parameters
 
