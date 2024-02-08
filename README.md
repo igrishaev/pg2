@@ -43,7 +43,7 @@ classes are supported for reading and writing.
 - [Quick start (Demo)](#quick-start-demo)
 - [Benchmarks](#benchmarks)
 - [Authentication](#authentication)
-- [Connecting the server](#connecting-the-server)
+- [Connecting to the server](#connecting-to-the-server)
 - [Connection parameters](#connection-parameters)
 - [Query and Execute](#query-and-execute)
 - [Enum types](#enum-types)
@@ -217,7 +217,7 @@ The library suppors the following authentication types and pipelines:
 - SASL with the SCRAM-SHA-256 algorithm (default since Postgres ver. 15). The
   SCRAM-SHA-256-PLUS algorithm is not implemented.
 
-## Connecting the server
+## Connecting to the server
 
 To connect the server, define a config map and pass it into the `connect`
 function:
@@ -272,6 +272,22 @@ Avoid situations when you close a connection manually. Use one of these two
 macros shown above.
 
 ## Connection parameters
+
+The following table describes all the possible connection options with the
+possible values and semantics.
+
+| Field             | Type/enum | Default   | Comment                                      |
+|-------------------|-----------|-----------|----------------------------------------------|
+| `:user`           | string    | required  | the name of the DB user                      |
+| `:database`       | string    | required  | the name of the database                     |
+| `:host`           | string    | 127.0.0.1 | IP or hostname                               |
+| `:port`           | integer   | 5432      | port number                                  |
+| `:password`       | string    | ""        | DB user password                             |
+| `:pg-params`      | map       | {}        | A map of session params like {string string} |
+| `:binary-encode?` | bool      | false     | Whether to use binary data encoding          |
+| `:binary-decode?` | bool      | false     | Whether to use binary data decoding          |
+|                   |           |           |                                              |
+
 
 ## Query and Execute
 
