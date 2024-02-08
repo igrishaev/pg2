@@ -12,6 +12,9 @@
   - encode txt
   - encode bin
 
+- int to float
+- refactor locks? on Clojure level
+
 - types
   - interval
   - hstore
@@ -22,8 +25,8 @@
   - geom.etc
   - inet/cidr
 
+- use COPY OUT for result?
 - Unix socket connection type
-
 - migration adapter
 - hugsql adapter
 

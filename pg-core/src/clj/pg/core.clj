@@ -11,6 +11,7 @@
    java.io.OutputStream
    java.io.Reader
    java.io.Writer
+   java.lang.AutoCloseable
    java.lang.System$Logger$Level
    java.nio.ByteBuffer
    java.util.List
@@ -808,6 +809,14 @@
   (.setTxReadOnly conn))
 
 
+(defn lock
+  "
+  Acquire a lock object for this connection.
+  "
+  ^AutoCloseable [^Connection conn]
+  (.getLock conn))
+
+
 (defmacro with-tx
   "
   Wrap a block of code into a transaction, namely:
@@ -835,23 +844,25 @@
 
     `(let [~bind ~conn]
 
-       (.begin ~bind)
+       (with-open [_# (.getLock ~bind)]
 
-       ~@(when isolation-level
-           [`(set-tx-level ~bind ~isolation-level)])
+         (.begin ~bind)
 
-       ~@(when read-only?
-           [`(set-read-only ~bind)])
+         ~@(when isolation-level
+             [`(set-tx-level ~bind ~isolation-level)])
 
-       (try
-         (let [result# (do ~@body)]
-           ~(if rollback?
-              `(.rollback ~bind)
-              `(.commit ~bind))
-           result#)
-         (catch Throwable e#
-           (.rollback ~bind)
-           (throw e#))))))
+         ~@(when read-only?
+             [`(set-read-only ~bind)])
+
+         (try
+           (let [result# (do ~@body)]
+             ~(if rollback?
+                `(.rollback ~bind)
+                `(.commit ~bind))
+             result#)
+           (catch Throwable e#
+             (.rollback ~bind)
+             (throw e#)))))))
 
 
 (defn connection?

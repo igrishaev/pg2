@@ -978,6 +978,11 @@ public final class Connection implements AutoCloseable {
     }
 
     @SuppressWarnings("unused")
+    public AutoCloseable getLock() {
+        return lock.get();
+    }
+
+    @SuppressWarnings("unused")
     public Object copy (final String sql, final ExecuteParams executeParams) {
         try (TryLock ignored = lock.get()) {
             sendQuery(sql);
