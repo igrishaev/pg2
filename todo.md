@@ -15,6 +15,8 @@
 - int to float
 - refactor locks? on Clojure level
 
+- malli spec
+
 - types
   - interval
   - hstore
