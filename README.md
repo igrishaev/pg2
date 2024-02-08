@@ -44,17 +44,20 @@ classes are supported for reading and writing.
 - [Benchmarks](#benchmarks)
 - [Authentication](#authentication)
 - [Connecting to the server](#connecting-to-the-server)
-- [Connection parameters](#connection-parameters)
-- [Query and Execute](#query-and-execute)
-- [Enum types](#enum-types)
+- [Connection config parameters](#connection-config-parameters)
+- [Query](#query)
+- [Execute](#execute)
+  * [Type hints](#type-hints)
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
+- [Enums](#enums)
 - [Cloning a Connectin](#cloning-a-connectin)
 - [Cancelling a Query](#cancelling-a-query)
 - [Thread Safety](#thread-safety)
 - [Result reducers](#result-reducers)
 - [COPY IN/OUT](#copy-inout)
 - [SSL](#ssl)
+- [Connection state](#connection-state)
 - [Type Mapping](#type-mapping)
 - [JSON support](#json-support)
 - [Arrays support](#arrays-support)
@@ -271,7 +274,22 @@ The standard `with-open` macro calls the `(.close connection)` method on exit:
 Avoid situations when you close a connection manually. Use one of these two
 macros shown above.
 
-## Connection parameters
+Use `:pg-params` field to specify connection-specific Postgres parameters. These
+are "TimeZone", "application_name", "DateStyle" and more. Both keys and values
+are plain strings:
+
+~~~clojure
+(def config+
+  (assoc config
+         :pg-params
+         {"application_name" "Clojure"
+          "DateStyle" "ISO, MDY"}))
+
+(def conn
+  (pg/connect config+))
+~~~
+
+## Connection config parameters
 
 The following table describes all the possible connection options with the
 possible values and semantics. Only the two first options are requred. All the
@@ -312,13 +330,61 @@ Possible `:log-level` values are:
 - `:error`
 - `:off`, `false`, or `nil` to disable logging.
 
-## Query and Execute
+## Query
 
-## Enum types
+The `query` function sends a query to the server and returns the
+result. Non-data queries return a map with a tag:
+
+~~~clojure
+(pg/query conn "create table test1 (id serial primary key, name text)")
+{:command "CREATE TABLE"}
+
+(pg/query conn "insert into test1 (name) values ('Ivan'), ('Huan')")
+{:inserted 2}
+~~~
+
+Data queries return a vector of maps. This behaviour may be changed with
+reducers (see below).
+
+~~~clojure
+(pg/query conn "select * from test1")
+[{:name "Ivan", :id 1} {:name "Huan", :id 2}]
+~~~
+
+The SQL string might include several expressions concatenated with a
+semicolon. In this case, the result will be a vector of results:
+
+~~~clojure
+(pg/query conn "insert into test1 (name) values ('Juan'); select * from test1")
+
+[{:inserted 1}
+ [{:name "Ivan", :id 1}
+  {:name "Huan", :id 2}
+  {:name "Juan", :id 3}]]
+~~~
+
+Use this feature wisely; don't try to do lots of things at once.
+
+**Important:** the `query` function doesn't support parameters. You cannot run a
+query like these two below or similar:
+
+~~~clojure
+(pg/query conn "select * from test1 where id = ?" 1)
+;; or
+(pg/query conn ["select * from test1 where id = ?" 1])
+~~~
+
+Parameters work with the `execute` function and prepared statements.
+
+## Execute
+
+### Type hints
 
 ## Prepared Statements
 
 ## Transactions
+
+## Enums
 
 ## Cloning a Connectin
 
@@ -331,6 +397,8 @@ Possible `:log-level` values are:
 ## COPY IN/OUT
 
 ## SSL
+
+## Connection state
 
 ## Type Mapping
 

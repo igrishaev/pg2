@@ -21,6 +21,27 @@
   (def conn
     (pg/connect config))
 
+  (def config+
+    (assoc config
+           :pg-params
+           {"application_name" "Clojure"
+            "DateStyle" "ISO, MDY"}))
+
+  (def conn
+    (pg/connect config+))
+
+  (pg/query conn "create table test1 (id serial primary key, name text)")
+
+  (pg/query conn "insert into test1 (name) values ('Ivan'), ('Huan')")
+
+  (pg/query conn "select * from test1")
+
+  (pg/query conn "insert into test1 (name) values ('Juan'); select * from test1")
+
+
+
+
+
   (str conn)
 
   (pg/with-connection [conn config]
