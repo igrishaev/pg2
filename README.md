@@ -305,12 +305,12 @@ rest have predefined values.
 
 Possible logging values are:
 
-- `:all`
-- `:trace`
-- `:debug`
-- `:info`
-- `:error`
-- `:off`, `false` and `nil` to disable logging.
+- `:all` to render all the events;
+- `:trace`;
+- `:debug`;
+- `:info`;
+- `:error`;
+- `:off`, `false`, or `nil` to disable logging.
 
 ## Query and Execute
 
