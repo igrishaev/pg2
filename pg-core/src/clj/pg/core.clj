@@ -378,6 +378,11 @@
     (get -mapping (.getTxStatus conn))))
 
 
+(defmacro with-lock [[conn] & body]
+  `(with-open [_# (.getLock ~conn)]
+     ~@body))
+
+
 (defn idle?
   "
   True if the connection is in the idle state.
@@ -809,14 +814,6 @@
   (.setTxReadOnly conn))
 
 
-(defn lock
-  "
-  Acquire a lock object for this connection.
-  "
-  ^AutoCloseable [^Connection conn]
-  (.getLock conn))
-
-
 (defmacro with-tx
   "
   Wrap a block of code into a transaction, namely:
@@ -844,7 +841,7 @@
 
     `(let [~bind ~conn]
 
-       (with-open [_# (.getLock ~bind)]
+       (with-lock [~bind]
 
          (.begin ~bind)
 
