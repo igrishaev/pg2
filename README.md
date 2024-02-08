@@ -303,13 +303,13 @@ rest have predefined values.
 | `:ms-cancel-timeout`   | integer    | 5.000        | Default value for the `with-timeout` macro, in ms         |
 | `:protocol-version`    | integ      | 196608       | Postgres protocol version                                 |
 
-Possible logging values are:
+Possible `:log-level` values are:
 
-- `:all` to render all the events;
-- `:trace`;
-- `:debug`;
-- `:info`;
-- `:error`;
+- `:all` to render all the events
+- `:trace`
+- `:debug`
+- `:info`
+- `:error`
 - `:off`, `false`, or `nil` to disable logging.
 
 ## Query and Execute
