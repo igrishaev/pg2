@@ -38,6 +38,14 @@
 
   (pg/query conn "insert into test1 (name) values ('Juan'); select * from test1")
 
+  (pg/execute conn "select * from test1 where id = $1" {:params [2]})
+
+  (def pairs
+    [[1001 "Harry"]
+     [1002 "Hermione"]
+     [1003 "Ron"]])
+
+  (flatten pairs)
 
 
 

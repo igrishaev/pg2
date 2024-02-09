@@ -47,7 +47,7 @@ classes are supported for reading and writing.
 - [Connection config parameters](#connection-config-parameters)
 - [Query](#query)
 - [Execute](#execute)
-  * [Type hints](#type-hints)
+- [Type hints](#type-hints)
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
 - [Enums](#enums)
@@ -318,7 +318,7 @@ rest have predefined values.
 | `:so-recv-buf-size`    | integer    | 0xFFFF       | Socket receive buffer size                                |
 | `:so-send-buf-size`    | integer    | 0xFFFF       | Socket send buffer size                                   |
 | `:log-level`           | keyword    | :info        | Connection logging level. See possible values below       |
-| `:ms-cancel-timeout`   | integer    | 5.000        | Default value for the `with-timeout` macro, in ms         |
+| `:cancel-timeout-ms`   | integer    | 5.000        | Default value for the `with-timeout` macro, in ms         |
 | `:protocol-version`    | integ      | 196608       | Postgres protocol version                                 |
 
 Possible `:log-level` values are:
@@ -374,11 +374,78 @@ query like these two below or similar:
 (pg/query conn ["select * from test1 where id = ?" 1])
 ~~~
 
-Parameters work with the `execute` function and prepared statements.
+**NEVER(!), NEVER(!!), NEVER(!!!) put parameters into a SQL string using `str`
+`format`, or other functions that operate on strings. You will regret it one
+day. Use execute with parameters instead.**
 
 ## Execute
 
-### Type hints
+The `execute` function acts like `query` but has the following peculiarities:
+
+- The SQL string cannot have many expressions concatenated with a
+  semicolon. There must be a single expression (although the trailing semicolon
+  is allowed).
+
+- It may have parameters. The values for these parameters are passed
+  separately. Unlike in JDBC, the parameters use dollar sign with a number, for
+  example `$1`, `$2`, etc.
+
+Here is how you can query a row by its primary key:
+
+~~~clojure
+(pg/execute conn "select * from test1 where id = $1" {:params [2]})
+;; [{:name "Huan", :id 2}]
+~~~
+
+The values are passed into the `:params` key; they must be a vector, or a list,
+or a lazy sequence. Passing a set is not recommended as it doesn't guarantee the
+order of the values.
+
+This is how you insert values into a table using parameters:
+
+~~~clojure
+(pg/execute conn
+            "insert into test1 (name) values ($1), ($2), ($3)"
+            {:params ["Huey" "Dewey" "Louie"]})
+;; {:inserted 3}
+~~~
+
+Pay attention that the values are always a flat list. Imagine you'd like to
+insert rows with explicit ids:
+
+~~~clojure
+(pg/execute conn
+            "insert into test1 (id, name) values ($1, $2), ($3, $4), ($5, $6)"
+            {:params [1001 "Harry" 1002 "Hermione" 1003 "Ron"]})
+;; {:inserted 3}
+~~~
+
+The `:params` vector consists from flat values but not pairs like `[1001
+"Harry"]`. For better readability, make a list of pairs and then `flatten` it:
+
+~~~clojure
+(def pairs
+  [[1001 "Harry"]
+   [1002 "Hermione"]
+   [1003 "Ron"]])
+
+(flatten pairs)
+
+;; (1001 "Harry" 1002 "Hermione" 1003 "Ron")
+~~~
+
+Since the parameters have explicit numbers, you can reference a certain value
+many times. The following query will create three agents Smith with different
+ids.
+
+~~~clojure
+(pg/execute conn
+            "insert into test1 (name) values ($1), ($1), ($1)"
+            {:params ["Agent Smith"]})
+;; {:inserted 3}
+~~~
+
+## Type hints
 
 ## Prepared Statements
 
