@@ -201,7 +201,7 @@ create table demo (
 [bench2]: https://grishaev.me/en/pg2-bench-2
 [bench3]: https://grishaev.me/en/pg2-bench-3
 
-See the folling posts in my blog:
+See the following posts in my blog:
 
 - [PG2 early announce and benchmarks, part 1][bench1]
 - [PG2 benchmarks, part 2][bench2]
