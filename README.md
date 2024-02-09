@@ -374,7 +374,7 @@ query like these two below or similar:
 (pg/query conn ["select * from test1 where id = ?" 1])
 ~~~
 
-**NEVER(!), NEVER(!!), NEVER(!!!) put parameters into a SQL string using `str`
+**NEVER(!), NEVER(!!), NEVER(!!!) put parameters into a SQL string using `str`,
 `format`, or other functions that operate on strings. You will regret it one
 day. Use execute with parameters instead.**
 
