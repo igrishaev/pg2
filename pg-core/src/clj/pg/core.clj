@@ -276,7 +276,7 @@
                 log-level
 
                 ;; misc
-                ms-cancel-timeout
+                cancel-timeout-ms
                 protocol-version]}
         params]
 
@@ -342,8 +342,8 @@
       log-level
       (.logLevel (->LogLevel log-level))
 
-      ms-cancel-timeout
-      (.msCancelTimeout ms-cancel-timeout)
+      cancel-timeout-ms
+      (.msCancelTimeout cancel-timeout-ms)
 
       :finally
       (.build))))

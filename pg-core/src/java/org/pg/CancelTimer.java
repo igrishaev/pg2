@@ -9,7 +9,7 @@ public final class CancelTimer implements AutoCloseable {
     private final Timer timer = new Timer();
 
     public CancelTimer(final Connection conn) {
-        this(conn, conn.getConfig().msCancelTimeout());
+        this(conn, conn.getConfig().cancelTimeoutMs());
     }
 
     public CancelTimer(final Connection conn, final long msTimeout) {
