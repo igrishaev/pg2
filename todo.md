@@ -12,7 +12,7 @@
   - encode txt
   - encode bin
 
-- int to float
+- int to float: tests
 - refactor locks? on Clojure level
 
 - malli spec
