@@ -185,11 +185,14 @@
 
   (pg/with-connection [conn CONFIG]
 
-    (let [sql1
-          "copy (select s.x as x, s.x * s.x as square from generate_series(    1, 10000) as s(x)) TO STDOUT WITH (FORMAT CSV)"
+    (let [time1
+          (System/currentTimeMillis)
+
+          sql1
+          "select pg_sleep(2); copy (select s.x as x, s.x * s.x as square from generate_series(    1, 10000) as s(x)) TO STDOUT WITH (FORMAT CSV)"
 
           sql2
-          "copy (select s.x as x, s.x * s.x as square from generate_series(10001, 20000) as s(x)) TO STDOUT WITH (FORMAT CSV)"
+          "select pg_sleep(1); copy (select s.x as x, s.x * s.x as square from generate_series(10001, 20000) as s(x)) TO STDOUT WITH (FORMAT CSV)"
 
           out
           (new ByteArrayOutputStream)
@@ -205,8 +208,14 @@
           (future
             (pg/copy-out conn sql2 out))
 
-          res1 @f1
-          res2 @f2
+          [_ res1] @f1
+          [_ res2] @f2
+
+          time2
+          (System/currentTimeMillis)
+
+          diff
+          (- time2 time1)
 
           rows
           (with-open [reader (-> out
@@ -214,6 +223,8 @@
                                  (io/input-stream)
                                  (io/reader))]
             (vec (csv/read-csv reader)))]
+
+      (is (< 3000 diff 3100))
 
       (is (= {:copied 10000} res1))
       (is (= {:copied 10000} res2))
@@ -223,8 +234,65 @@
       (is (= [     "1"        "1"] (first rows)))
       (is (= ["20000" "400000000"] (last rows))))))
 
+
+(deftest test-copy-in-parallel
+
+  (pg/with-connection [conn CONFIG]
+
+    (pg/query conn "create temp table foo (x bigint)")
+
+    (let [time1
+          (System/currentTimeMillis)
+
+          sql
+          "select pg_sleep(1); copy foo (x) from STDIN WITH (FORMAT CSV)"
+
+          limit
+          9999
+
+          rows1
+          (for [x (range 0 limit)]
+            [x])
+
+          rows2
+          (for [x (range limit (* 2 limit))]
+            [x])
+
+          f1
+          (future
+            (pg/copy-in-rows conn sql rows1))
+
+          _
+          (Thread/sleep 100)
+
+          f2
+          (future
+            (pg/copy-in-rows conn sql rows2))
+
+          [_ res1] @f1
+          [_ res2] @f2
+
+          time2
+          (System/currentTimeMillis)
+
+          diff
+          (- time2 time1)
+
+          res
+          (pg/query conn "select * from foo")]
+
+      (is (< 2000 diff 2100))
+
+      (is (= {:copied 9999} res1))
+      (is (= {:copied 9999} res2))
+
+      (is (= (count res) 19998))
+
+      (is (= {:x 0} (first res)))
+      (is (= {:x 19997} (last res))))))
+
+
 ;; TODO
-;; copy in
 ;; tx-status
 ;; idel in tx tx-error ;; get-param ;; pid
 ;; close-statement
