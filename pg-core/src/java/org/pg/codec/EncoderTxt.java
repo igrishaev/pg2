@@ -65,7 +65,7 @@ public final class EncoderTxt {
                     "java.lang.Short",
                     "java.lang.Integer",
                     "java.lang.Long" -> switch (oid) {
-                case INT2, INT4, INT8, OID, NUMERIC, DEFAULT -> x.toString();
+                case INT2, INT4, INT8, OID, NUMERIC, FLOAT4, FLOAT8, DEFAULT -> x.toString();
                 default -> txtEncodingError(x, oid);
             };
 

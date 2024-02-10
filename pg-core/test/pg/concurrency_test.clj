@@ -1,6 +1,9 @@
 (ns pg.concurrency-test
+  (:import
+   java.io.ByteArrayOutputStream)
   (:require
    [clojure.data.csv :as csv]
+   [clojure.java.io :as io]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
    [pg.integration :refer [*CONFIG*
@@ -87,7 +90,7 @@
       (is (= [{:b ""}] res2))
       (is (= [{:c ""}] res3))
 
-      (is (< 6000 diff 6500)))))
+      (is (< 6000 diff 6100)))))
 
 
 (deftest test-prepare-sleep
@@ -119,7 +122,7 @@
 
           f2
           (future
-            (pg/execute-statement conn stmt2 {:params [2.0]}))
+            (pg/execute-statement conn stmt2 {:params [2]}))
 
           f3
           (future
@@ -139,25 +142,92 @@
       (is (= [{:b ""}] res2))
       (is (= [{:c ""}] res3))
 
-      (is (< 6000 diff 6500)))))
+      (is (< 6000 diff 6100)))))
 
 
 (deftest test-transaction-pipeline
 
   (pg/with-connection [conn CONFIG]
 
-    (let [f1
+    (let [time1
+          (System/currentTimeMillis)
+
+          f1
           (future
             (pg/with-tx [conn]
-              (pg/query conn "select pg_sleep(1) as A")))
+              (pg/execute conn
+                          "select pg_sleep(1) as A"
+                          {:first? true})))
 
           f2
           (future
             (pg/with-tx [conn]
-              (pg/query conn "select pg_sleep(2) as B")))
+              (pg/execute conn
+                          "select pg_sleep(2) as B"
+                          {:first? true})))
 
           res1 @f1
-          res2 @f2]
-      )
-    )
-  )
+          res2 @f2
+
+          time2
+          (System/currentTimeMillis)
+
+          diff
+          (- time2 time1)]
+
+      (is (= {:a ""} res1))
+      (is (= {:b ""} res2))
+
+      (is (< 3000 diff 3100)))))
+
+
+(deftest test-copy-out-parallel
+
+  (pg/with-connection [conn CONFIG]
+
+    (let [sql1
+          "copy (select s.x as x, s.x * s.x as square from generate_series(    1, 10000) as s(x)) TO STDOUT WITH (FORMAT CSV)"
+
+          sql2
+          "copy (select s.x as x, s.x * s.x as square from generate_series(10001, 20000) as s(x)) TO STDOUT WITH (FORMAT CSV)"
+
+          out
+          (new ByteArrayOutputStream)
+
+          f1
+          (future
+            (pg/copy-out conn sql1 out))
+
+          _
+          (Thread/sleep 100)
+
+          f2
+          (future
+            (pg/copy-out conn sql2 out))
+
+          res1 @f1
+          res2 @f2
+
+          rows
+          (with-open [reader (-> out
+                                 (.toByteArray)
+                                 (io/input-stream)
+                                 (io/reader))]
+            (vec (csv/read-csv reader)))]
+
+      (is (= {:copied 10000} res1))
+      (is (= {:copied 10000} res2))
+
+      (is (= (count rows) 20000))
+
+      (is (= [     "1"        "1"] (first rows)))
+      (is (= ["20000" "400000000"] (last rows))))))
+
+;; TODO
+;; copy in
+;; tx-status
+;; idel in tx tx-error ;; get-param ;; pid
+;; close-statement
+;; execute-statement
+;; prepare
+;; with connection

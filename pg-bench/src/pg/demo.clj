@@ -94,6 +94,10 @@ create table demo (
                 {:params ["test4"]}))
   {:inserted 1}
 
+  (pg/execute conn
+              "select pg_sleep($1) as sleep"
+              {:params [1]})
+
   ;; LOG:  statement: BEGIN
   ;; LOG:  execute s3/p4: delete from demo where id = $1
   ;; DETAIL:  parameters: $1 = '3'

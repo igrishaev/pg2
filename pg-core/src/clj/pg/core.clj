@@ -343,7 +343,7 @@
       (.logLevel (->LogLevel log-level))
 
       cancel-timeout-ms
-      (.msCancelTimeout cancel-timeout-ms)
+      (.cancelTimeoutMs cancel-timeout-ms)
 
       :finally
       (.build))))
