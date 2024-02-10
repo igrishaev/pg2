@@ -61,9 +61,10 @@ public final class EncoderTxt {
                 default -> txtEncodingError(x, oid);
             };
 
-            case "java.lang.Short",
+            case
+                    "java.lang.Short",
                     "java.lang.Integer",
-                    "java.lang.Long"-> switch (oid) {
+                    "java.lang.Long" -> switch (oid) {
                 case INT2, INT4, INT8, OID, NUMERIC, DEFAULT -> x.toString();
                 default -> txtEncodingError(x, oid);
             };
@@ -74,7 +75,8 @@ public final class EncoderTxt {
             };
 
 
-            case "java.lang.Float",
+            case
+                    "java.lang.Float",
                     "java.lang.Double"-> switch (oid) {
                 case FLOAT4, FLOAT8, DEFAULT -> x.toString();
                 default -> txtEncodingError(x, oid);
@@ -95,7 +97,8 @@ public final class EncoderTxt {
                 default -> txtEncodingError(x, oid);
             };
 
-            case "java.math.BigInteger",
+            case
+                    "java.math.BigInteger",
                     "clojure.lang.BigInt" -> switch (oid) {
                 case INT2, INT4, INT8, FLOAT4, FLOAT8, NUMERIC, DEFAULT -> x.toString();
                 default -> txtEncodingError(x, oid);
@@ -112,7 +115,8 @@ public final class EncoderTxt {
                 default -> txtEncodingError(x, oid);
             };
 
-            case "clojure.lang.PersistentArrayMap",
+            case
+                    "clojure.lang.PersistentArrayMap",
                     "clojure.lang.PersistentHashMap",
                     "clojure.lang.PersistentVector" -> switch (oid) {
                 // TODO: maybe return bytes?

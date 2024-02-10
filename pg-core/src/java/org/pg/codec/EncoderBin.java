@@ -177,7 +177,8 @@ public final class EncoderBin {
                 default -> binEncodingError(x, oid);
             };
 
-            case "clojure.lang.PersistentArrayMap",
+            case
+                    "clojure.lang.PersistentArrayMap",
                     "clojure.lang.PersistentHashMap",
                     "clojure.lang.PersistentVector" -> switch (oid) {
                 case JSON, JSONB, DEFAULT -> {
