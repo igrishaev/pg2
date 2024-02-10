@@ -244,8 +244,11 @@
     (let [time1
           (System/currentTimeMillis)
 
-          sql
-          "select pg_sleep(1); copy foo (x) from STDIN WITH (FORMAT CSV)"
+          sql1
+          "select pg_sleep(1.5); copy foo (x) from STDIN WITH (FORMAT CSV)"
+
+          sql2
+          "select pg_sleep(0.5); copy foo (x) from STDIN WITH (FORMAT CSV)"
 
           limit
           9999
@@ -260,14 +263,14 @@
 
           f1
           (future
-            (pg/copy-in-rows conn sql rows1))
+            (pg/copy-in-rows conn sql1 rows1))
 
           _
           (Thread/sleep 100)
 
           f2
           (future
-            (pg/copy-in-rows conn sql rows2))
+            (pg/copy-in-rows conn sql2 rows2))
 
           [_ res1] @f1
           [_ res2] @f2
