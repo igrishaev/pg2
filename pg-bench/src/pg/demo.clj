@@ -48,7 +48,39 @@
   (flatten pairs)
 
 
+  (def stmt-by-id
+    (pg/prepare conn "select * from test1 where id = $1"))
 
+  (pg/query conn "insert into test1 (name) values ('Juan'); select * from test1")
+
+  (pg/execute-statement conn
+                        stmt-by-id
+                        {:params [1] :first? true})
+
+  {:name "Ivan", :id 1}
+
+  (pg/execute-statement conn
+                        stmt-by-id
+                        {:params [5] :first? true})
+
+  {:name "Louie", :id 5}
+
+  (pg/execute-statement conn
+                        stmt-by-id
+                        {:params [8] :first? true})
+
+  {:name "Agent Smith", :id 8}
+
+  (pg/with-statement [stmt conn "insert into test1 (name) values ($1) returning *"]
+    (doall
+     (for [character ["Agent Brown"
+                      "Agent Smith"
+                      "Agent Jones"]]
+       (pg/execute-statement conn stmt {:params [character] :first? true}))))
+
+  ({:name "Agent Brown", :id 12}
+   {:name "Agent Smith", :id 13}
+   {:name "Agent Jones", :id 14})
 
   (str conn)
 
@@ -74,7 +106,7 @@ create table demo (
 
   (pg/execute conn
               "insert into demo (title) values ($1), ($2), ($3)
-             returning *"
+               returning *"
               {:params ["test1" "test2" "test3"]})
 
   (see trash.clj)
