@@ -27,6 +27,15 @@
   - geom.etc
   - inet/cidr
 
+- honey helpers
+  - prepare
+  - get-by-id
+  - get-by-ids
+  - get-by-ids-temp
+  - insert
+  - udpate
+  - delete
+
 - use COPY OUT for result?
 - Unix socket connection type
 - migration adapter
