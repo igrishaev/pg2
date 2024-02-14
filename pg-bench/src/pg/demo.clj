@@ -103,6 +103,104 @@ create table demo (
 )")
   {:command "CREATE TABLE"}
 
+  ;;
+  ;; Transactions
+  ;;
+
+  (pg/begin conn)
+
+  (pg/execute conn
+              "insert into test1 (name) values ($1)"
+              {:params ["Test1"]})
+
+  (pg/execute conn
+              "insert into test1 (name) values ($1)"
+              {:params ["Test2"]})
+
+  (pg/commit conn)
+
+  (pg/query conn
+            "select name from test1 where name like 'Test%'")
+
+  ;; [{:name "Test1"} {:name "Test2"}]
+
+
+  pg-pg14-1  | 2024-02-14 15:10:08.160 UTC [73004] LOG:  statement: BEGIN
+  pg-pg14-1  | 2024-02-14 15:10:25.838 UTC [73004] LOG:  execute s23/p24: insert into test1 (name) values ($1)
+  pg-pg14-1  | 2024-02-14 15:10:25.838 UTC [73004] DETAIL:  parameters: $1 = 'Test1'
+  pg-pg14-1  | 2024-02-14 15:10:30.094 UTC [73004] LOG:  execute s25/p26: insert into test1 (name) values ($1)
+  pg-pg14-1  | 2024-02-14 15:10:30.094 UTC [73004] DETAIL:  parameters: $1 = 'Test2'
+  pg-pg14-1  | 2024-02-14 15:10:33.306 UTC [73004] LOG:  statement: COMMIT
+
+  (pg/begin conn)
+  (pg/execute conn
+              "insert into test1 (name) values ($1)"
+              {:params ["Test3"]})
+  (pg/rollback conn)
+
+  (pg/query conn
+            "select name from test1 where name like 'Test%'")
+  ;; [{:name "Test1"} {:name "Test2"}]
+
+
+  (pg/status conn)
+  :I
+
+  (pg/idle? conn)
+  true
+
+  (pg/begin conn)
+
+  (pg/status conn)
+  :T
+
+  (pg/in-transaction? conn)
+  true
+
+  (pg/query conn "selekt dunno")
+
+  Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:205).
+  Server error response: {severity=ERROR, code=42601, file=scan.l, line=1176, function=scanner_yyerror, position=1, message=syntax error at or near "selekt", verbosity=ERROR}
+
+  (pg/status conn)
+  :E
+
+  (pg/tx-error? conn)
+  true
+
+  (pg/rollback conn)
+
+  (pg/idle? conn)
+  true
+
+  (pg/with-tx [conn]
+    (pg/execute conn
+                "delete from test1 where name like $1"
+                {:params ["Test%"]})
+    (pg/execute conn
+                "insert into test1 (name) values ($1)"
+                {:params ["Test3"]}))
+
+
+pg-pg14-1  | 2024-02-14 15:33:22.200 UTC [73004] LOG:  statement: BEGIN
+pg-pg14-1  | 2024-02-14 15:33:22.209 UTC [73004] LOG:  execute s29/p30: delete from test1 where name like $1
+pg-pg14-1  | 2024-02-14 15:33:22.209 UTC [73004] DETAIL:  parameters: $1 = 'Test%'
+pg-pg14-1  | 2024-02-14 15:33:22.217 UTC [73004] LOG:  execute s31/p32: insert into test1 (name) values ($1)
+pg-pg14-1  | 2024-02-14 15:33:22.217 UTC [73004] DETAIL:  parameters: $1 = 'Test3'
+pg-pg14-1  | 2024-02-14 15:33:22.219 UTC [73004] LOG:  statement: COMMIT
+
+  (pg/query conn
+            "select name from test1 where name like 'Test%'")
+  [{:name "Test3"}]
+
+
+  - isolation-level
+  - read-only?
+  - rollback?
+
+
+
+
 
   (pg/execute conn
               "insert into demo (title) values ($1), ($2), ($3)
