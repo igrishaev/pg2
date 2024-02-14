@@ -126,12 +126,12 @@ create table demo (
   ;; [{:name "Test1"} {:name "Test2"}]
 
 
-  pg-pg14-1  | 2024-02-14 15:10:08.160 UTC [73004] LOG:  statement: BEGIN
-  pg-pg14-1  | 2024-02-14 15:10:25.838 UTC [73004] LOG:  execute s23/p24: insert into test1 (name) values ($1)
-  pg-pg14-1  | 2024-02-14 15:10:25.838 UTC [73004] DETAIL:  parameters: $1 = 'Test1'
-  pg-pg14-1  | 2024-02-14 15:10:30.094 UTC [73004] LOG:  execute s25/p26: insert into test1 (name) values ($1)
-  pg-pg14-1  | 2024-02-14 15:10:30.094 UTC [73004] DETAIL:  parameters: $1 = 'Test2'
-  pg-pg14-1  | 2024-02-14 15:10:33.306 UTC [73004] LOG:  statement: COMMIT
+statement: BEGIN
+execute s23/p24: insert into test1 (name) values ($1)
+  parameters: $1 = 'Test1'
+execute s25/p26: insert into test1 (name) values ($1)
+  parameters: $1 = 'Test2'
+statement: COMMIT
 
   (pg/begin conn)
   (pg/execute conn
@@ -185,12 +185,12 @@ create table demo (
   ;; auto rollback
 
 
-  pg-pg14-1  | 2024-02-14 15:33:22.200 UTC [73004] LOG:  statement: BEGIN
-pg-pg14-1  | 2024-02-14 15:33:22.209 UTC [73004] LOG:  execute s29/p30: delete from test1 where name like $1
-pg-pg14-1  | 2024-02-14 15:33:22.209 UTC [73004] DETAIL:  parameters: $1 = 'Test%'
-pg-pg14-1  | 2024-02-14 15:33:22.217 UTC [73004] LOG:  execute s31/p32: insert into test1 (name) values ($1)
-pg-pg14-1  | 2024-02-14 15:33:22.217 UTC [73004] DETAIL:  parameters: $1 = 'Test3'
-pg-pg14-1  | 2024-02-14 15:33:22.219 UTC [73004] LOG:  statement: COMMIT
+statement: BEGIN
+execute s29/p30: delete from test1 where name like $1
+  parameters: $1 = 'Test%'
+execute s31/p32: insert into test1 (name) values ($1)
+  parameters: $1 = 'Test3'
+statement: COMMIT
 
   (pg/query conn
             "select name from test1 where name like 'Test%'")

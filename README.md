@@ -50,6 +50,7 @@ classes are supported for reading and writing.
 - [Type hints](#type-hints)
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
+- [Connection state](#connection-state)
 - [Enums](#enums)
 - [Cloning a Connectin](#cloning-a-connectin)
 - [Cancelling a Query](#cancelling-a-query)
@@ -57,7 +58,6 @@ classes are supported for reading and writing.
 - [Result reducers](#result-reducers)
 - [COPY IN/OUT](#copy-inout)
 - [SSL](#ssl)
-- [Connection state](#connection-state)
 - [Type Mapping](#type-mapping)
 - [JSON support](#json-support)
 - [Arrays support](#arrays-support)
@@ -520,6 +520,117 @@ versa. Do not share them across different threads.**
 
 ## Transactions
 
+To execute one or more queries in a transaction, wrap them with `begin` and
+`commit` functions as follows:
+
+~~~clojure
+(pg/begin conn)
+
+(pg/execute conn
+            "insert into test1 (name) values ($1)"
+            {:params ["Test1"]})
+
+(pg/execute conn
+            "insert into test1 (name) values ($1)"
+            {:params ["Test2"]})
+
+(pg/commit conn)
+~~~
+
+Both rows are inserted in a transaction. Should one of them fail, none will
+succeed. By checking the database log, you'll see the following entries:
+
+~~~
+statement: BEGIN
+execute s23/p24: insert into test1 (name) values ($1)
+  parameters: $1 = 'Test1'
+execute s25/p26: insert into test1 (name) values ($1)
+  parameters: $1 = 'Test2'
+statement: COMMIT
+~~~
+
+The `rollback` function rolls back the current transaction. The "Test3" entry
+will be available during transaction but won't be stored at the end.
+
+~~~clojure
+(pg/begin conn)
+(pg/execute conn
+            "insert into test1 (name) values ($1)"
+            {:params ["Test3"]})
+(pg/rollback conn)
+~~~
+
+## Connection state
+
+There are some function to track the connection state. In Postgres, the state of
+a connection might be one of these:
+
+- **idle** when it's ready for a query;
+
+- **in transaction** when a transaction has already been started but not
+  committed yet;
+
+- **error** when transaction has failed but hasn't been rolled back yet.
+
+The `status` function returns either `:I`, `:T`, or `:E` keywords depending on
+where you are at the moment. For each state, there is a corresponding predicate
+that returns either true of false.
+
+At the beginning, the connection is idle:
+
+~~~clojure
+(pg/status conn)
+:I
+
+(pg/idle? conn)
+true
+~~~
+
+Open a transaction and check out the state:
+
+~~~clojure
+(pg/begin conn)
+
+(pg/status conn)
+:T
+
+(pg/in-transaction? conn)
+true
+~~~
+
+Now send a broken query to the server. You'll get an exception describing the
+error occurred on the server:
+
+~~~clojure
+(pg/query conn "selekt dunno")
+
+;; Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:205).
+;; Server error response: {severity=ERROR, code=42601, ...,  message=syntax error at or near "selekt", verbosity=ERROR}
+~~~
+
+The connection is in the error state now:
+
+~~~clojure
+(pg/status conn)
+:E
+
+(pg/tx-error? conn)
+true
+~~~
+
+When state is error, the connection doesn't accept any new queries. Each of them
+will be rejected with a message saying that the connection is in the error
+state. To recover from an error, rollback the current transaction:
+
+~~~clojure
+(pg/rollback conn)
+
+(pg/idle? conn)
+true
+~~~
+
+Now it's ready for new queries again.
+
 ## Enums
 
 ## Cloning a Connectin
@@ -533,8 +644,6 @@ versa. Do not share them across different threads.**
 ## COPY IN/OUT
 
 ## SSL
-
-## Connection state
 
 ## Type Mapping
 
