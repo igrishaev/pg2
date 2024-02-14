@@ -184,8 +184,18 @@ statement: COMMIT
 
   ;; auto rollback
 
+  (pg/begin conn)
+  (try
+    (let [result (do <body>)]
+      (pg/commit conn)
+      result)
+    (catch Throwable e
+      (pg/rollback conn)
+      (throw e)))
 
-statement: BEGIN
+
+
+  statement: BEGIN
 execute s29/p30: delete from test1 where name like $1
   parameters: $1 = 'Test%'
 execute s31/p32: insert into test1 (name) values ($1)

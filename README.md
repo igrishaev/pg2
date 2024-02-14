@@ -560,6 +560,44 @@ will be available during transaction but won't be stored at the end.
 (pg/rollback conn)
 ~~~
 
+Of course, there is a macro what handles `BEGIN`, `COMMIT`, and `ROLLBACK` logic
+for you. The `with-tx` one wraps a block of code. It opens a transaction,
+executes the body and, if there was not an exception, commits it. If there was
+an exception, the macro rolls back the transaction and re-throws it.
+
+The first argument of the macro is a connection object:
+
+~~~clojure
+(pg/with-tx [conn]
+  (pg/execute conn
+              "delete from test1 where name like $1"
+              {:params ["Test%"]})
+  (pg/execute conn
+              "insert into test1 (name) values ($1)"
+              {:params ["Test3"]}))
+~~~
+
+The macro expands into something like this:
+
+~~~clojure
+(pg/begin conn)
+(try
+  (let [result (do <body>)]
+    (pg/commit conn)
+    result)
+  (catch Throwable e
+    (pg/rollback conn)
+    (throw e)))
+~~~
+
+The macro accepts several optional parameters that affect a transaction, namely:
+
+| Name               | Type              | Description                                                                  |
+|--------------------|-------------------|------------------------------------------------------------------------------|
+| `:read-only?`      | Boolean           | When true, only read operations are allowed                                  |
+| `:rollback?`       | Boolean           | When true, he transaction gets rolled back even if there was no an exception |
+| `:isolation-level` | Keyword or String | Set isolation level for the current transaction                              |
+
 ## Connection state
 
 There are some function to track the connection state. In Postgres, the state of
