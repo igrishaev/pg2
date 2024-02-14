@@ -103,6 +103,7 @@ create table demo (
 )")
   {:command "CREATE TABLE"}
 
+
   ;;
   ;; Transactions
   ;;
@@ -181,8 +182,10 @@ create table demo (
                 "insert into test1 (name) values ($1)"
                 {:params ["Test3"]}))
 
+  ;; auto rollback
 
-pg-pg14-1  | 2024-02-14 15:33:22.200 UTC [73004] LOG:  statement: BEGIN
+
+  pg-pg14-1  | 2024-02-14 15:33:22.200 UTC [73004] LOG:  statement: BEGIN
 pg-pg14-1  | 2024-02-14 15:33:22.209 UTC [73004] LOG:  execute s29/p30: delete from test1 where name like $1
 pg-pg14-1  | 2024-02-14 15:33:22.209 UTC [73004] DETAIL:  parameters: $1 = 'Test%'
 pg-pg14-1  | 2024-02-14 15:33:22.217 UTC [73004] LOG:  execute s31/p32: insert into test1 (name) values ($1)
@@ -194,9 +197,57 @@ pg-pg14-1  | 2024-02-14 15:33:22.219 UTC [73004] LOG:  statement: COMMIT
   [{:name "Test3"}]
 
 
-  - isolation-level
-  - read-only?
-  - rollback?
+
+  (pg/with-tx [conn {:isolation-level :serializable}]
+    (pg/execute conn
+                "delete from test1 where name like $1"
+                {:params ["Test%"]})
+    (pg/execute conn
+                "insert into test1 (name) values ($1)"
+                {:params ["Test3"]}))
+
+
+    (:serializable "SERIALIZABLE")
+
+    (:repeatable-read "REPEATABLE READ")
+
+    (:read-committed "READ COMMITTED")
+
+    (:read-uncommitted "READ UNCOMMITTED")
+    TxLevel/READ_UNCOMMITTED))
+
+
+;; pg14_1  | 2024-02-14 16:57:54.539 UTC [9020] LOG:  statement: BEGIN
+;; pg14_1  | 2024-02-14 16:57:54.556 UTC [9020] LOG:  statement: SET TRANSACTION ISOLATION LEVEL SERIALIZABLE
+;; pg14_1  | 2024-02-14 16:57:54.594 UTC [9020] LOG:  execute s5/p6: delete from test1 where name like $1
+;; pg14_1  | 2024-02-14 16:57:54.594 UTC [9020] DETAIL:  parameters: $1 = 'Test%'
+;; pg14_1  | 2024-02-14 16:57:54.605 UTC [9020] LOG:  execute s7/p8: insert into test1 (name) values ($1)
+;; pg14_1  | 2024-02-14 16:57:54.605 UTC [9020] DETAIL:  parameters: $1 = 'Test3'
+;; pg14_1  | 2024-02-14 16:57:54.608 UTC [9020] LOG:  statement: COMMIT
+
+
+(pg/with-tx [conn {:read-only? true}]
+  (pg/execute conn
+              "delete from test1 where name like $1"
+              {:params ["Test%"]})
+  (pg/execute conn
+              "insert into test1 (name) values ($1)"
+              {:params ["Test3"]}))
+
+
+;; Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:205).
+;; Server error response: {severity=ERROR, code=25006, file=utility.c, line=411, function=PreventCommandIfReadOnly, message=cannot execute DELETE in a read-only transaction, verbosity=ERROR}
+
+(pg/with-tx [conn {:rollback? true}]
+  (pg/execute conn
+              "delete from test1 where name like $1"
+              {:params ["Test%"]}))
+
+;; pg14_1  | 2024-02-14 16:59:26.256 UTC [9020] LOG:  statement: BEGIN
+;; pg14_1  | 2024-02-14 16:59:26.263 UTC [9020] LOG:  execute s11/p12: delete from test1 where name like $1
+;; pg14_1  | 2024-02-14 16:59:26.263 UTC [9020] DETAIL:  parameters: $1 = 'Test%'
+;; pg14_1  | 2024-02-14 16:59:26.267 UTC [9020] LOG:  statement: ROLLBACK
+
 
 
 
