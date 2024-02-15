@@ -3,8 +3,9 @@
 
 - test parallel connection access
 - next.jdbc api layer
+
 - bulk statement execute
-- batch execute?
+- batch execute
 
 - arrays
   - decode txt
