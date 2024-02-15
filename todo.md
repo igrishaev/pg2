@@ -17,6 +17,10 @@
 
 - malli spec
 
+- custom types
+  - encode
+  - decode
+
 - types
   - interval
   - hstore
