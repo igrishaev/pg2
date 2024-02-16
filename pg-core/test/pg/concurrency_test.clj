@@ -6,8 +6,7 @@
    [clojure.java.io :as io]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
-   [pg.integration :refer [*CONFIG*
-                           P15]]
+   [pg.integration :refer [*CONFIG* P15]]
    [pg.oid :as oid]
    [pg.pool :as pool]))
 

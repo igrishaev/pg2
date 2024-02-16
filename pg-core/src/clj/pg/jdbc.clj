@@ -15,45 +15,65 @@
 
 (defn ->connection
   "
-  Get a connection out from a pool or a Clojure map.
+  Get a connection out from a source (pool, Clojure map).
   "
-  ^Connection [connectable]
+  ^Connection [source]
   (cond
 
-    (pool/pool? connectable)
-    (pool/borrow-connection connectable)
+    (pool/pool? source)
+    (pool/borrow-connection source)
 
-    (map? connectable)
-    (pg/connect connectable)
+    (map? source)
+    (pg/connect source)
 
-    (pg/connection? connectable)
-    connectable
+    (pg/connection? source)
+    source
 
     :else
-    (pg/error! "Unsupported connectable: %s" connectable)))
+    (pg/error! "Unsupported connection source: %s" source)))
 
 
-(defn get-connection ^Connection [connectable]
-  (->connection connectable))
-
-
-(defn prepare
-  ([conn sql-vec]
-   (prepare conn sql-vec nil))
-
-  ([conn sql-vec _opt]
-   (let [[sql & _params] sql-vec]
-     (pg/prepare conn sql))))
+(defn get-connection ^Connection [source]
+  (->connection source))
 
 
 (defn execute!
-  ([conn sql-vec]
-   (execute! conn sql-vec nil))
+  ([source sql-vec]
+   (execute! source sql-vec nil))
 
-  ([conn sql-vec opt]
-   (let [[sql & params] sql-vec]
-     (pg/execute conn sql (assoc opt
-                                 :params params)))))
+  ([source sql-vec opt]
+
+   (let [[expr & params]
+         sql-vec
+
+         fn-execute
+         (cond
+
+           (string? expr)
+           pg/execute
+
+           (pg/prepared-statement? expr)
+           pg/execute-statement
+
+           :else
+           (pg/error! "Wrong execute expression: %s" expr))]
+
+     (fn-execute (->connection source)
+                 expr
+                 (assoc opt :params params)))))
+
+
+;; TODO: pass OIDS
+(defn prepare
+  ([source sql-vec]
+   (prepare source sql-vec nil))
+
+  ([source sql-vec opt]
+   (let [[sql & _params] sql-vec]
+     (pg/prepare (->connection source) sql))))
+
+
+
 
 
 (defn execute-one!
