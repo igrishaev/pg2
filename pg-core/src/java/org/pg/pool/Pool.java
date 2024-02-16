@@ -52,7 +52,6 @@ public final class Pool implements AutoCloseable {
         connsUsed.remove(conn.getId());
     }
 
-    @SuppressWarnings("unused")
     private boolean isUsed (final Connection conn) {
         return connsUsed.containsKey(conn.getId());
     }
@@ -87,6 +86,14 @@ public final class Pool implements AutoCloseable {
                     throw new PGError(message);
                 }
             }
+            if (conn.isClosed()) {
+                final String message = String.format(
+                        "Connection %s has been already closed",
+                        conn.getId()
+                );
+                logger.log(poolConfig.logLevel(), message);
+                continue;
+            }
             if (isExpired(conn)) {
                 utilizeConnection(conn);
             }
@@ -95,11 +102,6 @@ public final class Pool implements AutoCloseable {
                 return conn;
             }
         }
-    }
-
-    @SuppressWarnings("unused")
-    public void returnConnection (final Connection conn) {
-        returnConnection(conn, false);
     }
 
     private void utilizeConnection(final Connection conn) {
@@ -126,6 +128,11 @@ public final class Pool implements AutoCloseable {
                 poolConfig.maxSize()
         );
         return conn;
+    }
+
+    @SuppressWarnings("unused")
+    public void returnConnection (final Connection conn) {
+        returnConnection(conn, false);
     }
 
     public void returnConnection (final Connection conn, final boolean forceClose) {
@@ -220,4 +227,5 @@ public final class Pool implements AutoCloseable {
             );
         }
     }
+
 }

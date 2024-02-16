@@ -9,7 +9,7 @@ import org.pg.enums.Phase;
 import org.pg.error.PGError;
 import org.pg.error.PGErrorResponse;
 import org.pg.msg.*;
-import org.pg.reducer.IReducer;
+import org.pg.proto.IReducer;
 
 import java.util.ArrayList;
 import java.util.Arrays;

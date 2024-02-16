@@ -5,7 +5,7 @@ import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentVector;
 import org.pg.util.BBTool;
-import org.pg.clojure.IClojure;
+import org.pg.proto.IClojure;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;

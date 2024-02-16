@@ -1,4 +1,4 @@
-package org.pg.reducer;
+package org.pg.proto;
 
 import org.pg.clojure.LazyMap;
 

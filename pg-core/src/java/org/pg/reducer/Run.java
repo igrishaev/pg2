@@ -3,6 +3,7 @@ package org.pg.reducer;
 
 import clojure.lang.IFn;
 import org.pg.clojure.LazyMap;
+import org.pg.proto.IReducer;
 
 import java.util.Objects;
 

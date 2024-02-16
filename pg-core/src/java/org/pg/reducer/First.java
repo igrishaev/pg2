@@ -1,6 +1,7 @@
 package org.pg.reducer;
 
 import org.pg.clojure.LazyMap;
+import org.pg.proto.IReducer;
 
 public class First implements IReducer {
 

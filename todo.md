@@ -1,11 +1,16 @@
 
+- next.jdbc api layer
+- next.jdbc tests
+- pool close conn test
+
 - readme
 
 - test parallel connection access
-- next.jdbc api layer
+
 
 - bulk statement execute
 - batch execute
+- pg.jdbc batch
 
 - arrays
   - decode txt

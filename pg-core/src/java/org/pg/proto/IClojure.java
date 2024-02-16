@@ -1,4 +1,4 @@
-package org.pg.clojure;
+package org.pg.proto;
 
 import clojure.lang.IPersistentCollection;
 

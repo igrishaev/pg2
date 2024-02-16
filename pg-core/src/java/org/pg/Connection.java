@@ -51,6 +51,7 @@ public final class Connection implements AutoCloseable {
     private boolean isSSL = false;
     private final System.Logger logger = System.getLogger(Connection.class.getCanonicalName());
     private final TryLock lock = new TryLock();
+    private boolean isClosed = false;
 
     public Connection(final String host,
                       final int port,
@@ -84,11 +85,15 @@ public final class Connection implements AutoCloseable {
     }
 
     public void close () {
-        if (!isClosed()) {
-            sendTerminate();
-            flush();
-            IOTool.close(socket);
+        try (TryLock ignored = lock.get()) {
+            if (!isClosed) {
+                sendTerminate();
+                flush();
+                IOTool.close(socket);
+                isClosed = true;
+            }
         }
+
     }
 
     private void setSocketOptions () {
@@ -127,7 +132,7 @@ public final class Connection implements AutoCloseable {
 
     public Boolean isClosed () {
         try (TryLock ignored = lock.get()) {
-            return socket.isClosed();
+            return isClosed;
         }
     }
 

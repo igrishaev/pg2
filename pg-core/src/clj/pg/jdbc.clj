@@ -5,14 +5,36 @@
 
   https://github.com/seancorfield/next-jdbc/blob/develop/src/next/jdbc.clj
   "
+  (:import
+   org.pg.Connection)
   (:require
    [clojure.set :as set]
-   [pg.core :as pg]))
+   [pg.core :as pg]
+   [pg.pool :as pool]))
 
 
-;; TODO: pool support
-(defn get-connection [config]
-  (pg/connect config))
+(defn ->connection
+  "
+  Get a connection out from a pool or a Clojure map.
+  "
+  ^Connection [connectable]
+  (cond
+
+    (pool/pool? connectable)
+    (pool/borrow-connection connectable)
+
+    (map? connectable)
+    (pg/connect connectable)
+
+    (pg/connection? connectable)
+    connectable
+
+    :else
+    (pg/error! "Unsupported connectable: %s" connectable)))
+
+
+(defn get-connection ^Connection [connectable]
+  (->connection connectable))
 
 
 (defn prepare
@@ -45,12 +67,12 @@
                                  :first? true)))))
 
 
-;; TODO: implement batch execute
 (defn execute-batch!
   [conn sql opts]
   (pg/error! "execute-batch! is not imiplemented"))
 
 
+;; TODO: pool support
 (defmacro on-connection [[bind config] & body]
   `(pg/with-connection [~bind ~config]
      ~@body))

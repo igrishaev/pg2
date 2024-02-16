@@ -6,6 +6,7 @@ import clojure.lang.PersistentHashMap;
 import clojure.lang.IFn;
 import clojure.lang.PersistentVector;
 import org.pg.clojure.LazyMap;
+import org.pg.proto.IReducer;
 
 import java.util.Objects;
 

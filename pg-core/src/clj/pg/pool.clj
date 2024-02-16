@@ -108,6 +108,14 @@
      ~@body))
 
 
+(defn borrow-connection
+  "
+  Borrow a connection from a pool.
+  "
+  ^Connection [^Pool pool]
+  (.borrowConnection pool))
+
+
 (defmacro with-connection
   "
   Execute the body while the `bind` symbol is bound
@@ -121,7 +129,7 @@
   [[bind pool] & body]
   (let [POOL
         (with-meta (gensym "POOL")
-                   {:tag `Pool})]
+          {:tag `Pool})]
     `(let [~POOL
            ~pool
 
