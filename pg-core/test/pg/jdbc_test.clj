@@ -1,4 +1,6 @@
 (ns pg.jdbc-test
+  (:import
+   java.time.LocalDate)
   (:require
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
@@ -108,4 +110,32 @@
                              {:kebab-keys? true})]
       (is (= {:foo-bar 42} res)))))
 
-;; test pool
+
+(deftest test-execute-one!-pool
+  (with-open [pool (pool/pool CONFIG)
+              conn (jdbc/get-connection pool)]
+    (let [res
+          (jdbc/execute-one! conn
+                             ["select $1 as foo_bar" true]
+                             {:kebab-keys? true})]
+      (is (= {:foo-true true} res)))))
+
+
+(deftest test-execute-one!-conn-stmt
+  (with-open [conn (jdbc/get-connection CONFIG)]
+    (let [date
+          (LocalDate/parse "2024-01-30")
+
+          stmt
+          (jdbc/prepare conn
+                        ["select $1 as is_date, $2 as is_num"]
+                        {:oids [oid/date oid/int4]
+                         :kebab-keys? true})
+
+          res
+          (jdbc/execute-one! conn
+                             [stmt date 123]
+                             {:kebab-keys? true})]
+
+      (is (= {:is-num 123,
+              :is-date date} res)))))

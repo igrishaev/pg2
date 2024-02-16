@@ -6,6 +6,7 @@
   https://github.com/seancorfield/next-jdbc/blob/develop/src/next/jdbc.clj
   "
   (:import
+   clojure.lang.IFn
    org.pg.Connection)
   (:require
    [clojure.set :as set]
@@ -37,6 +38,19 @@
   (->connection source))
 
 
+(defn ->fn-execute ^IFn [expr]
+  (cond
+
+    (string? expr)
+    pg/execute
+
+    (pg/prepared-statement? expr)
+    pg/execute-statement
+
+    :else
+    (pg/error! "Wrong execute expression: %s" expr)))
+
+
 (defn execute!
   ([source sql-vec]
    (execute! source sql-vec nil))
@@ -47,16 +61,7 @@
          sql-vec
 
          fn-execute
-         (cond
-
-           (string? expr)
-           pg/execute
-
-           (pg/prepared-statement? expr)
-           pg/execute-statement
-
-           :else
-           (pg/error! "Wrong execute expression: %s" expr))]
+         (->fn-execute expr)]
 
      (fn-execute (->connection source)
                  expr
@@ -74,19 +79,25 @@
                  (assoc opt :params params)))))
 
 
-;; ------------- untested
-
-
 (defn execute-one!
-  ([conn sql-vec]
-   (execute-one! conn sql-vec nil))
+  ([source sql-vec]
+   (execute-one! source sql-vec nil))
 
-  ([conn sql-vec opt]
-   (let [[sql & params] sql-vec]
-     (pg/execute conn sql (assoc opt
-                                 :params params
-                                 :first? true)))))
+  ([source sql-vec opt]
+   (let [[expr & params]
+         sql-vec
 
+         fn-execute
+         (->fn-execute expr)]
+
+     (fn-execute (->connection source)
+                 expr
+                 (assoc opt
+                        :params params
+                        :first? true)))))
+
+
+;; ------------- untested
 
 (defn execute-batch!
   [conn sql opts]
