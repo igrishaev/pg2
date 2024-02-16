@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.pg.PGError;
+import org.pg.error.PGError;
 import org.pg.util.ByteTool;
 import org.pg.util.HashTool;
 import org.pg.util.NormTool;

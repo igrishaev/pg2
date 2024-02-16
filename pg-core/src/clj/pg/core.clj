@@ -23,8 +23,8 @@
    org.pg.Connection
    org.pg.ExecuteParams
    org.pg.ExecuteParams$Builder
-   org.pg.PGError
-   org.pg.PGErrorResponse
+   org.pg.error.PGError
+   org.pg.error.PGErrorResponse
    org.pg.PreparedStatement
    org.pg.codec.DecoderBin
    org.pg.codec.DecoderTxt

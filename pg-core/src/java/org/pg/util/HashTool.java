@@ -1,6 +1,6 @@
 package org.pg.util;
 
-import org.pg.PGError;
+import org.pg.error.PGError;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;

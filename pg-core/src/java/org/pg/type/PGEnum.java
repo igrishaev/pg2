@@ -1,6 +1,6 @@
 package org.pg.type;
 
-import org.pg.PGError;
+import org.pg.error.PGError;
 
 public record PGEnum(String x) {
     public static PGEnum of(final Object x) {

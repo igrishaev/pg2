@@ -1,7 +1,7 @@
 package org.pg.codec;
 
 import org.pg.Const;
-import org.pg.PGError;
+import org.pg.error.PGError;
 import org.pg.enums.OID;
 
 import java.nio.charset.StandardCharsets;

@@ -7,7 +7,7 @@
    java.time.OffsetDateTime
    java.time.OffsetTime
    java.util.UUID
-   org.pg.PGError)
+   org.pg.error.PGError)
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]

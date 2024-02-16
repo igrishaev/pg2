@@ -6,7 +6,7 @@ import clojure.lang.PersistentHashMap;
 import clojure.lang.Ratio;
 import clojure.lang.Symbol;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.pg.PGError;
+import org.pg.error.PGError;
 import jsonista.jackson.PersistentVectorDeserializer;
 import jsonista.jackson.PersistentHashMapDeserializer;
 import jsonista.jackson.KeywordKeyDeserializer;

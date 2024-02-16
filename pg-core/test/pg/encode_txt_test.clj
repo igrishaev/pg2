@@ -1,6 +1,6 @@
 (ns pg.encode-txt-test
   (:import
-   org.pg.PGError
+   org.pg.error.PGError
    java.math.BigDecimal
    java.math.BigInteger
    java.time.Instant

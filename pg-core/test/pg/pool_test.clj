@@ -1,7 +1,7 @@
 (ns pg.pool-test
   (:import
-   org.pg.PGError
-   org.pg.PGErrorResponse)
+   org.pg.error.PGError
+   org.pg.error.PGErrorResponse)
   (:require
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]

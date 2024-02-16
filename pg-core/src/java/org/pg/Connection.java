@@ -12,6 +12,7 @@ import org.pg.codec.CodecParams;
 import org.pg.codec.EncoderTxt;
 import org.pg.copy.Copy;
 import org.pg.enums.*;
+import org.pg.error.PGError;
 import org.pg.msg.*;
 import org.pg.type.OIDHint;
 import org.pg.util.*;

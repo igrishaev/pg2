@@ -1,6 +1,6 @@
 package org.pg.util;
 
-import org.pg.PGError;
+import org.pg.error.PGError;
 import java.util.Arrays;
 
 public final class HexTool {

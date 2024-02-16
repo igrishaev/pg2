@@ -2,7 +2,7 @@ package org.pg.pool;
 
 import org.pg.ConnConfig;
 import org.pg.Connection;
-import org.pg.PGError;
+import org.pg.error.PGError;
 import org.pg.util.TryLock;
 
 import java.util.Deque;

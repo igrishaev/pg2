@@ -13,8 +13,8 @@
    java.util.Date
    java.util.HashMap
    java.util.concurrent.ExecutionException
-   org.pg.PGError
-   org.pg.PGErrorResponse
+   org.pg.error.PGError
+   org.pg.error.PGErrorResponse
    org.pg.clojure.LazyMap
    org.pg.clojure.LazyVector)
   (:require

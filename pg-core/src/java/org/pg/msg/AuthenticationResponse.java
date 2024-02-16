@@ -1,6 +1,6 @@
 package org.pg.msg;
 
-import org.pg.PGError;
+import org.pg.error.PGError;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

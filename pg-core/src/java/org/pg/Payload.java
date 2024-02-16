@@ -1,5 +1,6 @@
 package org.pg;
 
+import org.pg.error.PGError;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;

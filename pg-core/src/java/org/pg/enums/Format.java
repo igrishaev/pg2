@@ -1,6 +1,6 @@
 package org.pg.enums;
 
-import org.pg.PGError;
+import org.pg.error.PGError;
 
 public enum Format {
     TXT((short)0), BIN((short)1);

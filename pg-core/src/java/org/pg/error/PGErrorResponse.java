@@ -1,4 +1,4 @@
-package org.pg;
+package org.pg.error;
 
 import clojure.lang.IPersistentCollection;
 import org.pg.msg.ErrorResponse;

@@ -1,4 +1,4 @@
-package org.pg;
+package org.pg.error;
 
 
 public final class PGError extends Error {

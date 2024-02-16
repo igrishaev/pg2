@@ -4,7 +4,7 @@ package org.pg.codec;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-import org.pg.PGError;
+import org.pg.error.PGError;
 import org.pg.enums.OID;
 import org.pg.util.BBTool;
 import org.pg.json.JSON;

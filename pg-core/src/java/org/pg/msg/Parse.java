@@ -1,7 +1,7 @@
 package org.pg.msg;
 
 import org.pg.enums.OID;
-import org.pg.PGError;
+import org.pg.error.PGError;
 import org.pg.Payload;
 
 import java.nio.ByteBuffer;

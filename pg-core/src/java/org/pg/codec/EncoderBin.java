@@ -11,7 +11,7 @@ import clojure.lang.BigInt;
 
 import org.pg.type.PGEnum;
 import org.pg.Const;
-import org.pg.PGError;
+import org.pg.error.PGError;
 import org.pg.enums.OID;
 import org.pg.util.BBTool;
 import org.pg.json.JSON;

@@ -6,6 +6,8 @@ import clojure.lang.PersistentHashMap;
 import org.pg.auth.ScramSha256;
 import org.pg.clojure.LazyMap;
 import org.pg.enums.Phase;
+import org.pg.error.PGError;
+import org.pg.error.PGErrorResponse;
 import org.pg.msg.*;
 import org.pg.reducer.IReducer;
 

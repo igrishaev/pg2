@@ -1,6 +1,6 @@
 (ns pg.encode-bin-test
   (:import
-   org.pg.PGError
+   org.pg.error.PGError
    java.nio.ByteBuffer
    java.util.Date
    java.time.Instant
