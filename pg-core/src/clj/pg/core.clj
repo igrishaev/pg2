@@ -23,6 +23,7 @@
    org.pg.Connection
    org.pg.ExecuteParams
    org.pg.ExecuteParams$Builder
+   org.pg.PGError
    org.pg.PGErrorResponse
    org.pg.PreparedStatement
    org.pg.codec.DecoderBin
@@ -1002,3 +1003,7 @@
 (defn get-error-fields [^PGErrorResponse e]
   (when (instance? PGErrorResponse e)
     (.getErrorFields e)))
+
+
+(defn error! [template & args]
+  (throw (new PGError (apply format template args))))
