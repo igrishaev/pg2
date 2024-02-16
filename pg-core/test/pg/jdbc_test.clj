@@ -13,32 +13,21 @@
 
 
 (deftest test-get-connection-map
-  (let [conn
-        (jdbc/get-connection CONFIG)
+  (with-open [conn (jdbc/get-connection CONFIG)]
+    (let [res
+          (jdbc/execute! conn ["select 1 as one"])]
 
-        res
-        (jdbc/execute! conn ["select 1 as one"])]
-
-    (is (pg/connection? conn))
-    (is (= [{:one 1}] res))
-
-    (pg/close conn)))
+      (is (pg/connection? conn))
+      (is (= [{:one 1}] res)))))
 
 
 (deftest test-get-connection-pool
-  (let [pool
-        (pool/pool CONFIG)
-
-        conn
-        (jdbc/get-connection pool)
-
-        res
-        (jdbc/execute! conn ["select 1 as one"])]
-
+  (with-open [pool (pool/pool CONFIG)
+              conn (jdbc/get-connection pool)]
+    (let [res
+          (jdbc/execute! conn ["select 1 as one"])]
     (is (pg/connection? conn))
-    (is (= [{:one 1}] res))
-
-    (pool/close pool)))
+    (is (= [{:one 1}] res)))))
 
 
 (deftest test-get-connection-error
@@ -51,22 +40,20 @@
 
 
 (deftest test-execute!-conn
-  (let [conn
-        (jdbc/get-connection CONFIG)
-        res
-        (jdbc/execute! conn ["select $1::int4 as num" 42])]
-    (is (= [{:num 42}] res))))
+  (with-open [conn (jdbc/get-connection CONFIG)]
+    (let [res
+          (jdbc/execute! conn ["select $1::int4 as num" 42])]
+      (is (= [{:num 42}] res)))))
 
 
 (deftest test-execute!-conn-opt
-  (let [conn
-        (jdbc/get-connection CONFIG)
-        res
-        (jdbc/execute! conn
-                       ["select $1::int4 as num, $2::bool" 42 true]
-                       {:matrix? true})]
-    (is (= [[:num :bool] [42 true]] res))
-    (pg/close conn)))
+  (with-open [conn (jdbc/get-connection CONFIG)]
+    (let [res
+          (jdbc/execute! conn
+                         ["select $1::int4 as num, $2::bool" 42 true]
+                         {:matrix? true})]
+      (is (= [[:num :bool] [42 true]] res))
+      (pg/close conn))))
 
 
 (deftest test-execute!-pool-opt
@@ -79,31 +66,9 @@
 
 
 (deftest test-prepare-conn
-  (let [conn
-        (jdbc/get-connection CONFIG)
+  (with-open [conn (jdbc/get-connection CONFIG)]
 
-        stmt
-        (jdbc/prepare conn
-                      ["select $1 as num, $2 as bool" 42 true]
-                      {:oids [oid/int4]})
-
-        res
-        (jdbc/execute! conn
-                       [stmt 123 false]
-                       {:matrix? true})]
-
-    (is (pg/prepared-statement? stmt))
-    (is (= [[:num :bool] [123 false]] res))
-
-    (pg/close conn)))
-
-
-(deftest test-prepare-pool
-  (pool/with-pool [pool CONFIG]
-    (let [conn
-          (jdbc/get-connection pool)
-
-          stmt
+    (let [stmt
           (jdbc/prepare conn
                         ["select $1 as num, $2 as bool" 42 true]
                         {:oids [oid/int4]})
@@ -114,6 +79,33 @@
                          {:matrix? true})]
 
       (is (pg/prepared-statement? stmt))
-      (is (= [[:num :bool] [123 false]] res))
+      (is (= [[:num :bool] [123 false]] res)))))
 
-      (pg/close conn))))
+
+(deftest test-prepare-pool
+  (with-open [pool (pool/pool CONFIG)
+              conn (jdbc/get-connection pool)]
+
+    (let [stmt
+          (jdbc/prepare conn
+                        ["select $1 as num, $2 as bool" 42 true]
+                        {:oids [oid/int4]})
+
+          res
+          (jdbc/execute! conn
+                         [stmt 123 false]
+                         {:matrix? true})]
+
+      (is (pg/prepared-statement? stmt))
+      (is (= [[:num :bool] [123 false]] res)))))
+
+
+(deftest test-execute-one!-conn
+  (with-open [conn (jdbc/get-connection CONFIG)]
+    (let [res
+          (jdbc/execute-one! conn
+                             ["select $1 as foo_bar" 42]
+                             {:kebab-keys? true})]
+      (is (= {:foo-bar 42} res)))))
+
+;; test pool
