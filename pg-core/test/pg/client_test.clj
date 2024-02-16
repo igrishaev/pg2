@@ -881,6 +881,20 @@ from
       (is (pg/prepared-statement? res)))))
 
 
+(deftest test-prepare-with-oids
+  (pg/with-connection [conn *CONFIG*]
+    (let [stmt
+          (pg/prepare conn
+                      "select $1 as foo"
+                      {:oids [oid/int4]})
+          res
+          (pg/execute-statement conn
+                                stmt
+                                {:params [999]
+                                 :first? true})]
+      (is (= {:foo 999} res)))))
+
+
 (deftest test-statement-params-wrong-count
   (pg/with-connection [conn *CONFIG*]
     (pg/with-statement [stmt conn "select $1::integer as foo, $2::integer as bar"]

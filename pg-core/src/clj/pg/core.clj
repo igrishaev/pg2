@@ -491,7 +491,6 @@
   (.write writer (.toString conn)))
 
 
-;; TODO: weird signature
 (defn prepare
 
   "
@@ -509,8 +508,8 @@
    (.prepare conn sql ExecuteParams/INSTANCE))
 
   (^PreparedStatement
-   [^Connection conn ^String sql ^List oids]
-   (.prepare conn sql oids)))
+   [^Connection conn ^String sql ^Map opt]
+   (.prepare conn sql (->execute-params opt))))
 
 
 (defn execute-statement

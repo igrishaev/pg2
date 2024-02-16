@@ -502,9 +502,10 @@ public final class Connection implements AutoCloseable {
         final List<Object> params = executeParams.params();
         final int paramCount = params.size();
 
-        final OID[] OIDs = new OID[paramCount];
+        final int maxIndex = Math.max(OIDsProvidedCount, paramCount);
+        final OID[] OIDs = new OID[maxIndex];
 
-        for (int i = 0; i < paramCount; i++) {
+        for (int i = 0; i < maxIndex; i++) {
             if (i < OIDsProvidedCount) {
                 OIDs[i] = OIDsProvided.get(i);
             }

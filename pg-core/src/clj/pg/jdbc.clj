@@ -63,17 +63,18 @@
                  (assoc opt :params params)))))
 
 
-;; TODO: pass OIDS
 (defn prepare
   ([source sql-vec]
    (prepare source sql-vec nil))
 
   ([source sql-vec opt]
-   (let [[sql & _params] sql-vec]
-     (pg/prepare (->connection source) sql))))
+   (let [[sql & params] sql-vec]
+     (pg/prepare (->connection source)
+                 sql
+                 (assoc opt :params params)))))
 
 
-
+;; ------------- untested
 
 
 (defn execute-one!

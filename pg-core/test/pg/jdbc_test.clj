@@ -47,7 +47,7 @@
     (is false)
     (catch Throwable e
       (is true)
-      (is (= "Unsupported connectable: null" (ex-message e))))))
+      (is (= "Unsupported connection source: null" (ex-message e))))))
 
 
 (deftest test-execute!-conn
@@ -84,7 +84,7 @@
 
         stmt
         (jdbc/prepare conn
-                      ["select $1 as num, $2::bool" 42 true]
+                      ["select $1 as num, $2 as bool" 42 true]
                       {:oids [oid/int4]})
 
         res
@@ -95,7 +95,25 @@
     (is (pg/prepared-statement? stmt))
     (is (= [[:num :bool] [123 false]] res))
 
-    (pg/close conn)
+    (pg/close conn)))
 
-    )
-  )
+
+(deftest test-prepare-pool
+  (pool/with-pool [pool CONFIG]
+    (let [conn
+          (jdbc/get-connection pool)
+
+          stmt
+          (jdbc/prepare conn
+                        ["select $1 as num, $2 as bool" 42 true]
+                        {:oids [oid/int4]})
+
+          res
+          (jdbc/execute! conn
+                         [stmt 123 false]
+                         {:matrix? true})]
+
+      (is (pg/prepared-statement? stmt))
+      (is (= [[:num :bool] [123 false]] res))
+
+      (pg/close conn))))

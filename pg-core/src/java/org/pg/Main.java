@@ -1,5 +1,7 @@
 package org.pg;
 
+import org.pg.enums.OID;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -64,12 +66,11 @@ public final class Main {
 
         // System.out.println(conn.execute(""));
 
-        String query = "select '1 year 1 second'::interval as interval";
+        String query = "select $1 as foo";
         // "select $1::int as foo, 'test' as string, 42 as num, now() as now"
-        PreparedStatement ps = conn.prepare(query);
+        PreparedStatement ps = conn.prepare(query, ExecuteParams.builder().OIDs(List.of(OID.BOOL)).build());
         // List<Object> params = List.of(1);
-        List<Object> params = Collections.emptyList();
-        Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(params).build());
+        Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(List.of(true)).build());
         conn.closeStatement(ps);
         System.out.println(res2.toString());
 
