@@ -72,9 +72,8 @@
   (pg/error! "execute-batch! is not imiplemented"))
 
 
-;; TODO: pool support
-(defmacro on-connection [[bind config] & body]
-  `(pg/with-connection [~bind ~config]
+(defmacro on-connection [[bind connectable] & body]
+  `(pg/with-connection [~bind (->connection ~connectable)]
      ~@body))
 
 
@@ -95,8 +94,11 @@
 
 
 (defmacro with-transaction
-  [[bind conn opts] & body]
-  `(pg/with-tx [bind conn (remap-tx-opts opts)]
+  [[bind connectable opts] & body]
+  `(pg/with-tx [~bind
+                (->connection ~connectable)
+                ~@(when opts
+                    `[(remap-tx-opts ~opts)])]
      ~@body))
 
 

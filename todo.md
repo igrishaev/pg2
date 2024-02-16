@@ -1,6 +1,7 @@
 
 - next.jdbc api layer
 - next.jdbc tests
+- next.jdbc docstrings
 - pool close conn test
 
 - readme
