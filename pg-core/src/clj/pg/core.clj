@@ -832,31 +832,48 @@
   - rollback?: to ROLLBACK a transaction even if it was successful.
 
   "
-  [[conn {:as opt :keys [isolation-level
-                         read-only?
-                         rollback?]}]
-   & body]
+  [[conn opts] & body]
 
-  (let [bind (with-meta (gensym "CONN")
-               {:tag `Connection})]
+  (let [bind
+        (with-meta (gensym "CONN")
+          {:tag `Connection})
 
-    `(let [~bind ~conn]
+        ISOLVL
+        (gensym "ISOLVL")
+
+        RO?
+        (gensym "RO?")
+
+        ROLL?
+        (gensym "ROLL?")]
+
+    `(let [~bind ~conn
+
+           ~@(when opts
+               `[{~ISOLVL :isolation-level
+                  ~RO? :read-only?
+                  ~ROLL? :rollback?}
+                 ~opts])]
 
        (with-lock [~bind]
 
          (.begin ~bind)
 
-         ~@(when isolation-level
-             [`(set-tx-level ~bind ~isolation-level)])
+         ~@(when opts
+             `[(when ~ISOLVL
+                 (set-tx-level ~bind ~ISOLVL))])
 
-         ~@(when read-only?
-             [`(set-read-only ~bind)])
+         ~@(when opts
+             `[(when ~RO?
+                 (set-read-only ~bind))])
 
          (try
            (let [result# (do ~@body)]
-             ~(if rollback?
-                `(.rollback ~bind)
-                `(.commit ~bind))
+             ~@(if opts
+                 `[(if ~ROLL?
+                     (.rollback ~bind)
+                     (.commit ~bind))]
+                 `[(.commit ~bind)])
              result#)
            (catch Throwable e#
              (.rollback ~bind)

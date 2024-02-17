@@ -39,7 +39,8 @@
     (is false)
     (catch Throwable e
       (is true)
-      (is (= "Unsupported connection source: null" (ex-message e))))))
+      (is (= "Connection source cannot be null"
+             (ex-message e))))))
 
 
 (deftest test-execute!-conn
@@ -173,6 +174,10 @@
         (fn [conn]
           (jdbc/execute! conn
                          ["select $1 as one" 42]))
+
         res
-        (jdbc/transact CONFIG func)]
+        (jdbc/transact CONFIG
+                       func
+                       {:rollback-only true})]
+
     (is (= [{:one 42}] res))))

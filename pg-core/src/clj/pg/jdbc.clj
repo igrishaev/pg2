@@ -6,36 +6,50 @@
   https://github.com/seancorfield/next-jdbc/blob/develop/src/next/jdbc.clj
   "
   (:import
+   clojure.lang.IPersistentMap
    clojure.lang.IFn
-   org.pg.Connection)
+   org.pg.Connection
+   org.pg.pool.Pool)
   (:require
    [clojure.set :as set]
    [pg.core :as pg]
    [pg.pool :as pool]))
 
 
-(defn ->connection
-  "
-  Get a connection out from a source (pool, Clojure map).
-  "
-  ^Connection [source]
-  (cond
+(defprotocol IConnectable
+  (-connect [this]))
 
-    (pg/connection? source)
-    source
 
-    (pool/pool? source)
-    (pool/borrow-connection source)
+(extend-protocol IConnectable
 
-    (map? source)
-    (pg/connect source)
+  Connection
 
-    :else
-    (pg/error! "Unsupported connection source: %s" source)))
+  (-connect [this]
+    this)
+
+  Pool
+
+  (-connect [this]
+    (pool/borrow-connection this))
+
+  IPersistentMap
+
+  (-connect [this]
+    (pg/connect this))
+
+  Object
+
+  (-connect [this]
+    (pg/error! "Unsupported connection source: %s" this))
+
+  nil
+
+  (-connect [this]
+    (pg/error! "Connection source cannot be null")))
 
 
 (defn get-connection ^Connection [source]
-  (->connection source))
+  (-connect source))
 
 
 (defn ->fn-execute ^IFn [expr]
@@ -63,7 +77,7 @@
          fn-execute
          (->fn-execute expr)]
 
-     (fn-execute (->connection source)
+     (fn-execute (-connect source)
                  expr
                  (assoc opt :params params)))))
 
@@ -74,7 +88,7 @@
 
   ([source sql-vec opt]
    (let [[sql & params] sql-vec]
-     (pg/prepare (->connection source)
+     (pg/prepare (-connect source)
                  sql
                  (assoc opt :params params)))))
 
@@ -90,7 +104,7 @@
          fn-execute
          (->fn-execute expr)]
 
-     (fn-execute (->connection source)
+     (fn-execute (-connect source)
                  expr
                  (assoc opt
                         :params params
@@ -134,7 +148,7 @@
    (transact source f nil))
 
   ([source f opt]
-   (let [conn (->connection source)]
+   (let [conn (-connect source)]
      (pg/with-tx [conn (remap-tx-opts opt)]
        (f conn)))))
 
@@ -142,7 +156,7 @@
 (defmacro with-transaction
   [[bind source opts] & body]
   `(pg/with-tx [~bind
-                (->connection ~source)
+                (-connect ~source)
                 ~@(when opts
                     `[(remap-tx-opts ~opts)])]
      ~@body))
