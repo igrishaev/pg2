@@ -222,25 +222,38 @@
   (let [opts
         {:isolation :serializable
          :read-only true
-         :rollback-only true}]
+         :rollback-only true}
+
+        conn!
+        (atom nil)]
+
     (jdbc/with-transaction [conn CONFIG opts]
+      (reset! conn! conn)
       (let [res
             (jdbc/execute! conn
                            ["select $1 as one" 42])]
-        (is (= [{:one 42}] res))))))
+        (is (= [{:one 42}] res))))
+
+    (is (pg/connection? @conn!))
+    (is (pg/closed? @conn!))))
 
 
 (deftest test-with-transaction-conn
   (let [opts
         {:isolation :serializable
          :read-only true
-         :rollback-only true}]
+         :rollback-only true}
+        conn!
+        (atom nil)]
     (pg/with-connection [foo CONFIG]
+      (reset! conn! foo)
       (jdbc/with-transaction [TX foo opts]
         (let [res
               (jdbc/execute! TX
                              ["select $1 as one" 42])]
-          (is (= [{:one 42}] res)))))))
+          (is (= [{:one 42}] res)))))
+    (is (pg/connection? @conn!))
+    (is (pg/closed? @conn!))))
 
 
 (deftest test-with-transaction-pool
@@ -249,13 +262,28 @@
          :read-only true
          :rollback-only true}]
     (pool/with-pool [foo CONFIG]
-      (jdbc/with-transaction [TX foo opts]
-        (let [tx?
-              (jdbc/active-tx? TX)
+      (let [stats1
+            (pool/stats foo)]
 
-              res
-              (jdbc/execute! TX
-                             ["select $1 as one" 42])]
+        (jdbc/with-transaction [TX foo opts]
 
-          (is tx?)
-          (is (= [{:one 42}] res)))))))
+          (let [stats2
+                (pool/stats foo)
+
+                tx?
+                (jdbc/active-tx? TX)
+
+                res
+                (jdbc/execute! TX
+                               ["select $1 as one" 42])]
+
+            (is (= {:free 1 :used 1} stats2))
+
+            (is tx?)
+            (is (= [{:one 42}] res))))
+
+        (let [stats3
+              (pool/stats foo)]
+
+          (is (= {:free 2 :used 0} stats1))
+          (is (= {:free 2 :used 0} stats3)))))))

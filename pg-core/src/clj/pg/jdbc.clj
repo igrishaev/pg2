@@ -59,10 +59,41 @@
 (defn get-connection
   "
   Return a connection object from a source which might be
-  a config map, a pool, or a connection.
+  a config map, a pool, or a connection. Not recommended
+  to use as there is a chance to leave the connection not
+  closed. Consider `on-connection` instead.
   "
   ^Connection [source]
   (-connect source))
+
+
+(defmacro on-connection
+  "
+  Perform a block of code while the `bind` symbol is bound
+  to a `Connection` object. If the source is a config map,
+  the connection gets closed. When the source is a pool,
+  the connection gets borrowed and returned afterwards.
+  For existing connection, nothing is happening at the end.
+  "
+  [[bind source] & body]
+
+  `(let [source# ~source]
+     (cond
+
+       (pg/connection? source#)
+       (let [~bind source#]
+         (do ~@body))
+
+       (pool/pool? source#)
+       (pool/with-connection [~bind source#]
+         ~@body)
+
+       (map? source#)
+       (pg/with-connection [~bind source#]
+         ~@body)
+
+       :else
+       (pg/error! "Unsupported connection source: %s" source#))))
 
 
 (defn ->fn-execute ^IFn [expr]
@@ -97,11 +128,35 @@
          fn-execute
          (->fn-execute expr)]
 
-     (fn-execute (-connect source)
-                 expr
-                 (-> opt-defaults
-                     (merge opt)
-                     (assoc :params params))))))
+     (on-connection [conn source]
+       (fn-execute conn
+                   expr
+                   (-> opt-defaults
+                       (merge opt)
+                       (assoc :params params)))))))
+
+
+(defn execute-one!
+  "
+  Like `execute!` but returns only the first row.
+  "
+  ([source sql-vec]
+   (execute-one! source sql-vec nil))
+
+  ([source sql-vec opt]
+   (let [[expr & params]
+         sql-vec
+
+         fn-execute
+         (->fn-execute expr)]
+
+     (on-connection [conn source]
+       (fn-execute conn
+                   expr
+                   (-> opt-defaults
+                       (merge opt)
+                       (assoc :params params
+                              :first? true)))))))
 
 
 (defn prepare
@@ -128,31 +183,10 @@
 
   ([source sql-vec opt]
    (let [[sql & params] sql-vec]
-     (pg/prepare (-connect source)
-                 sql
-                 (assoc opt :params params)))))
-
-
-(defn execute-one!
-  "
-  Like `execute!` but returns only the first row.
-  "
-  ([source sql-vec]
-   (execute-one! source sql-vec nil))
-
-  ([source sql-vec opt]
-   (let [[expr & params]
-         sql-vec
-
-         fn-execute
-         (->fn-execute expr)]
-
-     (fn-execute (-connect source)
-                 expr
-                 (-> opt-defaults
-                     (merge opt)
-                     (assoc :params params
-                            :first? true))))))
+     (on-connection [conn source]
+       (pg/prepare conn
+                   sql
+                   (assoc opt :params params))))))
 
 
 (defn execute-batch!
@@ -163,40 +197,37 @@
   (pg/error! "execute-batch! is not imiplemented"))
 
 
-(defmacro on-connection
-  "
-  Perform a block of code while the `bind` symbol is bound
-  to a `Connection` object. If the source is a config map,
-  the connection gets closed. When the source is a pool,
-  the connection gets borrowed and returned afterwards.
-  For existing connection, nothing is happening at the end.
-  "
-  [[bind source] & body]
-
-  `(let [source# ~source]
-     (cond
-
-       (pg/connection? source#)
-       (let [~bind source#]
-         (do ~@body))
-
-       (pool/pool? source#)
-       (pool/with-connection [~bind source#]
-         ~@body)
-
-       (map? source#)
-       (pg/with-connection [~bind source#]
-         ~@body)
-
-       :else
-       (pg/error! "Unsupported connection source: %s" source#))))
-
-
 (defn remap-tx-opts [jdbc-opt]
   (set/rename-keys jdbc-opt
                    {:isolation     :isolation-level
                     :read-only     :read-only?
                     :rollback-only :rollback?}))
+
+
+(defmacro with-transaction
+  "
+  Execute a block of code in a transaction. The connection
+  with the transaction opened is bound to the `bind` symbol.
+  The source might be a config map, a connection, or a pool.
+  The `opts` is a map that accepts next.jdbc parameters for
+  transaction, namely:
+
+  - `:isolation`: one of these keywords:
+    - `:read-committed`
+    - `:read-uncommitted`
+    - `:repeatable-read`
+    - `:serializable`
+  - `:read-only`: true / false;
+  - `:rollback-only`; true / false.
+
+  Return the result of the body block.
+  "
+  [[bind source opts] & body]
+  `(on-connection [~bind ~source]
+     (pg/with-tx [~bind
+                  ~@(when opts
+                      `[(remap-tx-opts ~opts)])]
+       ~@body)))
 
 
 (defn transact
@@ -211,39 +242,14 @@
     on whether there was an exception;
   - if there was not, return the result of the function.
 
-  The function accepts the same next.jdbc options, namely:
-
-  - `:isolation`: one of these keywords:
-    - `:read-committed`
-    - `:read-uncommitted`
-    - `:repeatable-read`
-    - `:serializable`
-  - `:read-only`: true / false;
-  - `:rollback-only`; true / false.
+  The `opt` params are similar to `with-transaction` options.
   "
   ([source f]
    (transact source f nil))
 
   ([source f opt]
-   (let [conn (-connect source)]
-     (pg/with-tx [conn (remap-tx-opts opt)]
-       (f conn)))))
-
-
-(defmacro with-transaction
-  "
-  Execute a block of code in a transaction. The connection
-  with the transaction opened is bound to the `bind` symbol.
-  The source might be a config map, a connection, or a pool.
-  The `opts` is a map that accepts next.jdbc parameters for
-  transaction (see `transact` above).
-  "
-  [[bind source opts] & body]
-  `(on-connection [~bind ~source]
-     (pg/with-tx [~bind
-                  ~@(when opts
-                      `[(remap-tx-opts ~opts)])]
-       ~@body)))
+   (with-transaction [conn source opt]
+     (f conn))))
 
 
 (defn active-tx?
