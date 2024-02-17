@@ -155,6 +155,7 @@
 
 (defmacro with-transaction
   [[bind source opts] & body]
+  ;; TODO: check type
   `(pg/with-tx [~bind
                 (-connect ~source)
                 ~@(when opts
