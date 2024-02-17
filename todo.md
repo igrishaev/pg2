@@ -1,12 +1,13 @@
 
-- jdbc kebab default?
-- pool close conn test
+- jdbc readme
+- release 0.1.3
 
 - readme
 
-- test parallel connection access
-
+- pool close conn test
 - keywords with namespaces (+ jdbc)
+
+- test parallel connection access
 
 - bulk statement execute
 - batch execute

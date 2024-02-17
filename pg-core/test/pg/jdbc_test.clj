@@ -50,6 +50,16 @@
       (is (= [{:num 42}] res)))))
 
 
+(deftest test-execute!-kebab-off
+  (with-open [conn (jdbc/get-connection CONFIG)]
+    (let [res
+          (jdbc/execute! conn
+                         ["select $1 as foo_bar" 42]
+                         {:kebab-keys? false}
+                         )]
+      (is (= [{:foo_bar 42}] res)))))
+
+
 (deftest test-execute!-conn-opt
   (with-open [conn (jdbc/get-connection CONFIG)]
     (let [res
@@ -108,8 +118,7 @@
   (with-open [conn (jdbc/get-connection CONFIG)]
     (let [res
           (jdbc/execute-one! conn
-                             ["select $1 as foo_bar" 42]
-                             {:kebab-keys? true})]
+                             ["select $1 as foo_bar" 42])]
       (is (= {:foo-bar 42} res)))))
 
 
@@ -118,8 +127,7 @@
               conn (jdbc/get-connection pool)]
     (let [res
           (jdbc/execute-one! conn
-                             ["select $1 as foo_bar" true]
-                             {:kebab-keys? true})]
+                             ["select $1 as foo_bar" true])]
       (is (= {:foo-bar true} res)))))
 
 
@@ -131,16 +139,23 @@
           stmt
           (jdbc/prepare conn
                         ["select $1 as is_date, $2 as is_num"]
-                        {:oids [oid/date oid/int4]
-                         :kebab-keys? true})
+                        {:oids [oid/date oid/int4]})
 
           res
           (jdbc/execute-one! conn
-                             [stmt date 123]
-                             {:kebab-keys? true})]
+                             [stmt date 123])]
 
       (is (= {:is-num 123
               :is-date date} res)))))
+
+
+(deftest test-execute-one!-kebab-off
+  (with-open [conn (jdbc/get-connection CONFIG)]
+    (let [res
+          (jdbc/execute-one! conn
+                             ["select $1 as foo_bar" 42]
+                             {:kebab-keys? false})]
+      (is (= {:foo_bar 42} res)))))
 
 
 (deftest test-execute-batch!

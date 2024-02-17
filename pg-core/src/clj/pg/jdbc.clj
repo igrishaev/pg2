@@ -16,6 +16,10 @@
    [pg.pool :as pool]))
 
 
+(def opt-defaults
+  {:kebab-keys? true})
+
+
 ;;
 ;; Fetch connection out from various sources (config, pool).
 ;;
@@ -95,7 +99,9 @@
 
      (fn-execute (-connect source)
                  expr
-                 (assoc opt :params params)))))
+                 (-> opt-defaults
+                     (merge opt)
+                     (assoc :params params))))))
 
 
 (defn prepare
@@ -143,9 +149,10 @@
 
      (fn-execute (-connect source)
                  expr
-                 (assoc opt
-                        :params params
-                        :first? true)))))
+                 (-> opt-defaults
+                     (merge opt)
+                     (assoc :params params
+                            :first? true))))))
 
 
 (defn execute-batch!
