@@ -68,8 +68,8 @@ public record ConnConfig(
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
 
         public Builder(final String user, final String database) {
-            this.user = Objects.requireNonNull(user);
-            this.database = Objects.requireNonNull(database);
+            this.user = Objects.requireNonNull(user, "User cannot be null");
+            this.database = Objects.requireNonNull(database, "Database cannot be null");
             this.pgParams.put("client_encoding", Const.CLIENT_ENCODING);
             this.pgParams.put("application_name", Const.APP_NAME);
         }
@@ -100,17 +100,26 @@ public record ConnConfig(
         }
 
         public Builder fnNotification(final IFn fnNotification) {
-            this.fnNotification = Objects.requireNonNull(fnNotification);
+            this.fnNotification = Objects.requireNonNull(
+                    fnNotification,
+                    "Notification function cannot be null"
+            );
             return this;
         }
 
         public Builder fnNotice(final IFn fnNotice) {
-            this.fnNotice = Objects.requireNonNull(fnNotice);
+            this.fnNotice = Objects.requireNonNull(
+                    fnNotice,
+                    "Notice function cannot be null"
+            );
             return this;
         }
 
         public Builder fnProtocolVersion(final IFn fnProtocolVersion) {
-            this.fnProtocolVersion = Objects.requireNonNull(fnProtocolVersion);
+            this.fnProtocolVersion = Objects.requireNonNull(
+                    fnProtocolVersion,
+                    "Protocol version function cannot be null"
+            );
             return this;
         }
 

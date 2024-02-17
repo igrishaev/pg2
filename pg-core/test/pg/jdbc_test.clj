@@ -1,5 +1,6 @@
 (ns pg.jdbc-test
   (:import
+   org.pg.error.PGError
    java.time.LocalDate)
   (:require
    [clojure.test :refer [deftest is use-fixtures testing]]
@@ -118,7 +119,7 @@
           (jdbc/execute-one! conn
                              ["select $1 as foo_bar" true]
                              {:kebab-keys? true})]
-      (is (= {:foo-true true} res)))))
+      (is (= {:foo-bar true} res)))))
 
 
 (deftest test-execute-one!-conn-stmt
@@ -137,5 +138,41 @@
                              [stmt date 123]
                              {:kebab-keys? true})]
 
-      (is (= {:is-num 123,
+      (is (= {:is-num 123
               :is-date date} res)))))
+
+
+(deftest test-execute-batch!
+  (with-open [conn (jdbc/get-connection CONFIG)]
+    (try
+      (jdbc/execute-batch! conn "select 1" [])
+      (is false)
+      (catch PGError e
+        (is true)
+        (is (= "execute-batch! is not imiplemented"
+               (ex-message e)))))))
+
+
+(deftest test-on-connection-conn
+  (jdbc/on-connection [conn CONFIG]
+    (is (pg/connection? conn))
+    (is (= [{:num 1}]
+           (pg/query conn "select 1 as num")))))
+
+
+(deftest test-on-connection-pool
+  (pool/with-pool [pool CONFIG]
+    (jdbc/on-connection [conn pool]
+      (is (pg/connection? conn))
+      (is (= [{:num 1}]
+             (pg/query conn "select 1 as num"))))))
+
+
+(deftest test-transact-config
+  (let [func
+        (fn [conn]
+          (jdbc/execute! conn
+                         ["select $1 as one" 42]))
+        res
+        (jdbc/transact CONFIG func)]
+    (is (= [{:one 42}] res))))

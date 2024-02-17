@@ -21,14 +21,14 @@
   ^Connection [source]
   (cond
 
+    (pg/connection? source)
+    source
+
     (pool/pool? source)
     (pool/borrow-connection source)
 
     (map? source)
     (pg/connect source)
-
-    (pg/connection? source)
-    source
 
     :else
     (pg/error! "Unsupported connection source: %s" source)))
@@ -97,25 +97,26 @@
                         :first? true)))))
 
 
-;; ------------- untested
-
 (defn execute-batch!
   [conn sql opts]
   (pg/error! "execute-batch! is not imiplemented"))
 
 
-(defmacro on-connection [[bind connectable] & body]
-  `(pg/with-connection [~bind (->connection ~connectable)]
-     ~@body))
+(defmacro on-connection [[bind source] & body]
 
+  `(let [source# ~source]
+     (cond
 
-(defn transact
-  ([conn f]
-   (transact conn f nil))
+       (pool/pool? source#)
+       (pool/with-connection [~bind source#]
+         ~@body)
 
-  ([conn f opt]
-   (pg/with-tx [conn opt]
-     (f conn))))
+       (map? source#)
+       (pg/with-connection [~bind source#]
+         ~@body)
+
+       :else
+       (pg/error! "Unsupported connection source: %s" source#))))
 
 
 (defn remap-tx-opts [jdbc-opt]
@@ -125,10 +126,23 @@
                     :rollback-only :rollback?}))
 
 
+;; ------------- untested
+
+
+(defn transact
+  ([source f]
+   (transact source f nil))
+
+  ([source f opt]
+   (let [conn (->connection source)]
+     (pg/with-tx [conn (remap-tx-opts opt)]
+       (f conn)))))
+
+
 (defmacro with-transaction
-  [[bind connectable opts] & body]
+  [[bind source opts] & body]
   `(pg/with-tx [~bind
-                (->connection ~connectable)
+                (->connection ~source)
                 ~@(when opts
                     `[(remap-tx-opts ~opts)])]
      ~@body))

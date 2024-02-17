@@ -2,12 +2,14 @@
 - next.jdbc api layer
 - next.jdbc tests
 - next.jdbc docstrings
+- jdbc kebab default?
 - pool close conn test
 
 - readme
 
 - test parallel connection access
 
+- keywords with namespaces (+ jdbc)
 
 - bulk statement execute
 - batch execute
