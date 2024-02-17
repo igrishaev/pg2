@@ -121,6 +121,10 @@
   `(let [source# ~source]
      (cond
 
+       (pg/connection? source#)
+       (let [~bind source#]
+         (do ~@body))
+
        (pool/pool? source#)
        (pool/with-connection [~bind source#]
          ~@body)
@@ -140,9 +144,6 @@
                     :rollback-only :rollback?}))
 
 
-;; ------------- untested
-
-
 (defn transact
   ([source f]
    (transact source f nil))
@@ -155,12 +156,11 @@
 
 (defmacro with-transaction
   [[bind source opts] & body]
-  ;; TODO: check type
-  `(pg/with-tx [~bind
-                (-connect ~source)
-                ~@(when opts
-                    `[(remap-tx-opts ~opts)])]
-     ~@body))
+  `(on-connection [~bind ~source]
+     (pg/with-tx [~bind
+                  ~@(when opts
+                      `[(remap-tx-opts ~opts)])]
+       ~@body)))
 
 
 (defn active-tx? [conn]

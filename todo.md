@@ -1,6 +1,4 @@
 
-- next.jdbc api layer
-- next.jdbc tests
 - next.jdbc docstrings
 - jdbc kebab default?
 - pool close conn test

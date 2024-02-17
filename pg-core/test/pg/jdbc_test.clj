@@ -178,6 +178,69 @@
         res
         (jdbc/transact CONFIG
                        func
-                       {:rollback-only true})]
+                       {:isolation :serializable
+                        :read-only true
+                        :rollback-only true})]
 
     (is (= [{:one 42}] res))))
+
+
+(deftest test-transact-pool
+  (with-open [pool (pool/pool CONFIG)]
+
+    (let [func
+          (fn [conn]
+            (jdbc/execute! conn
+                           ["select $1 as one" 42]))
+
+          res
+          (jdbc/transact pool
+                         func
+                         {:isolation :serializable
+                          :read-only true
+                          :rollback-only true})]
+
+      (is (= [{:one 42}] res)))))
+
+
+(deftest test-with-transaction-config
+  (let [opts
+        {:isolation :serializable
+         :read-only true
+         :rollback-only true}]
+    (jdbc/with-transaction [conn CONFIG opts]
+      (let [res
+            (jdbc/execute! conn
+                           ["select $1 as one" 42])]
+        (is (= [{:one 42}] res))))))
+
+
+(deftest test-with-transaction-conn
+  (let [opts
+        {:isolation :serializable
+         :read-only true
+         :rollback-only true}]
+    (pg/with-connection [foo CONFIG]
+      (jdbc/with-transaction [TX foo opts]
+        (let [res
+              (jdbc/execute! TX
+                             ["select $1 as one" 42])]
+          (is (= [{:one 42}] res)))))))
+
+
+(deftest test-with-transaction-pool
+  (let [opts
+        {:isolation :serializable
+         :read-only true
+         :rollback-only true}]
+    (pool/with-pool [foo CONFIG]
+      (jdbc/with-transaction [TX foo opts]
+        (let [tx?
+              (jdbc/active-tx? TX)
+
+              res
+              (jdbc/execute! TX
+                             ["select $1 as one" 42])]
+
+          (is tx?)
+          (is (= [{:one 42}] res)))))))

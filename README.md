@@ -47,6 +47,7 @@ classes are supported for reading and writing.
 - [Connection config parameters](#connection-config-parameters)
 - [Query](#query)
 - [Execute](#execute)
+- [Query & Execute parameters](#query--execute-parameters)
 - [Type hints](#type-hints)
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
@@ -444,6 +445,11 @@ ids.
             {:params ["Agent Smith"]})
 ;; {:inserted 3}
 ~~~
+
+Both `query` and `execute` functions accept various options that affect data
+processing. Find their description in the next section.
+
+## Query & Execute parameters
 
 ## Type hints
 
