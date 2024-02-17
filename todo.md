@@ -1,5 +1,4 @@
 
-- next.jdbc docstrings
 - jdbc kebab default?
 - pool close conn test
 

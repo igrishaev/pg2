@@ -16,6 +16,10 @@
    [pg.pool :as pool]))
 
 
+;;
+;; Fetch connection out from various sources (config, pool).
+;;
+
 (defprotocol IConnectable
   (-connect [this]))
 
@@ -48,7 +52,12 @@
     (pg/error! "Connection source cannot be null")))
 
 
-(defn get-connection ^Connection [source]
+(defn get-connection
+  "
+  Return a connection object from a source which might be
+  a config map, a pool, or a connection.
+  "
+  ^Connection [source]
   (-connect source))
 
 
@@ -66,6 +75,13 @@
 
 
 (defn execute!
+  "
+  Given a source and an SQL vector like [expr & params],
+  execute a query and return a result.
+
+  The `expr` might be both a string representing a SQL query
+  or an instance of the `PreparedStatement` class.
+  "
   ([source sql-vec]
    (execute! source sql-vec nil))
 
@@ -83,6 +99,24 @@
 
 
 (defn prepare
+  "
+  Prepare and return an instance of the `PreparedStatement` class.
+
+  The `sql-vec` must be a vector like `[sql & params]`. The `params`,
+  although not requred, might be used for type hints, for example:
+
+  ```
+  ['select $1 as foo', 42]
+  ```
+
+  Without passing 42, the parser won't know the desired type of $1
+  and it will be a default one which is text.
+
+  Once prepared, the statement might be used continuously
+  with different parameters.
+
+  Don't share it with other connections.
+  "
   ([source sql-vec]
    (prepare source sql-vec nil))
 
@@ -94,6 +128,9 @@
 
 
 (defn execute-one!
+  "
+  Like `execute!` but returns only the first row.
+  "
   ([source sql-vec]
    (execute-one! source sql-vec nil))
 
@@ -112,11 +149,22 @@
 
 
 (defn execute-batch!
+  "
+  Performs batch execution on the server side (TBD).
+  "
   [conn sql opts]
   (pg/error! "execute-batch! is not imiplemented"))
 
 
-(defmacro on-connection [[bind source] & body]
+(defmacro on-connection
+  "
+  Perform a block of code while the `bind` symbol is bound
+  to a `Connection` object. If the source is a config map,
+  the connection gets closed. When the source is a pool,
+  the connection gets borrowed and returned afterwards.
+  For existing connection, nothing is happening at the end.
+  "
+  [[bind source] & body]
 
   `(let [source# ~source]
      (cond
@@ -145,6 +193,27 @@
 
 
 (defn transact
+  "
+  Having a source and a function that accepts a connection,
+  do the following steps:
+
+  - get a connection from the source;
+  - start a new transaction in this connection;
+  - run the function with the connection;
+  - either commit or rollback the transaction depending
+    on whether there was an exception;
+  - if there was not, return the result of the function.
+
+  The function accepts the same next.jdbc options, namely:
+
+  - `:isolation`: one of these keywords:
+    - `:read-committed`
+    - `:read-uncommitted`
+    - `:repeatable-read`
+    - `:serializable`
+  - `:read-only`: true / false;
+  - `:rollback-only`; true / false.
+  "
   ([source f]
    (transact source f nil))
 
@@ -155,6 +224,13 @@
 
 
 (defmacro with-transaction
+  "
+  Execute a block of code in a transaction. The connection
+  with the transaction opened is bound to the `bind` symbol.
+  The source might be a config map, a connection, or a pool.
+  The `opts` is a map that accepts next.jdbc parameters for
+  transaction (see `transact` above).
+  "
   [[bind source opts] & body]
   `(on-connection [~bind ~source]
      (pg/with-tx [~bind
@@ -163,5 +239,11 @@
        ~@body)))
 
 
-(defn active-tx? [conn]
+(defn active-tx?
+  "
+  True if the connection is a transaction at the moment.
+  Even if the transaction is in an error state, the result
+  will be true.
+  "
+  [conn]
   (not (pg/idle? conn)))
