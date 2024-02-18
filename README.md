@@ -520,7 +520,7 @@ there is no such a prepared statement.
  {:name "Agent Jones", :id 14})
 ~~~
 
-**In Postgres, prepared statement are always bound to a certain
+**In Postgres, prepared statements are always bound to a certain
 connection. Don't share a statement opened in a connection A to B and vice
 versa. Do not share them across different threads.**
 
@@ -670,7 +670,7 @@ The default transation level depends on the settings of your database.
 
 [transaction-iso]: https://www.postgresql.org/docs/current/transaction-iso.html
 
-This document doens't describe the difference between isolation levels. Please
+This document doesn't describe the difference between isolation levels. Please
 refer to the [official documentation][transaction-iso] for more information.
 
 ## Connection state
