@@ -1,0 +1,24 @@
+# Local pg-ragtime postgresql database
+#
+# I wasn't able to use the toplevel `docker-compose.yaml` out of the box.
+#
+# Maybe `.docker/postgres/initdb.d` is missing?
+#
+# Anyway, I'm adding a local compose file for now to get a REPL to run my
+# code.
+#
+# We probably want to delete this file when I understand how to run the
+# toplevel docker-compose.yaml.
+
+version: "3.6"
+
+services:
+  pg16-ragtime:
+    image: postgres:16
+    hostname: pg16-ragtime
+    ports:
+      - "10170:5432"
+    environment:
+      - POSTGRES_DB=test
+      - POSTGRES_PASSWORD=test
+      - POSTGRES_USER=test
