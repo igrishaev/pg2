@@ -9,6 +9,11 @@
 #
 # We probably want to delete this file when I understand how to run the
 # toplevel docker-compose.yaml.
+#
+# Connect with `psql`:
+#
+#     $ psql -d "postgresql://localhost:10170/test?user=test&password=test"
+
 
 version: "3.6"
 
