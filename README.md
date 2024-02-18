@@ -520,7 +520,7 @@ there is no such a prepared statement.
  {:name "Agent Jones", :id 14})
 ~~~
 
-**In Postgres, prepared statement are always bound to a certain
+**In Postgres, prepared statements are always bound to a certain
 connection. Don't share a statement opened in a connection A to B and vice
 versa. Do not share them across different threads.**
 
