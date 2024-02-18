@@ -670,7 +670,7 @@ The default transation level depends on the settings of your database.
 
 [transaction-iso]: https://www.postgresql.org/docs/current/transaction-iso.html
 
-This document doens't describe the difference between isolation levels. Please
+This document doesn't describe the difference between isolation levels. Please
 refer to the [official documentation][transaction-iso] for more information.
 
 ## Connection state
