@@ -249,6 +249,9 @@
                 password
                 pg-params
 
+                ;; Next.JDBC
+                dbname
+
                 ;; enc/dec format
                 binary-encode?
                 binary-decode?
@@ -279,9 +282,12 @@
                 ;; misc
                 cancel-timeout-ms
                 protocol-version]}
-        params]
+        params
 
-    (cond-> (new ConnConfig$Builder user database)
+        DB
+        (or database dbname)]
+
+    (cond-> (new ConnConfig$Builder user DB)
 
       password
       (.password password)

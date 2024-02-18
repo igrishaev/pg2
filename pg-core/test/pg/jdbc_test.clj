@@ -5,14 +5,14 @@
   (:require
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
-   [pg.integration :refer [*CONFIG* P15]]
+   [pg.integration :refer [*DB-SPEC* P15]]
    [pg.oid :as oid]
    [pg.jdbc :as jdbc]
    [pg.pool :as pool]))
 
 
 (def CONFIG
-  (assoc *CONFIG* :port P15))
+  (assoc *DB-SPEC* :port P15))
 
 
 (deftest test-get-connection-map

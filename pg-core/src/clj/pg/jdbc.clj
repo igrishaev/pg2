@@ -21,7 +21,7 @@
 
 
 ;;
-;; Fetch connection out from various sources (config, pool).
+;; Fetch connection from various sources (config, pool).
 ;;
 
 (defprotocol IConnectable
@@ -89,7 +89,7 @@
          ~@body)
 
        (map? source#)
-       (pg/with-connection [~bind source#]
+       (with-open [~bind (get-connection source#)]
          ~@body)
 
        :else
