@@ -747,6 +747,25 @@ Now it's ready for new queries again.
 
 ## Next.JDBC API layer
 
+[next-jdbc]: https://github.com/seancorfield/next-jdbc
+
+PG2 has a namespace that mimics [Next.JDBC][next-jdbc] API. Of course, it
+doesn't cover 100% of its features yet most of the functions and macros are
+there. Import the namespace and declare a config:
+
+~~~clojure
+(require '[pg.jdbc :as jdbc])
+
+(def config
+  {:host "127.0.0.1"
+   :port 10140
+   :user "test"
+   :password "test"
+   :dbname "test"})
+~~~
+
+Having a config map, you obtain a connection:
+
 ## Enums
 
 ## Cloning a Connectin
