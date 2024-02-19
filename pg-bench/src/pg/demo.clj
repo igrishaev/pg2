@@ -3,7 +3,140 @@
    [pg.core :as pg]))
 
 
-#_
+(comment
+
+  (require '[pg.pool :as pool])
+
+  (require '[pg.jdbc :as jdbc])
+  (require '[pg.oid :as oid])
+
+  (def config
+    {:host "127.0.0.1"
+     :port 10140
+     :user "test"
+     :password "test"
+     :dbname "test"})
+
+  (def conn
+    (jdbc/get-connection config))
+
+  (jdbc/on-connection [conn config]
+    (println conn))
+
+  ;; <PG connection test@127.0.0.1:10140/test>
+
+  (def pool (pool/pool config))
+
+  (jdbc/on-connection [conn pool]
+    (println conn))
+
+  (jdbc/on-connection [conn config]
+    (jdbc/execute! conn ["select $1 as num" 42]))
+
+  [{:num 42}]
+
+  (jdbc/on-connection [conn config]
+    (jdbc/execute-one! conn ["select $1 as num" 42]))
+
+  {:num 42}
+
+  (jdbc/on-connection [conn config]
+    (let [stmt
+          (jdbc/prepare conn
+                        ["select $1 as num"]
+                        {:oids [oid/int8]})
+          res1
+          (jdbc/execute-one! conn [stmt 1])
+
+          res2
+          (jdbc/execute-one! conn [stmt 2])]
+
+      [res1 res2]))
+
+  ;; [{:num 1} {:num 2}]
+
+  (jdbc/execute! config ["create table test2 (id serial primary key, name text not null)"])
+
+  (jdbc/on-connection [conn config]
+    (let [stmt
+          (jdbc/prepare conn
+                        ["insert into test2 (name) values ($1) returning *"])
+
+          res1
+          (jdbc/execute-one! conn [stmt "Ivan"])
+
+          res2
+          (jdbc/execute-one! conn [stmt "Huan"])]
+
+      [res1 res2]))
+
+  [{:name "Ivan", :id 1} {:name "Huan", :id 2}]
+
+  (jdbc/on-connection [conn config]
+    (let [stmt
+          (jdbc/prepare conn
+                        ["insert into test2 (name) values ($1) returning *"])]
+
+      (jdbc/with-transaction [TX conn {:isolation :serializable
+                                       :read-only false
+                                       :rollback-only false}]
+
+        (let [res1
+              (jdbc/execute-one! conn [stmt "Snip"])
+
+              res2
+              (jdbc/execute-one! conn [stmt "Snap"])]
+
+          [res1 res2]))))
+
+  [{:name "Snip", :id 3} {:name "Snap", :id 4}]
+
+  ;; BEGIN
+  ;; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE
+  ;; insert into test2 (name) values ($1) returning *
+  ;;   $1 = 'Snip'
+  ;; insert into test2 (name) values ($1) returning *
+  ;;   $1 = 'Snap'
+  ;; COMMIT
+
+
+  (jdbc/on-connection [conn config]
+
+    (let [res1 (jdbc/active-tx? conn)]
+
+      (jdbc/with-transaction [TX conn {:isolation :serializable
+                                       :read-only false
+                                       :rollback-only false}]
+
+        (let [res2 (jdbc/active-tx? TX)]
+
+          [res1 res2]))))
+
+  [false true]
+
+  ;; get-connection
+  ;; kebab-case, no fq yet
+
+  (jdbc/on-connection [conn config]
+    (jdbc/execute-one! conn ["select 42 as the_answer"]))
+
+  {:the-answer 42}
+
+  (jdbc/on-connection [conn config]
+    (jdbc/execute-one! conn
+                       ["select 42 as the_answer"]
+                       {:kebab-keys? false}))
+
+  {:the_answer 42}
+
+
+
+
+
+
+  )
+
+
 (comment
 
   (require '[pg.core :as pg])
@@ -126,12 +259,12 @@ create table demo (
   ;; [{:name "Test1"} {:name "Test2"}]
 
 
-statement: BEGIN
-execute s23/p24: insert into test1 (name) values ($1)
-  parameters: $1 = 'Test1'
-execute s25/p26: insert into test1 (name) values ($1)
-  parameters: $1 = 'Test2'
-statement: COMMIT
+  ;; statement: BEGIN
+  ;; execute s23/p24: insert into test1 (name) values ($1)
+  ;;   parameters: $1 = 'Test1'
+  ;; execute s25/p26: insert into test1 (name) values ($1)
+  ;;   parameters: $1 = 'Test2'
+  ;; statement: COMMIT
 
   (pg/begin conn)
   (pg/execute conn
@@ -160,8 +293,8 @@ statement: COMMIT
 
   (pg/query conn "selekt dunno")
 
-  Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:205).
-  Server error response: {severity=ERROR, code=42601, file=scan.l, line=1176, function=scanner_yyerror, position=1, message=syntax error at or near "selekt", verbosity=ERROR}
+  ;; Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:205).
+  ;; Server error response: {severity=ERROR, code=42601, file=scan.l, line=1176, function=scanner_yyerror, position=1, message=syntax error at or near "selekt", verbosity=ERROR}
 
   (pg/status conn)
   :E
@@ -195,12 +328,12 @@ statement: COMMIT
 
 
 
-  statement: BEGIN
-execute s29/p30: delete from test1 where name like $1
-  parameters: $1 = 'Test%'
-execute s31/p32: insert into test1 (name) values ($1)
-  parameters: $1 = 'Test3'
-statement: COMMIT
+  ;;   statement: BEGIN
+  ;; execute s29/p30: delete from test1 where name like $1
+  ;;   parameters: $1 = 'Test%'
+  ;; execute s31/p32: insert into test1 (name) values ($1)
+  ;;   parameters: $1 = 'Test3'
+  ;; statement: COMMIT
 
   (pg/query conn
             "select name from test1 where name like 'Test%'")
@@ -217,14 +350,16 @@ statement: COMMIT
                 {:params ["Test3"]}))
 
 
-    (:serializable "SERIALIZABLE")
+  (:serializable "SERIALIZABLE")
 
-    (:repeatable-read "REPEATABLE READ")
+  (:repeatable-read "REPEATABLE READ")
 
-    (:read-committed "READ COMMITTED")
+  (:read-committed "READ COMMITTED")
 
-    (:read-uncommitted "READ UNCOMMITTED")
-    TxLevel/READ_UNCOMMITTED))
+  (:read-uncommitted "READ UNCOMMITTED")
+  TxLevel/READ_UNCOMMITTED
+
+  )
 
 
 ;; pg14_1  | 2024-02-14 16:57:54.539 UTC [9020] LOG:  statement: BEGIN
@@ -236,67 +371,64 @@ statement: COMMIT
 ;; pg14_1  | 2024-02-14 16:57:54.608 UTC [9020] LOG:  statement: COMMIT
 
 
-(pg/with-tx [conn {:read-only? true}]
-  (pg/execute conn
-              "delete from test1 where name like $1"
-              {:params ["Test%"]})
-  (pg/execute conn
-              "insert into test1 (name) values ($1)"
-              {:params ["Test3"]}))
+
+#_
+(comment
+
+  (pg/with-tx [conn {:read-only? true}]
+    (pg/execute conn
+                "delete from test1 where name like $1"
+                {:params ["Test%"]})
+    (pg/execute conn
+                "insert into test1 (name) values ($1)"
+                {:params ["Test3"]}))
+
+  ;; Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:205).
+  ;; Server error response: {severity=ERROR, code=25006, file=utility.c, line=411, function=PreventCommandIfReadOnly, message=cannot execute DELETE in a read-only transaction, verbosity=ERROR}
 
 
-;; Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:205).
-;; Server error response: {severity=ERROR, code=25006, file=utility.c, line=411, function=PreventCommandIfReadOnly, message=cannot execute DELETE in a read-only transaction, verbosity=ERROR}
+  (pg/with-tx [conn {:rollback? true}]
+    (pg/execute conn
+                "delete from test1 where name like $1"
+                {:params ["Test%"]})
 
-(pg/with-tx [conn {:rollback? true}]
-  (pg/execute conn
-              "delete from test1 where name like $1"
-              {:params ["Test%"]}))
-
-;; pg14_1  | 2024-02-14 16:59:26.256 UTC [9020] LOG:  statement: BEGIN
-;; pg14_1  | 2024-02-14 16:59:26.263 UTC [9020] LOG:  execute s11/p12: delete from test1 where name like $1
-;; pg14_1  | 2024-02-14 16:59:26.263 UTC [9020] DETAIL:  parameters: $1 = 'Test%'
-;; pg14_1  | 2024-02-14 16:59:26.267 UTC [9020] LOG:  statement: ROLLBACK
+    ;; pg14_1  | 2024-02-14 16:59:26.256 UTC [9020] LOG:  statement: BEGIN
+    ;; pg14_1  | 2024-02-14 16:59:26.263 UTC [9020] LOG:  execute s11/p12: delete from test1 where name like $1
+    ;; pg14_1  | 2024-02-14 16:59:26.263 UTC [9020] DETAIL:  parameters: $1 = 'Test%'
+    ;; pg14_1  | 2024-02-14 16:59:26.267 UTC [9020] LOG:  statement: ROLLBACK
 
 
-
-
-
-
-  (pg/execute conn
-              "insert into demo (title) values ($1), ($2), ($3)
+    (pg/execute conn
+                "insert into demo (title) values ($1), ($2), ($3)
                returning *"
-              {:params ["test1" "test2" "test3"]})
+                {:params ["test1" "test2" "test3"]})
 
-  (see trash.clj)
+    (see trash.clj)
 
-  (pg/execute conn
-              "select * from demo where id = $1"
-              {:params [5]
-               :first? true})
-
-
-  (pg/with-tx [conn]
     (pg/execute conn
-                "delete from demo where id = $1"
-                {:params [3]})
+                "select * from demo where id = $1"
+                {:params [5]
+                 :first? true})
+
+
+    (pg/with-tx [conn]
+      (pg/execute conn
+                  "delete from demo where id = $1"
+                  {:params [3]})
+      (pg/execute conn
+                  "insert into demo (title) values ($1)"
+                  {:params ["test4"]}))
+    {:inserted 1}
+
     (pg/execute conn
-                "insert into demo (title) values ($1)"
-                {:params ["test4"]}))
-  {:inserted 1}
+                "select pg_sleep($1) as sleep"
+                {:params [1]})
 
-  (pg/execute conn
-              "select pg_sleep($1) as sleep"
-              {:params [1]})
+    ;; LOG:  statement: BEGIN
+    ;; LOG:  execute s3/p4: delete from demo where id = $1
+    ;; DETAIL:  parameters: $1 = '3'
+    ;; LOG:  execute s5/p6: insert into demo (title) values ($1)
+    ;; DETAIL:  parameters: $1 = 'test4'
+    ;; LOG:  statement: COMMIT
 
-  ;; LOG:  statement: BEGIN
-  ;; LOG:  execute s3/p4: delete from demo where id = $1
-  ;; DETAIL:  parameters: $1 = '3'
-  ;; LOG:  execute s5/p6: insert into demo (title) values ($1)
-  ;; DETAIL:  parameters: $1 = 'test4'
-  ;; LOG:  statement: COMMIT
-
-
-
-
-  )
+    ))
