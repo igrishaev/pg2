@@ -47,11 +47,12 @@ classes are supported for reading and writing.
 - [Connection config parameters](#connection-config-parameters)
 - [Query](#query)
 - [Execute](#execute)
-- [Query & Execute parameters](#query--execute-parameters)
+- [Common Execute parameters](#common-execute-parameters)
 - [Type hints](#type-hints)
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
 - [Connection state](#connection-state)
+- [Next.JDBC API layer](#nextjdbc-api-layer)
 - [Enums](#enums)
 - [Cloning a Connectin](#cloning-a-connectin)
 - [Cancelling a Query](#cancelling-a-query)
@@ -449,7 +450,7 @@ ids.
 Both `query` and `execute` functions accept various options that affect data
 processing. Find their description in the next section.
 
-## Query & Execute parameters
+## Common Execute parameters
 
 ## Type hints
 
@@ -743,6 +744,8 @@ true
 ~~~
 
 Now it's ready for new queries again.
+
+## Next.JDBC API layer
 
 ## Enums
 
