@@ -43,8 +43,7 @@
   (jdbc/on-connection [conn config]
     (let [stmt
           (jdbc/prepare conn
-                        ["select $1 as num"]
-                        {:oids [oid/int8]})
+                        ["select $1::int4 + 1 as num"])
           res1
           (jdbc/execute-one! conn [stmt 1])
 
@@ -53,7 +52,7 @@
 
       [res1 res2]))
 
-  ;; [{:num 1} {:num 2}]
+  ;; [{:num 2} {:num 3}]
 
   (jdbc/execute! config ["create table test2 (id serial primary key, name text not null)"])
 

@@ -751,7 +751,15 @@ Now it's ready for new queries again.
 
 PG2 has a namespace that mimics [Next.JDBC][next-jdbc] API. Of course, it
 doesn't cover 100% of its features yet most of the functions and macros are
-there. Import the namespace and declare a config:
+there. It will help you to introduce PG2 into the project without rewriting all
+the database-related code.
+
+In Next.JDBC, all the functions and macros accept something that implements
+`Connectable` protocol. It might be a plain Clojure map, an existing connection,
+or a connection pool. The PG2 wrapper follows the same design. It works with
+either a map, a connection, or a pool.
+
+Import the namespace and declare a config:
 
 ~~~clojure
 (require '[pg.jdbc :as jdbc])
@@ -764,7 +772,104 @@ there. Import the namespace and declare a config:
    :dbname "test"})
 ~~~
 
-Having a config map, you obtain a connection:
+Having a config map, obtain a connection by passing it into `get-connection`:
+
+~~~clojure
+(def conn
+  (jdbc/get-connection config))
+~~~
+
+This function, although is a part of Next.JDBC design, is not recommended to
+use. Once you've established a connection, you must either close it or, if it
+was borrowed from a pool, return it there. There is a special macro
+`on-connection` which follows this logic:
+
+~~~clojure
+(jdbc/on-connection [bind source]
+  ...)
+~~~
+
+If the `source` was a map, a new connection is spawned and gets closed
+afterwards. If the `source` is a pool, the connection gets returned to the pool.
+When the `source` is a connection, nothing happens to it when exiting the macro.
+
+~~~clojure
+(jdbc/on-connection [conn config]
+  (println conn))
+~~~
+
+Two functions `execute!` and `execute-one!` perform queries to the
+database. Each of them takes a source, a SQL vector, and a map of options. The
+SQL vector is a sequence where the first item is either a string or a prepared
+statement, and the rest values are parameters.
+
+~~~clojure
+(jdbc/on-connection [conn config]
+  (jdbc/execute! conn ["select $1 as num" 42]))
+;; [{:num 42}]
+~~~
+
+Pay attention that parameters use the dollar sign with a number but not question
+marks.
+
+The `execute-one!` function acts like `execute!` but returns the first row of
+the result only. Internaly, this is done by passing the `{:first? true}`
+parameter than enables the `First` reducer.
+
+~~~clojure
+(jdbc/on-connection [conn config]
+  (jdbc/execute-one! conn ["select $1 as num" 42]))
+;; {:num 42}
+~~~
+
+To prepare a statement, pass a SQL-vector into the `prepare` function. The
+result will be an instance of the `PreparedStatement` class. To execute a
+statement, put it into a SQL-vector followed by the parameters:
+
+~~~clojure
+(jdbc/on-connection [conn config]
+  (let [stmt
+        (jdbc/prepare conn
+                      ["select $1::int4 + 1 as num"])
+        res1
+        (jdbc/execute-one! conn [stmt 1])
+
+        res2
+        (jdbc/execute-one! conn [stmt 2])]
+
+    [res1 res2]))
+
+;; [{:num 2} {:num 3}]
+~~~
+
+Above, the same statement object is executed twice with different parameters.
+
+More realistic example with inserting the data into a table. Let's prepare the
+table first:
+
+~~~clojure
+(jdbc/execute! config ["create table test2 (id serial primary key, name text not null)"])
+~~~
+
+Then insert a couple of rows returning the result:
+
+~~~clojure
+(jdbc/on-connection [conn config]
+  (let [stmt
+        (jdbc/prepare conn
+                      ["insert into test2 (name) values ($1) returning *"])
+
+        res1
+        (jdbc/execute-one! conn [stmt "Ivan"])
+
+        res2
+        (jdbc/execute-one! conn [stmt "Huan"])]
+
+    [res1 res2]))
+
+;; [{:name "Ivan", :id 1} {:name "Huan", :id 2}]
+~~~
+
 
 ## Enums
 
