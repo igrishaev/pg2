@@ -98,6 +98,14 @@
   ;;   $1 = 'Snap'
   ;; COMMIT
 
+  (jdbc/with-transaction [TX config {:read-only true}]
+    (jdbc/execute! TX ["delete from test2"]))
+
+  (jdbc/with-transaction [TX config {:rollback-only true}]
+    (jdbc/execute! TX ["delete from test2"]))
+
+  (jdbc/execute! config ["select * from test2"])
+
 
   (jdbc/on-connection [conn config]
 
@@ -109,6 +117,14 @@
 
         (let [res2 (jdbc/active-tx? TX)]
 
+          [res1 res2]))))
+
+  [false true]
+
+  (jdbc/on-connection [conn config]
+    (let [res1 (jdbc/active-tx? conn)]
+      (jdbc/with-transaction [TX conn]
+        (let [res2 (jdbc/active-tx? TX)]
           [res1 res2]))))
 
   [false true]
@@ -128,12 +144,23 @@
 
   {:the_answer 42}
 
+  (require '[pg.pool :as pool])
 
+  (pool/with-pool [pool config]
+    (let [f1
+          (future
+            (jdbc/on-connection [conn1 pool]
+              (println
+               (jdbc/execute-one! conn1 ["select 'hoho' as message"]))))
+          f2
+          (future
+            (jdbc/on-connection [conn2 pool]
+              (println
+               (jdbc/execute-one! conn2 ["select 'haha' as message"]))))]
+      @f1
+      @f2)))
 
-
-
-
-  )
+  ;; {{:message hoho}:message haha}
 
 
 (comment
