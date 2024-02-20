@@ -840,8 +840,8 @@ the rest values are parameters.
 ;; [{:num 42}]
 ~~~
 
-Pay attention that parameters use the dollar sign with a number but not a
-question marks.
+Pay attention that parameters use a dollar sign with a number but not a question
+mark.
 
 The `execute-one!` function acts like `execute!` but returns the first row
 only. Internaly, this is done by passing the `{:first? true}` parameter that
