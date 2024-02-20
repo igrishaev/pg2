@@ -754,16 +754,16 @@ Now it's ready for new queries again.
 [next-jdbc]: https://github.com/seancorfield/next-jdbc
 
 PG2 has a namespace that mimics [Next.JDBC][next-jdbc] API. Of course, it
-doesn't cover 100% of its features yet most of the functions and macros are
-there. It will help you to introduce PG2 into the project without rewriting all
-the database-related code.
+doesn't cover 100% of Next.JDBC features yet most of the functions and macros
+are there. It will help you to introduce PG2 into the project without rewriting
+all the database-related code from scratch.
 
 ### Obtaining a Connection
 
-In Next.JDBC, all the functions and macros accept something that implements
+In Next.JDBC, all the functions and macros accept something that implements the
 `Connectable` protocol. It might be a plain Clojure map, an existing connection,
-or a connection pool. The PG2 wrapper follows the same design. It works with
-either a map, a connection, or a pool.
+or a connection pool. The PG2 wrapper follows this design. It works with either
+a map, a connection, or a pool.
 
 Import the namespace and declare a config:
 
@@ -778,17 +778,18 @@ Import the namespace and declare a config:
    :dbname "test"})
 ~~~
 
-Having a config map, obtain a connection by passing it into `get-connection`:
+Having a config map, obtain a connection by passing it into the `get-connection`
+function:
 
 ~~~clojure
 (def conn
   (jdbc/get-connection config))
 ~~~
 
-This function, although is a part of Next.JDBC design, is not recommended to
+This approach, although is a part of the Next.JDBC design, is not recommended to
 use. Once you've established a connection, you must either close it or, if it
-was borrowed from a pool, return it there. There is a special macro
-`on-connection` which follows this logic:
+was borrowed from a pool, return it to the pool. There is a special macro
+`on-connection` that covers this logic:
 
 ~~~clojure
 (jdbc/on-connection [bind source]
@@ -797,7 +798,7 @@ was borrowed from a pool, return it there. There is a special macro
 
 If the `source` was a map, a new connection is spawned and gets closed
 afterwards. If the `source` is a pool, the connection gets returned to the pool.
-When the `source` is a connection, nothing happens to it when exiting the macro.
+When the `source` is a connection, nothing happens when exiting the macro.
 
 ~~~clojure
 (jdbc/on-connection [conn config]
@@ -805,7 +806,7 @@ When the `source` is a connection, nothing happens to it when exiting the macro.
 ~~~
 
 A brief example with a connection pool and a couple of futures. Each future
-borrows a connection from a pool, and returns it to the pool afterwards.
+borrows a connection from a pool, and returns it afterwards.
 
 ~~~clojure
 (pool/with-pool [pool config]
@@ -823,14 +824,15 @@ borrows a connection from a pool, and returns it to the pool afterwards.
     @f2))
 
 ;; {{:message hoho}:message haha}
+;; two overlapping print statements
 ~~~
 
 ### Executing Queries
 
-Two functions `execute!` and `execute-one!` perform queries to the
-database. Each of them takes a source, a SQL vector, and a map of options. The
-SQL vector is a sequence where the first item is either a string or a prepared
-statement, and the rest values are parameters.
+Two functions `execute!` and `execute-one!` send queries to the database. Each
+of them takes a source, a SQL vector, and a map of options. The SQL vector is a
+sequence where the first item is either a string or a prepared statement, and
+the rest values are parameters.
 
 ~~~clojure
 (jdbc/on-connection [conn config]
@@ -838,12 +840,12 @@ statement, and the rest values are parameters.
 ;; [{:num 42}]
 ~~~
 
-Pay attention that parameters use the dollar sign with a number but not question
-marks.
+Pay attention that parameters use the dollar sign with a number but not a
+question marks.
 
-The `execute-one!` function acts like `execute!` but returns the first row of
-the result only. Internaly, this is done by passing the `{:first? true}`
-parameter than enables the `First` reducer.
+The `execute-one!` function acts like `execute!` but returns the first row
+only. Internaly, this is done by passing the `{:first? true}` parameter that
+enables the `First` reducer.
 
 ~~~clojure
 (jdbc/on-connection [conn config]
@@ -871,16 +873,16 @@ statement, put it into a SQL-vector followed by the parameters:
 ;; [{:num 2} {:num 3}]
 ~~~
 
-Above, the same statement object is executed twice with different parameters.
+Above, the same `stmt` statement is executed twice with different parameters.
 
-More realistic example with inserting the data into a table. Let's prepare the
-table first:
+More realistic example with inserting data into a table. Let's prepare the table
+first:
 
 ~~~clojure
 (jdbc/execute! config ["create table test2 (id serial primary key, name text not null)"])
 ~~~
 
-Then insert a couple of rows returning the result:
+Insert a couple of rows returning the result:
 
 ~~~clojure
 (jdbc/on-connection [conn config]
@@ -901,14 +903,14 @@ Then insert a couple of rows returning the result:
 
 As it was mentioned above, in Postgres, a prepared statement is always bound to
 a certain connection. Thus, use the `prepare` function only inside the
-`on-connection` macro to ensure all the underlying database calls are made
-within the same connection.
+`on-connection` macro to ensure that all the underlying database interaction is
+made within the same connection.
 
 ### Transactions
 
 The `with-transaction` macro wraps a block of code into a transaction. Before
 entering the block, the macro emits the `BEGIN` expression, and `COMMIT`
-afterwards, if there was no an exception. Should an exception appear, the
+afterwards, if there was no an exception. Should an exception pop up, the
 transaction gets rolled back with `ROLLBACK`, and the exception is re-thrown.
 
 The macro takes a binding symbol which a connection is bound to, a source, an a
@@ -917,7 +919,7 @@ namely:
 
 - `:isolation`
 - `:read-only`
-- `::rollback-only`
+- `:rollback-only`
 
 Here is an example of inserting a couple of rows in a transaction:
 
@@ -954,6 +956,16 @@ insert into test2 (name) values ($1) returning *
   $1 = 'Snap'
 COMMIT
 ~~~
+
+The `:isolation` parameter might be one of the following:
+
+- `:read-uncommitted`
+- `:read-committed`
+- `:repeatable-read`
+- `:serializable`
+
+To know more about transaction isolation, refer to the official [Postgres
+documentation][transaction-iso].
 
 When `read-only` is true, any mutable query will trigger an error response from
 Postgres:
@@ -1003,7 +1015,7 @@ transaction:
 ;; [false true]
 ~~~
 
-It returns `true` for transactions in error state as well.
+It returns `true` for transactions tha are in the error state as well.
 
 ### Keys and Namespaces
 
@@ -1029,7 +1041,7 @@ false}` option map:
 ;; {:the_answer 42}
 ~~~
 
-By default, Next.JDBC returns full-qualified keys there namespaces are table
+By default, Next.JDBC returns full-qualified keys where namespaces are table
 names, for example `:user/profile-id` or `:order/created-at`. At the moment,
 namespaces are not supported by the wrapper.
 
