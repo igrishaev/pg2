@@ -1,7 +1,4 @@
 
-- jdbc readme
-- release 0.1.3
-
 - readme
 
 - pool close conn test
@@ -12,6 +9,8 @@
 - bulk statement execute
 - batch execute
 - pg.jdbc batch
+
+- pass jsonista custom object
 
 - arrays
   - decode txt
