@@ -6,6 +6,8 @@
 
 - test parallel connection access
 
+- ragtime migrations
+
 - bulk statement execute
 - batch execute
 - pg.jdbc batch
@@ -39,12 +41,19 @@
 
 - honey helpers
   - prepare
-  - get-by-id
-  - get-by-ids
   - get-by-ids-temp
-  - insert
-  - udpate
-  - delete
+  - truncate
+  - find
+  - find-first
+
+- honey helpers
+  - docstrings
+  - tests
+  - release
+  - readme
+
+- honey
+  - copy in/out
 
 - use COPY OUT for result?
 - Unix socket connection type

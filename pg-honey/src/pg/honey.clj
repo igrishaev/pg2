@@ -1,5 +1,6 @@
 (ns pg.honey
-  (:refer-clojure :exclude [format])
+  (:refer-clojure :exclude [update
+                            format])
   (:require
    [honey.sql :as sql]
    [pg.core :as pg]))
@@ -69,3 +70,97 @@
      (pg/execute conn
                  sql
                  (assoc opt :params params)))))
+
+
+;;
+;; Helpers
+;;
+
+(defn get-by-id
+  ([conn table id]
+   (get-by-id conn table id nil))
+
+  ([conn table id {:as opt
+                   :keys [id
+                          fields]
+                   :or {pk :id
+                        fields [:*]}}]
+   (let [sql-map
+         {:select fields
+          :from table
+          :where [:= pk id]
+          :limit 1}]
+
+     (execute conn
+              sql-map
+              (assoc opt :first? true)))))
+
+
+(defn get-by-ids
+  ([conn table ids]
+   (get-by-ids conn table ids nil))
+
+  ([conn table ids {:as opt
+                    :keys [id
+                           fields]
+                    :or {pk :id
+                         fields [:*]}}]
+   (let [sql-map
+         {:select fields
+          :from table
+          :where [:in pk id]}]
+
+     (execute conn sql-map opt))))
+
+
+(defn insert
+
+  ([conn table maps]
+   (insert conn table maps nil))
+
+  ([conn table maps {:as opt
+                     :keys [returning]
+                     :or {returning [:*]}}]
+   (let [sql-map
+         {:insert-into table
+          :values maps
+          :returning returning}]
+
+     (execute conn sql-map opt))))
+
+
+(defn update
+  ([conn table set]
+   (update conn table set nil))
+
+  ([conn table set {:as opt
+                    :keys [where
+                           returning]
+                    :or {where nil
+                         returning [:*]}}]
+
+   (let [sql-map
+         {:udpate table
+          :set set
+          :where where
+          :returning returning}]
+
+     (execute conn sql-map opt))))
+
+
+(defn delete
+  ([conn table]
+   (delete conn table nil))
+
+  ([conn table {:as opt
+                :keys [where
+                       returning]
+                :or {where nil
+                     returning [:*]}}]
+
+   (let [sql-map
+         {:delete table
+          :where where
+          :returning returning}]
+
+     (execute conn sql-map opt))))
