@@ -88,10 +88,10 @@ decoding, COPY IN/OUT, SSL:
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-core "0.1.2"]
+[com.github.igrishaev/pg2-core "0.1.3"]
 
 ;; deps
-com.github.igrishaev/pg2-core {:mvn/version "0.1.2"}
+com.github.igrishaev/pg2-core {:mvn/version "0.1.3"}
 ~~~
 
 **HoneySQL integration**: special version of `query` and `execute` that accept
@@ -99,10 +99,10 @@ not a string of SQL but a map that gets formatted to SQL under the hood.
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-honey "0.1.2"]
+[com.github.igrishaev/pg2-honey "0.1.3"]
 
 ;; deps
-com.github.igrishaev/pg2-honey {:mvn/version "0.1.2"}
+com.github.igrishaev/pg2-honey {:mvn/version "0.1.3"}
 ~~~
 
 [component]: https://github.com/stuartsierra/component
@@ -112,10 +112,10 @@ objects with the `Lifecycle` protocol from the [Component][component] library.
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-component "0.1.2"]
+[com.github.igrishaev/pg2-component "0.1.3"]
 
 ;; deps
-com.github.igrishaev/pg2-component {:mvn/version "0.1.2"}
+com.github.igrishaev/pg2-component {:mvn/version "0.1.3"}
 ~~~
 
 ## Quick start (Demo)

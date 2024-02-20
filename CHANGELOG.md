@@ -1,7 +1,21 @@
 
-## 0.1.3-SNAPSHOT
+## 0.1.4-SNAPSHOT
 
 - ?
+
+## 0.1.3
+
+- Next.JDBC wrapper
+- more docs
+- with-tx macro refactored
+- error! function added
+- msCancelTimeout renamed
+- requireNonNull messages added
+- connection isClosed refactored
+- org.pg.proto package
+- int to float encoding support
+- oids type hints bug fixed
+- concurrency tests
 
 ## 0.1.2
 
