@@ -51,4 +51,10 @@ create table if not exists ragtime_migrations(
   (instance? Connection conn)
   ;; => true
 
+  ;; Next steps:
+  ;;
+  ;; - Read ragtime.jdbc @ https://github.com/weavejester/ragtime/tree/bf054489b2eb23e9a22c6f04f78d2e9f26e4dd23/jdbc/src/ragtime/jdbc.clj
+  ;; - Discover what ragtime.jdbc can do that pg.ragtime currently can not
+  ;; - Write example REPL code that _uses_ those features
+  ;; - Implement those features.
   )
