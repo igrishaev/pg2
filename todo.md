@@ -6,7 +6,8 @@
 
 - test parallel connection access
 
-- ragtime migrations
+- migration: no ragtime?
+- parse JDBC url
 
 - bulk statement execute
 - batch execute
@@ -52,7 +53,6 @@
 
 - use COPY OUT for result?
 - Unix socket connection type
-- migration adapter
 - hugsql adapter
 
 - reduce java version by converting records to classes
