@@ -40,20 +40,15 @@
   - inet/cidr
 
 - honey helpers
-  - prepare
-  - get-by-ids-temp
-  - truncate
-  - find
-  - find-first
-
-- honey helpers
   - docstrings
   - tests
   - release
   - readme
 
-- honey
+- honey helpers
+  - get-by-ids-temp
   - copy in/out
+  - truncate
 
 - use COPY OUT for result?
 - Unix socket connection type

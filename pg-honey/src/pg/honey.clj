@@ -1,5 +1,6 @@
 (ns pg.honey
-  (:refer-clojure :exclude [update
+  (:refer-clojure :exclude [find
+                            update
                             format])
   (:require
    [honey.sql :as sql]
@@ -72,6 +73,19 @@
                  (assoc opt :params params)))))
 
 
+(defn prepare
+
+  ([conn sql-map]
+   (prepare conn sql-map nil))
+
+  ([conn sql-map {:as opt :keys [honey]}]
+   (let [[sql & params]
+         (format sql-map honey)]
+     (pg/prepare conn
+                 sql
+                 (assoc opt :params params)))))
+
+
 ;;
 ;; Helpers
 ;;
@@ -81,7 +95,7 @@
    (get-by-id conn table id nil))
 
   ([conn table id {:as opt
-                   :keys [id
+                   :keys [pk
                           fields]
                    :or {pk :id
                         fields [:*]}}]
@@ -101,14 +115,14 @@
    (get-by-ids conn table ids nil))
 
   ([conn table ids {:as opt
-                    :keys [id
+                    :keys [pk
                            fields]
                     :or {pk :id
                          fields [:*]}}]
    (let [sql-map
          {:select fields
           :from table
-          :where [:in pk id]}]
+          :where [:in pk ids]}]
 
      (execute conn sql-map opt))))
 
@@ -136,8 +150,7 @@
   ([conn table set {:as opt
                     :keys [where
                            returning]
-                    :or {where nil
-                         returning [:*]}}]
+                    :or {returning [:*]}}]
 
    (let [sql-map
          {:udpate table
@@ -155,8 +168,7 @@
   ([conn table {:as opt
                 :keys [where
                        returning]
-                :or {where nil
-                     returning [:*]}}]
+                :or {returning [:*]}}]
 
    (let [sql-map
          {:delete table
@@ -164,3 +176,94 @@
           :returning returning}]
 
      (execute conn sql-map opt))))
+
+
+(defn find
+  ([conn table kv]
+   (find conn table kv nil))
+
+  ([conn table kv {:as opt
+                   :keys [fields
+                          limit
+                          offset
+                          order-by]
+                   :or {fields [:*]}}]
+
+   (let [where
+         (when (seq kv)
+           (reduce-kv
+            (fn [acc k v]
+              (conj acc [:= k v]))
+            [:and]
+            kv))
+
+         sql-map
+         {:select fields
+          :from table
+          :where where
+          :limit limit
+          :offset offset
+          :order-by order-by}]
+
+     (execute conn sql-map opt))))
+
+
+(defn find
+  ([conn table kv]
+   (find conn table kv nil))
+
+  ([conn table kv {:as opt
+                   :keys [fields
+                          limit
+                          offset
+                          order-by]
+                   :or {fields [:*]}}]
+
+   (let [where
+         (when (seq kv)
+           (reduce-kv
+            (fn [acc k v]
+              (conj acc [:= k v]))
+            [:and]
+            kv))
+
+         sql-map
+         {:select fields
+          :from table
+          :where where
+          :limit limit
+          :offset offset
+          :order-by order-by}]
+
+     (execute conn sql-map opt))))
+
+
+(defn find-first
+  ([conn table kv]
+   (find conn table kv nil))
+
+  ([conn table kv {:as opt
+                   :keys [fields
+                          offset
+                          order-by]
+                   :or {fields [:*]}}]
+
+   (let [where
+         (when (seq kv)
+           (reduce-kv
+            (fn [acc k v]
+              (conj acc [:= k v]))
+            [:and]
+            kv))
+
+         sql-map
+         {:select fields
+          :from table
+          :where where
+          :limit 1
+          :offset offset
+          :order-by order-by}]
+
+     (execute conn
+              sql-map
+              (assoc opt :first? true)))))
