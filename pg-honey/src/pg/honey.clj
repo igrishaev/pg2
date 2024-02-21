@@ -116,13 +116,17 @@
 
   ([conn table ids {:as opt
                     :keys [pk
-                           fields]
+                           fields
+                           order-by]
                     :or {pk :id
                          fields [:*]}}]
    (let [sql-map
-         {:select fields
-          :from table
-          :where [:in pk ids]}]
+         (cond-> {:select fields
+                  :from table
+                  :where [:in pk ids]}
+
+           order-by
+           (assoc :order-by order-by))]
 
      (execute conn sql-map opt))))
 
@@ -138,6 +142,22 @@
    (let [sql-map
          {:insert-into table
           :values maps
+          :returning returning}]
+
+     (execute conn sql-map opt))))
+
+
+(defn insert-one
+
+  ([conn table map]
+   (insert-one conn table map nil))
+
+  ([conn table map {:as opt
+                    :keys [returning]
+                    :or {returning [:*]}}]
+   (let [sql-map
+         {:insert-into table
+          :values [map]
           :returning returning}]
 
      (execute conn sql-map opt))))
