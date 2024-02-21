@@ -27,3 +27,24 @@ create table if not exists ragtime_migrations(
   (applied-migration-ids [conn]
     (->> (pg/query conn "select id from ragtime_migrations")
          (map :id))))
+
+(comment
+  ;; run
+  ;;
+  ;;     docker-compose up
+  ;;
+  ;; in pg-ragtime/ first.
+  (def config {:host "localhost"
+               :port 10170
+               :user "test"
+               :password "test"
+               :database "test"})
+  (def conn (pg/connect config))
+
+  conn
+  ;; => <PG connection test@localhost:10170/test>
+
+  (instance? Connection conn)
+  ;; => true
+
+  )
