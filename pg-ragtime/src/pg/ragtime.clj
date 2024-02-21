@@ -57,4 +57,33 @@ create table if not exists ragtime_migrations(
   ;; - Discover what ragtime.jdbc can do that pg.ragtime currently can not
   ;; - Write example REPL code that _uses_ those features
   ;; - Implement those features.
+
+  ;; ## Read ragtime.jdbc public interface / doc
+  ;;
+  ;; Source: https://weavejester.github.io/ragtime/ragtime.jdbc.html
+  ;;
+  ;; - (load-directory path)
+  ;;   Load a collection of Ragtime migrations from a directory.
+  ;;
+  ;; - (load-files files)
+  ;;   Given an collection of files with the same extension, return a ordered
+  ;;   collection of migrations. Dispatches on extension (e.g. ".edn"). Extend
+  ;;   this multimethod to support new formats for specifying SQL migrations.
+  ;;
+  ;; - (load-resources path)
+  ;;   Load a collection of Ragtime migrations from a classpath prefix.
+  ;;
+  ;; - (sql-database db-spec)
+  ;;   (sql-database db-spec options)
+  ;;
+  ;;   Given a db-spec and a map of options, return a Migratable database.
+  ;;   The following options are allowed:
+  ;;
+  ;;   :migrations-table - the name of the table to store the applied migrations
+  ;;                       (defaults to ragtime_migrations)
+  ;;
+  ;; - (sql-migration migration-map)
+  ;;
+  ;;   Create a Ragtime migration from a map with a unique :id, and :up and :down
+  ;;   keys that map to ordered collection of SQL strings.
   )
