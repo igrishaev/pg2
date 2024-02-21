@@ -128,4 +128,18 @@
                         {:returning [:id]
                          :fn-key identity})]
         (is (= [{"id" 4} {"id" 5} {"id" 6}]
-               res))))))
+               res)))))
+
+  (testing "insert return nothing"
+    (pg/with-connection [conn CONFIG]
+      (let [maps
+            [{:id 4 :name "Kyky" :active true}
+             {:id 5 :name "Koko" :active false}
+             {:id 6 :name "Kaka" :active true}]
+            res
+            (pgh/insert conn
+                        TABLE
+                        maps
+                        {:returning nil
+                         :fn-key identity})]
+        (is (= {:inserted 3} res))))))

@@ -140,9 +140,11 @@
                      :keys [returning]
                      :or {returning [:*]}}]
    (let [sql-map
-         {:insert-into table
-          :values maps
-          :returning returning}]
+         (cond-> {:insert-into table
+                  :values maps}
+
+           returning
+           (assoc :returning returning))]
 
      (execute conn sql-map opt))))
 
