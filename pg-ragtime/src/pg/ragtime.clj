@@ -6,6 +6,10 @@
    [pg.core :as pg])
   (:import org.pg.Connection))
 
+;; TODO do not hard-code table name.
+;;
+;; Requires a way to generate the SQL string without risking SQL injections.
+;; Perhaps use pg-honey?
 (defn ensure-migrations-table!
   [conn]
   (pg/query conn "
