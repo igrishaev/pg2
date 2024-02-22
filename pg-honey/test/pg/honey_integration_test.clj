@@ -143,3 +143,69 @@
                         {:returning nil
                          :fn-key identity})]
         (is (= {:inserted 3} res))))))
+
+
+(deftest test-insert-one
+
+  (testing "simple insert"
+    (pg/with-connection [conn CONFIG]
+      (let [row
+            {:id 4 :name "Kyky" :active true}
+            res
+            (pgh/insert-one conn TABLE row)]
+        (is (= {:name "Kyky", :active true, :id 4}
+               res)))))
+
+  (testing "insert with opts"
+    (pg/with-connection [conn CONFIG]
+      (let [row
+            {:id 4 :name "Kyky" :active true}
+            res
+            (pgh/insert-one conn
+                            TABLE
+                            row
+                            {:returning [:id]
+                             :fn-key identity})]
+        (is (= {"id" 4} res)))))
+
+  (testing "insert return nothing"
+    (pg/with-connection [conn CONFIG]
+      (let [row
+            {:id 4 :name "Kyky" :active true}
+            res
+            (pgh/insert-one conn
+                            TABLE
+                            row
+                            {:returning nil
+                             :fn-key identity})]
+        (is (= {:inserted 1} res))))))
+
+
+(deftest test-delete-all
+  (testing "delete all"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/delete conn TABLE)
+            data
+            (pg/query conn "select * from test003")]
+        (is (= [{:name "Ivan", :active true, :id 1}
+                {:name "Huan", :active false, :id 2}
+                {:name "Juan", :active true, :id 3}]
+               res))
+        (is (= [] data))))))
+
+
+(deftest test-delete-with-extra-opts
+  (testing "delete +where +returning +opts"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/delete conn TABLE
+                        {:where [:or [:= :id 1] [:= :id 3]]
+                         :returning [:name]
+                         :fn-key identity})
+            data
+            (pg/query conn "select * from test003")]
+        (is (= [{"name" "Ivan"}
+                {"name" "Juan"}]
+               res))
+        (is (= [{:name "Huan", :active false, :id 2}] data))))))

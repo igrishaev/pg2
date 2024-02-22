@@ -158,11 +158,15 @@
                     :keys [returning]
                     :or {returning [:*]}}]
    (let [sql-map
-         {:insert-into table
-          :values [map]
-          :returning returning}]
+         (cond-> {:insert-into table
+                  :values [map]}
 
-     (execute conn sql-map opt))))
+           returning
+           (assoc :returning returning))]
+
+     (execute conn
+              sql-map
+              (assoc opt :first? true)))))
 
 
 (defn update
@@ -193,12 +197,17 @@
                 :or {returning [:*]}}]
 
    (let [sql-map
-         {:delete table
-          :where where
-          :returning returning}]
+         (cond-> {:delete-from table}
+
+           where
+           (assoc :where where)
+
+           returning
+           (assoc :returning returning))]
 
      (execute conn sql-map opt))))
 
+;; ----- untested -----
 
 (defn find
   ([conn table kv]
