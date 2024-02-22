@@ -209,3 +209,24 @@
                 {"name" "Juan"}]
                res))
         (is (= [{:name "Huan", :active false, :id 2}] data))))))
+
+
+(deftest test-find
+
+  (testing "simple find"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/find conn TABLE
+                      {:active true}
+                      #_
+                      {:fields [:id :name]
+                       :limit 10
+                       :offset 1
+                       :order-by [[:id :desc]]
+                       :fn-key identity})
+            ]
+        (is (= 1 res))
+        )
+      )
+    )
+  )

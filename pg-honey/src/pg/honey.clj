@@ -137,14 +137,26 @@
    (insert conn table maps nil))
 
   ([conn table maps {:as opt
-                     :keys [returning]
+                     :keys [returning
+                            on-conflict
+                            do-update-set
+                            do-nothing]
                      :or {returning [:*]}}]
    (let [sql-map
          (cond-> {:insert-into table
                   :values maps}
 
            returning
-           (assoc :returning returning))]
+           (assoc :returning returning)
+
+           on-conflict
+           (assoc :on-conflict on-conflict)
+
+           do-update-set
+           (assoc :do-update-set do-update-set)
+
+           do-nothing
+           (assoc :do-nothing do-nothing))]
 
      (execute conn sql-map opt))))
 
@@ -155,14 +167,29 @@
    (insert-one conn table map nil))
 
   ([conn table map {:as opt
-                    :keys [returning]
+                    :keys [returning
+                           on-conflict
+                           do-update-set
+                           do-nothing]
                     :or {returning [:*]}}]
    (let [sql-map
          (cond-> {:insert-into table
                   :values [map]}
 
            returning
-           (assoc :returning returning))]
+           (assoc :returning returning)
+
+           returning
+           (assoc :returning returning)
+
+           on-conflict
+           (assoc :on-conflict on-conflict)
+
+           do-update-set
+           (assoc :do-update-set do-update-set)
+
+           do-nothing
+           (assoc :do-nothing do-nothing))]
 
      (execute conn
               sql-map
@@ -228,35 +255,7 @@
             [:and]
             kv))
 
-         sql-map
-         {:select fields
-          :from table
-          :where where
-          :limit limit
-          :offset offset
-          :order-by order-by}]
-
-     (execute conn sql-map opt))))
-
-
-(defn find
-  ([conn table kv]
-   (find conn table kv nil))
-
-  ([conn table kv {:as opt
-                   :keys [fields
-                          limit
-                          offset
-                          order-by]
-                   :or {fields [:*]}}]
-
-   (let [where
-         (when (seq kv)
-           (reduce-kv
-            (fn [acc k v]
-              (conj acc [:= k v]))
-            [:and]
-            kv))
+         ;; TODO
 
          sql-map
          {:select fields
