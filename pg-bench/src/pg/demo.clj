@@ -279,7 +279,9 @@ create table demo (
   (pgh/get-by-id conn :test003 1)
   ;; {:name "Ivan", :active true, :id 1}
 
-  (pgh/get-by-id conn :test003 1
+  (pgh/get-by-id conn
+                 :test003
+                 1
                  {:pk [:raw "test003.id"]
                   :fields [:id :name]})
 

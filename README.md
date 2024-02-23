@@ -52,8 +52,9 @@ classes are supported for reading and writing.
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
 - [Connection state](#connection-state)
-- [HoneySQL Integration](#honeysql-integration)
-- [HoneySQL Shortcuts](#honeysql-shortcuts)
+- [HoneySQL Integration & Shortcuts](#honeysql-integration--shortcuts)
+  * [Get by id](#get-by-id)
+  * [Get by ids](#get-by-ids)
 - [Next.JDBC API layer](#nextjdbc-api-layer)
   * [Obtaining a Connection](#obtaining-a-connection)
   * [Executing Queries](#executing-queries)
@@ -754,7 +755,76 @@ Now it's ready for new queries again.
 
 ## HoneySQL Integration & Shortcuts
 
+[honeysql]: https://github.com/seancorfield/honeysql
 
+The `pg-honey` package allows you to call `query` and `execute` functions
+passing not string SQL expressions but Clojure maps. Internally, they get
+transformed into SQL using the great [HoneySQL library][honeysql]. With
+HoneySQL, one don't need to format strings to build a SQL expression, which is
+clumsy and dangerous in terms of SQL injections.
+
+The package also provides several shortcuts for such common dutiles as get a
+single row by id, get a bunch of rows by their ids, insert a row having a map of
+values, update by a column->value map and so on.
+
+Before we go though the demo, let's do some preparetion first. Import the
+package, declare a config map and create a table with some rows as follows:
+
+~~~clojure
+(require '[pg.honey :as pgh])
+
+(def config
+  {:host "127.0.0.1"
+   :port 10140
+   :user "test"
+   :password "test"
+   :dbname "test"})
+
+(def conn
+  (pg/connect config))
+
+(pg/query conn "create table test003 (
+  id integer not null,
+  name text not null,
+  active boolean not null default true
+)")
+
+(pg/query conn "insert into test003 (id, name, active)
+  values
+  (1, 'Ivan', true),
+  (2, 'Huan', false),
+  (3, 'Juan', true)")
+~~~
+
+Now we're ready for the demo.
+
+### Get by id
+
+The `get-by-id` function fetches a single row by its primary key which is `:id`
+by default:
+
+~~~clojure
+(pgh/get-by-id conn :test003 1)
+;; {:name "Ivan", :active true, :id 1}
+~~~
+
+With options, you can specify the name of the primary key and the column names
+you're interested in:
+
+~~~clojure
+(pgh/get-by-id conn
+               :test003
+               1
+               {:pk [:raw "test003.id"]
+                :fields [:id :name]})
+
+;; {:name "Ivan", :id 1}
+
+;; SELECT id, name FROM test003 WHERE test003.id = $1 LIMIT $2
+;; parameters: $1 = '1', $2 = '1'
+~~~
+
+### Get by ids
 
 ## Next.JDBC API layer
 
