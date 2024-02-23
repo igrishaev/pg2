@@ -826,6 +826,82 @@ you're interested in:
 
 ### Get by ids
 
+The `get-by-ids` function accepts a collection of primary keys and fetch them
+using the `IN` operator. In additon to options that `get-by-id` has, you can
+specify the ordering:
+
+~~~clojure
+(pgh/get-by-ids conn
+                :test003
+                [1 3 999]
+                {:pk [:raw "test003.id"]
+                 :fields [:id :name]
+                 :order-by [[:id :desc]]})
+
+[{:name "Juan", :id 3}
+ {:name "Ivan", :id 1}]
+
+;; SELECT id, name FROM test003 WHERE test003.id IN ($1, $2, $3) ORDER BY id DESC
+;; parameters: $1 = '1', $2 = '3', $3 = '999'
+~~~
+
+Passing many IDs at once is not recommended. Either pass them by chunks or
+create a temp table, copy IDs there and join it with the main table.
+
+### Delete
+
+The `delete` function removes rows from a table. By default, all the rows are
+deleted with no filtering, and the deleted rows are returned:
+
+~~~clojure
+(pgh/delete conn :test003)
+
+[{:name "Ivan", :active true, :id 1}
+ {:name "Huan", :active false, :id 2}
+ {:name "Juan", :active true, :id 3}]
+~~~
+
+You can specify the `WHERE` clause and the column names of the result:
+
+~~~clojure
+(pgh/delete conn
+            :test003
+            {:where [:and
+                     [:= :id 3]
+                     [:= :active true]]
+             :returning [:*]})
+
+[{:name "Juan", :active true, :id 3}]
+~~~
+
+When passing the `:returning` option set to `nil`, no rows are returned.
+
+### Insert
+
+To observe all the features of the `insert` function, let's create a separate
+table:
+
+~~~clojure
+(pg/query conn "create table test004 (
+  id serial primary key,
+  name text not null,
+  active boolean not null default true
+)")
+~~~
+
+The function accepts a collection of maps where each map represents a row:
+
+~~~clojure
+(pgh/insert conn
+            :test004
+            [{:name "Foo" :active false}
+             {:name "Bar" :active true}]
+            {:returning [:id :name]})
+
+[{:name "Foo", :id 1}
+ {:name "Bar", :id 2}]
+~~~
+
 ## Next.JDBC API layer
 
 [next-jdbc]: https://github.com/seancorfield/next-jdbc

@@ -295,7 +295,9 @@ create table demo (
   [{:name "Ivan", :active true, :id 1}
    {:name "Juan", :active true, :id 3}]
 
-  (pgh/get-by-ids conn :test003 [1 3 999]
+  (pgh/get-by-ids conn
+                  :test003
+                  [1 3 999]
                   {:pk [:raw "test003.id"]
                    :fields [:id :name]
                    :order-by [[:id :desc]]})
@@ -306,7 +308,8 @@ create table demo (
   ;; SELECT id, name FROM test003 WHERE test003.id IN ($1, $2, $3) ORDER BY id DESC
   ;; parameters: $1 = '1', $2 = '3', $3 = '999'
 
-  (pgh/delete conn :test003
+  (pgh/delete conn
+              :test003
               {:where [:and
                        [:= :id 3]
                        [:= :active true]]
