@@ -394,12 +394,86 @@ create table demo (
   ;;   OFFSET $2
   ;; parameters: $1 = '10', $2 = '1'
 
+  (pgh/find-first conn :test003
+                  {:active true}
+                  {:fields [:id :name]
+                   :offset 1
+                   :order-by [[:id :desc]]
+                   :fn-key identity})
 
-  ;; TODO
-  ;; find-one
-  ;; prepare
-  ;; query
-  ;; execute
+  {"id" 1, "name" "Ivan"}
+
+
+  (def stmt
+    (pgh/prepare conn {:select [:*]
+                       :from :test003
+                       :where [:= :id 0]}))
+
+  ;; <Prepared statement, name: s37, param(s): 1, OIDs: [INT8], SQL: SELECT * FROM test003 WHERE id = $1>
+
+  (pg/execute-statement conn stmt {:params [3]
+                                   :first? true})
+
+  {:name "Juan", :active true, :id 3}
+
+  (def stmt
+    (pgh/prepare conn {:select [:*]
+                       :from :test003
+                       :where [:raw "id = $1"]}))
+
+  (pg/execute-statement conn stmt {:params [1]
+                                   :first? true})
+
+  {:name "Ivan", :active true, :id 1}
+
+  (pgh/query conn
+             {:select [:id]
+              :from :test003
+              :order-by [:id]})
+
+  ;; [{:id 1} {:id 2} {:id 3}]
+
+  (pgh/query conn
+             {:select [:id]
+              :from :test003
+              :where [:= :name "Ivan"]
+              :order-by [:id]})
+
+  ;; Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:207).
+  ;; Server error response: {severity=ERROR, code=42P02, file=parse_expr.c, line=842, function=transformParamRef, position=37, message=there is no parameter $1, verbosity=ERROR}
+
+  (pgh/query conn
+             {:select [:id]
+              :from :test003
+              :where [:raw "name = 'Ivan'"]
+              :order-by [:id]})
+
+  [{:id 1}]
+
+  ;; SELECT id FROM test003 WHERE name = 'Ivan' ORDER BY id ASC
+
+  (pgh/execute conn
+               {:select [:id]
+                :from :test003
+                :where [:= :name "Ivan"]
+                :order-by [:id]})
+
+  [{:id 1}]
+
+  (pgh/execute conn
+               {:select [:id :name]
+                :from :test003
+                :where [:= :name [:param :name]]
+                :order-by [:id]}
+               {:honey {:pretty? true
+                        :params {:name "Ivan"}}})
+
+  [{:name "Ivan", :id 1}]
+
+  ;; SELECT id, name FROM test003 WHERE name = $1 ORDER BY id ASC
+  ;; parameters: $1 = 'Ivan'
+
+
 
 
   ;;
