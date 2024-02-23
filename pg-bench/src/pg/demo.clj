@@ -262,6 +262,145 @@ create table demo (
 )")
   {:command "CREATE TABLE"}
 
+  ;;
+  ;; Honey
+  ;;
+
+  (require '[pg.honey :as pgh])
+
+  (def conn
+    (pg/connect config))
+
+  (pg/query conn "create table test003 (id integer not null, name text not null, active boolean not null default true)")
+
+  (pg/query conn "insert into test003 (id, name, active) values (1, 'Ivan', true), (2, 'Huan', false), (3, 'Juan', true)")
+  ;; {:inserted 3}
+
+  (pgh/get-by-id conn :test003 1)
+  ;; {:name "Ivan", :active true, :id 1}
+
+  (pgh/get-by-id conn :test003 1
+                 {:pk [:raw "test003.id"]
+                  :fields [:id :name]})
+
+  ;; {:name "Ivan", :id 1}
+
+  ;; SELECT id, name FROM test003 WHERE test003.id = $1 LIMIT $2
+  ;; parameters: $1 = '1', $2 = '1'
+
+  (pgh/get-by-ids conn :test003 [1 3 999])
+
+  [{:name "Ivan", :active true, :id 1}
+   {:name "Juan", :active true, :id 3}]
+
+  (pgh/get-by-ids conn :test003 [1 3 999]
+                  {:pk [:raw "test003.id"]
+                   :fields [:id :name]
+                   :order-by [[:id :desc]]})
+
+  [{:name "Juan", :id 3}
+   {:name "Ivan", :id 1}]
+
+  ;; SELECT id, name FROM test003 WHERE test003.id IN ($1, $2, $3) ORDER BY id DESC
+  ;; parameters: $1 = '1', $2 = '3', $3 = '999'
+
+  (pgh/delete conn :test003
+              {:where [:and
+                       [:= :id 3]
+                       [:= :active true]]
+               :returning [:*]})
+
+  [{:name "Juan", :active true, :id 3}]
+
+  (pgh/delete conn :test003)
+
+  [{:name "Ivan", :active true, :id 1}
+   {:name "Huan", :active false, :id 2}]
+
+
+  (pg/query conn "create table test004 (id serial primary key, name text not null, active boolean not null default true)")
+
+  (pgh/insert conn
+              :test004
+              [{:name "Foo" :active false}
+               {:name "Bar" :active true}]
+              {:returning [:id :name]})
+
+  [{:name "Foo", :id 1}
+   {:name "Bar", :id 2}]
+
+  (pgh/insert conn
+              :test004
+              [{:id 1 :name "Snip"}
+               {:id 2 :name "Snap"}]
+              {:on-conflict [:id]
+               :do-update-set [:name]
+               :returning [:id :name]})
+
+  ;; INSERT INTO test004 (id, name) VALUES ($1, $2), ($3, $4)
+  ;;   ON CONFLICT (id)
+  ;;   DO UPDATE SET name = EXCLUDED.name
+  ;;   RETURNING id, name
+  ;; parameters: $1 = '1', $2 = 'Snip', $3 = '2', $4 = 'Snap'
+
+  (pg/query conn "select * from test004")
+
+  [{:name "Snip", :active false, :id 1}
+   {:name "Snap", :active true, :id 2}]
+
+  (pgh/insert-one conn
+                  :test004
+                  {:id 2 :name "Alter Ego" :active true}
+                  {:on-conflict [:id]
+                   :do-update-set [:name :active]
+                   :returning [:*]})
+
+  {:name "Alter Ego", :active true, :id 2}
+
+  ;; INSERT INTO test004 (id, name, active) VALUES ($1, $2, TRUE)
+  ;;   ON CONFLICT (id)
+  ;;   DO UPDATE SET name = EXCLUDED.name, active = EXCLUDED.active
+  ;;   RETURNING *
+  ;; parameters: $1 = '2', $2 = 'Alter Ego'
+
+  (pgh/find conn :test003 {:active true})
+
+  [{:name "Ivan", :active true, :id 1}
+   {:name "Juan", :active true, :id 3}]
+
+  (pgh/find conn :test003 {:active true
+                           :name "Juan"})
+
+  [{:name "Juan", :active true, :id 3}]
+
+  ;; SELECT * FROM test003 WHERE (active = TRUE) AND (name = $1)
+  ;; parameters: $1 = 'Juan'
+
+  (pgh/find conn
+            :test003
+            {:active true}
+            {:fields [:id :name]
+             :limit 10
+             :offset 1
+             :order-by [[:id :desc]]
+             :fn-key identity})
+
+  [{"id" 1, "name" "Ivan"}]
+
+  ;; SELECT id, name FROM test003
+  ;;   WHERE (active = TRUE)
+  ;;   ORDER BY id DESC
+  ;;   LIMIT $1
+  ;;   OFFSET $2
+  ;; parameters: $1 = '10', $2 = '1'
+
+
+  ;; TODO
+  ;; find-one
+  ;; prepare
+  ;; query
+  ;; execute
+
 
   ;;
   ;; Transactions

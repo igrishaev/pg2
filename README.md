@@ -52,6 +52,8 @@ classes are supported for reading and writing.
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
 - [Connection state](#connection-state)
+- [HoneySQL Integration](#honeysql-integration)
+- [HoneySQL Shortcuts](#honeysql-shortcuts)
 - [Next.JDBC API layer](#nextjdbc-api-layer)
   * [Obtaining a Connection](#obtaining-a-connection)
   * [Executing Queries](#executing-queries)
@@ -72,7 +74,6 @@ classes are supported for reading and writing.
 - [Logging](#logging)
 - [Errors and Exceptions](#errors-and-exceptions)
 - [Connection Pool](#connection-pool)
-- [HoneySQL integration](#honeysql-integration)
 - [Component integration](#component-integration)
 - [Ring middleware](#ring-middleware)
 - [Debugging](#debugging)
@@ -95,7 +96,9 @@ com.github.igrishaev/pg2-core {:mvn/version "0.1.3"}
 ~~~
 
 **HoneySQL integration**: special version of `query` and `execute` that accept
-not a string of SQL but a map that gets formatted to SQL under the hood.
+not a string of SQL but a map that gets formatted to SQL under the hood. Also
+includes various helpers (`get-by-id`, `find`, `insert`, `udpate`, `delete`,
+etc).
 
 ~~~clojure
 ;; lein
@@ -749,6 +752,10 @@ true
 
 Now it's ready for new queries again.
 
+## HoneySQL Integration & Shortcuts
+
+
+
 ## Next.JDBC API layer
 
 [next-jdbc]: https://github.com/seancorfield/next-jdbc
@@ -1074,8 +1081,6 @@ namespaces are not supported by the wrapper.
 ## Errors and Exceptions
 
 ## Connection Pool
-
-## HoneySQL integration
 
 ## Component integration
 
