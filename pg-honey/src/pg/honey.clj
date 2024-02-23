@@ -172,7 +172,7 @@
 (defn insert
   "
   Insert a collection of rows into a table.
-  The `maps` argument must be a seq of maps.
+  The `kvs` argument must be a seq of maps.
 
   The optional arguments are:
   - returning: a vector of columns to return, default is [:*]
@@ -186,18 +186,18 @@
   By default, it will be a vector of inserted rows.
   "
 
-  ([conn table maps]
-   (insert conn table maps nil))
+  ([conn table kvs]
+   (insert conn table kvs nil))
 
-  ([conn table maps {:as opt
-                     :keys [returning
-                            on-conflict
-                            do-update-set
-                            do-nothing]
-                     :or {returning [:*]}}]
+  ([conn table kvs {:as opt
+                    :keys [returning
+                           on-conflict
+                           do-update-set
+                           do-nothing]
+                    :or {returning [:*]}}]
    (let [sql-map
          (cond-> {:insert-into table
-                  :values maps}
+                  :values kvs}
 
            returning
            (assoc :returning returning)
@@ -222,18 +222,18 @@
   is a single inserted row.
   "
 
-  ([conn table map]
-   (insert-one conn table map nil))
+  ([conn table kv]
+   (insert-one conn table kv nil))
 
-  ([conn table map {:as opt
-                    :keys [returning
-                           on-conflict
-                           do-update-set
-                           do-nothing]
-                    :or {returning [:*]}}]
+  ([conn table kv {:as opt
+                   :keys [returning
+                          on-conflict
+                          do-update-set
+                          do-nothing]
+                   :or {returning [:*]}}]
    (let [sql-map
          (cond-> {:insert-into table
-                  :values [map]}
+                  :values [kv]}
 
            returning
            (assoc :returning returning)
@@ -256,17 +256,26 @@
 
 
 (defn update
-  ([conn table set]
-   (update conn table set nil))
+  "
+  Update rows in a table. The `kv` is a map of field->value.
+  Note that the value might be not a scalar but something
+  like `[:raw 'now()']` or any other HoneySQL expression.
 
-  ([conn table set {:as opt
-                    :keys [where
-                           returning]
-                    :or {returning [:*]}}]
+  The optional parametes are:
+  - `where` which acts like a filter when updating the rows;
+  - `returning` which determines what columns to return.
+  "
+  ([conn table kv]
+   (update conn table kv nil))
+
+  ([conn table kv {:as opt
+                   :keys [where
+                          returning]
+                   :or {returning [:*]}}]
 
    (let [sql-map
          {:udpate table
-          :set set
+          :set kv
           :where where
           :returning returning}]
 
@@ -295,6 +304,19 @@
 
 
 (defn find
+  "
+  Select rows by a column->value filter, for example:
+
+  {:name 'Foo', :active true}
+
+  All the kv pairs get concatenated with AND.
+
+  The optional arguments are:
+  - fields (default is [:*])
+  - limit
+  - offset
+  - order-by
+  "
   ([conn table kv]
    (find conn table kv nil))
 
@@ -331,6 +353,11 @@
 
 
 (defn find-first
+  "
+  Like `find` but gets the first row only. Adds the
+  limit 1 expression to the query. Supports the same
+  optional arguments.
+  "
   ([conn table kv]
    (find-first conn table kv nil))
 
