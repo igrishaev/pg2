@@ -55,6 +55,8 @@ classes are supported for reading and writing.
 - [HoneySQL Integration & Shortcuts](#honeysql-integration--shortcuts)
   * [Get by id](#get-by-id)
   * [Get by ids](#get-by-ids)
+  * [Delete](#delete)
+  * [Insert](#insert)
 - [Next.JDBC API layer](#nextjdbc-api-layer)
   * [Obtaining a Connection](#obtaining-a-connection)
   * [Executing Queries](#executing-queries)
