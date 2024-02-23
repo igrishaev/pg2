@@ -16,7 +16,9 @@
 
 (defn format
   "
-  Like honey.sql/format but with some overrides.
+  Like honey.sql/format but with some Postgres-related overrides.
+  Namely, it produces a SQL expressions with dollar signs instead
+  of question marks, e.g. `SELECT * FROM USERS WHERE id = $1`.
   "
 
   ([sql-map]
@@ -34,7 +36,7 @@
   Arguments:
   - conn: a Connection object;
   - sql-map: a map like {:select [:this :that] :from [...]}
-  - opt: query options; pass the `:honey` key for HoneySQL params.
+  - opt: PG2 options; pass the `:honey` key for HoneySQL params.
 
   Result:
   - the same as `pg.core/query`.
@@ -59,7 +61,7 @@
   Arguments:
   - conn: a Connection object;
   - sql-map: a map like {:select [:this :that] :from [...]}
-  - opt: query options; pass the `:honey` key for HoneySQL params.
+  - opt: PG2 options; pass the `:honey` key for HoneySQL params.
 
   Result:
   - same as `pg.core/execute`.
@@ -77,6 +79,19 @@
 
 
 (defn prepare
+  "
+  Prepare a statement expressed wit a Honey map.
+  For parameters, use either blank values or raw
+  expressions, for example:
+
+  {:select [:*] :from :users :where [:= :id 0]}
+
+  or
+
+  {:select [:*] :from :users :where [:raw 'id = $1']}
+
+  Return an instance of `PreparedStatement` class.
+  "
 
   ([conn sql-map]
    (prepare conn sql-map nil))
@@ -94,6 +109,15 @@
 ;;
 
 (defn get-by-id
+  "
+  Get a single row by its primary key.
+
+  By default, the name of the primary key is `:id`
+  which can be overridden by the `:pk` parameter.
+
+  The optimal `:fields` vector specifies which
+  columns to return, `[:*]` by default.
+  "
   ([conn table id]
    (get-by-id conn table id nil))
 
@@ -114,6 +138,17 @@
 
 
 (defn get-by-ids
+  "
+  Get multiple rows from a table by their PKs. It's not
+  recommended to pass thousands of PKs at once. Split
+  them by smaller chunks instead.
+
+  Like `get-by-id`, accepts the PK name, the column names
+  to return, and order-by clause.
+
+  Returns a vector of rows.
+  "
+
   ([conn table ids]
    (get-by-ids conn table ids nil))
 
@@ -135,6 +170,21 @@
 
 
 (defn insert
+  "
+  Insert a collection of rows into a table.
+  The `maps` argument must be a seq of maps.
+
+  The optional arguments are:
+  - returning: a vector of columns to return, default is [:*]
+  - on-conflict,
+  - do-update-set,
+  - do-nothing: Postgres-specific ON CONFLICT ... DO ... expressions.
+
+  Other PG2-related options are supported.
+
+  The result depends on the `returning` clause and PG2 options.
+  By default, it will be a vector of inserted rows.
+  "
 
   ([conn table maps]
    (insert conn table maps nil))
@@ -165,6 +215,12 @@
 
 
 (defn insert-one
+  "
+  Like `insert` but accepts a single row.
+
+  Supports the same options. The default result
+  is a single inserted row.
+  "
 
   ([conn table map]
    (insert-one conn table map nil))
