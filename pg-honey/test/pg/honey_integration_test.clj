@@ -34,6 +34,63 @@
 (use-fixtures :each fix-prepare-table)
 
 
+(deftest test-prepare-statement
+
+  (testing "prepare explicit param"
+    (pg/with-connection [conn CONFIG]
+      (let [stmt
+            (pgh/prepare conn {:select [:*]
+                               :from TABLE
+                               :where [:= :id 0]})
+            res
+            (pg/execute-statement conn stmt {:params [3]
+                                             :first? true})]
+        (is (= "<Prepared statement, name: s1, param(s): 1, OIDs: [INT8], SQL: SELECT * FROM test003 WHERE id = $1>"
+               (str stmt)))
+        (is (= {:name "Juan", :active true, :id 3}
+               res)))))
+
+  (testing "prepare raw param"
+    (pg/with-connection [conn CONFIG]
+      (let [stmt
+            (pgh/prepare conn {:select [:*]
+                               :from TABLE
+                               :where [:raw "id = $1"]})
+            res
+            (pg/execute-statement conn stmt {:params [3]
+                                             :first? true})]
+        (is (= "<Prepared statement, name: s1, param(s): 1, OIDs: [INT4], SQL: SELECT * FROM test003 WHERE id = $1>"
+               (str stmt)))
+        (is (= {:name "Juan", :active true, :id 3}
+               res))))))
+
+
+(deftest test-query
+  (pg/with-connection [conn CONFIG]
+    (let [res
+          (pgh/query conn
+                     {:select [:id]
+                      :from TABLE
+                      :where [:raw "active"]
+                      :limit [:raw 1]}
+                     {:fn-key identity
+                      :first? true})]
+      (is (= {"id" 1} res)))))
+
+
+(deftest test-execute
+  (pg/with-connection [conn CONFIG]
+    (let [res
+          (pgh/execute conn
+                       {:select [:id]
+                        :from TABLE
+                        :where [:= :active true]
+                        :limit 1}
+                       {:fn-key identity
+                        :first? true})]
+      (is (= {"id" 1} res)))))
+
+
 (deftest test-get-by-id
 
   (testing "hit by id"
@@ -217,16 +274,43 @@
     (pg/with-connection [conn CONFIG]
       (let [res
             (pgh/find conn TABLE
+                      {:active true})]
+        (is (= [{:name "Ivan", :active true, :id 1}
+                {:name "Juan", :active true, :id 3}]
+               res)))))
+
+  (testing "find with options"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/find conn TABLE
                       {:active true}
-                      #_
                       {:fields [:id :name]
                        :limit 10
                        :offset 1
                        :order-by [[:id :desc]]
-                       :fn-key identity})
-            ]
-        (is (= 1 res))
-        )
-      )
-    )
-  )
+                       :fn-key identity})]
+        (is (= [{"id" 1, "name" "Ivan"}]
+               res))))))
+
+
+(deftest test-find-first
+
+  (testing "simple find first"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/find-first conn TABLE
+                            {:active true})]
+        (is (= {:name "Ivan", :active true, :id 1}
+               res)))))
+
+  (testing "find fist with options"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/find-first conn TABLE
+                            {:active true}
+                            {:fields [:id :name]
+                             :offset 1
+                             :order-by [[:id :desc]]
+                             :fn-key identity})]
+        (is (= {"id" 1, "name" "Ivan"}
+               res))))))

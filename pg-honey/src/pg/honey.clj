@@ -1,4 +1,7 @@
 (ns pg.honey
+  "
+  HoneySQL wrappers and shortcuts.
+  "
   (:refer-clojure :exclude [find
                             update
                             format])
@@ -234,7 +237,6 @@
 
      (execute conn sql-map opt))))
 
-;; ----- untested -----
 
 (defn find
   ([conn table kv]
@@ -255,22 +257,26 @@
             [:and]
             kv))
 
-         ;; TODO
-
          sql-map
-         {:select fields
-          :from table
-          :where where
-          :limit limit
-          :offset offset
-          :order-by order-by}]
+         (cond-> {:select fields
+                  :from table
+                  :where where}
+
+           limit
+           (assoc :limit limit)
+
+           offset
+           (assoc :offset offset)
+
+           order-by
+           (assoc :order-by order-by))]
 
      (execute conn sql-map opt))))
 
 
 (defn find-first
   ([conn table kv]
-   (find conn table kv nil))
+   (find-first conn table kv nil))
 
   ([conn table kv {:as opt
                    :keys [fields
@@ -287,12 +293,16 @@
             kv))
 
          sql-map
-         {:select fields
-          :from table
-          :where where
-          :limit 1
-          :offset offset
-          :order-by order-by}]
+         (cond-> {:select fields
+                  :from table
+                  :where where
+                  :limit 1}
+
+           offset
+           (assoc :offset offset)
+
+           order-by
+           (assoc :order-by order-by))]
 
      (execute conn
               sql-map
