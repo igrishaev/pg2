@@ -800,7 +800,7 @@ package, declare a config map and create a table with some rows as follows:
 
 Now we're ready for the demo.
 
-### Get by id
+### Get by id(s)
 
 The `get-by-id` function fetches a single row by its primary key which is `:id`
 by default:
@@ -825,8 +825,6 @@ you're interested in:
 ;; SELECT id, name FROM test003 WHERE test003.id = $1 LIMIT $2
 ;; parameters: $1 = '1', $2 = '1'
 ~~~
-
-### Get by ids
 
 The `get-by-ids` function accepts a collection of primary keys and fetch them
 using the `IN` operator. In additon to options that `get-by-id` has, you can
@@ -878,7 +876,7 @@ You can specify the `WHERE` clause and the column names of the result:
 
 When passing the `:returning` option set to `nil`, no rows are returned.
 
-### Insert
+### Insert (one)
 
 To observe all the features of the `insert` function, let's create a separate
 table:
@@ -904,7 +902,242 @@ The function accepts a collection of maps where each map represents a row:
  {:name "Bar", :id 2}]
 ~~~
 
-## Next.JDBC API layer
+It accepts several option to produce the `ON CONFLICT ... DO ...` clause known
+as `UPSERT`. The following query tries to insert two rows with existing primary
+keys. Should they exist, the query updates the names of the corresponding rows:
+
+~~~clojure
+(pgh/insert conn
+            :test004
+            [{:id 1 :name "Snip"}
+             {:id 2 :name "Snap"}]
+            {:on-conflict [:id]
+             :do-update-set [:name]
+             :returning [:id :name]})
+~~~
+
+The resulting query looks like this:
+
+~~~sql
+INSERT INTO test004 (id, name) VALUES ($1, $2), ($3, $4)
+  ON CONFLICT (id)
+  DO UPDATE SET name = EXCLUDED.name
+  RETURNING id, name
+parameters: $1 = '1', $2 = 'Snip', $3 = '2', $4 = 'Snap'
+~~~
+
+The `insert-one` function acts like `insert` but accepts (and returns) a single
+map. It supports `:returning` and `ON CONFLICT ...` clauses as well:
+
+~~~clojure
+(pgh/insert-one conn
+                :test004
+                {:id 2 :name "Alter Ego" :active true}
+                {:on-conflict [:id]
+                 :do-update-set [:name :active]
+                 :returning [:*]})
+
+{:name "Alter Ego", :active true, :id 2}
+~~~
+
+The logs:
+
+~~~sql
+INSERT INTO test004 (id, name, active) VALUES ($1, $2, TRUE)
+  ON CONFLICT (id)
+  DO UPDATE SET name = EXCLUDED.name, active = EXCLUDED.active
+  RETURNING *
+parameters: $1 = '2', $2 = 'Alter Ego'
+~~~
+
+### Update
+
+### Find (first)
+
+The `find` function performs a lookup in a table by column-value pairs. All the
+pairs are joined using the `AND` operator:
+
+~~~clojure
+(pgh/find conn :test003 {:active true})
+
+[{:name "Ivan", :active true, :id 1}
+ {:name "Juan", :active true, :id 3}]
+~~~
+
+Find by two conditions:
+
+~~~clojure
+(pgh/find conn :test003 {:active true
+                         :name "Juan"})
+
+[{:name "Juan", :active true, :id 3}]
+
+;; SELECT * FROM test003 WHERE (active = TRUE) AND (name = $1)
+;; parameters: $1 = 'Juan'
+~~~
+
+The function accepts additional options for LIMIT, OFFSET, and ORDER BY clauses:
+
+~~~clojure
+(pgh/find conn
+          :test003
+          {:active true}
+          {:fields [:id :name]
+           :limit 10
+           :offset 1
+           :order-by [[:id :desc]]
+           :fn-key identity})
+
+[{"id" 1, "name" "Ivan"}]
+
+;; SELECT id, name FROM test003
+;;   WHERE (active = TRUE)
+;;   ORDER BY id DESC
+;;   LIMIT $1
+;;   OFFSET $2
+;; parameters: $1 = '10', $2 = '1'
+~~~
+
+The `find-first` function acts the same but returns a single row or
+nil. Internally, it adds the `LIMIT 1` clause to the query:
+
+~~~clojure
+(pgh/find-first conn :test003
+                {:active true}
+                {:fields [:id :name]
+                 :offset 1
+                 :order-by [[:id :desc]]
+                 :fn-key identity})
+
+{"id" 1, "name" "Ivan"}
+~~~
+
+### Prepare
+
+The `prepare` function makes a prepared statement from a HoneySQL map:
+
+~~~clojure
+(def stmt
+  (pgh/prepare conn {:select [:*]
+                     :from :test003
+                     :where [:= :id 0]}))
+
+;; <Prepared statement, name: s37, param(s): 1, OIDs: [INT8], SQL: SELECT * FROM test003 WHERE id = $1>
+~~~
+
+Above, the zero value is just a placeholder for an integer parameter. Now that
+the statement is prepared, execute it with the right id:
+
+~~~clojure
+(pg/execute-statement conn stmt {:params [3]
+                                 :first? true})
+
+{:name "Juan", :active true, :id 3}
+~~~
+
+Alternately, you use the `[:raw ...]` syntax to specify a parameter with a
+dollar sign:
+
+~~~clojure
+(def stmt
+  (pgh/prepare conn {:select [:*]
+                     :from :test003
+                     :where [:raw "id = $1"]}))
+
+(pg/execute-statement conn stmt {:params [1]
+                                 :first? true})
+
+{:name "Ivan", :active true, :id 1}
+~~~
+
+### Query and Execute
+
+There are two general functions called `query` and `execute`. Each of them
+accepts an arbitrary HoneySQL map and performs either `Query` or `Execute`
+request to the server.
+
+Pay attention that, when using `query`, the HoneySQL map cannot have
+parameters. This is a limitation of the `Query` command. The following query
+will lead to an error response from the server:
+
+~~~clojure
+(pgh/query conn
+           {:select [:id]
+            :from :test003
+            :where [:= :name "Ivan"]
+            :order-by [:id]})
+
+;; Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:207).
+;; Server error response: {severity=ERROR, ... message=there is no parameter $1, verbosity=ERROR}
+~~~
+
+Instead, use either `[:raw ...]` syntax or `{:inline true}` option:
+
+~~~clojure
+(pgh/query conn
+           {:select [:id]
+            :from :test003
+            :where [:raw "name = 'Ivan'"]
+            :order-by [:id]})
+
+[{:id 1}]
+
+;; OR
+
+(pgh/query conn
+           {:select [:id]
+            :from :test003
+            :where [:= :name "Ivan"]
+            :order-by [:id]}
+           {:honey {:inline true}})
+
+[{:id 1}]
+
+;; SELECT id FROM test003 WHERE name = 'Ivan' ORDER BY id ASC
+~~~
+
+The `execute` function acceps a HoneySQL map with parameters:
+
+~~~clojure
+(pgh/execute conn
+               {:select [:id :name]
+                :from :test003
+                :where [:= :name "Ivan"]
+                :order-by [:id]})
+
+[{:name "Ivan", :id 1}]
+~~~
+
+Both `query` and `execute` accept not SELECT only but literally everything:
+inserting, updating, creating a table, an index, and more.
+
+### HoneySQL options
+
+Any HoneySQL-specific option might be passed via the `:honey` parameter in the
+options. Below, we use the `:params` map to refer to parameters using the
+`[:param ...]` syntax. Also, we produce pretty-formatted SQL query for better
+reading in logs:
+
+~~~clojure
+(pgh/execute conn
+             {:select [:id :name]
+              :from :test003
+              :where [:= :name [:param :name]]
+              :order-by [:id]}
+             {:honey {:pretty true
+                      :params {:name "Ivan"}}})
+
+;; SELECT id, name
+;; FROM test003
+;; WHERE name = $1
+;; ORDER BY id ASC
+;; parameters: $1 = 'Ivan'
+~~~
+
+For more options, please refer to the official [HoneySQL
+documentation][honeysql].
+
+## next.JDBC API layer
 
 [next-jdbc]: https://github.com/seancorfield/next-jdbc
 

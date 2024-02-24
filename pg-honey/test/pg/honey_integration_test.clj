@@ -157,6 +157,26 @@
                res))))))
 
 
+;; TODO: update counters
+;; TODO: not active
+(deftest test-update
+
+  (testing "simple update"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/update conn TABLE {:active true})]
+        (is (= [{:name "Ivan", :active true, :id 1}
+                {:name "Huan", :active true, :id 2}
+                {:name "Juan", :active true, :id 3}]
+               res))
+
+        )
+      )
+    )
+
+  )
+
+
 (deftest test-insert
 
   (testing "simple insert"

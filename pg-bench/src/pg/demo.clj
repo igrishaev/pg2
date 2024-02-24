@@ -378,6 +378,10 @@ create table demo (
 
   [{:name "Juan", :active true, :id 3}]
 
+  (pgh/update conn
+              :test003
+              {:active true})
+
   ;; SELECT * FROM test003 WHERE (active = TRUE) AND (name = $1)
   ;; parameters: $1 = 'Juan'
 
@@ -465,12 +469,28 @@ create table demo (
 
   [{:id 1}]
 
+  (pgh/query conn
+             {:select [:id]
+              :from :test003
+              :where [:= :name "Ivan"]
+              :order-by [:id]}
+             {:honey {:inline true}})
+
+  (pgh/execute conn
+               {:select [:id :name]
+                :from :test003
+                :where [:= :name "Ivan"]
+                :order-by [:id]})
+
+  [{:name "Ivan", :id 1}]
+
+
   (pgh/execute conn
                {:select [:id :name]
                 :from :test003
                 :where [:= :name [:param :name]]
                 :order-by [:id]}
-               {:honey {:pretty? true
+               {:honey {
                         :params {:name "Ivan"}}})
 
   [{:name "Ivan", :id 1}]

@@ -274,10 +274,14 @@
                    :or {returning [:*]}}]
 
    (let [sql-map
-         {:udpate table
-          :set kv
-          :where where
-          :returning returning}]
+         (cond-> {:update table
+                  :set kv}
+
+           where
+           (assoc :where where)
+
+           returning
+           (assoc :returning returning))]
 
      (execute conn sql-map opt))))
 
