@@ -53,11 +53,15 @@ classes are supported for reading and writing.
 - [Transactions](#transactions)
 - [Connection state](#connection-state)
 - [HoneySQL Integration & Shortcuts](#honeysql-integration--shortcuts)
-  * [Get by id](#get-by-id)
-  * [Get by ids](#get-by-ids)
+  * [Get by id(s)](#get-by-ids)
   * [Delete](#delete)
-  * [Insert](#insert)
-- [Next.JDBC API layer](#nextjdbc-api-layer)
+  * [Insert (one)](#insert-one)
+  * [Update](#update)
+  * [Find (first)](#find-first)
+  * [Prepare](#prepare)
+  * [Query and Execute](#query-and-execute)
+  * [HoneySQL options](#honeysql-options)
+- [next.JDBC API layer](#nextjdbc-api-layer)
   * [Obtaining a Connection](#obtaining-a-connection)
   * [Executing Queries](#executing-queries)
   * [Transactions](#transactions-1)
@@ -952,6 +956,59 @@ parameters: $1 = '2', $2 = 'Alter Ego'
 
 ### Update
 
+The `update` function alters rows in a table. By default, it doesn't do any
+filtering and returns all the affected rows. The following update sets active to
+the for all rows:
+
+~~~clojure
+(pgh/update conn
+            :test003
+            {:active true})
+
+[{:name "Ivan", :active true, :id 1}
+ {:name "Huan", :active true, :id 2}
+ {:name "Juan", :active true, :id 3}]
+~~~
+
+The `:where` clause determines conditions for update. You can also specify what
+columns to return:
+
+~~~clojure
+(pgh/update conn
+            :test003
+            {:active false}
+            {:where [:= :name "Ivan"]
+             :returning [:id]})
+
+[{:id 1}]
+~~~
+
+What is great about `update`, you can use expressions instead of plain values
+for increasing counters, negation and similar cases. Below, we alter the primary
+key by adding 100 to it, negate the `active` column, and change the `name`
+column with dull concatenation:
+
+~~~clojure
+(pgh/update conn
+            :test003
+            {:id [:+ :id 100]
+             :active [:not :active]
+             :name [:raw "name || name"]}
+            {:where [:= :name "Ivan"]
+             :returning [:id :active]})
+
+[{:active true, :id 101}]
+
+;; UPDATE test003
+;;   SET
+;;     id = id + $1,
+;;     active = NOT active,
+;;     name = name || name
+;;   WHERE name = $2
+;;   RETURNING id, active
+;; parameters: $1 = '100', $2 = 'Ivan'
+~~~
+
 ### Find (first)
 
 The `find` function performs a lookup in a table by column-value pairs. All the
@@ -1109,7 +1166,9 @@ The `execute` function acceps a HoneySQL map with parameters:
 ~~~
 
 Both `query` and `execute` accept not SELECT only but literally everything:
-inserting, updating, creating a table, an index, and more.
+inserting, updating, creating a table, an index, and more. You can build
+combinations like `INSERT ... FROM SELECT` or `UPDATE ... FROM DELETE` to
+perform complex logic in one atomic query.
 
 ### HoneySQL options
 
