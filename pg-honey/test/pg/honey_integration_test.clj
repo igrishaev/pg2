@@ -157,10 +157,7 @@
                res))))))
 
 
-;; TODO: update counters
-;; TODO: not active
-(deftest test-update
-
+(deftest test-update-simple
   (testing "simple update"
     (pg/with-connection [conn CONFIG]
       (let [res
@@ -168,13 +165,34 @@
         (is (= [{:name "Ivan", :active true, :id 1}
                 {:name "Huan", :active true, :id 2}
                 {:name "Juan", :active true, :id 3}]
-               res))
+               res))))))
 
-        )
-      )
-    )
 
-  )
+(deftest test-update-with-options
+  (testing "update with options"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/update conn
+                        TABLE
+                        {:active true}
+                        {:where [:= :name "Ivan"]
+                         :returning [:id]})]
+        (is (= [{:id 1}]
+               res))))))
+
+
+(deftest test-update-honey-expressions
+  (testing "update with options"
+    (pg/with-connection [conn CONFIG]
+      (let [res
+            (pgh/update conn
+                        TABLE
+                        {:id [:+ :id 100]
+                         :active [:not :active]}
+                        {:where [:= :name "Ivan"]
+                         :returning [:id :active]})]
+        (is (= [{:id 101, :active false}]
+               res))))))
 
 
 (deftest test-insert

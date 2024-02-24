@@ -325,6 +325,41 @@ create table demo (
 
   (pg/query conn "create table test004 (id serial primary key, name text not null, active boolean not null default true)")
 
+  (pgh/update conn
+              :test003
+              {:active true})
+
+  [{:name "Ivan", :active true, :id 1}
+   {:name "Huan", :active true, :id 2}
+   {:name "Juan", :active true, :id 3}]
+
+  (pgh/update conn
+              :test003
+              {:active false}
+              {:where [:= :name "Ivan"]
+               :returning [:id]})
+
+  [{:id 1}]
+
+  (pgh/update conn
+              :test003
+              {:id [:+ :id 100]
+               :active [:not :active]
+               :name [:raw "name || name"]}
+              {:where [:= :name "Ivan"]
+               :returning [:id :active]})
+
+  [{:active true, :id 101}]
+
+  ;; UPDATE test003
+  ;;   SET
+  ;;     id = id + $1,
+  ;;     active = NOT active,
+  ;;     name = name || name
+  ;;   WHERE name = $2
+  ;;   RETURNING id, active
+  ;; parameters: $1 = '100', $2 = 'Ivan'
+
   (pgh/insert conn
               :test004
               [{:name "Foo" :active false}
