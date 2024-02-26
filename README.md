@@ -763,18 +763,18 @@ Now it's ready for new queries again.
 
 [honeysql]: https://github.com/seancorfield/honeysql
 
-The `pg-honey` package allows you to call `query` and `execute` functions
-passing not string SQL expressions but Clojure maps. Internally, they get
-transformed into SQL using the great [HoneySQL library][honeysql]. With
-HoneySQL, one don't need to format strings to build a SQL expression, which is
-clumsy and dangerous in terms of SQL injections.
+The `pg-honey` package allows you to call `query` and `execute` functions using
+maps rather than string SQL expressions. Internally, maps are transformed into
+SQL using the great [HoneySQL library][honeysql]. With HoneySQL, you don't need
+to format strings to build a SQL, which is clumsy and dangerous in terms of
+injections.
 
 The package also provides several shortcuts for such common dutiles as get a
 single row by id, get a bunch of rows by their ids, insert a row having a map of
-values, update by a column->value map and so on.
+values, update by a map and so on.
 
-Before we go though the demo, let's do some preparetion first. Import the
-package, declare a config map and create a table with some rows as follows:
+For a demo, let's import the package, declare a config map and create a table
+with some rows as follows:
 
 ~~~clojure
 (require '[pg.honey :as pgh])
@@ -802,12 +802,10 @@ package, declare a config map and create a table with some rows as follows:
   (3, 'Juan', true)")
 ~~~
 
-Now we're ready for the demo.
-
 ### Get by id(s)
 
-The `get-by-id` function fetches a single row by its primary key which is `:id`
-by default:
+The `get-by-id` function fetches a single row by a primary key which is `:id` by
+default:
 
 ~~~clojure
 (pgh/get-by-id conn :test003 1)
@@ -830,7 +828,7 @@ you're interested in:
 ;; parameters: $1 = '1', $2 = '1'
 ~~~
 
-The `get-by-ids` function accepts a collection of primary keys and fetch them
+The `get-by-ids` function accepts a collection of primary keys and fetches them
 using the `IN` operator. In additon to options that `get-by-id` has, you can
 specify the ordering:
 
@@ -850,7 +848,8 @@ specify the ordering:
 ~~~
 
 Passing many IDs at once is not recommended. Either pass them by chunks or
-create a temp table, copy IDs there and join it with the main table.
+create a temporary table, `COPY IN` ids into it and `INNER JOIN` with the main
+table.
 
 ### Delete
 
@@ -878,7 +877,7 @@ You can specify the `WHERE` clause and the column names of the result:
 [{:name "Juan", :active true, :id 3}]
 ~~~
 
-When passing the `:returning` option set to `nil`, no rows are returned.
+When the `:returning` option set to `nil`, no rows are returned.
 
 ### Insert (one)
 
@@ -893,7 +892,7 @@ table:
 )")
 ~~~
 
-The function accepts a collection of maps where each map represents a row:
+The `insert` function accepts a collection of maps each represents a row:
 
 ~~~clojure
 (pgh/insert conn
@@ -906,8 +905,8 @@ The function accepts a collection of maps where each map represents a row:
  {:name "Bar", :id 2}]
 ~~~
 
-It accepts several option to produce the `ON CONFLICT ... DO ...` clause known
-as `UPSERT`. The following query tries to insert two rows with existing primary
+It also accepts options to produce the `ON CONFLICT ... DO ...`  clause known as
+`UPSERT`. The following query tries to insert two rows with existing primary
 keys. Should they exist, the query updates the names of the corresponding rows:
 
 ~~~clojure
@@ -930,7 +929,7 @@ INSERT INTO test004 (id, name) VALUES ($1, $2), ($3, $4)
 parameters: $1 = '1', $2 = 'Snip', $3 = '2', $4 = 'Snap'
 ~~~
 
-The `insert-one` function acts like `insert` but accepts (and returns) a single
+The `insert-one` function acts like `insert` but accepts and returns a single
 map. It supports `:returning` and `ON CONFLICT ...` clauses as well:
 
 ~~~clojure
@@ -957,8 +956,8 @@ parameters: $1 = '2', $2 = 'Alter Ego'
 ### Update
 
 The `update` function alters rows in a table. By default, it doesn't do any
-filtering and returns all the affected rows. The following update sets active to
-the for all rows:
+filtering and returns all the rows affected. The following query sets the
+boolean `active` value for all rows:
 
 ~~~clojure
 (pgh/update conn
@@ -970,7 +969,7 @@ the for all rows:
  {:name "Juan", :active true, :id 3}]
 ~~~
 
-The `:where` clause determines conditions for update. You can also specify what
+The `:where` clause determines conditions for update. You can also specify
 columns to return:
 
 ~~~clojure
@@ -983,10 +982,10 @@ columns to return:
 [{:id 1}]
 ~~~
 
-What is great about `update`, you can use expressions instead of plain values
-for increasing counters, negation and similar cases. Below, we alter the primary
-key by adding 100 to it, negate the `active` column, and change the `name`
-column with dull concatenation:
+What is great about `update` is, you can use such complex expressions as
+increasing counters, negation and so on. Below, we alter the primary key by
+adding 100 to it, negate the `active` column, and change the `name` column with
+dull concatenation:
 
 ~~~clojure
 (pgh/update conn
@@ -998,20 +997,24 @@ column with dull concatenation:
              :returning [:id :active]})
 
 [{:active true, :id 101}]
+~~~
 
-;; UPDATE test003
-;;   SET
-;;     id = id + $1,
-;;     active = NOT active,
-;;     name = name || name
-;;   WHERE name = $2
-;;   RETURNING id, active
-;; parameters: $1 = '100', $2 = 'Ivan'
+Which produces the following query:
+
+~~~sql
+UPDATE test003
+  SET
+    id = id + $1,
+    active = NOT active,
+    name = name || name
+  WHERE name = $2
+  RETURNING id, active
+parameters: $1 = '100', $2 = 'Ivan'
 ~~~
 
 ### Find (first)
 
-The `find` function performs a lookup in a table by column-value pairs. All the
+The `find` function makes a lookup in a table by column-value pairs. All the
 pairs are joined using the `AND` operator:
 
 ~~~clojure
@@ -1033,7 +1036,8 @@ Find by two conditions:
 ;; parameters: $1 = 'Juan'
 ~~~
 
-The function accepts additional options for LIMIT, OFFSET, and ORDER BY clauses:
+The function accepts additional options for `LIMIT`, `OFFSET`, and `ORDER BY`
+clauses:
 
 ~~~clojure
 (pgh/find conn
@@ -1056,7 +1060,7 @@ The function accepts additional options for LIMIT, OFFSET, and ORDER BY clauses:
 ~~~
 
 The `find-first` function acts the same but returns a single row or
-nil. Internally, it adds the `LIMIT 1` clause to the query:
+`nil`. Internally, it adds the `LIMIT 1` clause to the query:
 
 ~~~clojure
 (pgh/find-first conn :test003
@@ -1082,8 +1086,9 @@ The `prepare` function makes a prepared statement from a HoneySQL map:
 ;; <Prepared statement, name: s37, param(s): 1, OIDs: [INT8], SQL: SELECT * FROM test003 WHERE id = $1>
 ~~~
 
-Above, the zero value is just a placeholder for an integer parameter. Now that
-the statement is prepared, execute it with the right id:
+Above, the zero value is a placeholder for an integer parameter.
+
+Now that the statement is prepared, execute it with the right id:
 
 ~~~clojure
 (pg/execute-statement conn stmt {:params [3]
@@ -1092,8 +1097,8 @@ the statement is prepared, execute it with the right id:
 {:name "Juan", :active true, :id 3}
 ~~~
 
-Alternately, you use the `[:raw ...]` syntax to specify a parameter with a
-dollar sign:
+Alternately, use the `[:raw ...]` syntax to specify a parameter with a dollar
+sign:
 
 ~~~clojure
 (def stmt
@@ -1113,7 +1118,7 @@ There are two general functions called `query` and `execute`. Each of them
 accepts an arbitrary HoneySQL map and performs either `Query` or `Execute`
 request to the server.
 
-Pay attention that, when using `query`, the HoneySQL map cannot have
+Pay attention that, when using `query`, a HoneySQL map cannot have
 parameters. This is a limitation of the `Query` command. The following query
 will lead to an error response from the server:
 
@@ -1134,7 +1139,7 @@ Instead, use either `[:raw ...]` syntax or `{:inline true}` option:
 (pgh/query conn
            {:select [:id]
             :from :test003
-            :where [:raw "name = 'Ivan'"]
+            :where [:raw "name = 'Ivan'"] ;; raw (as is)
             :order-by [:id]})
 
 [{:id 1}]
@@ -1146,7 +1151,7 @@ Instead, use either `[:raw ...]` syntax or `{:inline true}` option:
             :from :test003
             :where [:= :name "Ivan"]
             :order-by [:id]}
-           {:honey {:inline true}})
+           {:honey {:inline true}}) ;; inline values
 
 [{:id 1}]
 
@@ -1165,17 +1170,16 @@ The `execute` function acceps a HoneySQL map with parameters:
 [{:name "Ivan", :id 1}]
 ~~~
 
-Both `query` and `execute` accept not SELECT only but literally everything:
+Both `query` and `execute` accept not `SELECT` only but literally everything:
 inserting, updating, creating a table, an index, and more. You can build
 combinations like `INSERT ... FROM SELECT` or `UPDATE ... FROM DELETE` to
-perform complex logic in one atomic query.
+perform complex logic in a single atomic query.
 
 ### HoneySQL options
 
-Any HoneySQL-specific option might be passed via the `:honey` parameter in the
-options. Below, we use the `:params` map to refer to parameters using the
-`[:param ...]` syntax. Also, we produce pretty-formatted SQL query for better
-reading in logs:
+Any HoneySQL-specific parameter might be passed through the `:honey` submap in
+options. Below, we pass the `:params` map to use the `[:param ...]`
+syntax. Also, we produce a pretty-formatted SQL for better logs:
 
 ~~~clojure
 (pgh/execute conn
