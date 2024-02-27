@@ -2,15 +2,19 @@
 - readme
 
 - pool close conn test
+
 - keywords with namespaces (+ jdbc)
 
 - test parallel connection access
 
 - migration: no ragtime?
+
 - parse JDBC url
 
 - bulk statement execute
+
 - batch execute
+
 - pg.jdbc batch
 
 - pass jsonista custom object
@@ -40,23 +44,17 @@
   - geom.etc
   - inet/cidr
 
-- honey helpers
-  - docstrings
-  - tests
-  - release
-  - readme
+- use COPY OUT for result?
+
+- Unix socket connection type
+
+- hugsql adapter
+
+- reduce java version by converting records to classes
 
 - honey helpers
   - get-by-ids-temp
   - copy in/out
   - truncate
 
-- use COPY OUT for result?
-- Unix socket connection type
-- hugsql adapter
-
-- reduce java version by converting records to classes
-
 - verify peer name? https://github.com/pgjdbc/pgjdbc/blob/5b8c2719806a9614aedeb5ee8a8b9e2b96432d28/pgjdbc/src/main/java/org/postgresql/ssl/MakeSSL.java#L30
-
-- own queue class?
