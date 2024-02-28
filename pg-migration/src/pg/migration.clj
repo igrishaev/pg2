@@ -1,19 +1,35 @@
 (ns pg.migration
-  (:import java.io.File)
+  (:import
+   java.io.File
+   java.lang.AutoCloseable)
   (:require
+   [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as str]
-   [pg.core :as pg]
-   [pg.honey :as pgh]
    [honey.sql :as sql]
-   [clojure.java.io :as io]))
+   [pg.core :as pg]
+   [pg.honey :as pgh]))
+
+
+(defprotocol IMigration
+  (-applied?
+    [this]
+    [this flag]))
 
 
 (defrecord Migration [id
                       slug
                       applied?
                       file-next
-                      file-prev])
+                      file-prev]
+
+  IMigration
+
+  (-applied? [this]
+    applied?)
+
+  (-applied? [this flag]
+    (assoc this :applied? flag)))
 
 
 (defprotocol IRegistry
@@ -34,8 +50,12 @@
 (defrecord Registry [conn
                      index
                      migrations
-                     migrations-table
-                     migrations-path]
+                     migrations-table]
+
+  AutoCloseable
+
+  (close [this]
+    (pg/close conn))
 
   IRegistry
 
@@ -49,7 +69,7 @@
         (nil? migration)
         this
 
-        (:applied? migration)
+        (-applied? migration)
         (-> this
             (update :index inc))
 
@@ -68,7 +88,7 @@
 
           (-> this
               (update :index inc)
-              (update :migrations index assoc :applied? true))))))
+              (update :migrations index -applied? true))))))
 
 
   (-apply-prev [this]
@@ -81,7 +101,7 @@
         (nil? migration)
         this
 
-        (:applied? migration)
+        (-applied? migration)
         (-> this
             (update :index dec))
 
@@ -104,7 +124,7 @@
 
           (-> this
               (update :index dec)
-              (update :migrations index assoc :applied? false))))))
+              (update :migrations index assoc -applied? false))))))
 
   (-next-to [this id])
 
@@ -129,24 +149,8 @@
        times))))
 
 
-(def QUERY_TABLE
-  {:create-table [:migrations :if-not-exists]
-   :with-columns
-   [[:id :bigint :primary-key]
-    [:slug :text]
-    [:created_at [:raw "timestamp with time zone not null default current_timestamp"]]]})
-
-
-(defn create-migrations-table [conn]
-
-  )
-
 (def RE_FILE
   #"(?i)^(\d+)(.*?)\.(prev|next)\.sql$")
-
-
-(defn migration-file? [^File file])
-
 
 
 (defn cleanup-slug ^String [^String slug]
@@ -156,7 +160,7 @@
       (str/trim)))
 
 
-(defn file->migration [^File file]
+(defn file->migration ^Migration [^File file]
   (when-let [[_ id-raw slug-raw direction-raw]
              (re-matches RE_FILE (.getName file))]
 
@@ -169,14 +173,37 @@
           direction
           (-> direction-raw
               str/lower-case
-              keyword)]
+              keyword)
 
-      {:id id
-       :slug slug
-       :next? (= direction :next)
-       :prev? (= direction :prev)
-       :direction direction
-       :file file})))
+          file-next
+          (when (= direction :next)
+            file)
+
+          file-prev
+          (when (= direction :prev)
+            file)]
+
+      (new Migration id slug nil file-next file-prev))))
+
+
+(defn ensure-table [conn migrations-table]
+  (let [query
+        {:create-table [migrations-table :if-not-exists]
+         :with-columns
+         [[:id :bigint :primary-key]
+          [:slug :text]
+          [:created_at [:raw "timestamp with time zone not null default current_timestamp"]]]}]
+    (pgh/query conn query)))
+
+
+(defn index-by [f coll]
+  (->> coll
+       (map (juxt f identity))
+       (into {})))
+
+
+(defn enumerate [coll]
+  (map-indexed vector coll))
 
 
 (defn list-file-migrations [^String path]
@@ -185,84 +212,71 @@
        io/file
        file-seq
        (map file->migration)
-       (filter some?)
-       (map (juxt :id identity))
-       (into (sorted-map))))
+       (filter some?)))
 
 
-(defn list-db-migrations [conn]
+(defn get-applied-migration-ids [conn]
   (let [query
-        {:select [:*]
+        {:select [:id]
          :from :migrations
-         :order-by [[:id :asc]]}
-
-        rows
-        (pgh/query conn query)]
-
-    (->> rows
-         (map (juxt :id identity))
-         (into (sorted-map)))))
+         :order-by [[:id :asc]]}]
+    (->> query
+         (pgh/query conn)
+         (map :id)
+         (set))))
 
 
-(defn get-pending-migration-ids [file-migrations
-                                 db-migrations]
-  (let [result
-        (set/difference (-> file-migrations keys set)
-                        (-> db-migrations keys set))]
-    (-> result
-        sort
-        vec
-        not-empty)))
+(def DEFAULTS
+  {:migrations-table :migrations
+   :migrations-path "migrations"})
 
 
-(defn get-last-migration []
-  )
+(defn init-registry [config]
 
+  (let [config+
+        (merge DEFAULTS config)
 
-(defn apply-migration [conn db-migration]
+        {:keys [migrations-table
+                migrations-path]}
+        config+
 
-  (let [{:keys [id slug file prev? next?]}
-        db-migration
+        conn
+        (pg/connect config+)
 
-        sql
-        (slurp file)]
+        _
+        (ensure-table conn migrations-table)
 
-    (pg/query conn sql)
+        migrations
+        (list-file-migrations migrations-path)
 
-    (cond
-      next?
-      (pgh/insert conn :migrations {:id id :slug slug})
-      prev?
-      (pgh/delete conn :migrations {:where [:= :id id]}))))
+        applied-ids-set
+        (get-applied-migration-ids conn)
 
+        id-max
+        (when (seq applied-ids-set)
+          (apply max applied-ids-set))
 
-(defn migrate-next-ids [conn migration-ids db-migrations]
+        migrations+
+        (vec
+         (for [{:as migration :keys [id]}
+               migrations]
+           (let [flag
+                 (contains? applied-ids-set id)]
+             (-applied? migration flag))))
 
-  (doseq [migration-id
-          migration-ids]
+        index
+        (reduce
+         (fn [_ [i migration]]
+           (when (-> migration :id (= id-max))
+             (reduced i)))
+         nil
+         (enumerate migrations+))
 
-    (let [db-migration
-          (get db-migrations migration-id)]
+        index
+        (or index -1)]
 
-      (apply-migration conn db-migration))))
-
-
-(defn migrate [config]
-
-  (pg/with-connection [conn config]
-
-    (let [db-migrations
-          (list-db-migrations conn)
-
-          file-migrations
-          (list-file-migrations "migrations")
-
-          pending-migration-ids
-          (get-pending-migration-ids file-migrations
-                                     db-migrations)]
-
-      (migrate-next-ids conn pending-migration-ids db-migrations))))
-
-
-(defn rollback []
-  )
+    (new Registry
+         conn
+         index
+         migrations+
+         migrations-table)))
