@@ -35,12 +35,14 @@
   :sub
   ["pg-core"
    "pg-honey"
-   "pg-component"]
+   "pg-component"
+   "pg-migration"]
 
   :managed-dependencies
   [[com.github.igrishaev/pg2-core :version]
    [com.github.igrishaev/pg2-honey :version]
    [com.github.igrishaev/pg2-component :version]
+   [com.github.igrishaev/pg2-migration :version]
    [org.clojure/clojure "1.11.1"]
    [com.github.seancorfield/honeysql "2.4.1078"]
    [less-awful-ssl "1.0.6"]
