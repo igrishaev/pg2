@@ -84,11 +84,11 @@
               (slurp file-next)]
 
           (pg/query conn sql)
-          (pgh/insert conn migrations-table {:id id :slug slug})
+          (pgh/insert-one conn migrations-table {:id id :slug slug})
 
           (-> this
               (update :index inc)
-              (update :migrations index -applied? true))))))
+              (update-in [:migrations index] -applied? true))))))
 
 
   (-apply-prev [this]
@@ -102,10 +102,6 @@
         this
 
         (-applied? migration)
-        (-> this
-            (update :index dec))
-
-        :else
         (let [{:keys [id
                       file-prev]}
               migration
@@ -124,7 +120,11 @@
 
           (-> this
               (update :index dec)
-              (update :migrations index assoc -applied? false))))))
+              (update-in [:migrations index] -applied? false)))
+
+        :else
+        (-> this
+            (update :index dec)))))
 
   (-next-to [this id])
 
@@ -206,13 +206,63 @@
   (map-indexed vector coll))
 
 
-(defn list-file-migrations [^String path]
+(defn parse-file [^File file]
+  (when-let [[_ id-raw slug-raw direction-raw]
+             (re-matches RE_FILE (.getName file))]
+
+    (let [id
+          (Long/parseLong id-raw)
+
+          slug
+          (cleanup-slug slug-raw)
+
+          direction
+          (-> direction-raw
+              str/lower-case
+              keyword)]
+
+      {:id id
+       :slug slug
+       :direction direction
+       :file file})))
+
+
+(defn group-parsed-files [parsed-files]
+  (reduce
+   (fn [acc {:as foo
+             :keys [id slug direction file]}]
+
+     (let [node
+           (cond-> {:id id
+                    :slug slug}
+
+             (= direction :prev)
+             (assoc :file-prev file)
+
+             (= direction :next)
+             (assoc :file-next file))]
+
+       (update acc id merge node)))
+
+   (sorted-map)
+   parsed-files))
+
+
+(defn is-directory? [^File file]
+  (not (.isDirectory file)))
+
+
+(defn read-file-migrations [^String path]
   (->> path
-       io/resource
-       io/file
-       file-seq
-       (map file->migration)
-       (filter some?)))
+       (io/resource)
+       (io/file)
+       (file-seq)
+       (filter is-directory?)
+       (map parse-file)
+       (filter some?)
+       (group-parsed-files)
+       (vals)
+       (mapv map->Migration)))
 
 
 (defn get-applied-migration-ids [conn]
@@ -247,7 +297,7 @@
         (ensure-table conn migrations-table)
 
         migrations
-        (list-file-migrations migrations-path)
+        (read-file-migrations migrations-path)
 
         applied-ids-set
         (get-applied-migration-ids conn)
@@ -280,3 +330,23 @@
          index
          migrations+
          migrations-table)))
+
+
+#_
+(comment
+
+  (def -config
+    {:host "127.0.0.1"
+     :port 10150
+     :user "test"
+     :password "test"
+     :database "test"})
+
+  (def -reg
+    (init-registry -config))
+
+  (-apply-next -reg)
+  (-apply-prev -reg)
+
+
+  )
