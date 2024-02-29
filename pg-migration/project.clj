@@ -10,6 +10,8 @@
   [[com.github.igrishaev/pg2-core]
    [com.github.igrishaev/pg2-honey]]
 
+  :main pg.migration
+
   :parent-project
   {:path "../project.clj"
    :inherit [:deploy-repositories
@@ -23,5 +25,6 @@
 
   :profiles
   {:test
-   {:dependencies
+   {:resource-paths ["test/resources"]
+    :dependencies
     []}})

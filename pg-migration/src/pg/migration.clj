@@ -1,5 +1,12 @@
 (ns pg.migration
+  (:gen-class)
   (:import
+
+java.net.URI
+java.nio.file.FileSystem
+java.nio.file.FileSystems
+java.nio.file.Files
+
    java.io.File
    java.lang.AutoCloseable)
   (:require
@@ -332,6 +339,14 @@
          migrations-table)))
 
 
+(defn -main [& _]
+  (-> "migrations"
+      io/resource
+      .toURI
+      FileSystems/newFileSystem
+      println))
+
+
 #_
 (comment
 
@@ -345,8 +360,6 @@
   (def -reg
     (init-registry -config))
 
-  (-apply-next -reg)
-  (-apply-prev -reg)
-
+  (-> -reg -apply-next -apply-next -apply-prev -apply-prev)
 
   )
