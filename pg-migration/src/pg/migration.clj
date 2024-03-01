@@ -2,10 +2,18 @@
   (:gen-class)
   (:import
    org.pg.Connection
-   java.net.URI
+
+   ;; java.net.URI
    ;; java.nio.file.FileSystem
    ;; java.nio.file.FileSystems
    ;; java.nio.file.Files
+
+   java.util.jar.JarFile
+
+   java.net.JarURLConnection
+   java.net.URI
+   java.net.URL
+
    java.lang.System$Logger
    java.lang.System$Logger$Level
    java.io.File
@@ -359,6 +367,34 @@
 
 #_
 (comment
+
+  (def -url
+    (new URL "jar:file:/Users/ivan/work/pg2/pg-migration/target/pg2-migration-0.1.5-SNAPSHOT-standalone.jar!/migrations"))
+
+  (def -conn
+    (.openConnection -url))
+
+  (def -jar
+    (.getJarFile -conn))
+
+  (def -entries
+    (.entries -jar))
+
+  (.getName (.nextElement -entries))
+
+  (def -entry
+    (.nextElement -entries))
+
+  (.getInputStream -jar -e)
+
+  ;; zipFile.getInputStream(zipEntry);
+
+  (def -e
+    (.getJarEntry -conn))
+
+  ;; (.isDirectory -e)
+
+  (.getInputStream -jar -entry)
 
   (def -config
     {:host "127.0.0.1"
