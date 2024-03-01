@@ -1,6 +1,7 @@
 (ns pg.migration
   (:gen-class)
   (:import
+   org.pg.Connection
    java.net.URI
    java.nio.file.FileSystem
    java.nio.file.FileSystems
@@ -18,6 +19,15 @@
    [pg.honey :as pgh]))
 
 
+(def DEFAULTS
+  {:migrations-table :migrations
+   :migrations-path "migrations"})
+
+
+(def RE_FILE
+  #"(?i)^(\d+)(.*?)\.(prev|next)\.sql$")
+
+
 (def ^System$Logger LOGGER
   (System/getLogger "pg.migration"))
 
@@ -26,10 +36,6 @@
   `(.log LOGGER
          System$Logger$Level/INFO
          (format ~template ~@args)))
-
-
-(def RE_FILE
-  #"(?i)^(\d+)(.*?)\.(prev|next)\.sql$")
 
 
 (defn cleanup-slug ^String [^String slug]
@@ -47,7 +53,6 @@
           [:slug :text]
           [:created_at [:raw "timestamp with time zone not null default current_timestamp"]]]}]
     (pgh/query conn query)))
-
 
 
 (defn parse-file [^File file]
@@ -138,20 +143,6 @@
          (not-empty))))
 
 
-(def DEFAULTS
-  {:migrations-table :migrations
-   :migrations-path "migrations"})
-
-
-
-(defn -main [& _]
-  (-> "migrations"
-      io/resource
-      .toURI
-      FileSystems/newFileSystem
-      println))
-
-
 (defn check-migration-conflicts [migrations]
   (doseq [i (range 0 (-> migrations count dec))]
     (let [migration1 (get migrations i)
@@ -163,7 +154,10 @@
                    (:id migration1))))))
 
 
-(defn PREPARE [config]
+;; todo: close connection
+
+
+(defn make-scope [config]
 
   (let [config+
         (merge DEFAULTS config)
@@ -178,14 +172,14 @@
         _
         (ensure-table conn migrations-table)
 
-        migrations
-        (read-file-migrations migrations-path)
-
         applied-ids-set
         (get-applied-migration-ids conn)
 
+        migrations
+        (read-file-migrations migrations-path)
+
         id-current
-        (apply max -1 applied-ids-set)
+        (apply max Long/MIN_VALUE applied-ids-set)
 
         migrations+
         (reduce-kv
@@ -204,39 +198,80 @@
      :migrations-path migrations-path}))
 
 
-(defn MIGRATE-TO [config id-to]
+(defn -migrate [scope id-migration's]
 
-  (let [{:keys [conn
-                migrations
-                id-current
+  (let [{:keys [^Connection conn
                 migrations-table]}
-        (PREPARE config)
+        scope]
+
+    (with-open [_ conn]
+
+      (doseq [[id migration]
+              id-migration's]
+
+        (log "Processing next migration %s" id)
+
+        (let [{:keys [slug
+                      file-next]}
+              migration
+
+              sql
+              (some-> file-next slurp)]
+
+          (when file-next
+            (pg/query conn sql)
+            (pgh/insert-one conn
+                            migrations-table
+                            {:id id :slug slug})))))))
+
+
+(defn migrate-to [config id-to]
+
+  (let [scope
+        (make-scope config)
+
+        {:keys [migrations
+                id-current]}
+        scope
 
         pending-migrations
         (subseq migrations > id-current <= id-to)]
 
-    (doseq [[id migration]
-            pending-migrations]
-
-      (log "Processing next migration %s" id)
-
-      (let [{:keys [slug
-                    file-next]}
-            migration
-
-            sql
-            (some-> file-next slurp)]
-
-        (when file-next
-          (pg/query conn sql)
-          (pgh/insert-one conn
-                          migrations-table
-                          {:id id :slug slug}))))))
+    (-migrate scope pending-migrations)))
 
 
-(defn MIGRATE [config]
-  (MIGRATE-TO config Long/MAX_VALUE))
+(defn migrate-all [config]
+  (let [scope
+        (make-scope config)
 
+        {:keys [migrations
+                id-current]}
+        scope
+
+        pending-migrations
+        (subseq migrations > id-current)]
+
+    (-migrate scope pending-migrations)))
+
+
+(defn migrate-next [config]
+
+  (let [scope
+        (make-scope config)
+
+        {:keys [migrations
+                id-current]}
+        scope
+
+        pending-migrations
+        (subseq migrations > id-current <= (inc id-current))]
+
+    (-migrate scope pending-migrations)))
+
+
+(defn -rollback [scope id-migration's]
+
+  )
 
 (defn ROLLBACK-TO [config id-to]
 
@@ -272,6 +307,42 @@
   (ROLLBACK-TO config Long/MIN_VALUE))
 
 
+(defn ROLLBACK-PREV [config]
+
+  (let [{:keys [conn
+                migrations
+                id-current
+                migrations-table]}
+        (PREPARE config)
+
+        pending-migrations
+        [(find migrations id-current)]]
+
+    (doseq [[id migration]
+            pending-migrations]
+
+      (log "Processing prev migration %s" id)
+
+      (let [{:keys [slug
+                    file-prev]}
+            migration
+
+            sql
+            (some-> file-prev slurp)]
+
+        (when file-prev
+          (pg/query conn sql)
+          (pgh/delete conn
+                      migrations-table
+                      {:where [:= :id id]}))))))
+
+
+(defn -main [& _]
+  (-> "migrations"
+      io/resource
+      .toURI
+      FileSystems/newFileSystem
+      println))
 
 
 #_
