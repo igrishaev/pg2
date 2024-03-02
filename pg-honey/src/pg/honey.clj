@@ -6,6 +6,7 @@
                             update
                             format])
   (:require
+   [clojure.string :as str]
    [honey.sql :as sql]
    [pg.core :as pg]))
 
@@ -49,6 +50,28 @@
 
    (let [[sql]
          (format sql-map honey)]
+     (pg/query conn sql opt))))
+
+
+(defn queries
+  "
+  Like `query` but accepts a vector of SQL maps.
+  Returns a vector of results.
+  "
+  ([conn sql-maps]
+   (queries conn sql-maps nil))
+
+  ([conn sql-maps {:as opt :keys [honey]}]
+
+   (let [sql-vecs
+         (for [sql-map sql-maps]
+           (format sql-map honey))
+
+         sql
+         (->> sql-vecs
+              (map first)
+              (str/join "; "))]
+
      (pg/query conn sql opt))))
 
 

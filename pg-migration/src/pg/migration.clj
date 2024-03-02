@@ -142,10 +142,10 @@
        (group-parsed-files)))
 
 
-(defn get-applied-migration-ids [conn]
+(defn get-applied-migration-ids [conn table]
   (let [query
         {:select [:id]
-         :from :migrations
+         :from table
          :order-by [[:id :asc]]}]
     (->> query
          (pgh/query conn)
@@ -181,7 +181,7 @@
         (ensure-table conn migrations-table)
 
         applied-ids-set
-        (get-applied-migration-ids conn)
+        (get-applied-migration-ids conn migrations-table)
 
         migrations
         (read-file-migrations migrations-path)
@@ -272,7 +272,7 @@
         scope
 
         pending-migrations
-        (subseq migrations > id-current <= (inc id-current))]
+        (take 1 (subseq migrations > id-current))]
 
     (-migrate scope pending-migrations)))
 

@@ -24,24 +24,64 @@
 (defn fix-prepare-table
   [t]
   (pg/with-connection [conn CONFIG]
-    (pgh/query conn {:drop-table [:if-exists TABLE]})
+    (pgh/queries conn
+                 [{:drop-table [:if-exists TABLE]}
+                  {:drop-table [:if-exists :test_mig3]}
+                  {:drop-table [:if-exists :test_mig4]}
+                  {:drop-table [:if-exists :test_mig5]}])
     (t)))
 
 
 (use-fixtures :each fix-prepare-table)
 
 
+(defn get-db-migrations [config]
+  (pg/with-connection [conn config]
+    (let [query
+          {:select [:id :slug] :from TABLE :order-by [:id]}]
+      (pgh/query conn query))))
+
+
 (deftest test-migration-migrate-all
   (mig/migrate-all CONFIG)
-  (pg/with-connection [conn CONFIG]
-    (let [query
-          {:select [:id :slug] :from TABLE :order-by [:id]}
-          res
-          (pgh/query conn query)]
-      (is (= [{:slug "create users", :id 1}
-              {:slug "create profiles", :id 2}
-              {:slug "next only migration", :id 3}
-              {:slug "add some table", :id 5}] res)))))
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}
+          {:id 5 :slug "add some table"}]
+         (get-db-migrations CONFIG))))
+
+
+(deftest test-migration-migrate-one
+
+  (mig/migrate-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}]
+         (get-db-migrations CONFIG)))
+
+  ;; TODO: bug
+  (mig/migrate-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}]
+         (get-db-migrations CONFIG)))
+
+  )
 
 ;; add more migrations
 ;; next only

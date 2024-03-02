@@ -78,6 +78,24 @@
       (is (= {"id" 1} res)))))
 
 
+(deftest test-queries
+  (pg/with-connection [conn CONFIG]
+    (let [res
+          (pgh/queries conn
+                       [{:select [:id]
+                         :from TABLE
+                         :where [:raw "active"]
+                         :limit [:raw 1]}
+                        {:select [:name]
+                         :from TABLE
+                         :where [:raw "active"]
+                         :limit [:raw 1]}]
+                       {:fn-key identity
+                        :first? true})]
+      (is (= [{"id" 1} {"name" "Ivan"}]
+             res)))))
+
+
 (deftest test-execute
   (pg/with-connection [conn CONFIG]
     (let [res
