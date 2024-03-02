@@ -129,6 +129,57 @@
          (get-db-migrations CONFIG))))
 
 
+(deftest test-rollback-all
+  (mig/migrate-all CONFIG)
+  (mig/rollback-all CONFIG)
+  (is (= [{:slug "next only migration", :id 3}]
+         (get-db-migrations CONFIG))))
+
+
+(deftest test-rollback-one
+
+  (mig/migrate-one CONFIG)
+  (mig/migrate-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/rollback-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/rollback-one CONFIG)
+  (is (= []
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-one CONFIG)
+  (mig/migrate-one CONFIG)
+  (mig/migrate-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}]
+         (get-db-migrations CONFIG)))
+
+  ;; BUG
+  (mig/rollback-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 3 :slug "next only migration"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/rollback-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 3 :slug "next only migration"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/rollback-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 3 :slug "next only migration"}]
+         (get-db-migrations CONFIG)))
+
+  )
+
+
+
 ;; add migration with wrong pattern
 ;; conflicted migrations (applied before)
 ;; double migration file

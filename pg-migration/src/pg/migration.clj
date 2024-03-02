@@ -291,11 +291,11 @@
 
 (defn -rollback [scope id-migration's]
 
-  (let [{:keys [^Connection conn
+  (let [{:keys [config
                 migrations-table]}
         scope]
 
-    (with-open [_ conn]
+    (pg/with-connection [conn config]
 
       (doseq [[id migration]
               id-migration's]
@@ -303,17 +303,16 @@
         (log "Processing prev migration %s" id)
 
         (let [{:keys [slug
-                      file-prev]}
+                      file]}
               migration
 
               sql
-              (some-> file-prev slurp)]
+              (slurp file)]
 
-          (when file-prev
-            (pg/query conn sql)
-            (pgh/delete conn
-                        migrations-table
-                        {:where [:= :id id]})))))))
+          (pg/query conn sql)
+          (pgh/delete conn
+                      migrations-table
+                      {:where [:= :id id]}))))))
 
 
 (defn rollback-to [config id-to]
@@ -321,12 +320,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations
+        {:keys [migrations-prev
                 id-current]}
         scope
 
         pending-migrations
-        (rsubseq migrations > id-to <= id-current)]
+        (rsubseq migrations-prev > id-to <= id-current)]
 
     (-rollback scope pending-migrations)))
 
@@ -336,12 +335,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations
+        {:keys [migrations-prev
                 id-current]}
         scope
 
         pending-migrations
-        (rsubseq migrations <= id-current)]
+        (rsubseq migrations-prev <= id-current)]
 
     (-rollback scope pending-migrations)))
 
@@ -349,14 +348,14 @@
 (defn rollback-one [config]
 
   (let [scope
-        (make-scope)
+        (make-scope config)
 
-        {:keys [migrations
+        {:keys [migrations-prev
                 id-current]}
         scope
 
         pending-migrations
-        (take 1 (rsubseq migrations <= id-current))]
+        (take 1 (rsubseq migrations-prev <= id-current))]
 
     (-rollback scope pending-migrations)))
 
