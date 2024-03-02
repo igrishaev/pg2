@@ -19,6 +19,8 @@
 
 
 ;; TODO
+;; - generate migration id
+;; - generate migration file
 ;; - tests
 ;; - zipfile support
 ;; - check logs in console

@@ -38,7 +38,10 @@
           {:select [:id :slug] :from TABLE :order-by [:id]}
           res
           (pgh/query conn query)]
-      (is (= [{:slug "create users", :id 1}] res)))))
+      (is (= [{:slug "create users", :id 1}
+              {:slug "create profiles", :id 2}
+              {:slug "next only migration", :id 3}
+              {:slug "add some table", :id 5}] res)))))
 
 ;; add more migrations
 ;; next only
