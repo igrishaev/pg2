@@ -1,19 +1,10 @@
 (ns pg.migration
-  (:gen-class)
   (:import
    org.pg.Connection
-
-   ;; java.net.URI
-   ;; java.nio.file.FileSystem
-   ;; java.nio.file.FileSystems
-   ;; java.nio.file.Files
-
    java.util.jar.JarFile
-
    java.net.JarURLConnection
    java.net.URI
    java.net.URL
-
    java.lang.System$Logger
    java.lang.System$Logger$Level
    java.io.File
@@ -356,8 +347,9 @@
     (-rollback scope pending-migrations)))
 
 
+
+#_
 (defn -main [& _]
-  #_
   (-> "migrations"
       io/resource
       .toURI
