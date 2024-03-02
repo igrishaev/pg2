@@ -90,6 +90,45 @@
          (get-db-migrations CONFIG))))
 
 
+(deftest test-migration-migrate-to
+
+  (mig/migrate-to CONFIG 2)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-to CONFIG -99999)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-to CONFIG 2)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-to CONFIG 999)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}
+          {:id 5 :slug "add some table"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-to CONFIG 999)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}
+          {:id 5 :slug "add some table"}]
+         (get-db-migrations CONFIG)))
+
+  (mig/migrate-to CONFIG -99999)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}
+          {:id 5 :slug "add some table"}]
+         (get-db-migrations CONFIG))))
+
+
 ;; add migration with wrong pattern
 ;; conflicted migrations (applied before)
 ;; double migration file
