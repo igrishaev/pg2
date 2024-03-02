@@ -68,25 +68,29 @@
           {:id 3 :slug "next only migration"}]
          (get-db-migrations CONFIG)))
 
-  ;; TODO: bug
   (mig/migrate-one CONFIG)
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}]
+          {:id 3 :slug "next only migration"}
+          {:id 5 :slug "add some table"}]
          (get-db-migrations CONFIG)))
 
   (mig/migrate-one CONFIG)
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}]
+          {:id 3 :slug "next only migration"}
+          {:id 5 :slug "add some table"}]
          (get-db-migrations CONFIG)))
 
-  )
+  (mig/migrate-one CONFIG)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}
+          {:id 5 :slug "add some table"}]
+         (get-db-migrations CONFIG))))
 
-;; add more migrations
-;; next only
-;; down only
-;; wrong pattern
+
+;; add migration with wrong pattern
 ;; conflicted migrations (applied before)
 ;; double migration file
 ;; migrate all

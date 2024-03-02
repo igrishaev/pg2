@@ -88,28 +88,42 @@
 
 
 (defn group-parsed-files [parsed-files]
-  (reduce
-   (fn [acc {:keys [id slug direction file]}]
-     (let [node
-           (cond-> {:id id
-                    :slug slug}
 
-             (= direction :prev)
-             (assoc :file-prev file)
+  (loop [migrations-prev
+         (sorted-map)
 
-             (= direction :next)
-             (assoc :file-next file))]
+         migrations-next
+         (sorted-map)
 
-       (update acc id merge node)))
-   (sorted-map)
-   parsed-files))
+         [parsed-file & parsed-files]
+         parsed-files]
+
+    (if parsed-file
+
+      (let [{:keys [id direction]}
+            parsed-file]
+
+        (case direction
+
+          :prev
+          (recur (assoc migrations-prev id parsed-file)
+                 migrations-next
+                 parsed-files)
+
+          :next
+          (recur migrations-prev
+                 (assoc migrations-next id parsed-file)
+                 parsed-files)))
+
+      [migrations-prev
+       migrations-next])))
 
 
 (defn is-directory? [^File file]
   (.isDirectory file))
 
 
-(defn validate-parsed-files [parsed-files]
+(defn validate-duplicate-files [parsed-files]
   (let [f
         (juxt :id :direction)
 
@@ -138,7 +152,7 @@
        (remove is-directory?)
        (map parse-file)
        (filter some?)
-       (validate-parsed-files)
+       (validate-duplicate-files)
        (group-parsed-files)))
 
 
@@ -167,70 +181,68 @@
 
 (defn make-scope [config]
 
-  (let [config+
+  (let [config
         (merge DEFAULTS config)
 
         {:keys [migrations-table
                 migrations-path]}
-        config+
+        config]
 
-        conn
-        (pg/connect config+)
+    (pg/with-connection [conn config]
 
-        _
-        (ensure-table conn migrations-table)
+      (ensure-table conn migrations-table)
 
-        applied-ids-set
-        (get-applied-migration-ids conn migrations-table)
+      (let [applied-ids-set
+            (get-applied-migration-ids conn migrations-table)
 
-        migrations
-        (read-file-migrations migrations-path)
+            [migrations-prev
+             migrations-next]
+            (read-file-migrations migrations-path)
 
-        id-current
-        (apply max -1 applied-ids-set)
+            id-current
+            (apply max -1 applied-ids-set)
 
-        migrations+
-        (reduce-kv
-         (fn [acc id migration]
-           (let [flag (contains? applied-ids-set id)]
-             (assoc-in acc [id :applied?] flag)))
-         migrations
-         migrations)]
+            migrations-next
+            (reduce-kv
+             (fn [acc id migration]
+               (let [flag (contains? applied-ids-set id)]
+                 (assoc-in acc [id :applied?] flag)))
+             migrations-next
+             migrations-next)]
 
-    (check-migration-conflicts (vals migrations+))
+        (check-migration-conflicts (vals migrations-next))
 
-    {:conn conn
-     :migrations migrations+
-     :id-current id-current
-     :migrations-table migrations-table
-     :migrations-path migrations-path}))
+        {:config config
+         :id-current id-current
+         :migrations-prev migrations-prev
+         :migrations-next migrations-next
+         :migrations-table migrations-table
+         :migrations-path migrations-path}))))
 
 
 (defn -migrate [scope id-migration's]
 
-  (let [{:keys [^Connection conn
+  (let [{:keys [config
                 migrations-table]}
         scope]
 
-    (with-open [_ conn]
+    (pg/with-connection [conn config]
 
       (doseq [[id migration]
               id-migration's]
 
         (log "Processing next migration %s" id)
 
-        (let [{:keys [slug
-                      file-next]}
+        (let [{:keys [slug file]}
               migration
 
               sql
-              (some-> file-next slurp)]
+              (slurp file)]
 
-          (when file-next
-            (pg/query conn sql)
-            (pgh/insert-one conn
-                            migrations-table
-                            {:id id :slug slug})))))))
+          (pg/query conn sql)
+          (pgh/insert-one conn
+                          migrations-table
+                          {:id id :slug slug}))))))
 
 
 (defn migrate-to [config id-to]
@@ -238,12 +250,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations
+        {:keys [migrations-next
                 id-current]}
         scope
 
         pending-migrations
-        (subseq migrations > id-current <= id-to)]
+        (subseq migrations-next > id-current <= id-to)]
 
     (-migrate scope pending-migrations)))
 
@@ -252,12 +264,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations
+        {:keys [migrations-next
                 id-current]}
         scope
 
         pending-migrations
-        (subseq migrations > id-current)]
+        (subseq migrations-next > id-current)]
 
     (-migrate scope pending-migrations)))
 
@@ -267,12 +279,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations
+        {:keys [migrations-next
                 id-current]}
         scope
 
         pending-migrations
-        (take 1 (subseq migrations > id-current))]
+        (take 1 (subseq migrations-next > id-current))]
 
     (-migrate scope pending-migrations)))
 
