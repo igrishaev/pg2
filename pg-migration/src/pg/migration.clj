@@ -1,14 +1,14 @@
 (ns pg.migration
   (:import
-   org.pg.Connection
-   java.util.jar.JarFile
+   java.io.File
+   java.lang.AutoCloseable
+   java.lang.System$Logger
+   java.lang.System$Logger$Level
    java.net.JarURLConnection
    java.net.URI
    java.net.URL
-   java.lang.System$Logger
-   java.lang.System$Logger$Level
-   java.io.File
-   java.lang.AutoCloseable)
+   java.util.jar.JarFile
+   org.pg.Connection)
   (:require
    [clojure.java.io :as io]
    [clojure.set :as set]
@@ -88,42 +88,25 @@
 
 
 (defn group-parsed-files [parsed-files]
-
-  (loop [migrations-prev
-         (sorted-map)
-
-         migrations-next
-         (sorted-map)
-
-         [parsed-file & parsed-files]
-         parsed-files]
-
-    (if parsed-file
-
-      (let [{:keys [id direction]}
-            parsed-file]
-
-        (case direction
-
-          :prev
-          (recur (assoc migrations-prev id parsed-file)
-                 migrations-next
-                 parsed-files)
-
-          :next
-          (recur migrations-prev
-                 (assoc migrations-next id parsed-file)
-                 parsed-files)))
-
-      [migrations-prev
-       migrations-next])))
+  (reduce
+   (fn [acc {:keys [id slug direction file]}]
+     (let [node
+           (cond-> {:id id
+                    :slug slug}
+             (= direction :prev)
+             (assoc :file-prev file)
+             (= direction :next)
+             (assoc :file-next file))]
+       (update acc id merge node)))
+   (sorted-map)
+   parsed-files))
 
 
 (defn is-directory? [^File file]
   (.isDirectory file))
 
 
-(defn validate-duplicate-files [parsed-files]
+(defn validate-duplicates! [parsed-files]
   (let [f
         (juxt :id :direction)
 
@@ -152,7 +135,7 @@
        (remove is-directory?)
        (map parse-file)
        (filter some?)
-       (validate-duplicate-files)
+       (validate-duplicates!)
        (group-parsed-files)))
 
 
@@ -168,7 +151,7 @@
          (not-empty))))
 
 
-(defn check-migration-conflicts [migrations]
+(defn validate-conflicts! [migrations]
   (doseq [i (range 0 (-> migrations count dec))]
     (let [migration1 (get migrations i)
           migration2 (get migrations (inc i))]
@@ -195,27 +178,25 @@
       (let [applied-ids-set
             (get-applied-migration-ids conn migrations-table)
 
-            [migrations-prev
-             migrations-next]
+            migrations
             (read-file-migrations migrations-path)
 
             id-current
             (apply max -1 applied-ids-set)
 
-            migrations-next
+            migrations
             (reduce-kv
              (fn [acc id migration]
                (let [flag (contains? applied-ids-set id)]
                  (assoc-in acc [id :applied?] flag)))
-             migrations-next
-             migrations-next)]
+             migrations
+             migrations)]
 
-        (check-migration-conflicts (vals migrations-next))
+        (validate-conflicts! (vals migrations))
 
         {:config config
          :id-current id-current
-         :migrations-prev migrations-prev
-         :migrations-next migrations-next
+         :migrations migrations
          :migrations-table migrations-table
          :migrations-path migrations-path}))))
 
@@ -233,13 +214,14 @@
 
         (log "Processing next migration %s" id)
 
-        (let [{:keys [slug file]}
+        (let [{:keys [slug file-next]}
               migration
 
               sql
-              (slurp file)]
+              (some-> file-next slurp)]
 
-          (pg/query conn sql)
+          (when sql
+            (pg/query conn sql))
           (pgh/insert-one conn
                           migrations-table
                           {:id id :slug slug}))))))
@@ -250,12 +232,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations-next
+        {:keys [migrations
                 id-current]}
         scope
 
         pending-migrations
-        (subseq migrations-next > id-current <= id-to)]
+        (subseq migrations > id-current <= id-to)]
 
     (-migrate scope pending-migrations)))
 
@@ -264,12 +246,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations-next
+        {:keys [migrations
                 id-current]}
         scope
 
         pending-migrations
-        (subseq migrations-next > id-current)]
+        (subseq migrations > id-current)]
 
     (-migrate scope pending-migrations)))
 
@@ -279,12 +261,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations-next
+        {:keys [migrations
                 id-current]}
         scope
 
         pending-migrations
-        (take 1 (subseq migrations-next > id-current))]
+        (take 1 (subseq migrations > id-current))]
 
     (-migrate scope pending-migrations)))
 
@@ -303,13 +285,14 @@
         (log "Processing prev migration %s" id)
 
         (let [{:keys [slug
-                      file]}
+                      file-prev]}
               migration
 
               sql
-              (slurp file)]
+              (some-> file-prev slurp)]
 
-          (pg/query conn sql)
+          (when sql
+            (pg/query conn sql))
           (pgh/delete conn
                       migrations-table
                       {:where [:= :id id]}))))))
@@ -320,12 +303,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations-prev
+        {:keys [migrations
                 id-current]}
         scope
 
         pending-migrations
-        (rsubseq migrations-prev > id-to <= id-current)]
+        (rsubseq migrations > id-to <= id-current)]
 
     (-rollback scope pending-migrations)))
 
@@ -335,12 +318,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations-prev
+        {:keys [migrations
                 id-current]}
         scope
 
         pending-migrations
-        (rsubseq migrations-prev <= id-current)]
+        (rsubseq migrations <= id-current)]
 
     (-rollback scope pending-migrations)))
 
@@ -350,12 +333,12 @@
   (let [scope
         (make-scope config)
 
-        {:keys [migrations-prev
+        {:keys [migrations
                 id-current]}
         scope
 
         pending-migrations
-        (take 1 (rsubseq migrations-prev <= id-current))]
+        (take 1 (rsubseq migrations <= id-current))]
 
     (-rollback scope pending-migrations)))
 

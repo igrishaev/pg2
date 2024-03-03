@@ -8,190 +8,97 @@
    [pg.migration :as mig]))
 
 
-(def TABLE :migrations_test)
+(deftest test-parse-file
+
+  (let [res
+        (-> "foo/bar/baz/0001-some-slug.next.sql"
+            io/file
+            mig/parse-file)]
+
+    (is (= {:id 1, :slug "some slug", :direction :next}
+           (dissoc res :file))))
+
+  (let [res
+        (-> "foo/bar/baz/20221211235559-Hello World .Next.SQL"
+            io/file
+            mig/parse-file)]
+
+    (is (= {:slug "Hello World",
+            :id 20221211235559
+            :direction :next}
+           (dissoc res :file))))
+
+  (let [res
+        (-> "foo/bar/baz/1aaa.prev.sql"
+            io/file
+            mig/parse-file)]
+
+    (is (= {:id 1, :slug "aaa", :direction :prev}
+           (dissoc res :file))))
+
+  (let [res
+        (-> "foo/bar/baz/aaa.prev.sql"
+            io/file
+            mig/parse-file)]
+
+    (is (= nil
+           (dissoc res :file))))
+
+  (let [res
+        (-> "foo/bar/baz/555aaa..sql"
+            io/file
+            mig/parse-file)]
+
+    (is (= nil
+           (dissoc res :file))))
+
+  (let [res
+        (-> "foo/bar/baz/555aaa.prev.sql "
+            io/file
+            mig/parse-file)]
+
+    (is (= nil
+           (dissoc res :file)))))
 
 
-(def CONFIG
-  {:host "127.0.0.1"
-   :port 10150
-   :user "test"
-   :password "test"
-   :database "test"
-   :migrations-table TABLE
-   :migrations-path "migrations"})
+(deftest test-validate-duplicates
 
+  (let [res
+        (mig/validate-duplicates!
+         [{:id 1
+           :direction :prev}
+          {:id 1
+           :direction :next}
+          {:id 2
+           :direction :prev}
+          {:id 2
+           :direction :next}
+          {:id 3
+           :direction :prev}
+          {:id 4
+           :direction :next}])]
 
-(defn fix-prepare-table
-  [t]
-  (pg/with-connection [conn CONFIG]
-    (pgh/queries conn
-                 [{:drop-table [:if-exists TABLE]}
-                  {:drop-table [:if-exists :test_mig3]}
-                  {:drop-table [:if-exists :test_mig4]}
-                  {:drop-table [:if-exists :test_mig5]}])
-    (t)))
+    (is (vector? res)))
 
-
-(use-fixtures :each fix-prepare-table)
-
-
-(defn get-db-migrations [config]
-  (pg/with-connection [conn config]
-    (let [query
-          {:select [:id :slug] :from TABLE :order-by [:id]}]
-      (pgh/query conn query))))
-
-
-(deftest test-migration-migrate-all
-  (mig/migrate-all CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}
-          {:id 5 :slug "add some table"}]
-         (get-db-migrations CONFIG))))
-
-
-(deftest test-migration-migrate-one
-
-  (mig/migrate-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}
-          {:id 5 :slug "add some table"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}
-          {:id 5 :slug "add some table"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}
-          {:id 5 :slug "add some table"}]
-         (get-db-migrations CONFIG))))
-
-
-(deftest test-migration-migrate-to
-
-  (mig/migrate-to CONFIG 2)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-to CONFIG -99999)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-to CONFIG 2)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-to CONFIG 999)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}
-          {:id 5 :slug "add some table"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-to CONFIG 999)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}
-          {:id 5 :slug "add some table"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-to CONFIG -99999)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}
-          {:id 5 :slug "add some table"}]
-         (get-db-migrations CONFIG))))
-
-
-(deftest test-rollback-all
-  (mig/migrate-all CONFIG)
-  (mig/rollback-all CONFIG)
-  (is (= [{:slug "next only migration", :id 3}]
-         (get-db-migrations CONFIG))))
-
-
-(deftest test-rollback-one
-
-  (mig/migrate-one CONFIG)
-  (mig/migrate-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/rollback-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/rollback-one CONFIG)
-  (is (= []
-         (get-db-migrations CONFIG)))
-
-  (mig/migrate-one CONFIG)
-  (mig/migrate-one CONFIG)
-  (mig/migrate-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}]
-         (get-db-migrations CONFIG)))
-
-  ;; BUG
-  (mig/rollback-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 3 :slug "next only migration"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/rollback-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 3 :slug "next only migration"}]
-         (get-db-migrations CONFIG)))
-
-  (mig/rollback-one CONFIG)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 3 :slug "next only migration"}]
-         (get-db-migrations CONFIG)))
-
-  )
-
-
-
-;; add migration with wrong pattern
-;; conflicted migrations (applied before)
-;; double migration file
-;; migrate all
-;; migrate back
-;; migrate to ok
-;; migrate to missing
-;; migrate one at last
-;; rollback all
-;; rollback one
-;; rollback one at the beginning
-;; rollback to
-;; rollback wrong
-;; check jar file
-;; check weird sql syntax
+  (try
+    (mig/validate-duplicates!
+     [{:id 1
+       :direction :prev
+       :file (io/file "mig1a")}
+      {:id 1
+       :direction :next}
+      {:id 2
+       :direction :prev}
+      {:id 2
+       :direction :next}
+      {:id 3
+       :direction :prev}
+      {:id 4
+       :direction :next}
+      {:id 1
+       :direction :prev
+       :file (io/file "mig1b")}])
+    (is false)
+    (catch Throwable e
+      (is (= "Migration 1 has 2 prev files: mig1a, mig1b"
+             (ex-message e))))))
