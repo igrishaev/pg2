@@ -158,6 +158,10 @@
   (is (= []
          (get-db-migrations CONFIG)))
 
+  (mig/rollback-one CONFIG)
+  (is (= []
+         (get-db-migrations CONFIG)))
+
   (mig/migrate-one CONFIG)
   (mig/migrate-one CONFIG)
   (mig/migrate-one CONFIG)
@@ -180,19 +184,67 @@
          (get-db-migrations CONFIG))))
 
 
+(deftest test-rollback-to-wrong-id
 
-;; add migration with wrong pattern
-;; conflicted migrations (applied before)
-;; double migration file
-;; migrate all
-;; migrate back
-;; migrate to ok
-;; migrate to missing
-;; migrate one at last
-;; rollback all
-;; rollback one
-;; rollback one at the beginning
-;; rollback to
-;; rollback wrong
+  (mig/migrate-all CONFIG)
+  (mig/rollback-to CONFIG 10000)
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}
+          {:id 4 :slug "prev only migration"}
+          {:id 5 :slug "add some table"}]
+         (get-db-migrations CONFIG))))
+
+
+(deftest test-rollback-to-4
+
+  (mig/migrate-all CONFIG)
+  (mig/rollback-to CONFIG 4)
+  (is (= [{:slug "create users", :id 1}
+          {:slug "create profiles", :id 2}
+          {:slug "next only migration", :id 3}
+          {:slug "prev only migration", :id 4}]
+         (get-db-migrations CONFIG))))
+
+
+(deftest test-rollback-to-minus
+
+  (mig/migrate-all CONFIG)
+  (mig/rollback-to CONFIG -100500)
+  (is (= []
+         (get-db-migrations CONFIG))))
+
+
+(defmacro with-file [[path content] & body]
+  `(do
+     (spit ~path ~content)
+     (try
+       ~@body
+       (finally
+         (io/delete-file ~path)))))
+
+
+(deftest test-migrate-weird-sql
+  (let [path
+        "test/resources/migrations/999-weird-syntax.next.sql"
+        content
+        "selekt 100500"]
+    (with-file [path content]
+
+      (try
+        (mig/migrate-all CONFIG)
+        (is false)
+        (catch Throwable e
+          (is (-> e
+                  ex-message
+                  (str/includes? "syntax error at or near")))))
+
+      (is (= [{:id 1 :slug "create users"}
+              {:id 2 :slug "create profiles"}
+              {:id 3 :slug "next only migration"}
+              {:id 4 :slug "prev only migration"}
+              {:id 5 :slug "add some table"}]
+             (get-db-migrations CONFIG))))))
+
+
 ;; check jar file
-;; check weird sql syntax

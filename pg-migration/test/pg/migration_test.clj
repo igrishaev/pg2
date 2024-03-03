@@ -102,3 +102,42 @@
     (catch Throwable e
       (is (= "Migration 1 has 2 prev files: mig1a, mig1b"
              (ex-message e))))))
+
+
+(deftest test-validate-conflicts
+
+  (let [migrations
+        [{:id 5
+          :applied? true}
+         {:id 6
+          :applied? true}
+         {:id 7
+          :applied? false}]
+
+        res
+        (mig/validate-conflicts! migrations)]
+
+    (is (nil? res)))
+
+  (let [migrations
+        []
+
+        res
+        (mig/validate-conflicts! migrations)]
+
+    (is (nil? res)))
+
+  (let [migrations
+        [{:id 5
+          :applied? true}
+         {:id 6
+          :applied? false}
+         {:id 7
+          :applied? true}]]
+
+    (try
+      (mig/validate-conflicts! migrations)
+      (is false)
+      (catch Throwable e
+        (is (= "Migration conflict: migration 7 has been applied before 6"
+               (ex-message e)))))))
