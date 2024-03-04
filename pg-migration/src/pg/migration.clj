@@ -7,6 +7,12 @@
    java.net.JarURLConnection
    java.net.URI
    java.net.URL
+   java.nio.file.Path
+   java.nio.file.Paths
+   java.nio.file.Files
+   java.time.OffsetDateTime
+   java.time.ZoneOffset
+   java.time.format.DateTimeFormatter
    java.util.jar.JarFile
    org.pg.Connection)
   (:require
@@ -21,7 +27,6 @@
 ;; TODO
 ;; - generate migration id
 ;; - generate migration file
-;; - tests
 ;; - zipfile support
 ;; - check logs in console
 ;; - docstrings
@@ -29,6 +34,9 @@
 ;; - docs
 ;; - cmd line args support
 ;; - lein plugin
+
+;; tests
+;; check jar file
 
 (def DEFAULTS
   {:migrations-table :migrations
@@ -47,6 +55,70 @@
   `(.log LOGGER
          System$Logger$Level/INFO
          (format ~template ~@args)))
+
+
+(def ^DateTimeFormatter DATETIME_PATTERN
+  (-> "yyyyMMddHHmmss"
+      (DateTimeFormatter/ofPattern)
+      (.withZone ZoneOffset/UTC)))
+
+
+(defn generate-datetime-id ^Long []
+  (-> (java.time.OffsetDateTime/now)
+      (.format DATETIME_PATTERN)
+      (Long/parseLong)))
+
+
+(defn text->slug ^String [^String text]
+  (-> text
+      (str/lower-case)
+      (str/trim)
+      (str/replace #"\s+" " ")
+      (str/replace #"\s" "-")))
+
+
+(defn make-file-name [id text direction]
+  (let [slug (some-> text text->slug)]
+    (with-out-str
+      (print id)
+      (when-not (str/blank? slug)
+        (print ".")
+        (print slug))
+      (print ".")
+      (print
+       (case direction
+         :prev "prev"
+         :next "next"))
+      (print ".sql"))))
+
+
+#_
+(defn create-migration-files
+  ([migrations-path]
+   (generate-migration migrations-path ""))
+
+  ([migrations-path slug]
+   (let [id
+         (generate-datetime-id)
+
+         name-prev
+         (make-file-name id slug :prev)
+
+         name-next
+         (make-file-name id slug :next)
+
+         path-prev
+         (Path/of migrations-path name-prev)
+
+         path-next
+         (Path/of migrations-path name-next)]
+
+     (Files/createDirectories path-prev nil)
+     (Files/createDirectories path-next nil)
+     ;; (spit file-prev "")
+     ;; (spit file-next "")
+
+     [path-prev path-next])))
 
 
 (defn cleanup-slug ^String [^String slug]

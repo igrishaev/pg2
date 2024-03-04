@@ -245,6 +245,3 @@
               {:id 4 :slug "prev only migration"}
               {:id 5 :slug "add some table"}]
              (get-db-migrations CONFIG))))))
-
-
-;; check jar file

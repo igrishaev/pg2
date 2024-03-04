@@ -37,6 +37,14 @@
            (dissoc res :file))))
 
   (let [res
+        (-> "foo/bar/baz/999.prev.sql"
+            io/file
+            mig/parse-file)]
+
+    (is (= {:id 999, :slug "", :direction :prev}
+           (dissoc res :file))))
+
+  (let [res
         (-> "foo/bar/baz/aaa.prev.sql"
             io/file
             mig/parse-file)]
@@ -101,6 +109,25 @@
     (is false)
     (catch Throwable e
       (is (= "Migration 1 has 2 prev files: mig1a, mig1b"
+             (ex-message e))))))
+
+
+(deftest test-make-file-name
+
+  (is (= "123.hello-world.prev.sql"
+         (mig/make-file-name 123 "hello-world" :prev)))
+
+  (is (= "123.prev.sql"
+         (mig/make-file-name 123 nil :prev)))
+
+  (is (= "123.some-text-hello.prev.sql"
+         (mig/make-file-name 123 "  \n some Text Hello \r\n" :prev)))
+
+  (try
+    (mig/make-file-name 123 nil :foobar)
+    (is false)
+    (catch Throwable e
+      (is (= "No matching clause: :foobar"
              (ex-message e))))))
 
 
