@@ -168,3 +168,36 @@
       (catch Throwable e
         (is (= "Migration conflict: migration 7 has been applied before 6"
                (ex-message e)))))))
+
+
+(deftest test-create-migration-files
+
+  (let [path
+        "foo/bar/baz"
+
+        res
+        (mig/create-migration-files path "  A test migration \r\n ")
+
+        [file-prev file-next]
+        res]
+
+    (is (-> file-prev
+            str
+            (str/starts-with? path)))
+
+    (is (-> file-next
+            str
+            (str/starts-with? path)))
+
+    (is (-> file-prev
+            str
+            (str/ends-with? ".a-test-migration.prev.sql")))
+
+    (is (-> file-next
+            str
+            (str/ends-with? ".a-test-migration.next.sql")))
+
+    (->> (io/file "foo")
+         (file-seq)
+         (reverse)
+         (mapv io/delete-file))))

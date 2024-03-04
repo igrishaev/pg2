@@ -7,9 +7,6 @@
    java.net.JarURLConnection
    java.net.URI
    java.net.URL
-   java.nio.file.Path
-   java.nio.file.Paths
-   java.nio.file.Files
    java.time.OffsetDateTime
    java.time.ZoneOffset
    java.time.format.DateTimeFormatter
@@ -92,10 +89,9 @@
       (print ".sql"))))
 
 
-#_
 (defn create-migration-files
   ([migrations-path]
-   (generate-migration migrations-path ""))
+   (create-migration-files migrations-path ""))
 
   ([migrations-path slug]
    (let [id
@@ -107,18 +103,18 @@
          name-next
          (make-file-name id slug :next)
 
-         path-prev
-         (Path/of migrations-path name-prev)
+         file-prev
+         (io/file migrations-path name-prev)
 
-         path-next
-         (Path/of migrations-path name-next)]
+         file-next
+         (io/file migrations-path name-next)]
 
-     (Files/createDirectories path-prev nil)
-     (Files/createDirectories path-next nil)
-     ;; (spit file-prev "")
-     ;; (spit file-next "")
+     (.mkdirs (io/file migrations-path))
 
-     [path-prev path-next])))
+     (spit file-prev "")
+     (spit file-next "")
+
+     [file-prev file-next])))
 
 
 (defn cleanup-slug ^String [^String slug]
