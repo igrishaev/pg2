@@ -1,4 +1,4 @@
-(ns pg.migration
+(ns pg.migration.core
   (:import
    java.io.File
    java.lang.AutoCloseable
@@ -22,15 +22,12 @@
 
 
 ;; TODO
-;; - generate migration id
-;; - generate migration file
 ;; - zipfile support
-;; - check logs in console
+;; - cmd line args support
+;; - lein plugin
 ;; - docstrings
 ;; - demo
 ;; - docs
-;; - cmd line args support
-;; - lein plugin
 
 ;; tests
 ;; check jar file
@@ -194,6 +191,9 @@
 
   parsed-files)
 
+
+;; TODO: use fs
+;; TODO: refactor file->url
 
 (defn read-file-migrations [^String path]
   (->> path

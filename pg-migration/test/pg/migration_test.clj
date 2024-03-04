@@ -5,7 +5,7 @@
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
    [pg.honey :as pgh]
-   [pg.migration :as mig]))
+   [pg.migration.core :as mig]))
 
 
 (deftest test-parse-file
