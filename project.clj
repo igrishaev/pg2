@@ -44,6 +44,7 @@
    [com.github.igrishaev/pg2-component :version]
    [com.github.igrishaev/pg2-migration :version]
    [org.clojure/clojure "1.11.1"]
+   [org.clojure/tools.cli "1.1.230"]
    [com.github.seancorfield/honeysql "2.4.1078"]
    [less-awful-ssl "1.0.6"]
    [com.github.seancorfield/next.jdbc "1.2.796"]

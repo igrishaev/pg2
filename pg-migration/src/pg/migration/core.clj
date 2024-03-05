@@ -1,32 +1,23 @@
 (ns pg.migration.core
   (:import
-   java.io.File
-   java.lang.AutoCloseable
-   java.lang.System$Logger
-   java.lang.System$Logger$Level
-   java.net.JarURLConnection
-   java.net.URI
    java.net.URL
    java.net.URLDecoder
    java.time.OffsetDateTime
    java.time.ZoneOffset
-   java.time.format.DateTimeFormatter
-   java.util.jar.JarFile
-   org.pg.Connection)
+   java.time.format.DateTimeFormatter)
   (:require
    [clojure.java.io :as io]
-   [clojure.set :as set]
    [clojure.string :as str]
-   [honey.sql :as sql]
    [pg.core :as pg]
    [pg.honey :as pgh]
+   [pg.migration.log :as log]
    [pg.migration.fs :as fs]))
 
 
 ;; TODO
-;; - remove imports
-;; - move log ns?
 ;; - cmd line args support
+;; - throw in unknown migration
+;; - cmd: try/catch exit
 ;; - lein plugin
 ;; - docstrings
 ;; - demo
@@ -39,16 +30,6 @@
 
 (def RE_FILE
   #"(?i)^.*?/(\d+)(.*?)\.(prev|next)\.sql$")
-
-
-(def ^System$Logger LOGGER
-  (System/getLogger "pg.migration"))
-
-
-(defmacro log [template & args]
-  `(.log LOGGER
-         System$Logger$Level/INFO
-         (format ~template ~@args)))
 
 
 (def ^DateTimeFormatter DATETIME_PATTERN
@@ -279,7 +260,7 @@
       (doseq [[id migration]
               id-migration's]
 
-        (log "Processing next migration %s" id)
+        (log/infof "Processing next migration %s" id)
 
         (let [{:keys [slug url-next]}
               migration
@@ -349,7 +330,7 @@
       (doseq [[id migration]
               id-migration's]
 
-        (log "Processing prev migration %s" id)
+        (log/infof "Processing prev migration %s" id)
 
         (let [{:keys [slug
                       url-prev]}

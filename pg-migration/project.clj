@@ -8,9 +8,10 @@
 
   :dependencies
   [[com.github.igrishaev/pg2-core]
-   [com.github.igrishaev/pg2-honey]]
+   [com.github.igrishaev/pg2-honey]
+   [org.clojure/tools.cli]]
 
-  :main pg.migration
+  :main pg.migration.cli
 
   :parent-project
   {:path "../project.clj"
