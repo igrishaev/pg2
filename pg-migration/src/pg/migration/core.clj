@@ -7,6 +7,7 @@
    java.net.JarURLConnection
    java.net.URI
    java.net.URL
+   java.net.URLDecoder
    java.time.OffsetDateTime
    java.time.ZoneOffset
    java.time.format.DateTimeFormatter
@@ -23,6 +24,7 @@
 
 
 ;; TODO
+;; - remove imports
 ;; - move log ns?
 ;; - cmd line args support
 ;; - lein plugin
@@ -131,7 +133,9 @@
 
 (defn parse-url [^URL url]
   (when-let [[_ id-raw slug-raw direction-raw]
-             (re-matches RE_FILE (str url))]
+             (re-matches RE_FILE (-> url
+                                     .getFile
+                                     URLDecoder/decode))]
 
     (let [id
           (Long/parseLong id-raw)
