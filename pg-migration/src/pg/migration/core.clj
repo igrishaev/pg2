@@ -18,19 +18,17 @@
    [clojure.string :as str]
    [honey.sql :as sql]
    [pg.core :as pg]
-   [pg.honey :as pgh]))
+   [pg.honey :as pgh]
+   [pg.migration.fs :as fs]))
 
 
 ;; TODO
-;; - zipfile support
+;; - move log ns?
 ;; - cmd line args support
 ;; - lein plugin
 ;; - docstrings
 ;; - demo
 ;; - docs
-
-;; tests
-;; check jar file
 
 (def DEFAULTS
   {:migrations-table :migrations
@@ -38,7 +36,7 @@
 
 
 (def RE_FILE
-  #"(?i)^(\d+)(.*?)\.(prev|next)\.sql$")
+  #"(?i)^.*?/(\d+)(.*?)\.(prev|next)\.sql$")
 
 
 (def ^System$Logger LOGGER
@@ -131,9 +129,9 @@
     (pgh/query conn query)))
 
 
-(defn parse-file [^File file]
+(defn parse-url [^URL url]
   (when-let [[_ id-raw slug-raw direction-raw]
-             (re-matches RE_FILE (.getName file))]
+             (re-matches RE_FILE (str url))]
 
     (let [id
           (Long/parseLong id-raw)
@@ -149,62 +147,59 @@
       {:id id
        :slug slug
        :direction direction
-       :file file})))
+       :url url})))
 
 
-(defn group-parsed-files [parsed-files]
+(defn group-parsed-urls [parsed-urls]
   (reduce
-   (fn [acc {:keys [id slug direction file]}]
+   (fn [acc {:keys [id slug direction url]}]
      (let [node
            (cond-> {:id id
                     :slug slug}
              (= direction :prev)
-             (assoc :file-prev file)
+             (assoc :url-prev url)
              (= direction :next)
-             (assoc :file-next file))]
+             (assoc :url-next url))]
        (update acc id merge node)))
    (sorted-map)
-   parsed-files))
+   parsed-urls))
 
 
-(defn is-directory? [^File file]
-  (.isDirectory file))
-
-
-(defn validate-duplicates! [parsed-files]
+(defn validate-duplicates! [parsed-urls]
   (let [f
         (juxt :id :direction)
 
         result
-        (group-by f parsed-files)]
+        (group-by f parsed-urls)]
 
     (doseq [[[id direction] items] result]
       (when (-> items count (> 1))
-        (let [files
+        (let [urls
               (for [item items]
-                (-> item ^File (:file) .getName))]
+                (-> item ^URL (:url) (.getFile)))]
+
           (pg/error! "Migration %s has %s %s files: %s"
                      id
                      (count items)
                      (name direction)
-                     (str/join ", " files))))))
+                     (str/join ", " urls))))))
 
-  parsed-files)
+  parsed-urls)
 
 
-;; TODO: use fs
-;; TODO: refactor file->url
-
-(defn read-file-migrations [^String path]
-  (->> path
-       (io/resource)
-       (io/file)
-       (file-seq)
-       (remove is-directory?)
-       (map parse-file)
+(defn url->migrations [^URL url]
+  (->> url
+       (fs/url->children)
+       (map parse-url)
        (filter some?)
        (validate-duplicates!)
-       (group-parsed-files)))
+       (group-parsed-urls)))
+
+
+(defn read-disk-migrations [^String path]
+  (->> path
+       (fs/path->url)
+       (url->migrations)))
 
 
 (defn get-applied-migration-ids [conn table]
@@ -247,7 +242,7 @@
             (get-applied-migration-ids conn migrations-table)
 
             migrations
-            (read-file-migrations migrations-path)
+            (read-disk-migrations migrations-path)
 
             id-current
             (apply max -1 applied-ids-set)
@@ -282,11 +277,11 @@
 
         (log "Processing next migration %s" id)
 
-        (let [{:keys [slug file-next]}
+        (let [{:keys [slug url-next]}
               migration
 
               sql
-              (some-> file-next slurp)]
+              (some-> url-next slurp)]
 
           (when sql
             (pg/query conn sql))
@@ -353,11 +348,11 @@
         (log "Processing prev migration %s" id)
 
         (let [{:keys [slug
-                      file-prev]}
+                      url-prev]}
               migration
 
               sql
-              (some-> file-prev slurp)]
+              (some-> url-prev slurp)]
 
           (when sql
             (pg/query conn sql))
@@ -409,63 +404,3 @@
         (take 1 (rsubseq migrations <= id-current))]
 
     (-rollback scope pending-migrations)))
-
-
-
-#_
-(defn -main [& _]
-  (-> "migrations"
-      io/resource
-      .toURI
-      FileSystems/newFileSystem
-      println))
-
-
-#_
-(comment
-
-  (def -url
-    (new URL "jar:file:/Users/ivan/work/pg2/pg-migration/target/pg2-migration-0.1.5-SNAPSHOT-standalone.jar!/migrations"))
-
-  (def -conn
-    (.openConnection -url))
-
-  (def -jar
-    (.getJarFile -conn))
-
-  (def -entries
-    (.entries -jar))
-
-  (.getName (.nextElement -entries))
-
-  (def -entry
-    (.nextElement -entries))
-
-  (.getInputStream -jar -e)
-
-  ;; zipFile.getInputStream(zipEntry);
-
-  (def -e
-    (.getJarEntry -conn))
-
-  ;; (.isDirectory -e)
-
-  (.getInputStream -jar -entry)
-
-  (def -config
-    {:host "127.0.0.1"
-     :port 10150
-     :user "test"
-     :password "test"
-     :database "test"})
-
-  (def -conn
-    (pg/connect -config))
-
-  (ensure-table -conn :migrations)
-
-  (read-file-migrations "migrations")
-
-  (get-applied-migration-ids -conn)
-
-  )

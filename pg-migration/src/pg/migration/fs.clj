@@ -15,17 +15,17 @@
       (pg/error! "Resource %s doens't exist" path)))
 
 
-(defmulti get-children
+(defmulti url->children
   (fn [^URL url]
     (.getProtocol url)))
 
 
-(defmethod get-children :default
+(defmethod url->children :default
   [url]
   (pg/error! "Unsupported URL: %s" url))
 
 
-(defmethod get-children "file"
+(defmethod url->children "file"
   [^URL url]
   (->> url
        io/as-file
@@ -36,7 +36,7 @@
               (-> file .toURI .toURL)))))
 
 
-(defmethod get-children "jar"
+(defmethod url->children "jar"
   [^URL url]
 
   (let [^JarURLConnection conn

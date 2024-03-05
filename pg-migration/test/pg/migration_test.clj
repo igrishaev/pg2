@@ -1,4 +1,6 @@
 (ns pg.migration-test
+  (:import
+   java.net.URL)
   (:require
    [clojure.string :as str]
    [clojure.java.io :as io]
@@ -13,60 +15,67 @@
   (let [res
         (-> "foo/bar/baz/0001-some-slug.next.sql"
             io/file
-            mig/parse-file)]
+            io/as-url
+            mig/parse-url)]
 
     (is (= {:id 1, :slug "some slug", :direction :next}
-           (dissoc res :file))))
+           (dissoc res :url))))
 
   (let [res
         (-> "foo/bar/baz/20221211235559-Hello World .Next.SQL"
             io/file
-            mig/parse-file)]
+            io/as-url
+            mig/parse-url)]
 
     (is (= {:slug "Hello World",
             :id 20221211235559
             :direction :next}
-           (dissoc res :file))))
+           (dissoc res :url))))
 
   (let [res
         (-> "foo/bar/baz/1aaa.prev.sql"
             io/file
-            mig/parse-file)]
+            io/as-url
+            mig/parse-url)]
 
     (is (= {:id 1, :slug "aaa", :direction :prev}
-           (dissoc res :file))))
+           (dissoc res :url))))
 
   (let [res
         (-> "foo/bar/baz/999.prev.sql"
             io/file
-            mig/parse-file)]
+            io/as-url
+            mig/parse-url)]
 
     (is (= {:id 999, :slug "", :direction :prev}
-           (dissoc res :file))))
+           (dissoc res :url))))
 
   (let [res
         (-> "foo/bar/baz/aaa.prev.sql"
             io/file
-            mig/parse-file)]
+            io/as-url
+            mig/parse-url)]
 
     (is (= nil
-           (dissoc res :file))))
+           (dissoc res :url))))
 
   (let [res
         (-> "foo/bar/baz/555aaa..sql"
             io/file
-            mig/parse-file)]
+            io/as-url
+            mig/parse-url)]
 
     (is (= nil
-           (dissoc res :file))))
+           (dissoc res :url))))
 
   (let [res
         (-> "foo/bar/baz/555aaa.prev.sql "
             io/file
-            mig/parse-file)]
+            io/as-url
+            mig/parse-url)]
 
     (is (= nil
-           (dissoc res :file)))))
+           (dissoc res :url)))))
 
 
 (deftest test-validate-duplicates
@@ -92,7 +101,7 @@
     (mig/validate-duplicates!
      [{:id 1
        :direction :prev
-       :file (io/file "mig1a")}
+       :url (-> "mig1a" io/file io/as-url)}
       {:id 1
        :direction :next}
       {:id 2
@@ -105,11 +114,13 @@
        :direction :next}
       {:id 1
        :direction :prev
-       :file (io/file "mig1b")}])
+       :url (-> "mig1b" io/file io/as-url)}])
     (is false)
     (catch Throwable e
-      (is (= "Migration 1 has 2 prev files: mig1a, mig1b"
-             (ex-message e))))))
+      (let [msg (ex-message e)]
+        (is (str/includes? msg "Migration 1 has 2 prev files"))
+        (is (str/includes? msg "mig1a"))
+        (is (str/includes? msg "mig1b"))))))
 
 
 (deftest test-make-file-name
@@ -201,3 +212,20 @@
          (file-seq)
          (reverse)
          (mapv io/delete-file))))
+
+
+(deftest test-read-jar-migrations
+
+  (let [url
+        (new URL "jar:file:test/resources/migrations.jar!/migrations")
+
+        migrations
+        (mig/url->migrations url)
+
+        sql
+        (-> migrations (get 1) :url-prev slurp str/trim)]
+
+    (is (= [1 2 3 4 5]
+           (-> migrations keys vec)))
+
+    (is (= "drop table test_users;" sql))))
