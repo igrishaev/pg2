@@ -15,13 +15,14 @@
 
 
 ;; TODO
-;; - cmd line args support
+;; - refactor logs?
+;; - fix exit
+;; - cli tests
 ;; - throw in unknown migration
-;; - cmd: try/catch exit
-;; - lein plugin
 ;; - docstrings
 ;; - demo
 ;; - docs
+;; - lein plugin
 
 (def DEFAULTS
   {:migrations-table :migrations

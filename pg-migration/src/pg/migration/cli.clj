@@ -1,6 +1,7 @@
 (ns pg.migration.cli
   (:gen-class)
   (:require
+   [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [pg.migration.core :as mig]
    [pg.migration.log :as log]))
@@ -239,13 +240,47 @@
     (println " -" cmd)))
 
 
+(defn letters
+  ([n]
+   (letters n \space))
+  ([n ch]
+   (str/join (repeat n ch))))
+
+
 (defn handle-list [config cmd-args]
   (let [scope
         (mig/make-scope config)
 
         {:keys [id-current
                 migrations]}
-        scope]
+        scope
+
+        id-max-size
+        (->> migrations
+             keys
+             (apply max 4))
+
+        | \|
+
+        id-template
+        (str \% id-max-size \d)]
+
+    (println "Migrations:")
+    (println)
+
+    (println |
+             (letters (- id-max-size 3)) "ID"
+             |
+             "Applied?"
+             |
+             "Slug")
+
+    (println |
+             (letters id-max-size \-)
+             |
+             (letters 8 \-)
+             |
+             (letters 8 \-))
 
     (doseq [[id migration]
             migrations]
@@ -256,10 +291,12 @@
                     applied?]}
             migration]
 
-        (println id applied? slug)
-
-        )))
-  )
+        (println |
+                 (format id-template id)
+                 |
+                 (if applied? "true    " "false   ")
+                 |
+                 slug)))))
 
 
 (defn -main [& args]
