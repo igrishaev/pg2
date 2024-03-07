@@ -16,6 +16,7 @@
 
 ;; TODO
 ;; - refactor logs?
+;; - split config and options?
 ;; - fix exit
 ;; - cli tests
 ;; - throw in unknown migration
