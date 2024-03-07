@@ -112,9 +112,15 @@
      (when message
        (binding [*out* channel]
          (println message))))
-   (throw (new Error (or message "exit")))
-   #_
    (System/exit code)))
+
+
+(defmacro with-exit [& body]
+  `(with-redefs [exit
+                 (fn [code# & [message# & args#]]
+                   (throw (new Error (when message#
+                                       (apply format message# args#)))))]
+     ~@body))
 
 
 (defn parse-args [args cli-opt]

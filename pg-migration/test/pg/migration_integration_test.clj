@@ -5,6 +5,7 @@
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
    [pg.honey :as pgh]
+   [pg.migration.cli :as cli]
    [pg.migration.core :as mig]))
 
 
@@ -245,3 +246,61 @@
               {:id 4 :slug "prev only migration"}
               {:id 5 :slug "add some table"}]
              (get-db-migrations CONFIG))))))
+
+
+(def ARGS-BASE
+  ["-p" "10150"
+   "-h" "localhost"
+   "-u" "test"
+   "-w" "test"
+   "-d" "test"])
+
+
+(deftest test-cli-help
+  (let [res
+        (with-out-str
+          (cli/with-exit
+            (apply cli/-main (into ARGS-BASE ["help"]))))]
+
+    (is (= "Manage migrations via CLI
+
+Synatax:
+
+<global options> <command> <command options>
+
+Global options:
+
+  -p, --port PORT           5432         Port number
+  -h, --host HOST           localhost    Host name
+  -u, --user USER           ivan         User
+  -w, --password PASSWORD                Password
+  -d, --database DATABASE   ivan         Database
+  --migrations-table TABLE  :migrations
+  --migrations-path PATH    migrations
+
+Supported commands:
+
+ - create
+ - help
+ - list
+ - migrate
+ - rollback
+
+Command-specific help:
+
+<command> --help
+
+"
+           res))))
+
+
+(deftest test-cli-migrate
+
+  (cli/with-exit
+    (apply cli/-main (into ARGS-BASE ["--migrations-table" (name TABLE)
+                                      "migrate"])))
+
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}]
+         (get-db-migrations CONFIG))))
