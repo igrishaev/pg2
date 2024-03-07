@@ -15,6 +15,8 @@
 
 
 ;; TODO
+;; - common --help?
+;; - common args as vars
 ;; - refactor logs?
 ;; - split config and options?
 ;; - fix exit
