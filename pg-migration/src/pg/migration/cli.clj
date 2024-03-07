@@ -97,18 +97,18 @@
   ([code]
    (exit code nil))
 
+  ([code message & args]
+   (exit code (apply format message args)))
+
   ([code ^String message]
    (let [channel
          (if (zero? code) *out* *err*)]
      (when message
        (binding [*out* channel]
          (println message))))
-   (throw (new Error message))
+   (throw (new Error (or message "exit")))
    #_
-   (System/exit code))
-
-  ([code message & args]
-   (exit code (apply format message args))))
+   (System/exit code)))
 
 
 (defn parse-args [args cli-opt]
