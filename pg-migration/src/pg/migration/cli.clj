@@ -34,12 +34,12 @@
     :id :database
     :default (System/getenv "USER")]
 
-   ["--migrations-table TABLE" "Migrations table"
+   [nil "--table TABLE" "Migrations table"
     :id :migrations-table
     :parse-fn keyword
     :default :migrations]
 
-   ["--migrations-path PATH" "Migrations path"
+   [nil "--path PATH" "Migrations path"
     :id :migrations-path
     :default "migrations"]])
 
@@ -117,9 +117,8 @@
 
 (defmacro with-exit [& body]
   `(with-redefs [exit
-                 (fn [code# & [message# & args#]]
-                   (throw (new Error (when message#
-                                       (apply format message# args#)))))]
+                 (fn [& _#]
+                   (throw (new Error "exit")))]
      ~@body))
 
 
@@ -304,8 +303,7 @@
                  |
                  slug)))))
 
-
-(defn -main [& args]
+(defn main [args]
 
   (let [{:keys [options
                 arguments
@@ -347,3 +345,7 @@
 
       :else
       (handle-unknown-cmd cmd))))
+
+
+(defn -main [& args]
+  (main args))

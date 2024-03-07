@@ -260,7 +260,7 @@
   (let [res
         (with-out-str
           (cli/with-exit
-            (apply cli/-main (into ARGS-BASE ["help"]))))]
+            (cli/main (into ARGS-BASE ["help"]))))]
 
     (is (= "Manage migrations via CLI
 
@@ -270,13 +270,13 @@ Synatax:
 
 Global options:
 
-  -p, --port PORT           5432         Port number
-  -h, --host HOST           localhost    Host name
-  -u, --user USER           ivan         User
-  -w, --password PASSWORD                Password
-  -d, --database DATABASE   ivan         Database
-  --migrations-table TABLE  :migrations
-  --migrations-path PATH    migrations
+  -p, --port PORT          5432         Port number
+  -h, --host HOST          localhost    Host name
+  -u, --user USER          ivan         User
+  -w, --password PASSWORD               Password
+  -d, --database DATABASE  ivan         Database
+      --table TABLE        :migrations  Migrations table
+      --path PATH          migrations   Migrations path
 
 Supported commands:
 
@@ -294,13 +294,19 @@ Command-specific help:
            res))))
 
 
-(deftest test-cli-migrate
+(deftest test-cli-migrate-defalut
 
-  (cli/with-exit
-    (apply cli/-main (into ARGS-BASE ["--migrations-table" (name TABLE)
-                                      "migrate"])))
+  (let [args
+        (into ARGS-BASE ["--table"
+                         (name TABLE)
+                         "migrate"])]
+
+    (cli/with-exit
+      (cli/main args)))
 
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}]
+          {:id 3 :slug "next only migration"}
+          {:id 4 :slug "prev only migration"}
+          {:id 5 :slug "add some table"}]
          (get-db-migrations CONFIG))))
