@@ -69,11 +69,12 @@
 
 (defn create-migration-files
   ([migrations-path]
-   (create-migration-files migrations-path ""))
+   (create-migration-files migrations-path nil))
 
-  ([migrations-path slug]
+  ([migrations-path {:keys [id slug]}]
    (let [id
-         (generate-datetime-id)
+         (or id
+             (generate-datetime-id))
 
          name-prev
          (make-file-name id slug :prev)
@@ -253,7 +254,10 @@
 
   (let [{:keys [config
                 migrations-table]}
-        scope]
+        scope
+
+        {:keys [verbose?]}
+        config]
 
     (pg/with-connection [conn config]
 
@@ -269,6 +273,8 @@
               (some-> url-next slurp)]
 
           (when sql
+            (when verbose?
+              (log/infof sql))
             (pg/query conn sql))
           (pgh/insert-one conn
                           migrations-table
@@ -323,7 +329,10 @@
 
   (let [{:keys [config
                 migrations-table]}
-        scope]
+        scope
+
+        {:keys [verbose?]}
+        config]
 
     (pg/with-connection [conn config]
 
@@ -340,6 +349,8 @@
               (some-> url-prev slurp)]
 
           (when sql
+            (when verbose?
+              (log/infof sql))
             (pg/query conn sql))
           (pgh/delete conn
                       migrations-table

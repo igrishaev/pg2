@@ -52,7 +52,7 @@
     :parse-fn parse-int]])
 
 
-(def CLI-OPT-ROLLBACK
+(def CLI-OPT-MIGRATE
   [[nil "--all" "Rollback all the previous migrations"
     :id :all?]
 
@@ -61,7 +61,11 @@
 
    [nil "--to ID" "Rollback to certain migration"
     :id :to
-    :parse-fn parse-int]])
+    :parse-fn parse-int]
+
+   ["-v" "--verbose" "Verbose (println SQL expressions)"
+    :id :verbose?
+    :default false]])
 
 
 (def CLI-OPT-CREATE
@@ -70,10 +74,11 @@
     :parse-fn parse-int]
 
    [nil "--slug SLUG" "Optional slug (e.g. 'create-users-table')"
-    :id :slug]])
+    :id :slug]
 
-
-;; TODO: debug sql?
+   ["-v" "--verbose" "Verbose (println SQL expressions)"
+    :id :verbose?
+    :default false]])
 
 
 ;; ["-p" "3333" "create" "--id" "--slug"]
@@ -179,16 +184,36 @@
 (def CMD_MIGRATE "migrate")
 (def CMD_ROLLBACK "rollback")
 (def CMD_CREATE "create")
+(def CMD_LIST "list")
 
 
 (def CMDS #{CMD_HELP
             CMD_MIGRATE
             CMD_ROLLBACK
-            CMD_CREATE})
+            CMD_CREATE
+            CMD_LIST})
 
 
-(defn handle-help []
-  (println "help"))
+(defn handle-help [summary]
+  (println "Manage migrations via CLI")
+  (println)
+  (println "Synatax:")
+  (println)
+  (println "<global options> <command> <command options>")
+  (println)
+  (println "Global options:")
+  (println)
+  (println summary)
+  (println)
+  (println "Supported commands:")
+  (println)
+  (doseq [cmd (sort CMDS)]
+    (println " -" cmd))
+  (println)
+  (println "Command-specific help:")
+  (println)
+  (println "<command> --help")
+  (println))
 
 
 (defn handle-create
@@ -201,20 +226,47 @@
                 slug]}
         options
 
-        id
-        (or id (mig/generate-datetime-id))
-
         {:keys [migrations-path]}
         config]
 
-    ;; TODO: pass id
-    (mig/create-migration-files migrations-path slug)))
+    (mig/create-migration-files migrations-path
+                                {:id id :slug slug})))
+
+
+(defn handle-unknown-cmd [cmd]
+  (println "Supported commands:")
+  (doseq [cmd (sort CMDS)]
+    (println " -" cmd)))
+
+
+(defn handle-list [config cmd-args]
+  (let [scope
+        (mig/make-scope config)
+
+        {:keys [id-current
+                migrations]}
+        scope]
+
+    (doseq [[id migration]
+            migrations]
+
+      (let [{:keys [slug
+                    url-next
+                    url-prev
+                    applied?]}
+            migration]
+
+        (println id applied? slug)
+
+        )))
+  )
 
 
 (defn -main [& args]
 
   (let [{:keys [options
-                arguments]}
+                arguments
+                summary]}
 
         (parse-args args
                     CLI-OPT-MAIN)
@@ -227,7 +279,8 @@
                       :port
                       :password
                       :migrations-table
-                      :migrations-path])
+                      :migrations-path
+                      :verbose?])
 
         [cmd & cmd-args]
         arguments]
@@ -235,7 +288,7 @@
     (cond
 
       (= cmd CMD_HELP)
-      (handle-help)
+      (handle-help summary)
 
       (= cmd CMD_MIGRATE)
       (handle-migrate config cmd-args)
@@ -246,6 +299,8 @@
       (= cmd CMD_CREATE)
       (handle-create config cmd-args)
 
-      ;; :else
-      ;; (handle-unknown-cmd cmd)
-      )))
+      (= cmd CMD_LIST)
+      (handle-list config cmd-args)
+
+      :else
+      (handle-unknown-cmd cmd))))
