@@ -44,16 +44,34 @@
     :default "migrations"]])
 
 
+(def OPT-VERBOSE
+  ["-v" "--verbose" "Verbose (print SQL expressions)"
+   :id :verbose?
+   :default false])
+
+
+(def OPT-HELP
+  [nil "--help" "Show help message"
+   :id :help?
+   :default false])
+
+
 (def CLI-OPT-MIGRATE
-  [[nil "--one" "Migrate next a single pending migration"
+  [[nil "--all" "Migrate all the pending migrations"
+    :id :all?]
+
+   [nil "--one" "Migrate next a single pending migration"
     :id :one?]
 
    [nil "--to ID" "Migrate next to certain migration"
     :id :to
-    :parse-fn parse-int]])
+    :parse-fn parse-int]
+
+   OPT-VERBOSE
+   OPT-HELP])
 
 
-(def CLI-OPT-MIGRATE
+(def CLI-OPT-ROLLBACK
   [[nil "--all" "Rollback all the previous migrations"
     :id :all?]
 
@@ -64,9 +82,8 @@
     :id :to
     :parse-fn parse-int]
 
-   ["-v" "--verbose" "Verbose (println SQL expressions)"
-    :id :verbose?
-    :default false]])
+   OPT-VERBOSE
+   OPT-HELP])
 
 
 (def CLI-OPT-CREATE
@@ -77,9 +94,7 @@
    [nil "--slug SLUG" "Optional slug (e.g. 'create-users-table')"
     :id :slug]
 
-   ["-v" "--verbose" "Verbose (println SQL expressions)"
-    :id :verbose?
-    :default false]])
+   OPT-HELP])
 
 
 ;; ["-p" "3333" "create" "--id" "--slug"]
@@ -143,19 +158,26 @@
         (parse-args cmd-args
                     CLI-OPT-MIGRATE)
 
-        {:keys [options]}
+        {:keys [options
+                summary]}
         parsed
 
-        {:keys [one? to]}
+        {:keys [help? all? one? to]}
         options]
 
     (cond
+
+      help?
+      (render-summary summary)
 
       one?
       (mig/migrate-one config)
 
       to
       (mig/migrate-to config to)
+
+      all?
+      (mig/migrate-all config)
 
       :default
       (mig/migrate-all config))))
@@ -167,13 +189,17 @@
         (parse-args cmd-args
                     CLI-OPT-ROLLBACK)
 
-        {:keys [options]}
+        {:keys [options
+                summary]}
         parsed
 
-        {:keys [all? one? to]}
+        {:keys [help? all? one? to]}
         options]
 
     (cond
+
+      help?
+      (render-summary summary)
 
       all?
       (mig/rollback-all config)
@@ -225,18 +251,26 @@
 (defn handle-create
   [config cmd-args]
 
-  (let [{:keys [options]}
+  (let [{:keys [options
+                summary]}
         (parse-args cmd-args CLI-OPT-CREATE)
 
         {:keys [id
-                slug]}
+                slug
+                help?]}
         options
 
         {:keys [migrations-path]}
         config]
 
-    (mig/create-migration-files migrations-path
-                                {:id id :slug slug})))
+    (cond
+
+      help?
+      (render-summary summary)
+
+      :else
+      (mig/create-migration-files migrations-path
+                                  {:id id :slug slug}))))
 
 
 (defn handle-unknown-cmd [cmd]
@@ -303,14 +337,19 @@
                  |
                  slug)))))
 
-(defn main [args]
+(defn main [args & more]
 
-  (let [{:keys [options
+  (let [args-all
+        (-> [] (into args) (into more))
+
+        parsed
+        (parse-args args-all
+                    CLI-OPT-MAIN)
+
+        {:keys [options
                 arguments
                 summary]}
-
-        (parse-args args
-                    CLI-OPT-MAIN)
+        parsed
 
         config
         (select-keys options

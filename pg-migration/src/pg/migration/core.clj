@@ -14,19 +14,6 @@
    [pg.migration.fs :as fs]))
 
 
-;; TODO
-;; - common --help?
-;; - common args as vars
-;; - refactor logs?
-;; - split config and options?
-;; - fix exit
-;; - cli tests
-;; - throw in unknown migration
-;; - docstrings
-;; - demo
-;; - docs
-;; - lein plugin
-
 (def DEFAULTS
   {:migrations-table :migrations
    :migrations-path "migrations"})

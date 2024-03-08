@@ -187,7 +187,8 @@
         "foo/bar/baz"
 
         res
-        (mig/create-migration-files path "  A test migration \r\n ")
+        (mig/create-migration-files path
+                                    {:slug "  A test migration \r\n "})
 
         [file-prev file-next]
         res]

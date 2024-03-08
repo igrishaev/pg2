@@ -1,22 +1,23 @@
 
 - readme
 
+migrations
+- refactor logs?
+- split config and options?
+- throw in unknown migration
+- docstrings
+- demo
+- docs
+- lein plugin
+
 - pool close conn test
-
 - keywords with namespaces (+ jdbc)
-
 - test parallel connection access
-
 - migration: no ragtime?
-
 - parse JDBC url
-
 - bulk statement execute
-
 - batch execute
-
 - pg.jdbc batch
-
 - pass jsonista custom object
 
 - arrays
