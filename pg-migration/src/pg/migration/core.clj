@@ -1,17 +1,23 @@
 (ns pg.migration.core
+  "
+  Common migration functions.
+  "
   (:import
+   clojure.lang.Keyword
+   clojure.lang.Sorted
    java.net.URL
    java.net.URLDecoder
    java.time.OffsetDateTime
    java.time.ZoneOffset
-   java.time.format.DateTimeFormatter)
+   java.time.format.DateTimeFormatter
+   org.pg.Connection)
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
    [pg.core :as pg]
    [pg.honey :as pgh]
-   [pg.migration.log :as log]
-   [pg.migration.fs :as fs]))
+   [pg.migration.fs :as fs]
+   [pg.migration.log :as log]))
 
 
 (def DEFAULTS
@@ -34,19 +40,32 @@
 
 
 (defn letters
+  "
+  Repeat a certain string/character N times.
+  "
   ([n]
    (letters n \space))
   ([n ch]
    (str/join (repeat n ch))))
 
 
-(defn generate-datetime-id ^Long []
+(defn generate-datetime-id
+  "
+  Generate a Long number based on the current UTC datetime
+  of a format YYYYmmddHHMMSS, e.g. 20240308154432.
+  "
+  ^Long []
   (-> (java.time.OffsetDateTime/now)
       (.format DATETIME_PATTERN)
       (Long/parseLong)))
 
 
-(defn text->slug ^String [^String text]
+(defn text->slug
+  "
+  Turn a 'Human  Friendly Text ' into something like
+  'human-friendly-text' to be a part of a migration file.
+  "
+  ^String [^String text]
   (-> text
       (str/lower-case)
       (str/trim)
@@ -54,7 +73,12 @@
       (str/replace #"\s" "-")))
 
 
-(defn make-file-name [id text direction]
+(defn make-file-name
+  "
+  Compose a file name based on the id,
+  an optional slug, and the direction type.
+  "
+  ^String [id text direction]
   (let [slug (some-> text text->slug)]
     (with-out-str
       (print id)
@@ -70,6 +94,12 @@
 
 
 (defn create-migration-files
+  "
+  Create a couple of new migration files, prev and next.
+  When not set, the id is generated from the current UTC time.
+  Return a pair of `File` objects, prev and next.
+  "
+
   ([migrations-path]
    (create-migration-files migrations-path nil))
 
@@ -98,14 +128,23 @@
      [file-prev file-next])))
 
 
-(defn cleanup-slug ^String [^String slug]
+(defn cleanup-slug
+  "
+  Turn a slug fragment into a human-friendly text.
+  "
+  ^String [^String slug]
   (-> slug
       (str/replace #"-|_" " ")
       (str/replace #"\s+" " ")
       (str/trim)))
 
 
-(defn ensure-table [conn migrations-table]
+(defn ensure-table
+  "
+  Having a db connection and the name of the migrations table,
+  create a table if it doesn't exist.
+  "
+  [^Connection conn ^Keyword migrations-table]
   (let [query
         {:create-table [migrations-table :if-not-exists]
          :with-columns
@@ -115,7 +154,11 @@
     (pgh/query conn query)))
 
 
-(defn parse-url [^URL url]
+(defn parse-url
+  "
+  Split a URL pointing to a migration file to various fields.
+  "
+  [^URL url]
   (when-let [[_ id-raw slug-raw direction-raw]
              (re-matches RE_FILE (-> url
                                      .getFile
@@ -138,7 +181,12 @@
        :url url})))
 
 
-(defn group-parsed-urls [parsed-urls]
+(defn group-parsed-urls
+  "
+  Having a seq of maps (parsed URLs), unify them by id.
+  Return a sorted map, an instance of `clojure.lang.Sorted`.
+  "
+  ^Sorted [parsed-urls]
   (reduce
    (fn [acc {:keys [id slug direction url]}]
      (let [node
@@ -153,7 +201,12 @@
    parsed-urls))
 
 
-(defn validate-duplicates! [parsed-urls]
+(defn validate-duplicates!
+  "
+  Having a seq of parsed URLs, find those that have the same
+  (id, direction) pair. If found, an exception is thrown.
+  "
+  [parsed-urls]
   (let [f
         (juxt :id :direction)
 
@@ -175,7 +228,12 @@
   parsed-urls)
 
 
-(defn url->migrations [^URL url]
+(defn url->migrations
+  "
+  Fetch all the migrations from the top-level URL.
+  Return a sorted map like (id => migration-map).
+  "
+  ^Sorted [^URL url]
   (->> url
        (fs/url->children)
        (map parse-url)
@@ -184,13 +242,22 @@
        (group-parsed-urls)))
 
 
-(defn read-disk-migrations [^String path]
+(defn read-disk-migrations
+  "
+  Read all the migrations from a resource.
+  "
+  ^Sorted [^String path]
   (->> path
        (fs/path->url)
        (url->migrations)))
 
 
-(defn get-applied-migration-ids [conn table]
+(defn get-applied-migration-ids
+  "
+  Read all the applied migrations from the database
+  and return a set of their ids.
+  "
+  [^Connection conn ^Keyword table]
   (let [query
         {:select [:id]
          :from table
@@ -202,7 +269,31 @@
          (not-empty))))
 
 
-(defn validate-conflicts! [migrations]
+(defn validate-conflicts!
+  "
+  Try to find a situation when a migration with less ID
+  was applied before another migration with a greater ID.
+
+  For example:
+
+  id applied
+   1 yes
+   2 yes
+   3 no
+   4 yes
+
+  Above, 3 is less then 4 but 4 has been applied whereas 3 has not.
+  Usually it happens when two features get merged at the same time.
+  To fix it, rename the migration 3 to 5 as follows:
+
+  id applied
+   1 yes
+   2 yes
+   4 yes
+   5 no
+
+  "
+  [^Sorted migrations]
   (doseq [i (range 0 (-> migrations count dec))]
     (let [migration1 (get migrations i)
           migration2 (get migrations (inc i))]
@@ -213,12 +304,27 @@
                 (:id migration1))))))
 
 
-(defn validate-migration-id! [migrations id]
+(defn validate-migration-id!
+  "
+  Check if the migration map has a certain id.
+  "
+  [^Sorted migrations id]
   (when-not (contains? migrations id)
     (error! "Migration %s doesn't exist" id)))
 
 
-(defn make-scope [config]
+(defn make-scope
+  "
+  Having a raw config map, do the following:
+  - apply config defautls
+  - build migrations map
+  - get applied migration IDs from the database
+  - mark applied migrations;
+  - detect the current migration;
+
+  Return a map of all these fields.
+  "
+  [config]
 
   (let [config
         (merge DEFAULTS config)
@@ -257,7 +363,11 @@
          :migrations-path migrations-path}))))
 
 
-(defn log-connection-info [config]
+(defn log-connection-info
+  "
+  Report the connection information.
+  "
+  [config]
   (let [{:keys [user
                 password
                 host
@@ -287,7 +397,14 @@
     (log/infof "The file is missing")))
 
 
-(defn -migrate [scope id-migration's]
+(defn -migrate
+  "
+  A general migrate forward function. Don't use it directly.
+  Accepts the scope map and a seq of pairs (id, migration).
+  Runs the migrations one by one. Tracks the applied migrations
+  in the database.
+  "
+  [scope id-migration's]
 
   (let [{:keys [config
                 migrations-table]}
@@ -328,7 +445,11 @@
                           {:id id :slug slug}))))))
 
 
-(defn migrate-to [config id-to]
+(defn migrate-to
+  "
+  Migrate forward to a certain migration by its ID.
+  "
+  [config id-to]
 
   (let [scope
         (make-scope config)
@@ -346,7 +467,11 @@
     (-migrate scope pending-migrations)))
 
 
-(defn migrate-all [config]
+(defn migrate-all
+  "
+  Migrate all the pending forward migrations.
+  "
+  [config]
   (let [scope
         (make-scope config)
 
@@ -360,7 +485,11 @@
     (-migrate scope pending-migrations)))
 
 
-(defn migrate-one [config]
+(defn migrate-one
+  "
+  Apply the next single migration.
+  "
+  [config]
 
   (let [scope
         (make-scope config)
@@ -375,7 +504,14 @@
     (-migrate scope pending-migrations)))
 
 
-(defn -rollback [scope id-migration's]
+(defn -rollback
+  "
+  A general rollback function. Don't use it directly.
+  Accepts the scope map and a seq of pairs (id, migration).
+  Rolls back the migrations one by one. Removes the records
+  from the database.
+  "
+  [scope id-migration's]
 
   (let [{:keys [config
                 migrations-table]}
@@ -417,7 +553,11 @@
                       {:where [:= :id id]}))))))
 
 
-(defn rollback-to [config id-to]
+(defn rollback-to
+  "
+  Rollback to a certain migration by its ID.
+  "
+  [config id-to]
 
   (let [scope
         (make-scope config)
@@ -435,7 +575,11 @@
     (-rollback scope pending-migrations)))
 
 
-(defn rollback-all [config]
+(defn rollback-all
+  "
+  Rollback all the previous migrations.
+  "
+  [config]
 
   (let [scope
         (make-scope config)
@@ -450,7 +594,11 @@
     (-rollback scope pending-migrations)))
 
 
-(defn rollback-one [config]
+(defn rollback-one
+  "
+  Rollback the current migration.
+  "
+  [config]
 
   (let [scope
         (make-scope config)
