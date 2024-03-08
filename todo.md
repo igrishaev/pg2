@@ -2,9 +2,6 @@
 - readme
 
 migrations
-- refactor logs?
-- split config and options?
-- throw in unknown migration
 - docstrings
 - demo
 - docs

@@ -114,7 +114,7 @@
           {:id 2 :slug "create profiles"}]
          (get-db-migrations CONFIG)))
 
-  (mig/migrate-to CONFIG -99999)
+  (mig/migrate-to CONFIG 1)
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}]
          (get-db-migrations CONFIG)))
@@ -124,7 +124,7 @@
           {:id 2 :slug "create profiles"}]
          (get-db-migrations CONFIG)))
 
-  (mig/migrate-to CONFIG 999)
+  (mig/migrate-to CONFIG 5)
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}
           {:id 3 :slug "next only migration"}
@@ -132,7 +132,7 @@
           {:id 5 :slug "add some table"}]
          (get-db-migrations CONFIG)))
 
-  (mig/migrate-to CONFIG 999)
+  (mig/migrate-to CONFIG 5)
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}
           {:id 3 :slug "next only migration"}
@@ -140,7 +140,7 @@
           {:id 5 :slug "add some table"}]
          (get-db-migrations CONFIG)))
 
-  (mig/migrate-to CONFIG -99999)
+  (mig/migrate-to CONFIG 1)
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}
           {:id 3 :slug "next only migration"}
@@ -198,18 +198,6 @@
          (get-db-migrations CONFIG))))
 
 
-(deftest test-rollback-to-wrong-id
-
-  (mig/migrate-all CONFIG)
-  (mig/rollback-to CONFIG 10000)
-  (is (= [{:id 1 :slug "create users"}
-          {:id 2 :slug "create profiles"}
-          {:id 3 :slug "next only migration"}
-          {:id 4 :slug "prev only migration"}
-          {:id 5 :slug "add some table"}]
-         (get-db-migrations CONFIG))))
-
-
 (deftest test-rollback-to-4
 
   (mig/migrate-all CONFIG)
@@ -224,8 +212,31 @@
 (deftest test-rollback-to-minus
 
   (mig/migrate-all CONFIG)
-  (mig/rollback-to CONFIG -100500)
-  (is (= []
+  (try
+    (mig/rollback-to CONFIG -100500)
+    (is false)
+    (catch Error e
+      (is (= "Migration -100500 doesn't exist"
+             (ex-message e)))))
+  (is (= [{:slug "create users", :id 1}
+          {:slug "create profiles", :id 2}
+          {:slug "next only migration", :id 3}
+          {:slug "prev only migration", :id 4}
+          {:slug "add some table", :id 5}]
+         (get-db-migrations CONFIG))))
+
+
+(deftest test-migrate-to-inf
+  (mig/migrate-to CONFIG 3)
+  (try
+    (mig/migrate-to CONFIG 999)
+    (is false)
+    (catch Error e
+      (is (= "Migration 999 doesn't exist"
+             (ex-message e)))))
+  (is (= [{:slug "create users", :id 1}
+          {:slug "create profiles", :id 2}
+          {:slug "next only migration", :id 3}]
          (get-db-migrations CONFIG))))
 
 
@@ -374,11 +385,10 @@ Command-specific help:
             (cli/main ARGS-BASE "migrate" "--help")))]
 
     (is (= "Syntax:
-      --all             Migrate all the pending migrations
-      --one             Migrate next a single pending migration
-      --to ID           Migrate next to certain migration
-  -v, --verbose  false  Verbose (print SQL expressions)
-      --help     false  Show help message
+      --all           Migrate all the pending migrations
+      --one           Migrate next a single pending migration
+      --to ID         Migrate next to certain migration
+      --help   false  Show help message
 "
            out)))
 
@@ -388,11 +398,10 @@ Command-specific help:
             (cli/main ARGS-BASE "rollback" "--help")))]
 
     (is (= "Syntax:
-      --all             Rollback all the previous migrations
-      --one             Rollback to the previous migration
-      --to ID           Rollback to certain migration
-  -v, --verbose  false  Verbose (print SQL expressions)
-      --help     false  Show help message
+      --all           Rollback all the previous migrations
+      --one           Rollback to the previous migration
+      --to ID         Rollback to certain migration
+      --help   false  Show help message
 "
            out)))
 

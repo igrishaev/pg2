@@ -6,13 +6,16 @@
    java.util.jar.JarEntry)
   (:require
    [clojure.java.io :as io]
-   [clojure.string :as str]
-   [pg.core :as pg]))
+   [clojure.string :as str]))
+
+
+(defmacro error! [template & args]
+  `(throw (new Error (format ~template ~@args))))
 
 
 (defn path->url ^URL [^String path]
   (or (io/resource path)
-      (pg/error! "Resource %s doens't exist" path)))
+      (error! "Resource %s doens't exist" path)))
 
 
 (defmulti url->children
@@ -22,7 +25,7 @@
 
 (defmethod url->children :default
   [url]
-  (pg/error! "Unsupported URL: %s" url))
+  (error! "Unsupported URL: %s" url))
 
 
 (defmethod url->children "file"

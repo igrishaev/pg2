@@ -44,12 +44,6 @@
     :default "migrations"]])
 
 
-(def OPT-VERBOSE
-  ["-v" "--verbose" "Verbose (print SQL expressions)"
-   :id :verbose?
-   :default false])
-
-
 (def OPT-HELP
   [nil "--help" "Show help message"
    :id :help?
@@ -67,7 +61,6 @@
     :id :to
     :parse-fn parse-int]
 
-   OPT-VERBOSE
    OPT-HELP])
 
 
@@ -82,7 +75,6 @@
     :id :to
     :parse-fn parse-int]
 
-   OPT-VERBOSE
    OPT-HELP])
 
 
@@ -279,13 +271,6 @@
     (println " -" cmd)))
 
 
-(defn letters
-  ([n]
-   (letters n \space))
-  ([n ch]
-   (str/join (repeat n ch))))
-
-
 (defn handle-list [config cmd-args]
   (let [scope
         (mig/make-scope config)
@@ -308,18 +293,18 @@
     (println)
 
     (println |
-             (letters (- id-max-size 3)) "ID"
+             (mig/letters (- id-max-size 3)) "ID"
              |
              "Applied?"
              |
              "Slug")
 
     (println |
-             (letters id-max-size \-)
+             (mig/letters id-max-size \-)
              |
-             (letters 8 \-)
+             (mig/letters 8 \-)
              |
-             (letters 8 \-))
+             (mig/letters 8 \-))
 
     (doseq [[id migration]
             migrations]
@@ -359,8 +344,7 @@
                       :port
                       :password
                       :migrations-table
-                      :migrations-path
-                      :verbose?])
+                      :migrations-path])
 
         [cmd & cmd-args]
         arguments]

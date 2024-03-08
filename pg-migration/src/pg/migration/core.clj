@@ -29,6 +29,17 @@
       (.withZone ZoneOffset/UTC)))
 
 
+(defmacro error! [template & args]
+  `(throw (new Error (format ~template ~@args))))
+
+
+(defn letters
+  ([n]
+   (letters n \space))
+  ([n ch]
+   (str/join (repeat n ch))))
+
+
 (defn generate-datetime-id ^Long []
   (-> (java.time.OffsetDateTime/now)
       (.format DATETIME_PATTERN)
@@ -155,11 +166,11 @@
               (for [item items]
                 (-> item ^URL (:url) (.getFile)))]
 
-          (pg/error! "Migration %s has %s %s files: %s"
-                     id
-                     (count items)
-                     (name direction)
-                     (str/join ", " urls))))))
+          (error! "Migration %s has %s %s files: %s"
+                  id
+                  (count items)
+                  (name direction)
+                  (str/join ", " urls))))))
 
   parsed-urls)
 
@@ -197,9 +208,14 @@
           migration2 (get migrations (inc i))]
       (when (and (-> migration1 :applied? not)
                  (-> migration2 :applied?))
-        (pg/error! "Migration conflict: migration %s has been applied before %s"
-                   (:id migration2)
-                   (:id migration1))))))
+        (error! "Migration conflict: migration %s has been applied before %s"
+                (:id migration2)
+                (:id migration1))))))
+
+
+(defn validate-migration-id! [migrations id]
+  (when-not (contains? migrations id)
+    (error! "Migration %s doesn't exist" id)))
 
 
 (defn make-scope [config]
@@ -241,31 +257,71 @@
          :migrations-path migrations-path}))))
 
 
+(defn log-connection-info [config]
+  (let [{:keys [user
+                password
+                host
+                port
+                database]}
+        config
+
+        len
+        (count password)
+
+        stars
+        (letters len \*)]
+
+    (log/infof "Connection: %s:%s@%s:%s/%s"
+      user
+      stars
+      host
+      port
+      database)))
+
+
+(defn log-sql [^URL url sql]
+  (if url
+    (do
+      (log/infof "File: %s" (.getFile url))
+      (log/infof sql))
+    (log/infof "The file is missing")))
+
+
 (defn -migrate [scope id-migration's]
 
   (let [{:keys [config
                 migrations-table]}
-        scope
+        scope]
 
-        {:keys [verbose?]}
-        config]
+    (log-connection-info config)
+
+    (log/infof "Running next migrations: %s"
+      (->> id-migration's keys (str/join ", ") ))
 
     (pg/with-connection [conn config]
 
       (doseq [[id migration]
               id-migration's]
 
-        (log/infof "Processing next migration %s" id)
+        (let [title
+              (format "Processing next migration %s" id)
 
-        (let [{:keys [slug url-next]}
+              dash
+              (letters (count title) \-)
+
+              {:keys [slug url-next]}
               migration
 
               sql
               (some-> url-next slurp)]
 
+          (log/infof dash)
+          (log/infof title)
+          (log/infof dash)
+
+          (log-sql url-next sql)
+
           (when sql
-            (when verbose?
-              (log/infof sql))
             (pg/query conn sql))
           (pgh/insert-one conn
                           migrations-table
@@ -280,6 +336,9 @@
         {:keys [migrations
                 id-current]}
         scope
+
+        _
+        (validate-migration-id! migrations id-to)
 
         pending-migrations
         (subseq migrations > id-current <= id-to)]
@@ -320,28 +379,38 @@
 
   (let [{:keys [config
                 migrations-table]}
-        scope
+        scope]
 
-        {:keys [verbose?]}
-        config]
+    (log-connection-info config)
+
+    (log/infof "Running previous migrations: %s"
+      (->> id-migration's keys (str/join ", ") ))
 
     (pg/with-connection [conn config]
 
       (doseq [[id migration]
               id-migration's]
 
-        (log/infof "Processing prev migration %s" id)
-
         (let [{:keys [slug
                       url-prev]}
               migration
 
+              title
+              (format "Processing prev migration %s" id)
+
+              dash
+              (letters (count title) \-)
+
               sql
               (some-> url-prev slurp)]
 
+          (log/infof dash)
+          (log/infof title)
+          (log/infof dash)
+
+          (log-sql url-prev sql)
+
           (when sql
-            (when verbose?
-              (log/infof sql))
             (pg/query conn sql))
           (pgh/delete conn
                       migrations-table
@@ -356,6 +425,9 @@
         {:keys [migrations
                 id-current]}
         scope
+
+        _
+        (validate-migration-id! migrations id-to)
 
         pending-migrations
         (rsubseq migrations > id-to <= id-current)]
