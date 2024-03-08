@@ -1,4 +1,7 @@
 (ns pg.migration.cli
+  "
+  Command line interface for migrations.
+  "
   (:gen-class)
   (:require
    [clojure.string :as str]
@@ -89,13 +92,11 @@
    OPT-HELP])
 
 
-;; ["-p" "3333" "create" "--id" "--slug"]
-;; ["-p" "3333" "list"]
-;; ["-p" "3333" "applied"]
-
-
-
-(defn render-erros [errors]
+(defn render-erros
+  "
+  Print CLI-related error messages.
+  "
+  [errors]
   (println "Errors:")
   (doseq [err errors]
     (println " -" err)))
@@ -107,6 +108,11 @@
 
 
 (defn exit
+  "
+  Terminate a program with a given status code
+  and an error message. The message gets sent to either
+  stdout or stderr depending on the status code.
+  "
   ([code]
    (exit code nil))
 
@@ -122,14 +128,24 @@
    (System/exit code)))
 
 
-(defmacro with-exit [& body]
+(defmacro with-exit
+  "
+  A macro that prevents terminating JVM
+  in favour of throwing an exception.
+  "
+  [& body]
   `(with-redefs [exit
                  (fn [& _#]
                    (throw (new Error "exit")))]
      ~@body))
 
 
-(defn parse-args [args cli-opt]
+(defn parse-args
+  "
+  A strict version of `parse-opts` that renders errors
+  and terminates the program.
+  "
+  [args cli-opt]
   (let [{:as parsed
          :keys [errors
                 summary]}
@@ -145,7 +161,11 @@
     parsed))
 
 
-(defn handle-migrate [config cmd-args]
+(defn handle-migrate
+  "
+  Handle the `migrate` sub-command.
+  "
+  [config cmd-args]
   (let [parsed
         (parse-args cmd-args
                     CLI-OPT-MIGRATE)
@@ -175,7 +195,11 @@
       (mig/migrate-all config))))
 
 
-(defn handle-rollback [config cmd-args]
+(defn handle-rollback
+  "
+  Handle the `rollback` sub-command.
+  "
+  [config cmd-args]
 
   (let [parsed
         (parse-args cmd-args
@@ -201,7 +225,6 @@
 
       :default
       (mig/rollback-one config))))
-
 
 
 (def CMD_HELP "help")
@@ -241,6 +264,9 @@
 
 
 (defn handle-create
+  "
+  Handle the `create` sub-command.
+  "
   [config cmd-args]
 
   (let [{:keys [options
@@ -271,7 +297,11 @@
     (println " -" cmd)))
 
 
-(defn handle-list [config cmd-args]
+(defn handle-list
+  "
+  Handle the `list` sub-command.
+  "
+  [config cmd-args]
   (let [scope
         (mig/make-scope config)
 
@@ -313,16 +343,26 @@
                     url-next
                     url-prev
                     applied?]}
-            migration]
+            migration
+
+            applied-str
+            (->> applied?
+                 (boolean)
+                 (format "%-8s"))]
 
         (println |
                  (format id-template id)
                  |
-                 (if applied? "true    " "false   ")
+                 applied-str
                  |
                  slug)))))
 
-(defn main [args & more]
+(defn main
+  "
+  A more convenient version of -main that accepts
+  a vector of args plus extra args.
+  "
+  [args & more]
 
   (let [args-all
         (-> [] (into args) (into more))

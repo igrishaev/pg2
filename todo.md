@@ -2,7 +2,7 @@
 - readme
 
 migrations
-- docstrings
+- rename to up/down?
 - demo
 - docs
 - lein plugin

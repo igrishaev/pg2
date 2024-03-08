@@ -1,4 +1,7 @@
 (ns pg.migration.fs
+  "
+  Utilities to handle both file and jar URLs.
+  "
   (:import
    java.io.File
    java.net.JarURLConnection
@@ -13,12 +16,20 @@
   `(throw (new Error (format ~template ~@args))))
 
 
-(defn path->url ^URL [^String path]
+(defn path->url
+  "
+  Turn a string path into a URL.
+  "
+  ^URL [^String path]
   (or (io/resource path)
       (error! "Resource %s doens't exist" path)))
 
 
 (defmulti url->children
+  "
+  Get child URLs for a given URL. The result
+  desn't unclude the given URL.
+  "
   (fn [^URL url]
     (.getProtocol url)))
 
