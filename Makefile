@@ -36,6 +36,6 @@ certs-generate:
 
 test:
 	lein sub install
-	lein sub test
+	PG_MIGRATION_PASS=test lein sub test
 
 .phony: test
