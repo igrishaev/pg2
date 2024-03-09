@@ -272,7 +272,7 @@
              (get-db-migrations CONFIG))))))
 
 
-(deftest test-cli-help
+(deftest test-cli-help-main
   (let [res
         (with-out-str
           (cli/with-exit
@@ -289,9 +289,9 @@ Global options:
   -c, --config CONNFIG     nil          Path to the .edn config file
   -p, --port PORT          5432         Port number
   -h, --host HOST          localhost    Host name
-  -u, --user USER          wzhivga      User
-  -w, --password PASSWORD               Password
-  -d, --database DATABASE  wzhivga      Database
+  -u, --user USER          ivan         User
+  -w, --password PASSWORD               Password (empty string by default)
+  -d, --database DATABASE  ivan         Database
       --table TABLE        :migrations  Migrations table
       --path PATH          migrations   Migrations path
 

@@ -58,10 +58,11 @@
     :id :user
     :default (System/getenv "USER")]
 
-   ["-w" "--password PASSWORD" "Password"
+   ["-w" "--password PASSWORD" "Password (empty string by default)"
     :id :password
     :default ""]
 
+   ;; TODO: fix default
    ["-d" "--database DATABASE" "Database"
     :id :database
     :default (System/getenv "USER")]

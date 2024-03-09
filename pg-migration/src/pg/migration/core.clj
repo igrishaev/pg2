@@ -26,7 +26,7 @@
 
 
 (def RE_FILE
-  #"(?i)^.*?/(\d+)(.*?)\.(prev|next)\.sql$")
+  #"(?i)^.*?/(\d+)(.*?)\.(prev|next|up|down)\.sql$")
 
 
 (def ^DateTimeFormatter DATETIME_PATTERN
@@ -170,10 +170,15 @@
           slug
           (cleanup-slug slug-raw)
 
-          direction
+          direction-keyword
           (-> direction-raw
               str/lower-case
-              keyword)]
+              keyword)
+
+          direction
+          (case direction-keyword
+            (:prev :down) :prev
+            (:next :up) :next)]
 
       {:id id
        :slug slug

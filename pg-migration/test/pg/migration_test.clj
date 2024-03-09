@@ -1,6 +1,7 @@
 (ns pg.migration-test
   (:import
-   java.net.URL)
+   java.net.URL
+   clojure.lang.PersistentTreeMap)
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
@@ -12,7 +13,32 @@
    [pg.migration.core :as mig]))
 
 
+(deftest test-read-migrations
+  (let [migrations
+        (mig/read-disk-migrations "migrations")]
+    (is (= 5 (count migrations)))
+    (is (instance? PersistentTreeMap migrations))))
+
+
 (deftest test-parse-file
+
+  (let [res
+        (-> "foo/bar/baz/0001-some-slug.UP.sql"
+            io/file
+            io/as-url
+            mig/parse-url)]
+
+    (is (= {:id 1, :slug "some slug", :direction :next}
+           (dissoc res :url))))
+
+  (let [res
+        (-> "foo/bar/baz/0001-some-slug.DoWn.sql"
+            io/file
+            io/as-url
+            mig/parse-url)]
+
+    (is (= {:id 1, :slug "some slug", :direction :prev}
+           (dissoc res :url))))
 
   (let [res
         (-> "foo/bar/baz/0001-some-slug.next.sql"
