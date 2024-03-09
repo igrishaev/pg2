@@ -2,7 +2,7 @@
 - readme
 
 migrations
-- rename to up/down?
+- fix default user env
 - demo
 - docs
 - lein plugin
