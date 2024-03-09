@@ -286,6 +286,7 @@ Synatax:
 
 Global options:
 
+  -c, --config CONNFIG     nil          Path to the .edn config file
   -p, --port PORT          5432         Port number
   -h, --host HOST          localhost    Host name
   -u, --user USER          wzhivga      User
@@ -463,3 +464,16 @@ Command-specific help:
 |     5 | true     | add some table
 "
            out))))
+
+
+(deftest test-cli-config-passed
+
+  (cli/with-exit
+    (cli/main ["-c" "config.example.edn" "migrate"]))
+
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}
+          {:id 4 :slug "prev only migration"}
+          {:id 5 :slug "add some table"}]
+         (get-db-migrations CONFIG))))

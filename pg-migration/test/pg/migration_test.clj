@@ -2,11 +2,13 @@
   (:import
    java.net.URL)
   (:require
-   [clojure.string :as str]
+   [clojure.edn :as edn]
    [clojure.java.io :as io]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
    [pg.honey :as pgh]
+   [pg.migration.cli :as cli]
    [pg.migration.core :as mig]))
 
 
@@ -230,3 +232,39 @@
            (-> migrations keys vec)))
 
     (is (= "drop table test_users;" sql))))
+
+
+(deftest test-read-edn-file
+  (let [result
+        (cli/parse-config "config.example.edn")]
+    (is (= {:host "127.0.0.1"
+            :port 10150
+            :user "test"
+            :password "test"
+            :database "test"
+            :migrations-table :migrations_test
+            :migrations-path "migrations"}
+           result))))
+
+
+(deftest test-env-edn-tag-ok
+  (let [input
+        "{:user #env USER}"
+
+        data
+        (edn/read-string {:readers cli/edn-readers}
+                         input)]
+
+    (is (-> data :user string?))))
+
+
+(deftest test-env-edn-tag-error
+  (let [input
+        "{:user #env :FOOBAR}"]
+    (try
+      (edn/read-string {:readers cli/edn-readers}
+                       input)
+      (is false)
+      (catch Error e
+        (is (= "Env variable FOOBAR is not set"
+               (ex-message e)))))))

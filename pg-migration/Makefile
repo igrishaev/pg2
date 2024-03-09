@@ -1,8 +1,8 @@
 
 repl:
-	lein with-profile +test repl
+	PG_MIGRATION_PASS=test lein with-profile +test repl
 
 test:
-	lein test
+	PG_MIGRATION_PASS=test lein test
 
 .PHONY: test

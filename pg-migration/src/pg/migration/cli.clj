@@ -3,20 +3,49 @@
   Command line interface for migrations.
   "
   (:gen-class)
+  (:import
+   java.io.PushbackReader)
   (:require
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [pg.migration.core :as mig]
    [pg.migration.log :as log]))
 
 
+(defmacro error! [template & args]
+  `(throw (new Error (format ~template ~@args))))
+
+
 (defn parse-int [string]
   (Integer/parseInt string))
 
 
+(def edn-readers
+  {'env
+   (fn [v]
+     (let [vname (name v)]
+       (or (System/getenv vname)
+           (error! "Env variable %s is not set" vname))))})
+
+
+(defn parse-config [path]
+  (some->> path
+           io/file
+           io/reader
+           (new PushbackReader)
+           (edn/read {:readers edn-readers})))
+
+
 (def CLI-OPT-MAIN
 
-  [["-p" "--port PORT" "Port number"
+  [["-c" "--config CONNFIG" "Path to the .edn config file"
+    :id :config
+    :default nil
+    :parse-fn parse-config]
+
+   ["-p" "--port PORT" "Port number"
     :id :port
     :default 5432
     :parse-fn parse-int]
@@ -146,6 +175,7 @@
   and terminates the program.
   "
   [args cli-opt]
+
   (let [{:as parsed
          :keys [errors
                 summary]}
@@ -357,6 +387,17 @@
                  |
                  slug)))))
 
+
+(def CONFIG-FIELDS
+  [:user
+   :database
+   :host
+   :port
+   :password
+   :migrations-table
+   :migrations-path])
+
+
 (defn main
   "
   A more convenient version of -main that accepts
@@ -376,15 +417,13 @@
                 summary]}
         parsed
 
-        config
-        (select-keys options
-                     [:user
-                      :database
-                      :host
-                      :port
-                      :password
-                      :migrations-table
-                      :migrations-path])
+        {:keys [config]}
+        options
+
+        config-full
+        (-> options
+            (select-keys CONFIG-FIELDS)
+            (merge config))
 
         [cmd & cmd-args]
         arguments]
@@ -395,16 +434,16 @@
       (handle-help summary)
 
       (= cmd CMD_MIGRATE)
-      (handle-migrate config cmd-args)
+      (handle-migrate config-full cmd-args)
 
       (= cmd CMD_ROLLBACK)
-      (handle-rollback config cmd-args)
+      (handle-rollback config-full cmd-args)
 
       (= cmd CMD_CREATE)
-      (handle-create config cmd-args)
+      (handle-create config-full cmd-args)
 
       (= cmd CMD_LIST)
-      (handle-list config cmd-args)
+      (handle-list config-full cmd-args)
 
       :else
       (handle-unknown-cmd cmd))))
