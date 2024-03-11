@@ -1734,7 +1734,15 @@ Each command has its own sup-options which we will describe below.
 Here is how you apply review the migrations:
 
 ~~~
-<lein or deps preamble> -h 127.0.0.1 -p 10150 -u test -w test -d test --table migrations_test --path migrations list
+<lein or deps preamble> \
+    -h 127.0.0.1 \
+    -p 10150 \
+    -u test \
+    -w test \
+    -d test \
+    --table migrations_test \
+    --path migrations \
+    list
 
 |    ID | Applied? | Slug
 | ----- | -------- | --------
@@ -1752,7 +1760,7 @@ Here is how you apply review the migrations:
 Lein preamble is usually something like this:
 
 ~~~
-> lein  run -m pg.migration.cli <ARGS>
+> lein run -m pg.migration.cli <ARGS>
 ~~~
 
 The `pg2-migration` library must be in dependencies. Sincle migrations are often
