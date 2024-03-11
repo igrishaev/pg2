@@ -83,6 +83,13 @@ classes are supported for reading and writing.
 - [Connection Pool](#connection-pool)
 - [Component integration](#component-integration)
 - [Ring middleware](#ring-middleware)
+- [Migrations](#migrations)
+  * [Concepts](#concepts)
+  * [Naming](#naming)
+  * [SQL](#sql)
+  * [Code-Driven Migrations (.edn and .clj)](#code-driven-migrations-edn-and-clj)
+  * [Migration Table and Location](#migration-table-and-location)
+  * [CLI Interface](#cli-interface)
 - [Debugging](#debugging)
 - [Running tests](#running-tests)
 - [Running benchmarks](#running-benchmarks)
@@ -126,6 +133,17 @@ objects with the `Lifecycle` protocol from the [Component][component] library.
 
 ;; deps
 com.github.igrishaev/pg2-component {:mvn/version "0.1.4"}
+~~~
+
+**Migrations**: a package that provides migration management: migrate forward,
+rollback, create, list applied migrations and so on.
+
+~~~clojure
+;; lein
+[com.github.igrishaev/pg2-migration "0.1.5]
+
+;; deps
+com.github.igrishaev/pg2-migration {:mvn/version "0.1.5"}
 ~~~
 
 ## Quick start (Demo)
@@ -1529,6 +1547,154 @@ namespaces are not supported by the wrapper.
 ## Component integration
 
 ## Ring middleware
+
+## Migrations
+
+The project provides its own migration engine through the `pg2-migration`
+package (see the Installation section). Like Migratus or Ragtime, it allows to
+grow the database schema continuously, track changes and apply them with care.
+
+### Concepts
+
+Migrations are SQL files that get applied to the database in certain order. A
+migration has an id and a direction: next/up or prev/down. Usually it's split on
+two files called `<id>.up.sql` and `<id>.down.sql` each of them holding SQL
+commands. Say, the -up file creates a table with an index, and the -down one
+drops the index first, and then the table.
+
+Migrations might have a slug: a short and human-friendly text describing
+changes. For example, in a file called `002.create-users-table.up.sql`, the slug
+is "Create users table".
+
+### Naming
+
+In PG2, the migration framework looks for files named according to the following
+pattern:
+
+~~~
+<id>.<slug>.<direction>.sql
+~~~
+
+where:
+
+- `id` is a Long number, for example 12345 (a counter), or 20240311 (date
+  precision), or 20240311235959 (date & time precision);
+
+- `slug` is an optional word or group of words joined with - or _, for example
+  `create-users-table-and-index` or `remove_some_view`. When rendered, both -
+  and _ are substituted with spaces, and the phrase is capitalized.
+
+- `direction` is either `prev/down` or `next/up`. Internally, `down` and `up`
+  are transformed to `prev` and `next` because these two have the same amount of
+  characters which makes file look better.
+
+Examples:
+
+- `001-create-users.next.sql`
+- `012-next-only-migration.up.sql`
+- `153-add-some-table.next.sql`
+
+Above, the leading zeroes in ids are used for better alignment only. Infernally
+they are transferred into 1, 12 and 153 Long numbers. Thus, `001`, `01` and `1`
+become the same id 1 after parsing.
+
+Each id has at most two directions: prev/down and next/up. On bootstrap, the
+engine checks that constraint to prevent weird behaviour. The table below shows
+that there are two rows which, after parsing, have the same (id, direction)
+pair. The bootstrap step will end up with an exception saying which files
+duplicate each other.
+
+| Filename                         | Parsed    |
+|----------------------------------|-----------|
+| `001-some-trivial-slug.next.sql` | (1, next) |
+| `001-some-simple-slug.next.sql`  | (1, next) |
+
+A migration might have only one direction, e.g. next/up or prev/down file only.
+
+When parsing, the registry gets ignored meaning `001-Create-Users.NEXT.sql` and
+`001-CREATE-USERS.next.SQL` produce the same maps.
+
+### SQL
+
+The files hold SQL expressions to be evaluated by the engine. Here is the
+content of the `001-create-users.next.sql` file:
+
+~~~sql
+create table IF NOT EXISTS test_users (
+  id serial primary key,
+  name text not null
+);
+
+begin;
+
+insert into test_users (name) values ('Ivan');
+insert into test_users (name) values ('Huan');
+insert into test_users (name) values ('Juan');
+
+commit;
+~~~
+
+Pay attention to the following features.
+
+- A single file might have as many SQL expressions as you want. There is no need
+  to separate them with magic comments like `--;;` as Migratus requires. The
+  whole file is executed in a single query. Use the standard semicolon to at the
+  end of each expression.
+
+- There is no a hidden transaction management. Transactions are up to you:
+  everything is explicit! Above, we wrap tree `INSERT` expressions into a
+  transaction. You can use save-points, rollbacks, or whatever you want. Note
+  that not all expressions can be inside a transaction. Say, the `CREATE TABLE`
+  one cannot and thus is out from the transaction scope.
+
+For granular transaction control, split your complex transaction on two or three
+files named like:
+
+```
+# direct parts
+001-huge-update-step-1.next.sql
+002-huge-update-step-2.next.sql
+003-huge-update-step-3.next.sql
+
+# backward counterparts
+003-huge-update-step-3.prev.sql
+002-huge-update-step-2.prev.sql
+001-huge-update-step-1.prev.sql
+```
+
+### Code-Driven Migrations (.edn and .clj)
+
+At the moment, nither .edn nor .clj transactions are not supported. This is by
+design as I'm highly agains mixing SQL and Clojure. Everytime I see an EDN
+transaction that points to a Clojure function, I get angry. Mixing these two for
+database management is the worst idea one can come up with. Please, if you're
+thinking about migrating the database with Clojure, close you laptop and have a
+walk to the nearest park.
+
+### Migration Table and Location
+
+All the applied migrations are tracked in a database table called `migrations`
+by default. The engine saves the id and the slug or a migration applied as well
+as the current datetime of the event. The datetime field has the time zone. Here
+is the structure of the table:
+
+~~~sql
+CREATE TABLE IF NOT EXISTS migrations (
+  id BIGINT PRIMARY KEY,
+  slug TEXT,
+  created_at timestamp with time zone not null default current_timestamp
+)
+~~~
+
+Every time you apply a migration, a new record is inserted into the table. On
+rollback, the corresponding migration is deleted.
+
+You can override the name of the table in settings (see below).
+
+### CLI Interface
+
+The migration engine is controlled with both API and CLI interface. We will
+start with CLI first.
 
 ## Debugging
 
