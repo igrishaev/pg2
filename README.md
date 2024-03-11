@@ -90,6 +90,9 @@ classes are supported for reading and writing.
   * [Code-Driven Migrations (.edn and .clj)](#code-driven-migrations-edn-and-clj)
   * [Migration Table and Location](#migration-table-and-location)
   * [CLI Interface](#cli-interface)
+    + [Commands](#commands)
+    + [Lein examples](#lein-examples)
+    + [Deps.edn examples](#depsedn-examples)
 - [Debugging](#debugging)
 - [Running tests](#running-tests)
 - [Running benchmarks](#running-benchmarks)
@@ -1706,7 +1709,14 @@ options, a command, and command-specific options:
 General options are:
 
 ```
-123
+-c, --config CONNFIG                               Path to the .edn config file
+-p, --port PORT          5432                      Port number
+-h, --host HOST          localhost                 Host name
+-u, --user USER          The current USER env var  User
+-w, --password PASSWORD  <empty string>            Password
+-d, --database DATABASE  The current USER env var  Database
+    --table TABLE        :migrations               Migrations table
+    --path PATH          migrations                Migrations path
 ```
 
 The list of the commands:
@@ -1721,9 +1731,74 @@ The list of the commands:
 
 Each command has its own sup-options which we will describe below.
 
-#### Lein example
+Here is how you apply review the migrations:
 
-#### Deps.edn example
+~~~
+<lein or deps preamble> -h 127.0.0.1 -p 10150 -u test -w test -d test --table migrations_test --path migrations list
+
+|    ID | Applied? | Slug
+| ----- | -------- | --------
+|     1 | false    | create users
+|     2 | false    | create profiles
+|     3 | false    | next only migration
+|     4 | false    | prev only migration
+|     5 | false    | add some table
+~~~
+
+#### Commands
+
+#### Lein examples
+
+Lein preamble is usually something like this:
+
+~~~
+> lein  run -m pg.migration.cli <ARGS>
+~~~
+
+The `pg2-migration` library must be in dependencies. Sincle migrations are often
+run aside from the main application, they're put into a separate profile, for
+example:
+
+~~~clojure
+:profiles
+{:migrations
+ {:main pg.migration.cli
+  :resource-paths ["extra/resources"]
+  :dependencies
+  [[com.github.igrishaev/pg2-core ...]]}}
+~~~
+
+Above, the `migrations` profile has the dependency and the `:main`
+attribute. Now run `lein run` with migration args:
+
+~~~clojure
+> lein with-profile +migrations run <options> migrate
+~~~
+
+#### Deps.edn examples
+
+~~~clojure
+{:aliases
+ {:migrations
+  {:extra-deps
+   {com.github.igrishaev/pg2-migration {:mvn/version "0.1.5-SNAPSHOT"}}
+   :extra-paths
+   ["test/resources"]
+   :main-opts
+   ["-m" "pg.migration.cli"
+    "-h" "127.0.0.1"
+    "-p" "10150"
+    "-u" "test"
+    "-w" "test"
+    "-d" "test"
+    "--table" "migrations_test"
+    "--path" "migrations"
+    "list"]}}}
+~~~
+
+~~~
+> clj -M:migrations
+~~~
 
 ## Debugging
 
