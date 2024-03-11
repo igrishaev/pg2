@@ -1696,6 +1696,35 @@ You can override the name of the table in settings (see below).
 The migration engine is controlled with both API and CLI interface. We will
 start with CLI first.
 
+The `pg.migration.cli` namespaces acts like an entry point. It accepts general
+options, a command, and command-specific options:
+
+```
+<global options> <command> <command options>
+```
+
+General options are:
+
+```
+123
+```
+
+The list of the commands:
+
+| Name     | Meaning                                                        |
+|----------|----------------------------------------------------------------|
+| create   | Create a pair of blank up & down migration files               |
+| help     | Pring the help message                                         |
+| list     | Show all the migrations and their status (applied or not)      |
+| migrate  | Migrate forward (everything, next only, or up to a certain ID) |
+| rollback | Rollback (the current, everything, or down to a certain ID)    |
+
+Each command has its own sup-options which we will describe below.
+
+#### Lein example
+
+#### Deps.edn example
+
 ## Debugging
 
 ## Running tests
