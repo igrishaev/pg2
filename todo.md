@@ -2,7 +2,6 @@
 - readme
 
 migrations
-- fix default user env
 - demo
 - docs
 - lein plugin

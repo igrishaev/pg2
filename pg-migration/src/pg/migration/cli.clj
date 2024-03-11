@@ -38,11 +38,16 @@
            (edn/read {:readers edn-readers})))
 
 
+(defn current-user [_]
+  (or (System/getenv "USER") ""))
+
+
 (def CLI-OPT-MAIN
 
   [["-c" "--config CONNFIG" "Path to the .edn config file"
     :id :config
     :default nil
+    :default-desc ""
     :parse-fn parse-config]
 
    ["-p" "--port PORT" "Port number"
@@ -56,16 +61,18 @@
 
    ["-u" "--user USER" "User"
     :id :user
-    :default (System/getenv "USER")]
+    :default-desc "The current USER env var"
+    :default-fn current-user]
 
-   ["-w" "--password PASSWORD" "Password (empty string by default)"
+   ["-w" "--password PASSWORD" "Password"
     :id :password
+    :default-desc "<empty string>"
     :default ""]
 
-   ;; TODO: fix default
    ["-d" "--database DATABASE" "Database"
     :id :database
-    :default (System/getenv "USER")]
+    :default-desc "The current USER env var"
+    :default-fn current-user]
 
    [nil "--table TABLE" "Migrations table"
     :id :migrations-table

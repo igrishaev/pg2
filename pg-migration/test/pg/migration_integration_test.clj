@@ -286,14 +286,14 @@ Synatax:
 
 Global options:
 
-  -c, --config CONNFIG     nil          Path to the .edn config file
-  -p, --port PORT          5432         Port number
-  -h, --host HOST          localhost    Host name
-  -u, --user USER          ivan         User
-  -w, --password PASSWORD               Password (empty string by default)
-  -d, --database DATABASE  ivan         Database
-      --table TABLE        :migrations  Migrations table
-      --path PATH          migrations   Migrations path
+  -c, --config CONNFIG                               Path to the .edn config file
+  -p, --port PORT          5432                      Port number
+  -h, --host HOST          localhost                 Host name
+  -u, --user USER          The current USER env var  User
+  -w, --password PASSWORD  <empty string>            Password
+  -d, --database DATABASE  The current USER env var  Database
+      --table TABLE        :migrations               Migrations table
+      --path PATH          migrations                Migrations path
 
 Supported commands:
 
