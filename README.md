@@ -87,12 +87,14 @@ classes are supported for reading and writing.
   * [Concepts](#concepts)
   * [Naming](#naming)
   * [SQL](#sql)
-  * [Code-Driven Migrations (.edn and .clj)](#code-driven-migrations-edn-and-clj)
-  * [Migration Table and Location](#migration-table-and-location)
+  * [No Code-Driven Migrations](#no-code-driven-migrations)
+  * [Migration Resources](#migration-resources)
+  * [Migration Table](#migration-table)
   * [CLI Interface](#cli-interface)
-    + [Commands](#commands)
-    + [Lein examples](#lein-examples)
-    + [Deps.edn examples](#depsedn-examples)
+  * [Config](#config)
+  * [Commands](#commands)
+  * [Lein examples](#lein-examples)
+  * [Deps.edn examples](#depsedn-examples)
 - [Debugging](#debugging)
 - [Running tests](#running-tests)
 - [Running benchmarks](#running-benchmarks)
@@ -1641,7 +1643,7 @@ Pay attention to the following features.
 
 - A single file might have as many SQL expressions as you want. There is no need
   to separate them with magic comments like `--;;` as Migratus requires. The
-  whole file is executed in a single query. Use the standard semicolon to at the
+  whole file is executed in a single query. Use the standard semicolon at the
   end of each expression.
 
 - There is no a hidden transaction management. Transactions are up to you:
@@ -1665,7 +1667,7 @@ files named like:
 001-huge-update-step-1.prev.sql
 ```
 
-### Code-Driven Migrations (.edn and .clj)
+### No Code-Driven Migrations
 
 At the moment, nither .edn nor .clj transactions are not supported. This is by
 design as I'm highly agains mixing SQL and Clojure. Everytime I see an EDN
@@ -1674,7 +1676,17 @@ database management is the worst idea one can come up with. Please, if you're
 thinking about migrating the database with Clojure, close you laptop and have a
 walk to the nearest park.
 
-### Migration Table and Location
+### Migration Resources
+
+Migration files are stored in project resources. The default search path is
+`migrations`. Thus, their physical location is `resources/migrations`. The
+engine scans the `migrations` resource for children files. Files from nested
+directories are also taken into account.
+
+The engine supports Jar resources when running the code from uberjar. The
+resource path can be overridden with settings.
+
+### Migration Table
 
 All the applied migrations are tracked in a database table called `migrations`
 by default. The engine saves the id and the slug or a migration applied as well
@@ -1719,6 +1731,10 @@ General options are:
     --path PATH          migrations                Migrations path
 ```
 
+Most of the options have default values. Both name of the user and the database
+come from the HOME `environment` variable. The password is an empty string by
+default. For local trusted connections, the password might not be required.
+
 The list of the commands:
 
 | Name     | Meaning                                                        |
@@ -1731,7 +1747,7 @@ The list of the commands:
 
 Each command has its own sup-options which we will describe below.
 
-Here is how you apply review the migrations:
+Here is how you review the migrations:
 
 ~~~
 <lein or deps preamble> \
@@ -1746,16 +1762,105 @@ Here is how you apply review the migrations:
 
 |    ID | Applied? | Slug
 | ----- | -------- | --------
-|     1 | false    | create users
+|     1 | true     | create users
 |     2 | false    | create profiles
 |     3 | false    | next only migration
 |     4 | false    | prev only migration
 |     5 | false    | add some table
 ~~~
 
-#### Commands
+Every command has its own arguments and help message. For example, to review the
+`create` command, run:
 
-#### Lein examples
+~~~
+lein with-profile +migrations run -m pg.migration.cli -c config.example.edn create --help
+
+Syntax:
+      --id ID             The id of the migration (auto-generated if not set)
+      --slug SLUG         Optional slug (e.g. 'create-users-table')
+      --help       false  Show help message
+~~~
+
+### Config
+
+Passing `-u`, `-h`, and other arguments all the time is inconvenient. The engine
+can read all them at once from a config file. Specify the path to the .edn
+config using the `-c` parameter:
+
+~~~
+<lein/deps> -c config.edn list
+~~~
+
+The `config.edn` file has the following structure:
+
+~~~clojure
+{:host "127.0.0.1"
+ :port 10150
+ :user "test"
+ :password #env PG_PASSWORD
+ :database "test"
+ :migrations-table :migrations_test
+ :migrations-path "migrations"}
+~~~
+
+The `:migrations-table` field must be a keyword and it takes place in a HoneySQL
+map.
+
+The `:migrations-path` field is a string referencing a resource with migrations.
+
+To not expose the `:password` field, it's wrapped with the `#env` tag. The
+engine reads the "PG_PASSWORD" environment variable for password. When it's not
+set, an exception is thrown.
+
+### Commands
+
+The `create` command creates a pair of two blank migration files. Then id, if
+not set, is generated automatically using the `YYYYmmddHHMMSS` pattern.
+
+~~~
+lein with-profile +migration run -m pg.migration.cli \
+  -c config.example.edn \
+  create
+
+ls -l migrations
+
+20240312074156.next.sql
+20240312074156.prev.sql
+~~~
+
+You can also provide a custom id and a slug as well:
+
+~~~
+lein with-profile +migration run -m pg.migration.cli \
+  -c config.example.edn \
+  create \
+  --id 100500 \
+  --slug 'some huge changes in tables'
+
+ll migrations
+
+100500.some-huge-changes-in-tables.next.sql
+100500.some-huge-changes-in-tables.prev.sql
+20240312074156.next.sql
+20240312074156.prev.sql
+~~~
+
+The `list` command renders all the migrations stored in resources and their
+status: whether they are applied or not.
+
+~~~clojure
+lein with-profile +migration run -m pg.migration.cli -c config.example.edn list
+
+|    ID | Applied? | Slug
+| ----- | -------- | --------
+|     1 | true     | create users
+|     2 | true     | create profiles
+|     3 | true     | next only migration
+|     4 | false    | prev only migration
+|     5 | false    | add some table
+~~~
+
+### Lein examples
 
 Lein preamble is usually something like this:
 
@@ -1783,7 +1888,7 @@ attribute. Now run `lein run` with migration args:
 > lein with-profile +migrations run <options> migrate
 ~~~
 
-#### Deps.edn examples
+### Deps.edn examples
 
 ~~~clojure
 {:aliases
