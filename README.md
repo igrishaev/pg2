@@ -1557,26 +1557,25 @@ namespaces are not supported by the wrapper.
 
 ## Migrations
 
-The project provides its own migration engine through the `pg2-migration`
-package (see the Installation section). Like Migratus or Ragtime, it allows to
-grow the database schema continuously, track changes and apply them with care.
+PG2 provides its own migration engine through the `pg2-migration` package (see
+the "Installation" section). Like Migratus or Ragtime, it allows to grow the
+database schema continuously, track changes and apply them with care.
 
 ### Concepts
 
-Migrations are SQL files that get applied to the database in certain order. A
+Migrations are SQL files that are applied to the database in certain order. A
 migration has an id and a direction: next/up or prev/down. Usually it's split on
-two files called `<id>.up.sql` and `<id>.down.sql` each of them holding SQL
-commands. Say, the -up file creates a table with an index, and the -down one
-drops the index first, and then the table.
+two files called `<id>.up.sql` and `<id>.down.sql` holding SQL commands. Say,
+the -up file creates a table with an index, and the -down one drops the index
+first, and then the table.
 
-Migrations might have a slug: a short and human-friendly text describing
+Migrations might have a slug: a short human-friendly text describing
 changes. For example, in a file called `002.create-users-table.up.sql`, the slug
 is "Create users table".
 
 ### Naming
 
-In PG2, the migration framework looks for files named according to the following
-pattern:
+In PG2, the migration framework looks for files matching the following pattern:
 
 ~~~
 <id>.<slug>.<direction>.sql
@@ -1587,13 +1586,13 @@ where:
 - `id` is a Long number, for example 12345 (a counter), or 20240311 (date
   precision), or 20240311235959 (date & time precision);
 
-- `slug` is an optional word or group of words joined with - or _, for example
-  `create-users-table-and-index` or `remove_some_view`. When rendered, both -
-  and _ are substituted with spaces, and the phrase is capitalized.
+- `slug` is an optional word or group of words joined with `-` or `_`, for
+  example `create-users-table-and-index` or `remove_some_view`. When rendered,
+  both `-` and `_` are replaced with spaces, and the phrase is capitalized.
 
 - `direction` is either `prev/down` or `next/up`. Internally, `down` and `up`
   are transformed to `prev` and `next` because these two have the same amount of
-  characters which makes file look better.
+  characters and files look better.
 
 Examples:
 
@@ -1606,10 +1605,9 @@ they are transferred into 1, 12 and 153 Long numbers. Thus, `001`, `01` and `1`
 become the same id 1 after parsing.
 
 Each id has at most two directions: prev/down and next/up. On bootstrap, the
-engine checks that constraint to prevent weird behaviour. The table below shows
-that there are two rows which, after parsing, have the same (id, direction)
-pair. The bootstrap step will end up with an exception saying which files
-duplicate each other.
+engine checks it to prevent weird behaviour. The table below shows there are two
+rows which, after parsing, have the same (id, direction) pair. The bootstrap
+step will end up with an exception saying which files duplicate each other.
 
 | Filename                         | Parsed    |
 |----------------------------------|-----------|
@@ -1618,8 +1616,9 @@ duplicate each other.
 
 A migration might have only one direction, e.g. next/up or prev/down file only.
 
-When parsing, the registry gets ignored meaning `001-Create-Users.NEXT.sql` and
-`001-CREATE-USERS.next.SQL` produce the same maps.
+When parsing, the registry is ignored meaning that both
+`001-Create-Users.NEXT.sql` and `001-CREATE-USERS.next.SQL` files produce the
+same map.
 
 ### SQL
 
@@ -1632,30 +1631,30 @@ create table IF NOT EXISTS test_users (
   name text not null
 );
 
-begin;
+BEGIN;
 
 insert into test_users (name) values ('Ivan');
 insert into test_users (name) values ('Huan');
 insert into test_users (name) values ('Juan');
 
-commit;
+COMMIT;
 ~~~
 
-Pay attention to the following features.
+Pay attention to the following points.
 
 - A single file might have as many SQL expressions as you want. There is no need
   to separate them with magic comments like `--;;` as Migratus requires. The
   whole file is executed in a single query. Use the standard semicolon at the
   end of each expression.
 
-- There is no a hidden transaction management. Transactions are up to you:
-  everything is explicit! Above, we wrap tree `INSERT` expressions into a
+- There is no a hidden transaction management. Transactions are up to you: they
+  are explicit! Above, we wrap tree `INSERT` queries into a single
   transaction. You can use save-points, rollbacks, or whatever you want. Note
-  that not all expressions can be inside a transaction. Say, the `CREATE TABLE`
-  one cannot and thus is out from the transaction scope.
+  that not all expressions can be in a transaction. Say, the `CREATE TABLE` one
+  cannot and thus is out from the transaction scope.
 
-For granular transaction control, split your complex transaction on two or three
-files named like:
+For granular transaction control, split your complex changes on two or three
+files named like this:
 
 ```
 # direct parts
@@ -1671,28 +1670,28 @@ files named like:
 
 ### No Code-Driven Migrations
 
-At the moment, nither .edn nor .clj transactions are not supported. This is by
-design as I'm highly agains mixing SQL and Clojure. Everytime I see an EDN
-transaction that points to a Clojure function, I get angry. Mixing these two for
-database management is the worst idea one can come up with. Please, if you're
-thinking about migrating the database with Clojure, close you laptop and have a
-walk to the nearest park.
+At the moment, neither `.edn` nor `.clj` migrations are supported. This is by
+design because personally I'm highly against mixing SQL and Clojure. Every time
+I see an EDN transaction, I get angry. Mixing these two for database management
+is the worst idea one can come up with. If you're thinking about migrating a
+database with Clojure, please close you laptop and have a walk to the nearest
+park.
 
 ### Migration Resources
 
 Migration files are stored in project resources. The default search path is
 `migrations`. Thus, their physical location is `resources/migrations`. The
 engine scans the `migrations` resource for children files. Files from nested
-directories are also taken into account.
+directories are also taken into account. The engine supports Jar resources when
+running the code from an uberjar.
 
-The engine supports Jar resources when running the code from uberjar. The
-resource path can be overridden with settings.
+The resource path can be overridden with settings.
 
 ### Migration Table
 
 All the applied migrations are tracked in a database table called `migrations`
 by default. The engine saves the id and the slug or a migration applied as well
-as the current datetime of the event. The datetime field has the time zone. Here
+as the current timestamp of the event. The timestamp field has a time zone. Here
 is the structure of the table:
 
 ~~~sql
@@ -1704,17 +1703,17 @@ CREATE TABLE IF NOT EXISTS migrations (
 ~~~
 
 Every time you apply a migration, a new record is inserted into the table. On
-rollback, the corresponding migration is deleted.
+rollback, a corresponding migration is deleted.
 
 You can override the name of the table in settings (see below).
 
 ### CLI Interface
 
-The migration engine is controlled with both API and CLI interface. We will
-start with CLI first.
+The migration engine is controlled with both API and CLI interface. Let's review
+CLI first.
 
-The `pg.migration.cli` namespaces acts like an entry point. It accepts general
-options, a command, and command-specific options:
+The `pg.migration.cli` namespaces acts like the main entry point. It accepts
+general options, a command, and command-specific options:
 
 ```
 <global options> <command> <command options>
@@ -1723,7 +1722,7 @@ options, a command, and command-specific options:
 General options are:
 
 ```
--c, --config CONNFIG                               Path to the .edn config file
+-c, --config CONNFIG     migration.config.edn      Path to the .edn config file
 -p, --port PORT          5432                      Port number
 -h, --host HOST          localhost                 Host name
 -u, --user USER          The current USER env var  User
@@ -1733,21 +1732,21 @@ General options are:
     --path PATH          migrations                Migrations path
 ```
 
-Most of the options have default values. Both name of the user and the database
-come from the HOME `environment` variable. The password is an empty string by
-default. For local trusted connections, the password might not be required.
+Most of the options have default values. Both user and database names come from
+the `USER` environment variable. The password is an empty string by default. For
+local trusted connections, the password might not be required.
 
 The list of the commands:
 
-| Name     | Meaning                                                        |
-|----------|----------------------------------------------------------------|
-| create   | Create a pair of blank up & down migration files               |
-| help     | Pring the help message                                         |
-| list     | Show all the migrations and their status (applied or not)      |
-| migrate  | Migrate forward (everything, next only, or up to a certain ID) |
-| rollback | Rollback (the current, everything, or down to a certain ID)    |
+| Name     | Meaning                                                         |
+|----------|-----------------------------------------------------------------|
+| create   | Create a pair of blank up & down migration files                |
+| help     | Print a help message                                            |
+| list     | Show all the migrations and their status (applied or not)       |
+| migrate  | Migrate forward (everything, next only, or up to a certain ID)  |
+| rollback | Rollback (the current one, everything, or down to a certain ID) |
 
-Each command has its own sup-options which we will describe below.
+Each command has its own sub-options which we will describe below.
 
 Here is how you review the migrations:
 
@@ -1786,8 +1785,9 @@ Syntax:
 ### Config
 
 Passing `-u`, `-h`, and other arguments all the time is inconvenient. The engine
-can read all them at once from a config file. The default path is
-`migration.config.edn`. Override path to the config using the `-c` parameter:
+can read them at once from a config file. The default config location is
+`migration.config.edn`. Override the path to the config using the `-c`
+parameter:
 
 ~~~
 <lein/deps> -c config.edn list
@@ -1805,21 +1805,22 @@ The config file has the following structure:
  :migrations-path "migrations"}
 ~~~
 
-The `:migrations-table` field must be a keyword and it takes place in a HoneySQL
-map.
+The `:migrations-table` field must be a keyword because it takes place in a
+HoneySQL map.
 
 The `:migrations-path` field is a string referencing a resource with migrations.
 
-To not expose the `:password` field, it's wrapped with the `#env` tag. The
-engine reads the "PG_PASSWORD" environment variable for password. When it's not
-set, an exception is thrown.
+Pay attention to the `#env` tag. The engine uses custom readers when loading a
+config. The tag reads the actual value from an environment variable. Thus, the
+database password won't be exposed to everyone. When the variable is not set, an
+exception is thrown.
 
 ### Commands
 
 #### Create
 
-The `create` command makes a pair of two blank migration files. Then id, if not
-set, is generated automatically using the `YYYYmmddHHMMSS` pattern.
+The `create` command makes a pair of two blank migration files. If not set, the
+id is generated automatically using the `YYYYmmddHHMMSS` pattern.
 
 ~~~
 lein with-profile +migration run -m pg.migration.cli \
@@ -2112,16 +2113,16 @@ In other words: this is a conflict:
 id        applied?
 20240312  true
 20240315  false
-20240316  true
+20240316  true  ;; applied before 20240315
 ~~~
 
-And this is a salutation:
+And this is a solution:
 
 ~~~
 id        applied?
 20240312  true
 20240316  true
-20240317  false
+20240317  false ;; 20240315 renamed to 20240317
 ~~~
 
 ## Debugging
