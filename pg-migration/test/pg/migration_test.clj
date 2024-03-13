@@ -20,6 +20,11 @@
     (is (instance? PersistentTreeMap migrations))))
 
 
+(deftest test-text->slug
+  (is (= "aaasss__fghj"
+         (mig/text->slug " \r \n \t AAAsss@__#))$%^&FGHJ??|"))))
+
+
 (deftest test-parse-file
 
   (let [res

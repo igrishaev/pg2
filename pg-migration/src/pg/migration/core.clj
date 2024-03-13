@@ -69,8 +69,8 @@
   (-> text
       (str/lower-case)
       (str/trim)
-      (str/replace #"\s+" " ")
-      (str/replace #"\s" "-")))
+      (str/replace #"\s+" "-")
+      (str/replace #"[^a-zA-Z0-9-_]" "")))
 
 
 (defn make-file-name

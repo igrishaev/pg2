@@ -469,7 +469,7 @@ Command-specific help:
 (deftest test-cli-config-passed
 
   (cli/with-exit
-    (cli/main ["-c" "config.example.edn" "migrate"]))
+    (cli/main ["-c" "migration.config.edn" "migrate"]))
 
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}

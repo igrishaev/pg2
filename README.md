@@ -2004,7 +2004,125 @@ Migrate:
 
 ### API Interface
 
+There is a way to call the migration engine in your code. The
+`pg.migration.core` namespace provides basic functions to list, create, migrate,
+and rollback migrations.
+
+To migrate, call one of the following functions: `migrate-to`, `migrate-all`,
+and `migrate-one`. All of them accept a config map:
+
+~~~clojure
+(ns demo
+  (:require
+   [pg.migration.core :as mig]))
+
+(def CONFIG
+  {:host "127.0.0.1"
+   :port 5432
+   :user "test"
+   :password "secret"
+   :database "test"
+   :migrations-table :test_migrations
+   :migrations-path "migrations"})
+
+;; migrate all pinding migrations
+(mig/migrate-all CONFIG)
+
+;; migrate only one next migration
+(mig/migrate-one CONFIG)
+
+;; migrate to a certain migration
+(mig/migrate-to CONFIG 20240313)
+~~~
+
+The same applies to rollback:
+
+~~~clojure
+;; rollback all previously applied migrations
+(mig/rollback-all CONFIG)
+
+;; rollback the current migration
+(mig/migrate-one CONFIG)
+
+;; rollback to the given migration
+(mig/rollback-to CONFIG 20230228)
+~~~
+
+The `read-disk-migrations` function reads migrations from disk. It returns a
+sorted map but without information about whether any migration has been applied:
+
+~~~clojure
+(mig/read-disk-migrations "migrations")
+
+{1
+ {:id 1
+  :slug "create users"
+  :url-prev #object[java.net.URL "file:/.../migrations/001-create-users.prev.sql"]
+  :url-next #object[java.net.URL "file:/.../migrations/001-create-users.next.sql"]}
+ 2
+ {:id 2
+  :slug "create profiles"
+  :url-prev #object[java.net.URL "file:/.../migrations/foobar/002-create-profiles.prev.sql"]
+  :url-next #object[java.net.URL "file:/.../migrations/foobar/002-create-profiles.next.sql"]}
+ ...}
+~~~
+
+The `make-scope` function accepts a config map and returns a scope map. The
+scope map knows everything the state of migrations, namely: which of them have
+been applied, what is the current migration, the table name, the resource path,
+and more.
+
+The function `create-migration-files` creates and returns a pair of empty SQL
+files. By default, the id is generated from the current date & time, and the
+slug is missing:
+
+~~~clojure
+(create-migration-files "migrations")
+
+[#object[java.io.File "migrations/20240313120122.prev.sql"]
+ #object[java.io.File "migrations/20240313120122.next.sql"]]
+
+(create-migration-files "migrations" {:id 12345 :slug "Hello migration"})
+
+[#object[java.io.File "migrations/12345.hello-migration.prev.sql"]
+ #object[java.io.File "migrations/12345.hello-migration.next.sql"]]
+~~~
+
 ### Conflicts
+
+On bootstrap, the engine always checks migrations for conflicts. A conflict is a
+situation when a migration with less id has been applied before a migration
+with greater id. Usually it happens when two developers create migrations in
+parallel and then merge then in a wrong order. For example:
+
+- the latest migration id is 20240312;
+- developer A makes a new branch and creates a migration 20240315;
+- the next day, developer B opens a new branch with migration 20240316;
+- dev. B merges his branch, now we have 20240312, then 20240316;
+- dev. A merges his branch, and we have 20240312, 20240316, 20240315.
+
+When you try to apply migration 20240315, the engine will check if 20240316 is
+already applied. If yes, an exception pops up saying which migration causes the
+problem (these are 20240316 and 20240315). To recover from the conflict, just
+rename 20240315 to 20240317.
+
+In other words: this is a conflict:
+
+~~~
+id        applied?
+20240312  true
+20240315  false
+20240316  true
+~~~
+
+And this is a salutation:
+
+~~~
+id        applied?
+20240312  true
+20240316  true
+20240317  false
+~~~
 
 ## Debugging
 

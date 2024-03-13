@@ -342,8 +342,11 @@
       (render-summary summary)
 
       :else
-      (mig/create-migration-files migrations-path
-                                  {:id id :slug slug}))))
+      (let [[file-prev file-next]
+            (mig/create-migration-files migrations-path
+                                  {:id id :slug slug})]
+        (println (str file-prev))
+        (println (str file-next))))))
 
 
 (defn handle-unknown-cmd [cmd]
