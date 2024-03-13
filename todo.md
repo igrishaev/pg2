@@ -57,15 +57,4 @@ migrations
 - verify peer name? https://github.com/pgjdbc/pgjdbc/blob/5b8c2719806a9614aedeb5ee8a8b9e2b96432d28/pgjdbc/src/main/java/org/postgresql/ssl/MakeSSL.java#L30
 
 
-CLI interface
- lein
- deps
- edn config
-  env tag
-
-API interface
- Running from code
-
-conflicts
-
-generate migration files
+when create, print files

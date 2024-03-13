@@ -286,7 +286,7 @@ Synatax:
 
 Global options:
 
-  -c, --config CONNFIG                               Path to the .edn config file
+  -c, --config CONNFIG     migration.config.edn      Path to the .edn config file
   -p, --port PORT          5432                      Port number
   -h, --host HOST          localhost                 Host name
   -u, --user USER          The current USER env var  User

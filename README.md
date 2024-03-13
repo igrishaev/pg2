@@ -95,6 +95,8 @@ classes are supported for reading and writing.
   * [Commands](#commands)
   * [Lein examples](#lein-examples)
   * [Deps.edn examples](#depsedn-examples)
+  * [API Interface](#api-interface)
+  * [Conflicts](#conflicts)
 - [Debugging](#debugging)
 - [Running tests](#running-tests)
 - [Running benchmarks](#running-benchmarks)
@@ -1784,14 +1786,14 @@ Syntax:
 ### Config
 
 Passing `-u`, `-h`, and other arguments all the time is inconvenient. The engine
-can read all them at once from a config file. Specify the path to the .edn
-config using the `-c` parameter:
+can read all them at once from a config file. The default path is
+`migration.config.edn`. Override path to the config using the `-c` parameter:
 
 ~~~
 <lein/deps> -c config.edn list
 ~~~
 
-The `config.edn` file has the following structure:
+The config file has the following structure:
 
 ~~~clojure
 {:host "127.0.0.1"
@@ -1814,8 +1816,10 @@ set, an exception is thrown.
 
 ### Commands
 
-The `create` command creates a pair of two blank migration files. Then id, if
-not set, is generated automatically using the `YYYYmmddHHMMSS` pattern.
+#### Create
+
+The `create` command makes a pair of two blank migration files. Then id, if not
+set, is generated automatically using the `YYYYmmddHHMMSS` pattern.
 
 ~~~
 lein with-profile +migration run -m pg.migration.cli \
@@ -1845,6 +1849,8 @@ ll migrations
 20240312074156.prev.sql
 ~~~
 
+#### List
+
 The `list` command renders all the migrations stored in resources and their
 status: whether they are applied or not.
 
@@ -1858,6 +1864,59 @@ lein with-profile +migration run -m pg.migration.cli -c config.example.edn list
 |     3 | true     | next only migration
 |     4 | false    | prev only migration
 |     5 | false    | add some table
+~~~
+
+#### Migrate
+
+The `migrate` command applies pending migrations to the database. By default,
+all the migrations that have not been applied are processed. You can change this
+behaviour using these flags:
+
+~~~
+... -c config.example.edn migrate --help
+
+Syntax:
+      --all           Migrate all the pending migrations
+      --one           Migrate next a single pending migration
+      --to ID         Migrate next to certain migration
+      --help   false  Show help message
+~~~
+
+The `--one` flag means, only one next migration will be applied. If `--to`
+parameter set, only migrations up to this given ID are processed. Examples:
+
+~~~bash
+... migrate
+... migrate --all
+... migrate --one
+... migrate --to 123
+~~~
+
+#### Rollback
+
+The `rollback` command applies reverting changes to the database and removes a
+corresponding record from the table. By default, only the current migration is
+rolled back.
+
+~~~
+... -c config.example.edn rollback --help
+
+Syntax:
+      --all           Rollback all the previous migrations
+      --one           Rollback to the previous migration
+      --to ID         Rollback to certain migration
+      --help   false  Show help message
+~~~
+
+The `--one` argument is the default behaviour. When `--all` is passed, all the
+backward migrations are processed. To rollback to a certain migration, pass
+`--to ID`. Examples:
+
+~~~
+... rollback
+... rollback --one
+... rollback --to 20240515
+... rollback --all
 ~~~
 
 ### Lein examples
@@ -1884,17 +1943,25 @@ example:
 Above, the `migrations` profile has the dependency and the `:main`
 attribute. Now run `lein run` with migration args:
 
-~~~clojure
-> lein with-profile +migrations run <options> migrate
+~~~bash
+> lein with-profile +migrations run <options> <cmd> <cmd-opt>
+~~~
+
+For example:
+
+~~~bash
+> lein with-profile +migrations run -c custom.config.edn migrate --to 100500
 ~~~
 
 ### Deps.edn examples
 
+Here is an example of an alias that shows pending migrations:
+
 ~~~clojure
 {:aliases
- {:migrations
+ {:migrations-list
   {:extra-deps
-   {com.github.igrishaev/pg2-migration {:mvn/version "0.1.5-SNAPSHOT"}}
+   {com.github.igrishaev/pg2-migration {:mvn/version "..."}}
    :extra-paths
    ["test/resources"]
    :main-opts
@@ -1909,9 +1976,35 @@ attribute. Now run `lein run` with migration args:
     "list"]}}}
 ~~~
 
+Run it as follows:
+
 ~~~
-> clj -M:migrations
+> clj -M:migrations-list
 ~~~
+
+Of course, you can shorten it using the config file. Move all the parameters
+into the `migration.config.edn` file, and keep only commands in the `:main-opts`
+vector:
+
+~~~clojure
+{:aliases
+ {:migrations-migrate
+  {:extra-deps
+   {com.github.igrishaev/pg2-migration {:mvn/version "..."}}
+   :extra-paths
+   ["test/resources"]
+   :main-opts ["migrate" "--all"]}}}
+~~~
+
+Migrate:
+
+~~~
+> clj -M:migrations-migrate
+~~~
+
+### API Interface
+
+### Conflicts
 
 ## Debugging
 

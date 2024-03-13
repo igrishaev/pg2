@@ -4,6 +4,7 @@
   "
   (:gen-class)
   (:import
+   java.io.File
    java.io.PushbackReader)
   (:require
    [clojure.edn :as edn]
@@ -30,12 +31,28 @@
            (error! "Env variable %s is not set" vname))))})
 
 
+(def CONFIG-NAME
+  "migration.config.edn")
+
+
+(defn path->config [^String path]
+  (->> path
+       io/file
+       io/reader
+       (new PushbackReader)
+       (edn/read {:readers edn-readers})))
+
+
+(defn path-exists? ^Boolean [^String path]
+  (-> path io/file .exists))
+
+
 (defn parse-config [path]
-  (some->> path
-           io/file
-           io/reader
-           (new PushbackReader)
-           (edn/read {:readers edn-readers})))
+  (cond
+    path
+    (path->config path)
+    (path-exists? CONFIG-NAME)
+    (path->config CONFIG-NAME)))
 
 
 (defn current-user [_]
@@ -47,7 +64,7 @@
   [["-c" "--config CONNFIG" "Path to the .edn config file"
     :id :config
     :default nil
-    :default-desc ""
+    :default-desc CONFIG-NAME
     :parse-fn parse-config]
 
    ["-p" "--port PORT" "Port number"

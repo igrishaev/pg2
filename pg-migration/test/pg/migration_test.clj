@@ -262,7 +262,7 @@
 
 (deftest test-read-edn-file
   (let [result
-        (cli/parse-config "config.example.edn")]
+        (cli/parse-config "migration.config.edn")]
     (is (= {:host "127.0.0.1"
             :port 10150
             :user "test"
