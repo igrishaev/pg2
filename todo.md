@@ -1,11 +1,6 @@
 
 - readme
 
-migrations
-- demo
-- docs
-- lein plugin
-
 - pool close conn test
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
@@ -24,6 +19,9 @@ migrations
 
 - int to float: tests
 - refactor locks? on Clojure level
+
+migrations
+- lein plugin
 
 - malli spec
 
@@ -55,6 +53,3 @@ migrations
   - truncate
 
 - verify peer name? https://github.com/pgjdbc/pgjdbc/blob/5b8c2719806a9614aedeb5ee8a8b9e2b96432d28/pgjdbc/src/main/java/org/postgresql/ssl/MakeSSL.java#L30
-
-
-when create, print files
