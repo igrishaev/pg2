@@ -110,10 +110,10 @@ decoding, COPY IN/OUT, SSL:
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-core "0.1.4"]
+[com.github.igrishaev/pg2-core "0.1.5"]
 
 ;; deps
-com.github.igrishaev/pg2-core {:mvn/version "0.1.4"}
+com.github.igrishaev/pg2-core {:mvn/version "0.1.5"}
 ~~~
 
 **HoneySQL integration**: special version of `query` and `execute` that accept
@@ -123,10 +123,10 @@ etc).
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-honey "0.1.4"]
+[com.github.igrishaev/pg2-honey "0.1.5"]
 
 ;; deps
-com.github.igrishaev/pg2-honey {:mvn/version "0.1.4"}
+com.github.igrishaev/pg2-honey {:mvn/version "0.1.5"}
 ~~~
 
 [component]: https://github.com/stuartsierra/component
@@ -136,10 +136,10 @@ objects with the `Lifecycle` protocol from the [Component][component] library.
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-component "0.1.4"]
+[com.github.igrishaev/pg2-component "0.1.5"]
 
 ;; deps
-com.github.igrishaev/pg2-component {:mvn/version "0.1.4"}
+com.github.igrishaev/pg2-component {:mvn/version "0.1.5"}
 ~~~
 
 **Migrations**: a package that provides migration management: migrate forward,
