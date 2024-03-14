@@ -1852,8 +1852,8 @@ ll migrations
 
 #### List
 
-The `list` command renders all the migrations stored in resources and their
-status: whether they are applied or not.
+The `list` command renders all the migrations and their status: whether they are
+applied or not.
 
 ~~~clojure
 lein with-profile +migration run -m pg.migration.cli -c config.example.edn list
@@ -1869,12 +1869,12 @@ lein with-profile +migration run -m pg.migration.cli -c config.example.edn list
 
 #### Migrate
 
-The `migrate` command applies pending migrations to the database. By default,
-all the migrations that have not been applied are processed. You can change this
-behaviour using these flags:
+The `migrate` command applies migrations to the database. By default, all the
+pending migrations are processed. You can change this behaviour using these
+flags:
 
 ~~~
-... -c config.example.edn migrate --help
+... migrate --help
 
 Syntax:
       --all           Migrate all the pending migrations
@@ -1883,24 +1883,24 @@ Syntax:
       --help   false  Show help message
 ~~~
 
-The `--one` flag means, only one next migration will be applied. If `--to`
-parameter set, only migrations up to this given ID are processed. Examples:
+With the `--one` flag set, only one next migration will be applied. If `--to`
+parameter is set, only migrations up to this given ID are processed. Examples:
 
 ~~~bash
-... migrate
-... migrate --all
-... migrate --one
-... migrate --to 123
+... migrate           # all migrations
+... migrate --all     # all migrations
+... migrate --one     # next only
+... migrate --to 123  # all that <= 123
 ~~~
 
 #### Rollback
 
-The `rollback` command applies reverting changes to the database and removes a
-corresponding record from the table. By default, only the current migration is
-rolled back.
+The `rollback` command reverses changes in the database and removes
+corresponding records from the migration table. By default, only the current
+migration is rolled back. Syntax:
 
 ~~~
-... -c config.example.edn rollback --help
+... rollback --help
 
 Syntax:
       --all           Rollback all the previous migrations
@@ -1914,49 +1914,43 @@ backward migrations are processed. To rollback to a certain migration, pass
 `--to ID`. Examples:
 
 ~~~
-... rollback
-... rollback --one
-... rollback --to 20240515
-... rollback --all
+... rollback               # current only
+... rollback --one         # current only
+... rollback --to 20240515 # down to 20240515
+... rollback --all         # down to the very beginning
 ~~~
 
 ### Lein examples
 
-Lein preamble is usually something like this:
+Lein preamble looks usually something like this:
 
 ~~~
 > lein run -m pg.migration.cli <ARGS>
 ~~~
 
-The `pg2-migration` library must be in dependencies. Sincle migrations are often
-run aside from the main application, they're put into a separate profile, for
-example:
+The `pg2-migration` library must be in dependencies. Since migrations are
+managed aside from the main application, they're put into a separate profile,
+for example:
 
 ~~~clojure
 :profiles
 {:migrations
  {:main pg.migration.cli
-  :resource-paths ["extra/resources"]
+  :resource-paths ["path/to/resources"]
   :dependencies
   [[com.github.igrishaev/pg2-core ...]]}}
 ~~~
 
 Above, the `migrations` profile has the dependency and the `:main`
-attribute. Now run `lein run` with migration args:
+attribute. Now run `lein run` with migration arguments:
 
 ~~~bash
-> lein with-profile +migrations run <options> <cmd> <cmd-opt>
-~~~
-
-For example:
-
-~~~bash
-> lein with-profile +migrations run -c custom.config.edn migrate --to 100500
+> lein with-profile +migrations run -c migration.config.edn migrate --to 100500
 ~~~
 
 ### Deps.edn examples
 
-Here is an example of an alias that shows pending migrations:
+Here is an example of an alias in `deps.edn` that prints pending migrations:
 
 ~~~clojure
 {:aliases
@@ -1983,9 +1977,9 @@ Run it as follows:
 > clj -M:migrations-list
 ~~~
 
-Of course, you can shorten it using the config file. Move all the parameters
-into the `migration.config.edn` file, and keep only commands in the `:main-opts`
-vector:
+You can shorten it by using the config file. Move all the parameters into the
+`migration.config.edn` file, and keep only a command with its sub-arguments in
+the `:main-opts` vector:
 
 ~~~clojure
 {:aliases
@@ -1997,7 +1991,7 @@ vector:
    :main-opts ["migrate" "--all"]}}}
 ~~~
 
-Migrate:
+To migrate:
 
 ~~~
 > clj -M:migrations-migrate
@@ -2005,9 +1999,9 @@ Migrate:
 
 ### API Interface
 
-There is a way to call the migration engine in your code. The
-`pg.migration.core` namespace provides basic functions to list, create, migrate,
-and rollback migrations.
+There is a way to manage migrations through code. The `pg.migration.core`
+namespace provides basic functions to list, create, migrate, and rollback
+migrations.
 
 To migrate, call one of the following functions: `migrate-to`, `migrate-all`,
 and `migrate-one`. All of them accept a config map:
@@ -2050,7 +2044,7 @@ The same applies to rollback:
 ~~~
 
 The `read-disk-migrations` function reads migrations from disk. It returns a
-sorted map but without information about whether any migration has been applied:
+sorted map without information about whether migrations have been applied:
 
 ~~~clojure
 (mig/read-disk-migrations "migrations")
@@ -2069,9 +2063,9 @@ sorted map but without information about whether any migration has been applied:
 ~~~
 
 The `make-scope` function accepts a config map and returns a scope map. The
-scope map knows everything the state of migrations, namely: which of them have
-been applied, what is the current migration, the table name, the resource path,
-and more.
+scope map knows everything about the state of migrations, namely: which of them
+have been applied, what is the current migration, the table name, the resource
+path, and more.
 
 The function `create-migration-files` creates and returns a pair of empty SQL
 files. By default, the id is generated from the current date & time, and the
@@ -2082,7 +2076,11 @@ slug is missing:
 
 [#object[java.io.File "migrations/20240313120122.prev.sql"]
  #object[java.io.File "migrations/20240313120122.next.sql"]]
+~~~
 
+Pass id and slug in options if needed:
+
+~~~clojure
 (create-migration-files "migrations" {:id 12345 :slug "Hello migration"})
 
 [#object[java.io.File "migrations/12345.hello-migration.prev.sql"]
@@ -2091,21 +2089,21 @@ slug is missing:
 
 ### Conflicts
 
-On bootstrap, the engine always checks migrations for conflicts. A conflict is a
-situation when a migration with less id has been applied before a migration
-with greater id. Usually it happens when two developers create migrations in
-parallel and then merge then in a wrong order. For example:
+On bootstrap, the engine checks migrations for conflicts. A conflict is a
+situation when a migration with less id has been applied before a migration with
+greater id. Usually it happens when two developers create migrations in parallel
+and merge them in a wrong order. For example:
 
 - the latest migration id is 20240312;
 - developer A makes a new branch and creates a migration 20240315;
-- the next day, developer B opens a new branch with migration 20240316;
-- dev. B merges his branch, now we have 20240312, then 20240316;
-- dev. A merges his branch, and we have 20240312, 20240316, 20240315.
+- the next day, developer B opens a new branch with a migration 20240316;
+- dev B merges the branch, now we have 20240312, then 20240316;
+- dev A merges the branch, and we have 20240312, 20240316, 20240315.
 
-When you try to apply migration 20240315, the engine will check if 20240316 is
-already applied. If yes, an exception pops up saying which migration causes the
-problem (these are 20240316 and 20240315). To recover from the conflict, just
-rename 20240315 to 20240317.
+When you try to apply migration 20240315, the engine will check if 20240316 has
+already been applied. If yes, an exception pops up saying which migration cause
+the problem (in our case, these are 20240316 and 20240315). To recover from the
+conflict, rename 20240315 to 20240317.
 
 In other words: this is a conflict:
 
