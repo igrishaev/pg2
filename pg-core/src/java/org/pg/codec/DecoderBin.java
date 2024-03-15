@@ -41,7 +41,7 @@ public final class DecoderBin {
                     default: throw new PGError("incorrect binary boolean value");
                 }
             }
-            case JSON, JSONB -> JSON.readValueBinary(buf);
+            case JSON, JSONB -> JSON.readValueBinary(codecParams.objectMapper, buf);
             case TIME -> DateTimeBin.decodeTIME(buf);
             case TIMETZ -> DateTimeBin.decodeTIMETZ(buf);
             case DATE -> DateTimeBin.decodeDATE(buf);

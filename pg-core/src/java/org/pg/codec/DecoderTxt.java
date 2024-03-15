@@ -16,6 +16,14 @@ public final class DecoderTxt {
             final String string,
             final OID oid
     ) {
+        return decode(string, oid, CodecParams.standard());
+    }
+
+    public static Object decode(
+            final String string,
+            final OID oid,
+            final CodecParams codecParams
+    ) {
 
         return switch (oid) {
 
@@ -33,7 +41,7 @@ public final class DecoderTxt {
                     case "f" -> false;
                     default -> throw new PGError("wrong boolean value: %s", string);
             };
-            case JSON, JSONB -> JSON.readValue(string);
+            case JSON, JSONB -> JSON.readValue(codecParams.objectMapper, string);
             case TIMESTAMPTZ -> DateTimeTxt.decodeTIMESTAMPTZ(string);
             case TIMESTAMP -> DateTimeTxt.decodeTIMESTAMP(string);
             case DATE -> DateTimeTxt.decodeDATE(string);

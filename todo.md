@@ -1,6 +1,14 @@
 
 - readme
 
+- json
+  - pass decode/encode-txt/bin codecParams
+  - pg.json: pass object-mapper
+  - integration test: read/write bin/txt
+  - pg.json test
+  - encode/decode test
+  - bench
+
 - pool close conn test
 - keywords with namespaces (+ jdbc)
 - test parallel connection access

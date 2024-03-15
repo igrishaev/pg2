@@ -171,7 +171,7 @@ public final class EncoderBin {
                 case JSON, JSONB, DEFAULT -> {
                     // TODO; guess the size?
                     ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
-                    JSON.writeValue(out, ((JSON.Wrapper)x).value());
+                    JSON.writeValue(codecParams.objectMapper, out, ((JSON.Wrapper)x).value());
                     yield ByteBuffer.wrap(out.toByteArray());
                 }
                 default -> binEncodingError(x, oid);
@@ -184,7 +184,7 @@ public final class EncoderBin {
                 case JSON, JSONB, DEFAULT -> {
                     // TODO; guess the size?
                     ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
-                    JSON.writeValue(out, x);
+                    JSON.writeValue(codecParams.objectMapper, out, x);
                     yield ByteBuffer.wrap(out.toByteArray());
                 }
                 default -> binEncodingError(x, oid);

@@ -1,6 +1,8 @@
 package org.pg;
 
 import clojure.lang.IFn;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pg.json.JSON;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;
@@ -31,7 +33,8 @@ public record ConnConfig(
         IFn fnNotice,
         SSLContext sslContext,
         System.Logger.Level logLevel,
-        long cancelTimeoutMs
+        long cancelTimeoutMs,
+        ObjectMapper objectMapper
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -66,6 +69,7 @@ public record ConnConfig(
         private SSLContext sslContext = null;
         private System.Logger.Level logLevel = System.Logger.Level.INFO;
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
+        private ObjectMapper objectMapper = JSON.mapper;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -76,6 +80,11 @@ public record ConnConfig(
 
         public Builder sslContext(final SSLContext sslContext) {
             this.sslContext = sslContext;
+            return this;
+        }
+
+        public Builder objectMapper(final ObjectMapper objectMapper) {
+            this.objectMapper = objectMapper;
             return this;
         }
 
@@ -216,7 +225,8 @@ public record ConnConfig(
                     this.fnNotice,
                     this.sslContext,
                     this.logLevel,
-                    this.cancelTimeoutMs
+                    this.cancelTimeoutMs,
+                    this.objectMapper
             );
         }
     }

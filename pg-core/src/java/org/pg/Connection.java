@@ -72,6 +72,7 @@ public final class Connection implements AutoCloseable {
         this.config = config;
         this.params = new HashMap<>();
         this.codecParams = CodecParams.standard();
+        this.codecParams.objectMapper = config.objectMapper();
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
         connect();

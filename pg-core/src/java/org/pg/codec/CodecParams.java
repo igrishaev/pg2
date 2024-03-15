@@ -1,5 +1,8 @@
 package org.pg.codec;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pg.json.JSON;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
@@ -12,6 +15,7 @@ public final class CodecParams {
     public ZoneId timeZone = ZoneOffset.UTC;
     public String dateStyle = "";
     public boolean integerDatetime = true;
+    public ObjectMapper objectMapper = JSON.mapper;
 
     public static CodecParams standard () {
         return new CodecParams();

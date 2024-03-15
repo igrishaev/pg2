@@ -7,6 +7,7 @@
    [less.awful.ssl :as ssl])
   (:import
    clojure.lang.Keyword
+   com.fasterxml.jackson.databind.ObjectMapper
    java.io.InputStream
    java.io.OutputStream
    java.io.Reader
@@ -23,8 +24,6 @@
    org.pg.Connection
    org.pg.ExecuteParams
    org.pg.ExecuteParams$Builder
-   org.pg.error.PGError
-   org.pg.error.PGErrorResponse
    org.pg.PreparedStatement
    org.pg.codec.DecoderBin
    org.pg.codec.DecoderTxt
@@ -34,6 +33,8 @@
    org.pg.enums.OID
    org.pg.enums.TXStatus
    org.pg.enums.TxLevel
+   org.pg.error.PGError
+   org.pg.error.PGErrorResponse
    org.pg.json.JSON
    org.pg.json.JSON$Wrapper
    org.pg.reducer.IReducer
@@ -279,6 +280,9 @@
                 ;; logging
                 log-level
 
+                ;; json
+                ^ObjectMapper object-mapper
+
                 ;; misc
                 cancel-timeout-ms
                 protocol-version]}
@@ -348,6 +352,9 @@
 
       log-level
       (.logLevel (->LogLevel log-level))
+
+      object-mapper
+      (.objectMapper object-mapper)
 
       cancel-timeout-ms
       (.cancelTimeoutMs cancel-timeout-ms)
@@ -938,6 +945,8 @@
 ;;
 ;; Encode/decode
 ;;
+
+;; TODO: codecParams
 
 (defn decode-bin
   "
