@@ -1,7 +1,6 @@
 package org.pg.reducer;
 
 import org.pg.clojure.LazyMap;
-import org.pg.proto.IReducer;
 
 import java.util.ArrayList;
 import java.util.List;

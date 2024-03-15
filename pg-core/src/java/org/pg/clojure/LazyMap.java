@@ -4,8 +4,8 @@ import clojure.lang.*;
 import org.pg.codec.CodecParams;
 import org.pg.codec.DecoderBin;
 import org.pg.codec.DecoderTxt;
-import org.pg.msg.DataRow;
-import org.pg.msg.RowDescription;
+import org.pg.msg.server.DataRow;
+import org.pg.msg.server.RowDescription;
 
 import java.nio.ByteBuffer;
 import java.util.*;

@@ -1,15 +1,12 @@
-package org.pg.msg;
-
-import org.pg.msg.client.IClientMessage;
-import org.pg.msg.server.IServerMessage;
+package org.pg.msg.client;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-public record CopyDone () implements IClientMessage, IServerMessage {
-    public final static CopyDone INSTANCE = new CopyDone();
+public record Terminate () implements IClientMessage {
+    public final static Terminate INSTANCE = new Terminate();
     private final static ByteBuffer buf = ByteBuffer.wrap(new byte[] {
-            (byte)'c',
+            (byte)'X',
             (byte) 0,
             (byte) 0,
             (byte) 0,

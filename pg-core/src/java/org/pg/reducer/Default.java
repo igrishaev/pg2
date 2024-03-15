@@ -4,7 +4,6 @@ import clojure.core$persistent_BANG_;
 import clojure.core$conj_BANG_;
 import clojure.lang.PersistentVector;
 import org.pg.clojure.LazyMap;
-import org.pg.proto.IReducer;
 
 public class Default implements IReducer {
 

@@ -3,7 +3,7 @@ package org.pg;
 import clojure.lang.IFn;
 import org.pg.enums.CopyFormat;
 import org.pg.enums.OID;
-import org.pg.proto.IReducer;
+import org.pg.reducer.IReducer;
 import org.pg.reducer.*;
 
 import java.io.InputStream;

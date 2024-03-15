@@ -1,9 +1,12 @@
 package org.pg.msg;
 
+import org.pg.msg.client.IClientMessage;
+import org.pg.msg.server.IServerMessage;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-public record CopyData (ByteBuffer buf) implements IMessage {
+public record CopyData (ByteBuffer buf) implements IClientMessage, IServerMessage {
 
     public ByteBuffer encode(final Charset charset) {
         buf.rewind();

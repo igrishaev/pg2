@@ -14,6 +14,8 @@ import org.pg.copy.Copy;
 import org.pg.enums.*;
 import org.pg.error.PGError;
 import org.pg.msg.*;
+import org.pg.msg.client.*;
+import org.pg.msg.server.*;
 import org.pg.type.OIDHint;
 import org.pg.util.*;
 
@@ -340,7 +342,7 @@ public final class Connection implements AutoCloseable {
         sendBytes(bytes);
     }
 
-    private void sendMessage (final IMessage msg) {
+    private void sendMessage (final IClientMessage msg) {
         if (isDebug) {
             logger.log(config.logLevel(), " <- {0}", msg);
         }
@@ -404,7 +406,7 @@ public final class Connection implements AutoCloseable {
         sendMessage(new SSLRequest(Const.SSL_CODE));
     }
 
-    private Object readMessage (final boolean skipMode) {
+    private IServerMessage readMessage (final boolean skipMode) {
 
         final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
         final ByteBuffer bbHeader = ByteBuffer.wrap(bufHeader);
@@ -427,7 +429,7 @@ public final class Connection implements AutoCloseable {
         ByteBuffer bbBody = ByteBuffer.wrap(bufBody);
 
         return switch (tag) {
-            case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody).parseResponse(bbBody, codecParams.serverCharset);
+            case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset);
             case 'S' -> ParameterStatus.fromByteBuffer(bbBody, codecParams.serverCharset);
             case 'Z' -> ReadyForQuery.fromByteBuffer(bbBody);
             case 'C' -> CommandComplete.fromByteBuffer(bbBody, codecParams.serverCharset);
@@ -659,7 +661,7 @@ public final class Connection implements AutoCloseable {
         flush();
         final Accum acc = new Accum(phase, executeParams);
         while (true) {
-            final Object msg = readMessage(acc.hasException());
+            final IServerMessage msg = readMessage(acc.hasException());
             if (isDebug) {
                 logger.log(config.logLevel(), " -> {0}", msg);
             }
@@ -676,7 +678,7 @@ public final class Connection implements AutoCloseable {
         return interact(phase, ExecuteParams.INSTANCE);
     }
 
-    private void handleMessage(final Object msg, final Accum acc) {
+    private void handleMessage(final IServerMessage msg, final Accum acc) {
         switch (msg.getClass().getSimpleName()) {
             case
                     "NotificationResponse" ->
@@ -1060,7 +1062,7 @@ public final class Connection implements AutoCloseable {
         secretKey = msg.secretKey();
     }
 
-    private static Boolean isEnough (final Object msg, final Phase phase) {
+    private static Boolean isEnough (final IServerMessage msg, final Phase phase) {
         return switch (msg.getClass().getSimpleName()) {
             case "ReadyForQuery" -> true;
             case "ErrorResponse" -> phase == Phase.AUTH;

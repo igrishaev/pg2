@@ -1,8 +1,8 @@
 package org.pg;
 
-import org.pg.msg.ParameterDescription;
-import org.pg.msg.Parse;
-import org.pg.msg.RowDescription;
+import org.pg.msg.server.ParameterDescription;
+import org.pg.msg.client.Parse;
+import org.pg.msg.server.RowDescription;
 
 import java.util.Arrays;
 

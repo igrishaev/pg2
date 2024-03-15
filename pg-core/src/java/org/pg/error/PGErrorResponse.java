@@ -1,7 +1,7 @@
 package org.pg.error;
 
 import clojure.lang.IPersistentCollection;
-import org.pg.msg.ErrorResponse;
+import org.pg.msg.server.ErrorResponse;
 
 public final class PGErrorResponse extends Error {
 

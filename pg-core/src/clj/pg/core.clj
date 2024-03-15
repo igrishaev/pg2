@@ -36,7 +36,7 @@
    org.pg.enums.TxLevel
    org.pg.json.JSON
    org.pg.json.JSON$Wrapper
-   org.pg.proto.IReducer
+   org.pg.reducer.IReducer
    org.pg.type.PGEnum))
 
 
