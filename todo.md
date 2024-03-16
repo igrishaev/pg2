@@ -2,7 +2,6 @@
 - readme
 
 - json
-  - bench
   - readme
 
 - pool close conn test
