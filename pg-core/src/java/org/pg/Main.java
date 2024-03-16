@@ -31,8 +31,10 @@ public final class Main {
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = new Connection(config);
 
-        System.out.println(conn.getId());
-        System.out.println(conn.getPid());
+        //System.out.println(conn.getId());
+        //System.out.println(conn.getPid());
+
+        System.out.println(conn.execute("select '{\"foo\": 555}'::jsonb as obj"));
 
         // System.out.println(conn.execute("select '1 year 1 second'::interval as interval"));
 
@@ -72,7 +74,7 @@ public final class Main {
         // List<Object> params = List.of(1);
         Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(List.of(true)).build());
         conn.closeStatement(ps);
-        System.out.println(res2.toString());
+        // System.out.println(res2.toString());
 
           //Object res3 = conn.execute("select 'ёёёё'::char as char");
           //System.out.println(res3);

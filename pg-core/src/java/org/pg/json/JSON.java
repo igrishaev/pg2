@@ -101,11 +101,8 @@ public final class JSON {
     }
 
     public static Object readValueBinary (final ObjectMapper objectMapper, final ByteBuffer buf) {
-        final byte b = buf.get();
-        if (b == 1) {
-            buf.limit(buf.limit() - 1);
-        }
-        else {
+        // skip Start of Heading, if met
+        if (buf.get() != 1) {
             buf.position(buf.position() - 1);
         }
         return readValue(objectMapper, buf);
@@ -117,7 +114,7 @@ public final class JSON {
 
     public static Object readValue (final ObjectMapper objectMapper, final ByteBuffer buf) {
         final int offset = buf.arrayOffset() + buf.position();
-        final int len = buf.limit();
+        final int len = buf.limit() - offset;
         try {
             return objectMapper.readValue(buf.array(), offset, len, Object.class);
         } catch (IOException e) {

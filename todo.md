@@ -2,8 +2,8 @@
 - readme
 
 - json
-  - integration test: read/write bin/txt
   - bench
+  - readme
 
 - pool close conn test
 - keywords with namespaces (+ jdbc)
