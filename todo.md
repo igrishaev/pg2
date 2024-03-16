@@ -3,10 +3,8 @@
 
 - json
   - pass decode/encode-txt/bin codecParams
-  - pg.json: pass object-mapper
-  - integration test: read/write bin/txt
-  - pg.json test
   - encode/decode test
+  - integration test: read/write bin/txt
   - bench
 
 - pool close conn test

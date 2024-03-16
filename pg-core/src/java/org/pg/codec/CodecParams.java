@@ -15,7 +15,7 @@ public final class CodecParams {
     public ZoneId timeZone = ZoneOffset.UTC;
     public String dateStyle = "";
     public boolean integerDatetime = true;
-    public ObjectMapper objectMapper = JSON.mapper;
+    public ObjectMapper objectMapper = JSON.defaultMapper;
 
     public static CodecParams standard () {
         return new CodecParams();

@@ -69,7 +69,7 @@ public record ConnConfig(
         private SSLContext sslContext = null;
         private System.Logger.Level logLevel = System.Logger.Level.INFO;
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
-        private ObjectMapper objectMapper = JSON.mapper;
+        private ObjectMapper objectMapper = JSON.defaultMapper;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");

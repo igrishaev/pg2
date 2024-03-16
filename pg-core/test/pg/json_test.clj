@@ -1,19 +1,31 @@
 (ns pg.json-test
   (:import
-   java.io.StringWriter
-   java.io.StringReader
-   java.io.ByteArrayOutputStream
    java.io.ByteArrayInputStream
+   java.io.ByteArrayOutputStream
+   java.io.StringReader
+   java.io.StringWriter
    java.time.Instant
    java.time.LocalDate
    java.time.LocalTime
    java.time.OffsetDateTime)
   (:require
+   [clojure.java.io :as io]
    [clojure.test :refer [deftest is]]
+   [jsonista.core :as j]
    [pg.bb :as bb]
    [pg.core :as pg]
    [pg.json :as json]
    [pg.oid :as oid]))
+
+
+(defn reverse-string [s]
+  (apply str (reverse s)))
+
+
+(def custom-mapper
+  (j/object-mapper
+   {:encode-key-fn (comp reverse-string name)
+    :decode-key-fn (comp keyword reverse-string)}))
 
 
 (deftest test-json-txt
@@ -136,3 +148,82 @@
 
     (is (= "[1,2,3]" (str writer)))
     (is (= [1 2 3] data2))))
+
+
+;;
+;; Custom mapper
+;;
+
+(deftest test-mapper-read-string
+  (let [string
+        (json/write-string {:foo 42})
+
+        data
+        (json/read-string custom-mapper string)]
+
+    (is (= {:oof 42} data))))
+
+
+(deftest test-mapper-read-stream
+  (let [stream
+        (-> {:foo 42}
+            json/write-string
+            (.getBytes "utf-8")
+            io/input-stream)
+
+        data
+        (json/read-stream custom-mapper stream)]
+
+    (is (= {:oof 42} data))))
+
+
+(deftest test-mapper-read-reader
+  (let [reader
+        (-> {:foo 42}
+            json/write-string
+            (.getBytes "utf-8")
+            io/reader)
+
+        data
+        (json/read-reader custom-mapper reader)]
+
+    (is (= {:oof 42} data))))
+
+
+(deftest test-mapper-write-string
+  (let [string
+        (json/write-string custom-mapper {:foo 42})
+
+        data
+        (json/read-string string)]
+
+    (is (= {:oof 42} data))))
+
+
+(deftest test-mapper-write-stream
+  (let [out
+        (new ByteArrayOutputStream)
+
+        _
+        (json/write-stream custom-mapper {:foo 42} out)
+
+        in
+        (-> out .toByteArray io/input-stream)
+
+        data
+        (json/read-string (slurp in))]
+
+    (is (= {:oof 42} data))))
+
+
+(deftest test-mapper-write-writer
+  (let [out
+        (new StringWriter)
+
+        _
+        (json/write-writer custom-mapper {:foo 42} out)
+
+        data
+        (json/read-string (str out))]
+
+    (is (= {:oof 42} data))))

@@ -33,7 +33,7 @@ public final class JSON {
         return new Wrapper(value);
     }
 
-    public static final ObjectMapper mapper = new ObjectMapper();
+    public static final ObjectMapper defaultMapper = new ObjectMapper();
 
     static {
         final SimpleModule module = new SimpleModule("pg");
@@ -46,7 +46,7 @@ public final class JSON {
         module.addSerializer(Ratio.class, new RatioSerializer());
         module.addSerializer(Symbol.class, new SymbolSerializer());
         module.addKeyDeserializer(Object.class, new KeywordKeyDeserializer());
-        mapper.registerModule(module);
+        defaultMapper.registerModule(module);
     }
 
     static Object decodeError(final Throwable e) {
@@ -67,7 +67,7 @@ public final class JSON {
     }
 
     public static Object readValue (final String input) {
-        return readValue(mapper, input);
+        return readValue(defaultMapper, input);
     }
 
     @SuppressWarnings("unused")
@@ -82,7 +82,7 @@ public final class JSON {
 
     @SuppressWarnings("unused")
     public static Object readValue (final InputStream inputStream) {
-        return readValue(mapper, inputStream);
+        return readValue(defaultMapper, inputStream);
     }
 
     @SuppressWarnings("unused")
@@ -97,7 +97,7 @@ public final class JSON {
 
     @SuppressWarnings("unused")
     public static Object readValue (final Reader reader) {
-        return readValue(mapper, reader);
+        return readValue(defaultMapper, reader);
     }
 
     public static Object readValueBinary (final ObjectMapper objectMapper, final ByteBuffer buf) {
@@ -112,7 +112,7 @@ public final class JSON {
     }
 
     public static Object readValueBinary (final ByteBuffer buf) {
-        return readValueBinary(mapper, buf);
+        return readValueBinary(defaultMapper, buf);
     }
 
     public static Object readValue (final ObjectMapper objectMapper, final ByteBuffer buf) {
@@ -126,7 +126,7 @@ public final class JSON {
     }
 
     public static Object readValue (final ByteBuffer buf) {
-        return readValue(mapper, buf);
+        return readValue(defaultMapper, buf);
     }
 
     public static void writeValue (final ObjectMapper objectMapper, final OutputStream outputStream, final Object value) {
@@ -138,7 +138,7 @@ public final class JSON {
     }
 
     public static void writeValue (final OutputStream outputStream, final Object value) {
-        writeValue(mapper, outputStream, value);
+        writeValue(defaultMapper, outputStream, value);
     }
 
     public static void writeValue (final ObjectMapper objectMapper, final Writer writer, final Object value) {
@@ -150,7 +150,7 @@ public final class JSON {
     }
 
     public static void writeValue (final Writer writer, final Object value) {
-        writeValue(mapper, writer, value);
+        writeValue(defaultMapper, writer, value);
     }
 
     @SuppressWarnings("unused")
@@ -165,7 +165,7 @@ public final class JSON {
 
     @SuppressWarnings("unused")
     public static String writeValueToString (final Object value) {
-        return writeValueToString(mapper, value);
+        return writeValueToString(defaultMapper, value);
     }
 
     public static void main (final String[] args) {
