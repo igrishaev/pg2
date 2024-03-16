@@ -49,7 +49,7 @@ public final class Connection implements AutoCloseable {
     private InputStream inStream;
     private OutputStream outStream;
     private final Map<String, String> params;
-    private final CodecParams codecParams;
+    private CodecParams codecParams;
     private boolean isSSL = false;
     private final System.Logger logger = System.getLogger(Connection.class.getCanonicalName());
     private final TryLock lock = new TryLock();
@@ -71,8 +71,7 @@ public final class Connection implements AutoCloseable {
     public Connection(final ConnConfig config, final boolean sendStartup) {
         this.config = config;
         this.params = new HashMap<>();
-        this.codecParams = CodecParams.standard();
-        this.codecParams.objectMapper = config.objectMapper();
+        this.codecParams = CodecParams.builder().objectMapper(config.objectMapper()).build();
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
         connect();
@@ -170,16 +169,23 @@ public final class Connection implements AutoCloseable {
     private void setParam (final String param, final String value) {
         params.put(param, value);
         switch (param) {
-            case "client_encoding" ->
-                    codecParams.clientCharset = Charset.forName(value);
-            case "server_encoding" ->
-                    codecParams.serverCharset = Charset.forName(value);
-            case "DateStyle" ->
-                    codecParams.dateStyle = value;
-            case "TimeZone" ->
-                    codecParams.timeZone = ZoneId.of(value);
-            case "integer_datetimes" ->
-                    codecParams.integerDatetime = value.equals("on");
+            case "client_encoding" -> {
+                final Charset clientCharset = Charset.forName(value);
+                codecParams = codecParams.withClientCharset(clientCharset);
+            }
+            case "server_encoding" -> {
+                final Charset serverCharset = Charset.forName(value);
+                codecParams = codecParams.withServerCharset(serverCharset);
+            }
+            case "DateStyle" -> codecParams = codecParams.withDateStyle(value);
+            case "TimeZone" -> {
+                final ZoneId timeZone = ZoneId.of(value);
+                codecParams = codecParams.withTimeZoneId(timeZone);
+            }
+            case "integer_datetimes" -> {
+                final boolean integerDatetime = value.equals("on");
+                codecParams = codecParams.withIntegerDatetime(integerDatetime);
+            }
         }
     }
 
@@ -347,7 +353,7 @@ public final class Connection implements AutoCloseable {
         if (isDebug) {
             logger.log(config.logLevel(), " <- {0}", msg);
         }
-        final ByteBuffer buf = msg.encode(codecParams.clientCharset);
+        final ByteBuffer buf = msg.encode(codecParams.clientCharset());
         IOTool.write(outStream, buf.array());
     }
 
@@ -430,13 +436,13 @@ public final class Connection implements AutoCloseable {
         ByteBuffer bbBody = ByteBuffer.wrap(bufBody);
 
         return switch (tag) {
-            case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset);
-            case 'S' -> ParameterStatus.fromByteBuffer(bbBody, codecParams.serverCharset);
+            case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
+            case 'S' -> ParameterStatus.fromByteBuffer(bbBody, codecParams.serverCharset());
             case 'Z' -> ReadyForQuery.fromByteBuffer(bbBody);
-            case 'C' -> CommandComplete.fromByteBuffer(bbBody, codecParams.serverCharset);
-            case 'T' -> RowDescription.fromByteBuffer(bbBody, codecParams.serverCharset);
+            case 'C' -> CommandComplete.fromByteBuffer(bbBody, codecParams.serverCharset());
+            case 'T' -> RowDescription.fromByteBuffer(bbBody, codecParams.serverCharset());
             case 'D' -> DataRow.fromByteBuffer(bbBody);
-            case 'E' -> ErrorResponse.fromByteBuffer(bbBody, codecParams.serverCharset);
+            case 'E' -> ErrorResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
             case 'K' -> BackendKeyData.fromByteBuffer(bbBody);
             case '1' -> ParseComplete.INSTANCE;
             case '2' -> BindComplete.INSTANCE;
@@ -447,9 +453,9 @@ public final class Connection implements AutoCloseable {
             case 'c' -> CopyDone.INSTANCE;
             case 'I' -> EmptyQueryResponse.INSTANCE;
             case 'n' -> NoData.INSTANCE;
-            case 'v' -> NegotiateProtocolVersion.fromByteBuffer(bbBody, codecParams.serverCharset);
-            case 'A' -> NotificationResponse.fromByteBuffer(bbBody, codecParams.serverCharset);
-            case 'N' -> NoticeResponse.fromByteBuffer(bbBody, codecParams.serverCharset);
+            case 'v' -> NegotiateProtocolVersion.fromByteBuffer(bbBody, codecParams.serverCharset());
+            case 'A' -> NotificationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
+            case 'N' -> NoticeResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
             case 's' -> PortalSuspended.INSTANCE;
             case 'G' -> CopyInResponse.fromByteBuffer(bbBody);
             default -> throw new PGError("Unknown message: %s", tag);
@@ -564,7 +570,7 @@ public final class Connection implements AutoCloseable {
                 }
                 case TXT -> {
                     String value = EncoderTxt.encode(param, oid, codecParams);
-                    bytes[i] = value.getBytes(codecParams.clientCharset);
+                    bytes[i] = value.getBytes(codecParams.clientCharset());
                 }
                 default ->
                     throw new PGError("unknown format: %s", paramsFormat);

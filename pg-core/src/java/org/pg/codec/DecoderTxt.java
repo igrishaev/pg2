@@ -41,7 +41,7 @@ public final class DecoderTxt {
                     case "f" -> false;
                     default -> throw new PGError("wrong boolean value: %s", string);
             };
-            case JSON, JSONB -> JSON.readValue(codecParams.objectMapper, string);
+            case JSON, JSONB -> JSON.readValue(codecParams.objectMapper(), string);
             case TIMESTAMPTZ -> DateTimeTxt.decodeTIMESTAMPTZ(string);
             case TIMESTAMP -> DateTimeTxt.decodeTIMESTAMP(string);
             case DATE -> DateTimeTxt.decodeDATE(string);

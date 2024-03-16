@@ -91,7 +91,7 @@ public final class LazyMap extends APersistentMap {
 
         final Object value = switch (col.format()) {
             case TXT -> {
-                final String string = new String(payload, offset, length, codecParams.serverCharset);
+                final String string = new String(payload, offset, length, codecParams.serverCharset());
                 yield DecoderTxt.decode(string, col.typeOid(), codecParams);
             }
             case BIN -> {
