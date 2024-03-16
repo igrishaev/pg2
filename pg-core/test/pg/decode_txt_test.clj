@@ -11,13 +11,25 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
+   [jsonista.core :as j]
    [pg.core :as pg]
    [pg.oid :as oid]))
+
+
+(defn reverse-string [s]
+  (apply str (reverse s)))
+
+
+(def custom-mapper
+  (j/object-mapper
+   {:encode-key-fn (comp reverse-string name)
+    :decode-key-fn (comp keyword reverse-string)}))
 
 
 (deftest test-bytea
   (let [res (pg/decode-txt "\\x68656c6c6f" oid/bytea)]
     (is (= [104 101 108 108 111] (vec res)))))
+
 
 (deftest test-numbers
 
@@ -326,3 +338,15 @@
 
       (testing input
         (is (= output (str res)))))))
+
+
+(deftest test-json-custom-mapper
+  (let [string
+        (j/write-value-as-string {:foo 42})
+
+        data
+        (pg/decode-txt string
+                       oid/json
+                       {:object-mapper custom-mapper})]
+
+    (is (= {:oof 42} data))))

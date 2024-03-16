@@ -14,8 +14,20 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
+   [jsonista.core :as j]
    [pg.core :as pg]
    [pg.oid :as oid]))
+
+
+(defn reverse-string [s]
+  (apply str (reverse s)))
+
+
+(def custom-mapper
+  (j/object-mapper
+   {:encode-key-fn (comp reverse-string name)
+    :decode-key-fn (comp keyword reverse-string)}))
+
 
 
 (deftest test-bytea
@@ -241,3 +253,15 @@
                   (Date.))
           res (pg/encode-txt val oid/date)]
       (is (= "2023-07-25" res)))))
+
+
+(deftest test-json-custom-mapper
+  (let [string
+        (pg/encode-txt {:foo 123}
+                       oid/json
+                       {:object-mapper custom-mapper})
+
+        data
+        (j/read-value string)]
+
+    (is (= {"oof" 123} data))))

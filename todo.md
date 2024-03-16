@@ -2,8 +2,6 @@
 - readme
 
 - json
-  - pass decode/encode-txt/bin codecParams
-  - encode/decode test
   - integration test: read/write bin/txt
   - bench
 
