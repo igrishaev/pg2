@@ -1539,6 +1539,15 @@ namespaces are not supported by the wrapper.
 
 ## JSON support
 
+- general info
+- JDBC PGObject
+- connection examples
+- ->json wrapper
+- connection: custom object mapper
+- pg.json namespace
+- json HTTP middleware
+- encode/decode txt/bin?
+
 ## Arrays support
 
 ## Notify/Listen (PubSub)

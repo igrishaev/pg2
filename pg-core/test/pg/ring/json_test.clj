@@ -1,29 +1,43 @@
 (ns pg.ring.json-test
   (:import
-   java.io.InputStream
+   java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
-   java.io.ByteArrayInputStream)
+   java.io.InputStream)
   (:require
    [clojure.test :refer [deftest is]]
+   [jsonista.core :as j]
    [pg.json :as json]
    [pg.ring.json :refer [wrap-json
                          wrap-json-response
                          wrap-json-request]]))
 
 
+(defn reverse-string [s]
+  (apply str (reverse s)))
+
+
+(def custom-mapper
+  (j/object-mapper
+   {:encode-key-fn (comp reverse-string name)
+    :decode-key-fn (comp keyword reverse-string)}))
+
+
 (deftest test-wrap-response-coll
 
-  (let [handler
+  (let [opt
+        {:object-mapper custom-mapper}
+
+        handler
         (-> (fn [request]
               {:status 200
                :body {:foo 42}})
-            wrap-json-response)
+            (wrap-json-response opt))
 
         response
         (handler {})]
 
     (is (= {:status 200,
-            :body "{\"foo\":42}"
+            :body "{\"oof\":42}"
             :headers {"content-type"
                       "application/json; encoding=utf-8"}}
            response))))
@@ -49,7 +63,10 @@
 
 (deftest test-wrap-request-ok
 
-  (let [capture!
+  (let [opt
+        {:object-mapper custom-mapper}
+
+        capture!
         (atom nil)
 
         handler
@@ -57,11 +74,11 @@
               (reset! capture! request)
               {:status 200
                :body "OK"})
-            wrap-json-request)
+            (wrap-json-request opt))
 
         body
         (new ByteArrayInputStream
-             (.getBytes "[1, 2, 3]" "UTF-8"))
+             (.getBytes "{\"foo\": 42}" "UTF-8"))
 
         request
         {:body body
@@ -76,7 +93,7 @@
     (is (instance? InputStream (:body request')))
 
     (is (= {:headers {"content-type" "application/json"}
-            :json [1 2 3]}
+            :json {:oof 42}}
            (dissoc request' :body)))))
 
 
@@ -185,11 +202,12 @@
               (reset! capture! request)
               {:status 200
                :body {:foo "kek"}})
-            (wrap-json {:slot :foobar}))
+            (wrap-json {:slot :foobar
+                        :object-mapper custom-mapper}))
 
         body
         (new ByteArrayInputStream
-             (.getBytes "[1, 2, 3]" "UTF-8"))
+             (.getBytes "{\"foo\": 123}" "UTF-8"))
 
         request
         {:body body
@@ -198,11 +216,11 @@
         response
         (handler request)]
 
-    (is (= {:headers {"content-type" "application/json"},
-            :foobar [1 2 3]}
-         (dissoc @capture! :body)))
+    (is (= {:headers {"content-type" "application/json"}
+            :foobar {:oof 123}}
+           (dissoc @capture! :body)))
 
     (is (= {:status 200
-            :body "{\"foo\":\"kek\"}"
+            :body "{\"oof\":\"kek\"}"
             :headers {"content-type" "application/json; encoding=utf-8"}}
            response))))

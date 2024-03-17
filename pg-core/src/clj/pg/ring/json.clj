@@ -15,15 +15,25 @@
   "
   If the :body of the response is a collection, JSON-encode
   it and add a corresponding HTTP header.
+
+  Supports the following options:
+
+  - :object-mapper -- an instance of `com.fasterxml.jackson.databind.ObjectMapper`
+    for custom JSON encoding and decoding.
   "
   ([handler]
    (wrap-json-response handler nil))
-  ([handler _]
+
+  ([handler {:keys [object-mapper]}]
    (fn wrapper [request]
      (let [response (handler request)]
        (if (-> response :body coll?)
          (-> response
-             (update :body pg.json/write-string)
+             (update :body
+                     (^:once fn [body]
+                      (if object-mapper
+                        (pg.json/write-string object-mapper body)
+                        (pg.json/write-string body))))
              (assoc-in [:headers "content-type"] CT_JSON))
          response)))))
 
@@ -58,14 +68,19 @@
   - :slot -- the field where the parsed JSON data gets associated;
   - :malformed-response -- a response map which gets returned
     when we could not parse the payload. Default is 400 with
-    a plain text error message.
+    a plain text error message;
+  - :object-mapper -- an instance of `com.fasterxml.jackson.databind.ObjectMapper`
+    for custom JSON encoding and decoding.
   "
   ([handler]
    (wrap-json-request handler nil))
 
-  ([handler {:keys [slot malformed-response]
+  ([handler {:keys [slot
+                    object-mapper
+                    malformed-response]
              :or {slot :json
                   malformed-response RESP-JSON-MALFORMED}}]
+
    (fn wrapper [request]
      (if-not (json-request? request)
        (handler request)
@@ -75,7 +90,9 @@
 
              json
              (try
-               (json/read-stream body)
+               (if object-mapper
+                 (json/read-stream object-mapper body)
+                 (json/read-stream body))
                (catch Throwable e
                  JSON_ERR))]
 

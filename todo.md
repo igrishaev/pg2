@@ -2,6 +2,8 @@
 - readme
 
 - json
+  - ring middleware object mapper
+  - object-mapper: change order?
   - readme
 
 - pool close conn test
