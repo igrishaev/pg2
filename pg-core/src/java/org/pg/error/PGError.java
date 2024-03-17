@@ -1,7 +1,7 @@
 package org.pg.error;
 
 
-public final class PGError extends Error {
+public final class PGError extends RuntimeException {
 
     public PGError (final String message) {
         super(message);
