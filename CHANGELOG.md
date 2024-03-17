@@ -1,7 +1,8 @@
 
 ## 0.1.6-SNAPSHOT
 
-- ?
+- PGError and PGErrorResponse extend RuntimeException
+- JSON (TODO)
 
 ## 0.1.5
 
