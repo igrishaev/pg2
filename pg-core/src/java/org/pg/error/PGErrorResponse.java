@@ -3,7 +3,7 @@ package org.pg.error;
 import clojure.lang.IPersistentCollection;
 import org.pg.msg.server.ErrorResponse;
 
-public final class PGErrorResponse extends Error {
+public final class PGErrorResponse extends RuntimeException {
 
     private final ErrorResponse errorResponse;
 
