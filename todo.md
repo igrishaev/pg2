@@ -1,6 +1,11 @@
 
 - readme
 
+- bug
+  (pg/execute conn
+              "insert into test_json (data) values ($1)"
+              {:params ["[1, 2, 3]"]})
+
 - json
   - ring middleware object mapper
   - object-mapper: change order?

@@ -20,11 +20,11 @@ public final class Main {
 //                .build();
 
         ConnConfig config = ConnConfig.builder("test", "test")
-                .port(10160)
+                .port(10140)
                 .host("127.0.0.1")
                 .password("test")
-                .binaryEncode(true)
-                .binaryDecode(true)
+                .binaryEncode(false)
+                .binaryDecode(false)
                 .SOKeepAlive(true)
                 .build();
 
@@ -34,7 +34,7 @@ public final class Main {
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());
 
-        System.out.println(conn.execute("select '{\"foo\": 555}'::jsonb as obj"));
+        // System.out.println(conn.execute("select '{\"foo\": 555}'::jsonb as obj"));
 
         // System.out.println(conn.execute("select '1 year 1 second'::interval as interval"));
 
@@ -67,6 +67,8 @@ public final class Main {
 //         System.out.println(res1);
 
         // System.out.println(conn.execute(""));
+
+        conn.execute("insert into test_json (data) values ($1)", ExecuteParams.builder().params(List.of("[1, 2, 3]")).build());
 
         String query = "select $1 as foo";
         // "select $1::int as foo, 'test' as string, 42 as num, now() as now"
