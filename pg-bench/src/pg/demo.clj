@@ -1,39 +1,31 @@
 (ns pg.demo
   (:import
+   clojure.lang.PersistentHashSet
    clojure.lang.Keyword
    java.util.UUID
    com.fasterxml.jackson.core.JsonGenerator
    com.fasterxml.jackson.databind.ObjectMapper)
   (:require
    [jsonista.core :as j]
+   [jsonista.tagged :as jt]
    [pg.honey :as pgh]
+   [pg.json :as json]
    [pg.core :as pg]))
 
 
-(defn decode-json-string
-  [^String v]
-  (println v)
-  (case (first v)
-    \: (keyword (subs v 1))
-    \# (UUID/fromString (subs v 1))
-    v))
-
-(def ^ObjectMapper json-mapper
+(def tagged-mapper
   (j/object-mapper
-   {:decode-key-fn
-    decode-json-string
-    :decode-fn
-    (fn [v]
-      (if (string? v)
-        (decode-json-string v)
-        v))
-    :encoders
-    {UUID
-     (fn [^UUID v ^JsonGenerator jg]
-       (.writeString jg (str "#" v)))
-     Keyword
-     (fn [^Keyword v ^JsonGenerator jg]
-       (.writeString jg (str ":" (name v))))}}))
+   {:encode-key-fn true
+    :decode-key-fn true
+    :modules
+    [(jt/module
+      {:handlers
+       {Keyword {:tag "!kw"
+                 :encode jt/encode-keyword
+                 :decode keyword}
+        PersistentHashSet {:tag "!set"
+                           :encode jt/encode-collection
+                           :decode set}}})]}))
 
 
 (comment
@@ -50,14 +42,6 @@
      :user "test"
      :password "test"
      :dbname "test"})
-
-  (def config
-    {:host "127.0.0.1"
-     :port 10140
-     :user "test"
-     :password "test"
-     :dbname "test"
-     :object-mapper json-mapper})
 
   (def conn
     (jdbc/get-connection config))
@@ -116,10 +100,32 @@
 
   (pg/execute conn "select * from test_json")
 
+  (def -dump
+    (json/write-string tagged-mapper #{:foo :bar :baz}))
+
+  (println -dump)
+  ["!set",[["!kw","baz"],["!kw","bar"],["!kw","foo"]]]
+
+  (json/read-string tagged-mapper -dump)
+  #{:baz :bar :foo}
+
+  (def config
+    {:host "127.0.0.1"
+     :port 10140
+     :user "test"
+     :password "test"
+     :dbname "test"
+     :object-mapper tagged-mapper})
+
+  (def conn
+    (jdbc/get-connection config))
+
   (pg/execute conn
               "insert into test_json (data) values ($1)"
-              {:params [[:vector :with :keywords]]})
+              {:params [{:object #{:foo :bar :baz}}]})
 
+  (pg/execute conn "select * from test_json")
+  [{:id 1, :data {:object #{:baz :bar :foo}}}]
 
 
 
