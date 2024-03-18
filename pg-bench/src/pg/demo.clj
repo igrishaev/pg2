@@ -1,9 +1,43 @@
 (ns pg.demo
+  (:import
+   clojure.lang.Keyword
+   java.util.UUID
+   com.fasterxml.jackson.core.JsonGenerator
+   com.fasterxml.jackson.databind.ObjectMapper)
   (:require
+   [jsonista.core :as j]
+   [pg.honey :as pgh]
    [pg.core :as pg]))
 
 
+(defn decode-json-string
+  [^String v]
+  (println v)
+  (case (first v)
+    \: (keyword (subs v 1))
+    \# (UUID/fromString (subs v 1))
+    v))
+
+(def ^ObjectMapper json-mapper
+  (j/object-mapper
+   {:decode-key-fn
+    decode-json-string
+    :decode-fn
+    (fn [v]
+      (if (string? v)
+        (decode-json-string v)
+        v))
+    :encoders
+    {UUID
+     (fn [^UUID v ^JsonGenerator jg]
+       (.writeString jg (str "#" v)))
+     Keyword
+     (fn [^Keyword v ^JsonGenerator jg]
+       (.writeString jg (str ":" (name v))))}}))
+
+
 (comment
+
 
   (require '[pg.pool :as pool])
 
@@ -17,11 +51,79 @@
      :password "test"
      :dbname "test"})
 
+  (def config
+    {:host "127.0.0.1"
+     :port 10140
+     :user "test"
+     :password "test"
+     :dbname "test"
+     :object-mapper json-mapper})
+
   (def conn
     (jdbc/get-connection config))
 
   (jdbc/on-connection [conn config]
     (println conn))
+
+  ;;
+  ;; JSON
+  ;;
+
+  (pg/query conn "create table test_json (id serial primary key, data jsonb not null)")
+
+  (pg/execute conn
+              "insert into test_json (data) values ($1)"
+              {:params [{:some {:nested {:json 42}}}]})
+  {:inserted 1}
+
+  ;; insert into test_json (data) values ($1)
+  ;; parameters: $1 = '{"some":{"nested":{"json":42}}}'
+
+  (pg/execute conn
+              "select * from test_json where id = $1"
+              {:params [1]
+               :first? true})
+
+  {:id 1 :data {:some {:nested {:json 42}}}}
+
+  (pgh/get-by-id conn :test_json 1)
+  {:id 1, :data {:some {:nested {:json 42}}}}
+
+  (pgh/insert-one conn
+                  :test_json
+                  {:data [:lift {:another {:json {:value [1 2 3]}}}]})
+
+  {:id 2, :data {:another {:json {:value [1 2 3]}}}}
+
+  (pg/execute conn
+              "insert into test_json (data) values ($1)"
+              {:params [[:some :vector [:nested :vector]]]})
+
+  (pgh/get-by-id conn :test_json 3)
+  {:id 3, :data ["some" "vector" ["nested" "vector"]]}
+
+  (pgh/insert-one conn
+                  :test_json
+                  {:data (pg/json-wrap 42)})
+  {:id 4, :data 42}
+
+  (pgh/insert-one conn
+                  :test_json
+                  {:data (pg/json-wrap nil)})
+
+  {:id 5, :data nil} ;; "null"
+
+
+  (pg/execute conn "select * from test_json")
+
+  (pg/execute conn
+              "insert into test_json (data) values ($1)"
+              {:params [[:vector :with :keywords]]})
+
+
+
+
+
 
   ;; <PG connection test@127.0.0.1:10140/test>
 

@@ -1539,14 +1539,39 @@ namespaces are not supported by the wrapper.
 
 ## JSON support
 
-- general info
-- JDBC PGObject
-- connection examples
-- ->json wrapper
-- connection: custom object mapper
-- pg.json namespace
-- json HTTP middleware
-- encode/decode txt/bin?
+Postgres is amazing when dealing with JSON. Here hardly can be a database that
+serves it better. Unfortunately, Postgres clients never respect that feature,
+which is horrible. Take JDBC, for example: when querying a JSON(b) value, you'll
+get a dull `PGObject` which might be decoded manually. The same applies to
+insertion: one cannot just pass a Clojure map or a vector. It should be packed
+into the `PGObject` as well.
+
+Of course, this can be automated with extending certain protocols. But it's
+still slow as it's done on Clojure level (not Java), and it forces you to copy
+the same code from project to project.
+
+Fortunately, PG2 supports JSON out from the box. If you query a JSON value,
+you'll get its Clojure counter-part: a map, a vector, etc. To insert a JSON
+value to a table, you pass either a Clojure map or a vector. No additional steps
+are required.
+
+[jsonista]: https://github.com/metosin/jsonista
+
+PG2 relies on [jsonista][jsonista] library to handle JSON. At the moment of
+writing, this is the fastest JSON library for Clojure. Jsonista uses a concept
+of Object Mapper: it's an object holding custom rules to encode and decode
+values. You can compose your own mapper with custom rules and pass it into the
+connection config.
+
+### Basic usage
+
+### Json Wrapper
+
+### Custom Object Mapper
+
+### Utility pg.json namespace
+
+### Ring HTTP middleware
 
 ## Arrays support
 
