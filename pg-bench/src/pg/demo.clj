@@ -79,6 +79,12 @@
 
   {:id 2, :data {:another {:json {:value [1 2 3]}}}}
 
+  (pgh/insert-one conn
+                  :test_json
+                  {:data [:param :data]}
+                  {:honey {:params {:data {:some [:json {:map [1 2 3]}]}}}})
+
+
   (pg/execute conn
               "insert into test_json (data) values ($1)"
               {:params [[:some :vector [:nested :vector]]]})
@@ -96,6 +102,7 @@
                   {:data (pg/json-wrap nil)})
 
   {:id 5, :data nil} ;; "null"
+
 
 
   (pg/execute conn "select * from test_json")
@@ -128,6 +135,8 @@
   [{:id 1, :data {:object #{:baz :bar :foo}}}]
 
 
+
+  ;; end json
 
 
 

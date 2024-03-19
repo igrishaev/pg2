@@ -75,6 +75,11 @@ classes are supported for reading and writing.
 - [SSL](#ssl)
 - [Type Mapping](#type-mapping)
 - [JSON support](#json-support)
+  * [Basic usage](#basic-usage)
+  * [Json Wrapper](#json-wrapper)
+  * [Custom Object Mapper](#custom-object-mapper)
+  * [Utility pg.json namespace](#utility-pgjson-namespace)
+  * [Ring HTTP middleware](#ring-http-middleware)
 - [Arrays support](#arrays-support)
 - [Notify/Listen (PubSub)](#notifylisten-pubsub)
 - [Notices](#notices)
@@ -1565,9 +1570,117 @@ connection config.
 
 ### Basic usage
 
+Let's prepare a connection and a test table with a jsonb column:
+
+~~~clojure
+(def config
+  {:host "127.0.0.1"
+   :port 10140
+   :user "test"
+   :password "test"
+   :dbname "test"})
+
+(def conn
+  (jdbc/get-connection config))
+
+(pg/query conn "create table test_json (
+  id serial primary key,
+  data jsonb not null
+)")
+~~~
+
+Now insert a row:
+
+~~~clojure
+(pg/execute conn
+            "insert into test_json (data) values ($1)"
+            {:params [{:some {:nested {:json 42}}}]})
+~~~
+
+See? No need to encode a map manually nor wrap it into a sort of `PGObject`.
+
+Let's get the new row by its id:
+
+~~~clojure
+(pg/execute conn
+            "select * from test_json where id = $1"
+            {:params [1]
+             :first? true})
+
+{:id 1 :data {:some {:nested {:json 42}}}}
+~~~
+
+Again, the JSON data returns as a Clojure map with no wrappers.
+
+When using JSON with HoneySQL though, some circs are still needed. Namely,
+you've got to either wrap a map with `[:lift ...]` as follows:
+
+~~~clojure
+(pgh/insert-one conn
+                :test_json
+                {:data [:lift {:another {:json {:value [1 2 3]}}}]})
+
+{:id 2, :data {:another {:json {:value [1 2 3]}}}}
+~~~
+
+Without the `[:lift ...]` tag, HoneySQL would think this is a nested SQL map and
+will try to render it as a string, which will fail of course or lead to a SQL
+injection.
+
+Another way is to use HoneySQL params conception:
+
+~~~clojure
+(pgh/insert-one conn
+                :test_json
+                {:data [:param :data]}
+                {:honey {:params {:data {:some [:json {:map [1 2 3]}]}}}})
+~~~
+
+For details, see the "HoneySQL Integration" section.
+
+PG2 supports not only Clojure maps but vectors, sets, and lists. Here is an
+example with with a vector:
+
+~~~clojure
+(pg/execute conn
+            "insert into test_json (data) values ($1)"
+            {:params [[:some :vector [:nested :vector]]]})
+
+{:id 3, :data ["some" "vector" ["nested" "vector"]]}
+~~~
+
 ### Json Wrapper
 
+In rare cases you would like to store a string or a number in a JSON field. Say,
+123 is a valid JSON value but by default, it's treated as a numeric type. To
+tell Postgres it's a JSON indeed, wrap the value with `pg/json-wrap`:
+
+~~~clojure
+(pgh/insert-one conn
+                :test_json
+                {:data (pg/json-wrap 42)})
+
+{:id 4, :data 42}
+~~~
+
+This wrapper is especially useful if you want to store a "null" JSON value: not
+the standard NULL but "null" which, when parsed, becomes nil. For this, pass
+`(pg/json-wrap nil)` as follows:
+
+~~~clojure
+(pgh/insert-one conn
+                :test_json
+                {:data (pg/json-wrap nil)})
+
+{:id 5, :data nil} ;; "null" in the database
+~~~
+
 ### Custom Object Mapper
+
+One great thing about Jsonista is a conception of mapper objects. A mapper is a
+set of rules how to encode and decode data. Jsonista provides a way to build
+your own mapper. Once built, it can be passed to a connection config so the JSON
+data is written and read back in a special way.
 
 ### Utility pg.json namespace
 

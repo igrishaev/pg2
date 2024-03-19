@@ -118,6 +118,8 @@ public final class EncoderTxt {
             case
                     "clojure.lang.PersistentArrayMap",
                     "clojure.lang.PersistentHashMap",
+                    "clojure.lang.PersistentHashSet",
+                    "clojure.lang.PersistentList",
                     "clojure.lang.PersistentVector" -> switch (oid) {
                 // TODO: maybe return bytes?
                 // TODO: guess the initial size?

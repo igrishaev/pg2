@@ -180,6 +180,8 @@ public final class EncoderBin {
             case
                     "clojure.lang.PersistentArrayMap",
                     "clojure.lang.PersistentHashMap",
+                    "clojure.lang.PersistentHashSet",
+                    "clojure.lang.PersistentList",
                     "clojure.lang.PersistentVector" -> switch (oid) {
                 case JSON, JSONB, DEFAULT -> {
                     // TODO; guess the size?
