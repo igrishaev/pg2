@@ -128,17 +128,18 @@
     (jdbc/get-connection config))
 
   (pg/execute conn
-              "insert into test_json (data) values ($1)"
+              "insert into test_json (data) values ($1) returning *"
               {:params [{:object #{:foo :bar :baz}}]})
 
   (pg/execute conn "select * from test_json")
+
   [{:id 1, :data {:object #{:baz :bar :foo}}}]
 
+  (printl (pg/execute conn "select data::text json_raw from test_json where id = 10"))
 
+  ;; [{:json_raw {"object": ["!set", [["!kw", "baz"], ["!kw", "bar"], ["!kw", "foo"]]]}}]
 
   ;; end json
-
-
 
   ;; <PG connection test@127.0.0.1:10140/test>
 

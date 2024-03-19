@@ -227,3 +227,10 @@
         (json/read-string (str out))]
 
     (is (= {:oof 42} data))))
+
+
+(defn api-handler [request]
+  (let [user-id (-> request :data :user_id)
+        user (get-user-by-id user-id)]
+    {:status 200
+     :body {:user user}}))

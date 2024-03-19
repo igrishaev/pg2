@@ -1682,9 +1682,218 @@ set of rules how to encode and decode data. Jsonista provides a way to build
 your own mapper. Once built, it can be passed to a connection config so the JSON
 data is written and read back in a special way.
 
+Let's assume you're going to tag JSON values to track types. For example, by
+encoding a keyword `:foo`, you'll get a vector of `["!kw", "foo"]`. When
+decoding that vector, by the `"!kw"` string, the mapper understands it a keyword
+and coerces `"foo"` to `:foo`.
+
+Here is how you create a mapper with Jsonista:
+
+~~~clojure
+
+(ns ...
+  (:import
+   clojure.lang.Keyword
+   clojure.lang.PersistentHashSet)
+  (:require
+    [jsonista.core :as j]
+    [jsonista.tagged :as jt]))
+
+(def tagged-mapper
+  (j/object-mapper
+   {:encode-key-fn true
+    :decode-key-fn true
+    :modules
+    [(jt/module
+      {:handlers
+       {Keyword {:tag "!kw"
+                 :encode jt/encode-keyword
+                 :decode keyword}
+        PersistentHashSet {:tag "!set"
+                           :encode jt/encode-collection
+                           :decode set}}})]}))
+~~~
+
+The `object-mapper` function accepts even more options which we skip for now.
+
+Now that you have a mapper, pass it into the config for connection:
+
+~~~clojure
+(def config
+  {:host "127.0.0.1"
+   :port 10140
+   :user "test"
+   :password "test"
+   :dbname "test"
+   :object-mapper tagged-mapper})
+
+(def conn
+  (jdbc/get-connection config))
+~~~
+
+All the JSON operations done withing this connection will reuse the passed
+object mapper. Let's insert a set of keywords:
+
+~~~clojure
+(pg/execute conn
+            "insert into test_json (data) values ($1)"
+            {:params [{:object #{:foo :bar :baz}}]})
+~~~
+
+When read back, the JSON value is not a vector of strings any longer but a set
+of keywords:
+
+~~~clojure
+(pg/execute conn "select * from test_json")
+
+[{:id 1, :data {:object #{:baz :bar :foo}}}]
+~~~
+
+To peek a real JSON value, select it as a plain text and print (to avoid
+escaping quotes):
+
+~~~clojure
+(printl (pg/execute conn "select data::text json_raw from test_json where id = 10"))
+
+;; [{:json_raw {"object": ["!set", [["!kw", "baz"], ["!kw", "bar"], ["!kw", "foo"]]]}}]
+~~~
+
+Of course, when read from another connection with a default object mapper, the
+data is returned without tags expanding.
+
 ### Utility pg.json namespace
 
+PG2 provides a dedicated namespace for JSON encoding and decoding. You can use
+it for utility purposes withing files, HTTP API, etc. It's a useful replacement
+for Cheshire and other JSON libraries. The namespace is `pg.json`:
+
+~~~clojure
+(ns ...
+  (:require
+   [pg.json :as json]))
+~~~
+
+#### Reading JSON
+
+The `read-string` function loads a value from a JSON string:
+
+~~~clojure
+(json/read-string "[1, 2, 3]")
+
+[1 2 3]
+~~~
+
+The first argument might be an object mapper:
+
+~~~clojure
+(json/read-string tagged-mapper "[\"!kw\", \"hello\"]")
+
+:hello
+~~~
+
+The functions `read-stream` and `read-reader` act the same but accept either an
+`InputStream` or a `Reader` object:
+
+~~~clojure
+(let [in (-> "[1, 2, 3]" .getBytes io/input-stream)]
+  (json/read-stream tagged-mapper in))
+
+(let [in (-> "[1, 2, 3]" .getBytes io/reader)]
+  (json/read-reader tagged-mapper in))
+~~~
+
+#### Writing JSON
+
+The `write-string` function dumps an value into a JSON string:
+
+~~~clojure
+(json/write-string {:test [:hello 1 true]})
+
+;; "{\"test\":[\"hello\",1,true]}"
+~~~
+
+The first argument might be a custom object mapper. Let's reuse our tagger
+mapper:
+
+~~~clojure
+(json/write-string tagged-mapper {:test [:hello 1 true]})
+
+;; "{\"test\":[[\"!kw\",\"hello\"],1,true]}"
+~~~
+
+The functions `write-stream` and `write-writer` act the same. The only
+difference is, they accept either an `OutputStream` or `Writer` objects. The
+first argument might be a mapper:
+
+~~~clojure
+(let [out (new ByteArrayOutputStream)]
+  (json/write-stream tagged-mapper {:foo [:a :b :c]} out))
+
+(let [out (new StringWriter)]
+  (json/write-writer tagged-mapper {:foo [:a :b :c]} out))
+~~~
+
 ### Ring HTTP middleware
+
+[ring-json]: https://github.com/ring-clojure/ring-json
+
+PG2 provides an HTTP Ring middleware for JSON. It acts like `wrap-json-request`
+and `wrap-json-response` middleware from the [ring-json][ring-json]
+library. Comparing to it, the PG2 stuff has the following advantages:
+
+- it's faster because Jsonista is faster than Cheshire;
+- it allows to wrap both request and response with one expression;
+- custom object mappers are supported.
+
+Imagine you have a Ring handler what reads JSON from body and returns a JSON
+map. Something like this:
+
+~~~clojure
+(defn api-handler [request]
+  (let [user-id (-> request :data :user_id)
+        user (get-user-by-id user-id)]
+    {:status 200
+     :body {:user user}}))
+~~~
+
+Here is how you wrap it:
+
+~~~clojure
+(ns ...
+  (:require
+   [pg.ring.json :refer [wrap-json
+                         wrap-json-response
+                         wrap-json-request]]))
+
+(def app
+  (-> api-handler
+      (wrap-this)
+      (wrap-json)
+      (wrap-that)))
+~~~
+
+Above, the `wrap-json` call is a combination of `wrap-json-request` and
+`wrap-json-response`. You can apply them both explicitly.
+
+All the three `wrap-json...` middleware accept a handler to wrap and a map of
+options. Here is the options supported:
+
+| Name                  | Direction         | Description                                                |
+|-----------------------|-------------------|------------------------------------------------------------|
+| `:object-mapper`      | request, response | An custom instance of `ObjectMapper`                       |
+| `:slot`               | request           | A field to `assoc` the parsed JSON data (1)                |
+| `:malformed-response` | request           | A ring response returned when payload cannot be parsed (2) |
+
+Notes:
+
+1. The default slot name is `:json`. Please avoid using `:body` or `:params` to
+   prevent overriding existing request fields. This is especially important for
+   `:body`! Often, you need the origin input stream to calculate an MD5 or
+   SHA-256 hash-sum of the payload. If you overwrite the `:body` field, you
+   cannot do that.
+
+2. The default malformed response is something like 400 "Malformed JSON" (plain
+   text).
 
 ## Arrays support
 
