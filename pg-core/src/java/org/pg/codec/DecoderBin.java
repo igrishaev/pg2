@@ -22,11 +22,11 @@ public final class DecoderBin {
             final CodecParams codecParams
     ) {
         return switch (oid) {
-            case TEXT, VARCHAR, NAME -> BBTool.getRestString(buf, codecParams.serverCharset);
+            case TEXT, VARCHAR, NAME -> BBTool.getRestString(buf, codecParams.serverCharset());
             case INT2 -> buf.getShort();
             case INT4, OID -> buf.getInt();
             case INT8 -> buf.getLong();
-            case CHAR, BPCHAR -> BBTool.getRestString(buf, codecParams.serverCharset).charAt(0);
+            case CHAR, BPCHAR -> BBTool.getRestString(buf, codecParams.serverCharset()).charAt(0);
             case UUID -> {
                 final long hiBits = buf.getLong();
                 final long loBits = buf.getLong();
@@ -41,7 +41,7 @@ public final class DecoderBin {
                     default: throw new PGError("incorrect binary boolean value");
                 }
             }
-            case JSON, JSONB -> JSON.readValueBinary(buf);
+            case JSON, JSONB -> JSON.readValueBinary(codecParams.objectMapper(), buf);
             case TIME -> DateTimeBin.decodeTIME(buf);
             case TIMETZ -> DateTimeBin.decodeTIMETZ(buf);
             case DATE -> DateTimeBin.decodeDATE(buf);

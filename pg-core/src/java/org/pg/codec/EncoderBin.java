@@ -38,7 +38,7 @@ public final class EncoderBin {
     }
 
     private static byte[] getBytes (String string, CodecParams codecParams) {
-        return string.getBytes(codecParams.clientCharset);
+        return string.getBytes(codecParams.clientCharset());
     }
 
     public static ByteBuffer encode (Object x, OID oid, CodecParams codecParams) {
@@ -81,7 +81,7 @@ public final class EncoderBin {
             case "java.lang.Character" -> switch (oid) {
                 case TEXT, VARCHAR, CHAR, DEFAULT -> {
                     ByteBuffer buf = ByteBuffer.allocate(2);
-                    buf.put(x.toString().getBytes(codecParams.clientCharset));
+                    buf.put(x.toString().getBytes(codecParams.clientCharset()));
                     yield buf;
                 }
                 default -> binEncodingError(x, oid);
@@ -171,7 +171,7 @@ public final class EncoderBin {
                 case JSON, JSONB, DEFAULT -> {
                     // TODO; guess the size?
                     ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
-                    JSON.writeValue(out, ((JSON.Wrapper)x).value());
+                    JSON.writeValue(codecParams.objectMapper(), out, ((JSON.Wrapper)x).value());
                     yield ByteBuffer.wrap(out.toByteArray());
                 }
                 default -> binEncodingError(x, oid);
@@ -180,11 +180,13 @@ public final class EncoderBin {
             case
                     "clojure.lang.PersistentArrayMap",
                     "clojure.lang.PersistentHashMap",
+                    "clojure.lang.PersistentHashSet",
+                    "clojure.lang.PersistentList",
                     "clojure.lang.PersistentVector" -> switch (oid) {
                 case JSON, JSONB, DEFAULT -> {
                     // TODO; guess the size?
                     ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
-                    JSON.writeValue(out, x);
+                    JSON.writeValue(codecParams.objectMapper(), out, x);
                     yield ByteBuffer.wrap(out.toByteArray());
                 }
                 default -> binEncodingError(x, oid);

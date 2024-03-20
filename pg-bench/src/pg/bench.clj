@@ -287,25 +287,25 @@ from
   ;;      (pg/execute conn
   ;;                  QUERY_SELECT_RANDOM_MANY_FIELDS))))
 
-  (with-title "next.JDBC select many fields WITH ASSOC"
-    (with-open [conn (jdbc/get-connection
-                      jdbc-config)]
-      (quick-bench
-       (let [rows
-             (jdbc/execute! conn
-                            [QUERY_SELECT_RANDOM_MANY_FIELDS]
-                            {:as rs/as-unqualified-maps})]
-         (doseq [row rows]
-           (assoc row :extra 42))))))
+  ;; (with-title "next.JDBC select many fields WITH ASSOC"
+  ;;   (with-open [conn (jdbc/get-connection
+  ;;                     jdbc-config)]
+  ;;     (quick-bench
+  ;;      (let [rows
+  ;;            (jdbc/execute! conn
+  ;;                           [QUERY_SELECT_RANDOM_MANY_FIELDS]
+  ;;                           {:as rs/as-unqualified-maps})]
+  ;;        (doseq [row rows]
+  ;;          (assoc row :extra 42))))))
 
-  (with-title "pg select many fields WITH ASSOC"
-    (pg/with-connection [conn pg-config]
-      (quick-bench
-        (let [rows
-              (pg/execute conn
-                          QUERY_SELECT_RANDOM_MANY_FIELDS)]
-          (doseq [row rows]
-            (assoc row :extra 42))))))
+  ;; (with-title "pg select many fields WITH ASSOC"
+  ;;   (pg/with-connection [conn pg-config]
+  ;;     (quick-bench
+  ;;       (let [rows
+  ;;             (pg/execute conn
+  ;;                         QUERY_SELECT_RANDOM_MANY_FIELDS)]
+  ;;         (doseq [row rows]
+  ;;           (assoc row :extra 42))))))
 
 
   ;; (with-title "next.JDBC simple value select with ASSOC"
@@ -422,20 +422,20 @@ from
   ;;      (pg/execute conn
   ;;                  QUERY_SELECT_RANDOM_COMPLEX))))
 
-  ;; (with-title "next.JDBC random JSON select"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
+  (with-title "next.JDBC random JSON select"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
 
-  ;;     (quick-bench
-  ;;      (jdbc/execute! conn
-  ;;                     [QUERY_SELECT_JSON]
-  ;;                     {:as rs/as-unqualified-maps}))))
+      (quick-bench
+       (jdbc/execute! conn
+                      [QUERY_SELECT_JSON]
+                      {:as rs/as-unqualified-maps}))))
 
-  ;; (with-title "pg random JSON select"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;      (pg/execute conn
-  ;;                  QUERY_SELECT_JSON))))
+  (with-title "pg random JSON select"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/execute conn
+                   QUERY_SELECT_JSON))))
 
   ;; (with-title "pg insert values in TRANSACTION"
   ;;   (pg/with-connection [conn pg-config]

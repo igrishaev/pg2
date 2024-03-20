@@ -33,7 +33,7 @@ public final class JSON {
         return new Wrapper(value);
     }
 
-    static final ObjectMapper mapper = new ObjectMapper();
+    public static final ObjectMapper defaultMapper = new ObjectMapper();
 
     static {
         final SimpleModule module = new SimpleModule("pg");
@@ -46,7 +46,7 @@ public final class JSON {
         module.addSerializer(Ratio.class, new RatioSerializer());
         module.addSerializer(Symbol.class, new SymbolSerializer());
         module.addKeyDeserializer(Object.class, new KeywordKeyDeserializer());
-        mapper.registerModule(module);
+        defaultMapper.registerModule(module);
     }
 
     static Object decodeError(final Throwable e) {
@@ -57,9 +57,23 @@ public final class JSON {
         throw new PGError(e, "JSON encode error, value: %s", value);
     }
 
-    public static Object readValue (final String input) {
+    public static Object readValue (final ObjectMapper objectMapper, final String input) {
         try {
-            return mapper.readValue(input, Object.class);
+            return objectMapper.readValue(input, Object.class);
+        }
+        catch (IOException e) {
+            return decodeError(e);
+        }
+    }
+
+    public static Object readValue (final String input) {
+        return readValue(defaultMapper, input);
+    }
+
+    @SuppressWarnings("unused")
+    public static Object readValue (final ObjectMapper objectMapper, final InputStream inputStream) {
+        try {
+            return objectMapper.readValue(inputStream, Object.class);
         }
         catch (IOException e) {
             return decodeError(e);
@@ -68,8 +82,13 @@ public final class JSON {
 
     @SuppressWarnings("unused")
     public static Object readValue (final InputStream inputStream) {
+        return readValue(defaultMapper, inputStream);
+    }
+
+    @SuppressWarnings("unused")
+    public static Object readValue (final ObjectMapper objectMapper, final Reader reader) {
         try {
-            return mapper.readValue(inputStream, Object.class);
+            return objectMapper.readValue(reader, Object.class);
         }
         catch (IOException e) {
             return decodeError(e);
@@ -78,59 +97,72 @@ public final class JSON {
 
     @SuppressWarnings("unused")
     public static Object readValue (final Reader reader) {
-        try {
-            return mapper.readValue(reader, Object.class);
+        return readValue(defaultMapper, reader);
+    }
+
+    public static Object readValueBinary (final ObjectMapper objectMapper, final ByteBuffer buf) {
+        // skip Start of Heading, if met
+        if (buf.get() != 1) {
+            buf.position(buf.position() - 1);
         }
-        catch (IOException e) {
-            return decodeError(e);
-        }
+        return readValue(objectMapper, buf);
     }
 
     public static Object readValueBinary (final ByteBuffer buf) {
-        final byte b = buf.get();
-        if (b == 1) {
-            buf.limit(buf.limit() - 1);
-        }
-        else {
-            buf.position(buf.position() - 1);
-        }
-        return readValue(buf);
+        return readValueBinary(defaultMapper, buf);
     }
 
-    public static Object readValue (final ByteBuffer buf) {
+    public static Object readValue (final ObjectMapper objectMapper, final ByteBuffer buf) {
         final int offset = buf.arrayOffset() + buf.position();
-        final int len = buf.limit();
+        final int len = buf.limit() - offset;
         try {
-            return mapper.readValue(buf.array(), offset, len, Object.class);
+            return objectMapper.readValue(buf.array(), offset, len, Object.class);
         } catch (IOException e) {
             return decodeError(e);
         }
     }
 
-    public static void writeValue (final OutputStream outputStream, final Object value) {
+    public static Object readValue (final ByteBuffer buf) {
+        return readValue(defaultMapper, buf);
+    }
+
+    public static void writeValue (final ObjectMapper objectMapper, final OutputStream outputStream, final Object value) {
         try {
-            mapper.writeValue(outputStream, value);
+            objectMapper.writeValue(outputStream, value);
+        } catch (IOException e) {
+            encodeError(e, value);
+        }
+    }
+
+    public static void writeValue (final OutputStream outputStream, final Object value) {
+        writeValue(defaultMapper, outputStream, value);
+    }
+
+    public static void writeValue (final ObjectMapper objectMapper, final Writer writer, final Object value) {
+        try {
+            objectMapper.writeValue(writer, value);
         } catch (IOException e) {
             encodeError(e, value);
         }
     }
 
     public static void writeValue (final Writer writer, final Object value) {
+        writeValue(defaultMapper, writer, value);
+    }
+
+    @SuppressWarnings("unused")
+    public static String writeValueToString (final ObjectMapper objectMapper, final Object value) {
         try {
-            mapper.writeValue(writer, value);
-        } catch (IOException e) {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
             encodeError(e, value);
+            return null;
         }
     }
 
     @SuppressWarnings("unused")
     public static String writeValueToString (final Object value) {
-        try {
-            return mapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
-            encodeError(e, value);
-            return "";
-        }
+        return writeValueToString(defaultMapper, value);
     }
 
     public static void main (final String[] args) {

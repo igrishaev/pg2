@@ -7,6 +7,7 @@
    [less.awful.ssl :as ssl])
   (:import
    clojure.lang.Keyword
+   com.fasterxml.jackson.databind.ObjectMapper
    java.io.InputStream
    java.io.OutputStream
    java.io.Reader
@@ -14,6 +15,8 @@
    java.lang.AutoCloseable
    java.lang.System$Logger$Level
    java.nio.ByteBuffer
+   java.nio.charset.Charset
+   java.time.ZoneId
    java.util.List
    java.util.Map
    java.util.UUID
@@ -23,9 +26,9 @@
    org.pg.Connection
    org.pg.ExecuteParams
    org.pg.ExecuteParams$Builder
-   org.pg.error.PGError
-   org.pg.error.PGErrorResponse
    org.pg.PreparedStatement
+   org.pg.codec.CodecParams
+   org.pg.codec.CodecParams$Builder
    org.pg.codec.DecoderBin
    org.pg.codec.DecoderTxt
    org.pg.codec.EncoderBin
@@ -34,6 +37,8 @@
    org.pg.enums.OID
    org.pg.enums.TXStatus
    org.pg.enums.TxLevel
+   org.pg.error.PGError
+   org.pg.error.PGErrorResponse
    org.pg.json.JSON
    org.pg.json.JSON$Wrapper
    org.pg.reducer.IReducer
@@ -279,6 +284,9 @@
                 ;; logging
                 log-level
 
+                ;; json
+                ^ObjectMapper object-mapper
+
                 ;; misc
                 cancel-timeout-ms
                 protocol-version]}
@@ -348,6 +356,9 @@
 
       log-level
       (.logLevel (->LogLevel log-level))
+
+      object-mapper
+      (.objectMapper object-mapper)
 
       cancel-timeout-ms
       (.cancelTimeoutMs cancel-timeout-ms)
@@ -939,21 +950,69 @@
 ;; Encode/decode
 ;;
 
+
+(defn ->codec-params ^CodecParams [^Map opt]
+
+  (let [{:keys [^String client-charset
+                ^String server-charset
+                ^String date-style
+                ^String time-zone-id
+                ^Boolean integer-datetime?
+                ^ObjectMapper object-mapper]}
+        opt]
+
+    (cond-> (CodecParams/builder)
+
+      client-charset
+      (as-> builder
+          (let [charset (Charset/forName client-charset)]
+            (.clientCharset builder charset)))
+
+      server-charset
+      (as-> builder
+          (let [charset (Charset/forName server-charset)]
+            (.serverCharset builder charset)))
+
+      date-style
+      (.dateStyle date-style)
+
+      time-zone-id
+      (as-> builder
+          (let [zone-id (ZoneId/of time-zone-id)]
+            (.timeZone builder zone-id)))
+
+      (some? integer-datetime?)
+      (.integerDatetime integer-datetime?)
+
+      object-mapper
+      (.objectMapper object-mapper)
+
+      :finally
+      (.build))))
+
+
 (defn decode-bin
   "
   Decode a binary-encoded value from a ByteBuffer.
   "
-  [^ByteBuffer buf ^OID oid]
-  (.rewind buf)
-  (DecoderBin/decode buf oid))
+  ([^ByteBuffer buf ^OID oid]
+   (.rewind buf)
+   (DecoderBin/decode buf oid))
+
+  ([^ByteBuffer buf ^OID oid opt]
+   (.rewind buf)
+   (DecoderBin/decode buf oid (->codec-params opt))))
 
 
 (defn decode-txt
   "
   Decode a text-encoded value from a ByteBuffer.
   "
-  [^String obj ^OID oid]
-  (DecoderTxt/decode obj oid))
+  ([^String obj ^OID oid]
+   (DecoderTxt/decode obj oid))
+
+  ([^String obj ^OID oid opt]
+   (DecoderTxt/decode obj oid (->codec-params opt))))
 
 
 (defn encode-bin
@@ -964,7 +1023,10 @@
    (EncoderBin/encode obj))
 
   (^ByteBuffer [obj ^OID oid]
-   (EncoderBin/encode obj oid)))
+   (EncoderBin/encode obj oid))
+
+  (^ByteBuffer [obj ^OID oid opt]
+   (EncoderBin/encode obj oid (->codec-params opt))))
 
 
 (defn encode-txt
@@ -975,7 +1037,10 @@
    (EncoderTxt/encode obj))
 
   (^String [obj ^OID oid]
-   (EncoderTxt/encode obj oid)))
+   (EncoderTxt/encode obj oid))
+
+  (^String [obj ^OID oid opt]
+   (EncoderTxt/encode obj oid (->codec-params opt))))
 
 
 ;;

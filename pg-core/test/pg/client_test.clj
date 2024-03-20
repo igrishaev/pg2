@@ -13,16 +13,17 @@
    java.util.Date
    java.util.HashMap
    java.util.concurrent.ExecutionException
-   org.pg.error.PGError
-   org.pg.error.PGErrorResponse
    org.pg.clojure.LazyMap
-   org.pg.clojure.LazyVector)
+   org.pg.clojure.LazyVector
+   org.pg.error.PGError
+   org.pg.error.PGErrorResponse)
   (:require
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [com.stuartsierra.component :as component]
+   [jsonista.core :as j]
    [less.awful.ssl :as ssl]
    [pg.component :as pgc]
    [pg.core :as pg]
@@ -35,6 +36,16 @@
 
 
 (use-fixtures :each fix-multi-port)
+
+
+(defn reverse-string [s]
+  (apply str (reverse s)))
+
+
+(def custom-mapper
+  (j/object-mapper
+   {:encode-key-fn (comp reverse-string name)
+    :decode-key-fn (comp keyword reverse-string)}))
 
 
 (defn gen-table []
@@ -1182,6 +1193,50 @@ drop table %1$s;
                       {:params [json]
                        :first? first})]
       (is (= '{:obj (1 2 [true {:foo 1}])} res)))))
+
+
+(deftest test-client-json-read-txt-object-mapper
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? false
+                                   :binary-decode? false
+                                   :object-mapper custom-mapper)]
+    (let [res
+          (pg/execute conn "select '{\"foo\": 123}'::jsonb as obj")]
+      (is (= [{:obj {:oof 123}}] res)))))
+
+
+(deftest test-client-json-read-bin-object-mapper
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true
+                                   :object-mapper custom-mapper)]
+    (let [res
+          (pg/execute conn "select '{\"foo\": 123}'::jsonb as obj")]
+      (is (= [{:obj {:oof 123}}] res)))))
+
+
+(deftest test-client-json-write-txt-object-mapper
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? false
+                                   :binary-decode? false
+                                   :object-mapper custom-mapper)]
+    (pg/execute conn "create temp table foo123 (val json)")
+    (pg/execute conn "insert into foo123 values ($1)" {:params [{:foo 123}]})
+    (let [res
+          (pg/execute conn "select val::text from foo123")]
+      (is (= [{:val "{\"oof\":123}"}] res)))))
+
+
+(deftest test-client-json-write-bin-object-mapper
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true
+                                   :object-mapper custom-mapper)]
+    (pg/execute conn "create temp table foo123 (val json)")
+    (pg/execute conn "insert into foo123 values ($1)" {:params [{:foo 123}]})
+    (let [res
+          (pg/execute conn "select val::text from foo123")]
+      (is (= [{:val "{\"oof\":123}"}] res)))))
 
 
 (deftest test-client-default-oid-long

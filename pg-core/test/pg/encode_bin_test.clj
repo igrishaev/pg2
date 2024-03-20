@@ -1,24 +1,35 @@
 (ns pg.encode-bin-test
   (:import
-   org.pg.error.PGError
+   java.math.BigDecimal
+   java.math.BigInteger
    java.nio.ByteBuffer
-   java.util.Date
    java.time.Instant
    java.time.LocalDate
+   java.time.LocalDateTime
    java.time.LocalTime
+   java.time.OffsetDateTime
    java.time.OffsetTime
    java.time.ZoneOffset
    java.time.ZonedDateTime
-   java.time.OffsetDateTime
-   java.time.LocalDateTime
-   java.math.BigDecimal
-   java.math.BigInteger)
+   java.util.Date
+   org.pg.error.PGError)
   (:require
    [clojure.string :as str]
-   [pg.core :as pg]
-   [pg.oid :as oid]
+   [clojure.test :refer [deftest is testing]]
+   [jsonista.core :as j]
    [pg.bb :refer [bb==]]
-   [clojure.test :refer [deftest is testing]]))
+   [pg.core :as pg]
+   [pg.oid :as oid]))
+
+
+(defn reverse-string [s]
+  (apply str (reverse s)))
+
+
+(def custom-mapper
+  (j/object-mapper
+   {:encode-key-fn (comp reverse-string name)
+    :decode-key-fn (comp keyword reverse-string)}))
 
 
 (deftest test-bytea
@@ -118,6 +129,21 @@
 
   (let [res (pg/encode-bin (new BigInteger "1") oid/int8)]
     (is (bb== (byte-array [0 0 0 0 0 0 0 1]) res))))
+
+
+(deftest test-json-custom-mapper
+  (let [bb
+        (pg/encode-bin {:foo 123}
+                       oid/json
+                       {:object-mapper custom-mapper})
+
+        string
+        (-> bb .rewind .array String.)
+
+        data
+        (j/read-value string)]
+
+    (is (= {"oof" 123} data))))
 
 
 (deftest test-big-decimal

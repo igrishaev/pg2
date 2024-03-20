@@ -109,7 +109,7 @@ public final class EncoderTxt {
                     // TODO: maybe return bytes?
                     // TODO: guess the initial size?
                     final StringWriter writer = new StringWriter(Const.JSON_ENC_BUF_SIZE);
-                    JSON.writeValue(writer, ((JSON.Wrapper)x).value());
+                    JSON.writeValue(codecParams.objectMapper(), writer, ((JSON.Wrapper)x).value());
                     yield writer.toString();
                 }
                 default -> txtEncodingError(x, oid);
@@ -118,12 +118,14 @@ public final class EncoderTxt {
             case
                     "clojure.lang.PersistentArrayMap",
                     "clojure.lang.PersistentHashMap",
+                    "clojure.lang.PersistentHashSet",
+                    "clojure.lang.PersistentList",
                     "clojure.lang.PersistentVector" -> switch (oid) {
                 // TODO: maybe return bytes?
                 // TODO: guess the initial size?
                 case JSON, JSONB, DEFAULT -> {
                     final StringWriter writer = new StringWriter(Const.JSON_ENC_BUF_SIZE);
-                    JSON.writeValue(writer, x);
+                    JSON.writeValue(codecParams.objectMapper(), writer, x);
                     yield writer.toString();
                 }
                 default -> txtEncodingError(x, oid);

@@ -1,9 +1,35 @@
 (ns pg.demo
+  (:import
+   clojure.lang.PersistentHashSet
+   clojure.lang.Keyword
+   java.util.UUID
+   com.fasterxml.jackson.core.JsonGenerator
+   com.fasterxml.jackson.databind.ObjectMapper)
   (:require
+   [jsonista.core :as j]
+   [jsonista.tagged :as jt]
+   [pg.honey :as pgh]
+   [pg.json :as json]
    [pg.core :as pg]))
 
 
+(def tagged-mapper
+  (j/object-mapper
+   {:encode-key-fn true
+    :decode-key-fn true
+    :modules
+    [(jt/module
+      {:handlers
+       {Keyword {:tag "!kw"
+                 :encode jt/encode-keyword
+                 :decode keyword}
+        PersistentHashSet {:tag "!set"
+                           :encode jt/encode-collection
+                           :decode set}}})]}))
+
+
 (comment
+
 
   (require '[pg.pool :as pool])
 
@@ -22,6 +48,98 @@
 
   (jdbc/on-connection [conn config]
     (println conn))
+
+  ;;
+  ;; JSON
+  ;;
+
+  (pg/query conn "create table test_json (id serial primary key, data jsonb not null)")
+
+  (pg/execute conn
+              "insert into test_json (data) values ($1)"
+              {:params [{:some {:nested {:json 42}}}]})
+  {:inserted 1}
+
+  ;; insert into test_json (data) values ($1)
+  ;; parameters: $1 = '{"some":{"nested":{"json":42}}}'
+
+  (pg/execute conn
+              "select * from test_json where id = $1"
+              {:params [1]
+               :first? true})
+
+  {:id 1 :data {:some {:nested {:json 42}}}}
+
+  (pgh/get-by-id conn :test_json 1)
+  {:id 1, :data {:some {:nested {:json 42}}}}
+
+  (pgh/insert-one conn
+                  :test_json
+                  {:data [:lift {:another {:json {:value [1 2 3]}}}]})
+
+  {:id 2, :data {:another {:json {:value [1 2 3]}}}}
+
+  (pgh/insert-one conn
+                  :test_json
+                  {:data [:param :data]}
+                  {:honey {:params {:data {:some [:json {:map [1 2 3]}]}}}})
+
+
+  (pg/execute conn
+              "insert into test_json (data) values ($1)"
+              {:params [[:some :vector [:nested :vector]]]})
+
+  (pgh/get-by-id conn :test_json 3)
+  {:id 3, :data ["some" "vector" ["nested" "vector"]]}
+
+  (pgh/insert-one conn
+                  :test_json
+                  {:data (pg/json-wrap 42)})
+  {:id 4, :data 42}
+
+  (pgh/insert-one conn
+                  :test_json
+                  {:data (pg/json-wrap nil)})
+
+  {:id 5, :data nil} ;; "null"
+
+
+
+  (pg/execute conn "select * from test_json")
+
+  (def -dump
+    (json/write-string tagged-mapper #{:foo :bar :baz}))
+
+  (println -dump)
+  ["!set",[["!kw","baz"],["!kw","bar"],["!kw","foo"]]]
+
+  (json/read-string tagged-mapper -dump)
+  #{:baz :bar :foo}
+
+  (def config
+    {:host "127.0.0.1"
+     :port 10140
+     :user "test"
+     :password "test"
+     :dbname "test"
+     :object-mapper tagged-mapper})
+
+  (def conn
+    (jdbc/get-connection config))
+
+  (pg/execute conn
+              "insert into test_json (data) values ($1) returning *"
+              {:params [{:object #{:foo :bar :baz}}]})
+
+  (pg/execute conn "select * from test_json")
+
+  [{:id 1, :data {:object #{:baz :bar :foo}}}]
+
+  (printl (pg/execute conn "select data::text json_raw from test_json where id = 10"))
+
+  ;; [{:json_raw {"object": ["!set", [["!kw", "baz"], ["!kw", "bar"], ["!kw", "foo"]]]}}]
+
+  ;; end json
 
   ;; <PG connection test@127.0.0.1:10140/test>
 

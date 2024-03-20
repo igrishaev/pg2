@@ -1,8 +1,17 @@
 
 ## 0.1.6-SNAPSHOT
 
+- msg package split on msg.server and msg.client
+- ClientMessage and ServerMessage interfaces
 - PGError and PGErrorResponse extend RuntimeException
-- JSON (TODO)
+- fixed offset/limit bug when parsing binary json
+- make CodecParams class immutable
+- ObjectMapper support in:
+  - connection,
+  - codec params,
+  - pg.json ns,
+  - encode/decode-bin/text,
+  - JSON middleware
 
 ## 0.1.5
 

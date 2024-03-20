@@ -1,6 +1,18 @@
 
 - readme
 
+- bug
+  (pg/execute conn
+              "insert into test_json (data) values ($1)"
+              {:params ["[1, 2, 3]"]})
+
+- encode: reverse type->oid to oid->type?
+
+- json
+  - ring middleware object mapper
+  - object-mapper: change order?
+  - readme
+
 - pool close conn test
 - keywords with namespaces (+ jdbc)
 - test parallel connection access

@@ -1,19 +1,30 @@
 (ns pg.decode-bin-test
   (:import
-   java.nio.ByteBuffer
    java.math.BigDecimal
-   java.time.OffsetTime
-   java.time.OffsetDateTime
-   java.time.LocalTime
+   java.math.BigDecimal
+   java.nio.ByteBuffer
    java.time.LocalDate
    java.time.LocalDateTime
-   java.util.UUID
-   java.math.BigDecimal)
+   java.time.LocalTime
+   java.time.OffsetDateTime
+   java.time.OffsetTime
+   java.util.UUID)
   (:require
+   [clojure.test :refer [deftest is testing]]
+   [jsonista.core :as j]
    [pg.bb :refer [->bb]]
    [pg.core :as pg]
-   [pg.oid :as oid]
-   [clojure.test :refer [deftest is testing]]))
+   [pg.oid :as oid]))
+
+
+(defn reverse-string [s]
+  (apply str (reverse s)))
+
+
+(def custom-mapper
+  (j/object-mapper
+   {:encode-key-fn (comp reverse-string name)
+    :decode-key-fn (comp keyword reverse-string)}))
 
 
 (deftest test-bytea
@@ -137,6 +148,21 @@
 
     (is (instance? BigDecimal res))
     (is (= -123.456M res))))
+
+
+(deftest test-json-custom-mapper
+  (let [string
+        (j/write-value-as-string {:foo 42})
+
+        bb
+        (ByteBuffer/wrap (.getBytes string))
+
+        data
+        (pg/decode-bin bb
+                       oid/json
+                       {:object-mapper custom-mapper})]
+
+    (is (= {:oof 42} data))))
 
 
 (def BUF-ARRAY-2X3-INT4
