@@ -1,10 +1,13 @@
 
 - readme
 
-- bug
+- oid hints
   (pg/execute conn
               "insert into test_json (data) values ($1)"
               {:params ["[1, 2, 3]"]})
+  - json string
+  - honeysql prepare params
+
 
 - encode: reverse type->oid to oid->type?
 

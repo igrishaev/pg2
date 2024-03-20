@@ -16,7 +16,6 @@ import org.pg.error.PGError;
 import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
-import org.pg.type.OIDHint;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
@@ -506,22 +505,11 @@ public final class Connection implements AutoCloseable {
         final String statement = generateStatement();
 
         final List<OID> OIDsProvided = executeParams.OIDs();
-        final int OIDsProvidedCount = OIDsProvided.size();
+        final int OIDsCount = OIDsProvided.size();
+        final OID[] OIDs = new OID[OIDsCount];
 
-        final List<Object> params = executeParams.params();
-        final int paramCount = params.size();
-
-        final int maxIndex = Math.max(OIDsProvidedCount, paramCount);
-        final OID[] OIDs = new OID[maxIndex];
-
-        for (int i = 0; i < maxIndex; i++) {
-            if (i < OIDsProvidedCount) {
-                OIDs[i] = OIDsProvided.get(i);
-            }
-            else {
-                Object param = params.get(i);
-                OIDs[i] = OIDHint.guessOID(param);
-            }
+        for (int i = 0; i < OIDsCount; i++) {
+            OIDs[i] = OIDsProvided.get(i);
         }
 
         final Parse parse = new Parse(statement, sql, OIDs);

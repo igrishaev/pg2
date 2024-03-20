@@ -1165,7 +1165,7 @@ drop table %1$s;
   (pg/with-connection [conn *CONFIG*]
     (let [res
           (pg/execute conn
-                      "select $1 as obj"
+                      "select $1::json as obj"
                       {:params [{:foo 123}]
                        :first? true})]
       (is (= {:obj {:foo 123}} res)))))
@@ -1241,14 +1241,14 @@ drop table %1$s;
 
 (deftest test-client-default-oid-long
   (pg/with-connection [conn *CONFIG*]
-    (let [res (pg/execute conn "select $1 as foo" {:params [42]})]
+    (let [res (pg/execute conn "select $1::int8 as foo" {:params [42]})]
       (is (= [{:foo 42}] res)))))
 
 
 (deftest test-client-default-oid-uuid
   (pg/with-connection [conn *CONFIG*]
     (let [uid (random-uuid)
-          res (pg/execute conn "select $1 as foo" {:params [uid]})]
+          res (pg/execute conn "select $1::uuid as foo" {:params [uid]})]
       (is (= [{:foo uid}] res)))))
 
 
@@ -1335,7 +1335,7 @@ drop table %1$s;
           (new Date 85 11 31 23 59 59)
 
           res
-          (pg/execute conn "select EXTRACT('year' from $1) as year" {:params [date]})]
+          (pg/execute conn "select EXTRACT('year' from $1::date) as year" {:params [date]})]
 
       (is (= (update-in res [0 :year] int)
              [{:year 1985}])))))
@@ -1680,7 +1680,7 @@ drop table %1$s;
     (let [res
           (pg/execute conn
                       "select $1::int8 = $1::int4 as eq"
-                      {:params [(int 123) 123]})]
+                      {:params [123]})]
       (is (= [{:eq true}] res)))))
 
 
@@ -1771,6 +1771,7 @@ drop table %1$s;
       (is (= [{:text "hello"}] res)))))
 
 
+;; TODO
 (deftest test-decode-text-and-binary-bpchar
   (pg/with-connection [conn (assoc *CONFIG*
                                    :binary-encode? true
@@ -1814,7 +1815,7 @@ drop table %1$s;
     (let [uuid
           (random-uuid)
           res
-          (pg/execute conn "select $1 as uuid" {:params [uuid]})]
+          (pg/execute conn "select $1::uuid as uuid" {:params [uuid]})]
       (is (= [{:uuid uuid}] res)))))
 
 
@@ -1825,7 +1826,7 @@ drop table %1$s;
     (let [uuid
           (random-uuid)
           res
-          (pg/execute conn "select $1 as uuid" {:params [uuid]})]
+          (pg/execute conn "select $1::uuid as uuid" {:params [uuid]})]
       (is (= [{:uuid uuid}] res)))))
 
 
@@ -1897,7 +1898,8 @@ drop table %1$s;
           (OffsetTime/now)
 
           res
-          (pg/execute conn "select $1 as x" {:params [x1]})
+          (pg/execute conn "select $1 as x" {:params [x1]
+                                             :oids [oid/timetz]})
 
           x2
           (-> res first :x)]
@@ -1914,7 +1916,7 @@ drop table %1$s;
           (LocalTime/now)
 
           res
-          (pg/execute conn "select $1 as x;" {:params [x1]})
+          (pg/execute conn "select $1::time as x;" {:params [x1]})
 
           x2
           (-> res first :x)]
@@ -1931,7 +1933,7 @@ drop table %1$s;
           (Instant/now)
 
           res
-          (pg/execute conn "select $1 as x;" {:params [x1]})
+          (pg/execute conn "select $1::timestamptz as x;" {:params [x1]})
 
           ^OffsetDateTime x2
           (-> res first :x)]
