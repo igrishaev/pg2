@@ -341,31 +341,32 @@ The following table describes all the possible connection options with the
 possible values and semantics. Only the two first options are requred. All the
 rest have predefined values.
 
-| Field                  | Type       | Default      | Comment                                                   |
-|------------------------|------------|--------------|-----------------------------------------------------------|
-| `:user`                | string     | **required** | the name of the DB user                                   |
-| `:database`            | string     | **required** | the name of the database                                  |
-| `:host`                | string     | 127.0.0.1    | IP or hostname                                            |
-| `:port`                | integer    | 5432         | port number                                               |
-| `:password`            | string     | ""           | DB user password                                          |
-| `:pg-params`           | map        | {}           | A map of session params like {string string}              |
-| `:binary-encode?`      | bool       | false        | Whether to use binary data encoding                       |
-| `:binary-decode?`      | bool       | false        | Whether to use binary data decoding                       |
-| `:in-stream-buf-size`  | integer    | 0xFFFF       | Size of the input buffered socket stream                  |
-| `:out-stream-buf-size` | integer    | 0xFFFF       | Size of the output buffered socket stream                 |
-| `:fn-notification`     | 1-arg fn   | logging fn   | A function to handle notifications                        |
-| `:fn-protocol-version` | 1-arg fn   | logging fn   | A function to handle negotiation version protocol event   |
-| `:fn-notice`           | 1-arg fn   | logging fn   | A function to handle notices                              |
-| `:use-ssl?`            | bool       | false        | Whether to use SSL connection                             |
-| `:ssl-context`         | SSLContext | nil          | An custom instance of `SSLContext` class to wrap a socket |
-| `:so-keep-alive?`      | bool       | true         | Socket KeepAlive value                                    |
-| `:so-tcp-no-delay?`    | bool       | true         | Socket TcpNoDelay value                                   |
-| `:so-timeout`          | integer    | 15.000       | Socket timeout value, in ms                               |
-| `:so-recv-buf-size`    | integer    | 0xFFFF       | Socket receive buffer size                                |
-| `:so-send-buf-size`    | integer    | 0xFFFF       | Socket send buffer size                                   |
-| `:log-level`           | keyword    | :info        | Connection logging level. See possible values below       |
-| `:cancel-timeout-ms`   | integer    | 5.000        | Default value for the `with-timeout` macro, in ms         |
-| `:protocol-version`    | integ      | 196608       | Postgres protocol version                                 |
+| Field                  | Type         | Default            | Comment                                                                         |
+|------------------------|--------------|--------------------|---------------------------------------------------------------------------------|
+| `:user`                | string       | **required**       | the name of the DB user                                                         |
+| `:database`            | string       | **required**       | the name of the database                                                        |
+| `:host`                | string       | 127.0.0.1          | IP or hostname                                                                  |
+| `:port`                | integer      | 5432               | port number                                                                     |
+| `:password`            | string       | ""                 | DB user password                                                                |
+| `:pg-params`           | map          | {}                 | A map of session params like {string string}                                    |
+| `:binary-encode?`      | bool         | false              | Whether to use binary data encoding                                             |
+| `:binary-decode?`      | bool         | false              | Whether to use binary data decoding                                             |
+| `:in-stream-buf-size`  | integer      | 0xFFFF             | Size of the input buffered socket stream                                        |
+| `:out-stream-buf-size` | integer      | 0xFFFF             | Size of the output buffered socket stream                                       |
+| `:fn-notification`     | 1-arg fn     | logging fn         | A function to handle notifications                                              |
+| `:fn-protocol-version` | 1-arg fn     | logging fn         | A function to handle negotiation version protocol event                         |
+| `:fn-notice`           | 1-arg fn     | logging fn         | A function to handle notices                                                    |
+| `:use-ssl?`            | bool         | false              | Whether to use SSL connection                                                   |
+| `:ssl-context`         | SSLContext   | nil                | An custom instance of `SSLContext` class to wrap a socket                       |
+| `:so-keep-alive?`      | bool         | true               | Socket KeepAlive value                                                          |
+| `:so-tcp-no-delay?`    | bool         | true               | Socket TcpNoDelay value                                                         |
+| `:so-timeout`          | integer      | 15.000             | Socket timeout value, in ms                                                     |
+| `:so-recv-buf-size`    | integer      | 0xFFFF             | Socket receive buffer size                                                      |
+| `:so-send-buf-size`    | integer      | 0xFFFF             | Socket send buffer size                                                         |
+| `:log-level`           | keyword      | :info              | Connection logging level. See possible values below                             |
+| `:cancel-timeout-ms`   | integer      | 5.000              | Default value for the `with-timeout` macro, in ms                               |
+| `:protocol-version`    | integ        | 196608             | Postgres protocol version                                                       |
+| `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section) |
 
 Possible `:log-level` values are:
 
