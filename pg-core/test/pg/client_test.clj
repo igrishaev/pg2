@@ -1771,7 +1771,6 @@ drop table %1$s;
       (is (= [{:text "hello"}] res)))))
 
 
-;; TODO
 (deftest test-decode-text-and-binary-bpchar
   (pg/with-connection [conn (assoc *CONFIG*
                                    :binary-encode? true

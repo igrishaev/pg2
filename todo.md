@@ -7,7 +7,7 @@
               {:params ["[1, 2, 3]"]})
   - json string
   - honeysql prepare params
-
+  - honeysql readme docs
 
 - encode: reverse type->oid to oid->type?
 

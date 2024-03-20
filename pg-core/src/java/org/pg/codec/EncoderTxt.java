@@ -47,7 +47,7 @@ public final class EncoderTxt {
             };
 
             case "java.lang.Character" -> switch (oid) {
-                case TEXT, VARCHAR, CHAR, DEFAULT -> x.toString();
+                case TEXT, VARCHAR, CHAR, BPCHAR, DEFAULT -> x.toString();
                 default -> txtEncodingError(x, oid);
             };
 

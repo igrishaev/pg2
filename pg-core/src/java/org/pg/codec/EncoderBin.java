@@ -79,7 +79,7 @@ public final class EncoderBin {
             };
 
             case "java.lang.Character" -> switch (oid) {
-                case TEXT, VARCHAR, CHAR, DEFAULT -> {
+                case TEXT, VARCHAR, CHAR, BPCHAR, DEFAULT -> {
                     ByteBuffer buf = ByteBuffer.allocate(2);
                     buf.put(x.toString().getBytes(codecParams.clientCharset()));
                     yield buf;

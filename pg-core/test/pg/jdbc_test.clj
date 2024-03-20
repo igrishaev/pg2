@@ -54,9 +54,8 @@
   (with-open [conn (jdbc/get-connection CONFIG)]
     (let [res
           (jdbc/execute! conn
-                         ["select $1 as foo_bar" 42]
-                         {:kebab-keys? false}
-                         )]
+                         ["select $1::int as foo_bar" 42]
+                         {:kebab-keys? false})]
       (is (= [{:foo_bar 42}] res)))))
 
 
@@ -85,7 +84,7 @@
     (let [stmt
           (jdbc/prepare conn
                         ["select $1 as num, $2 as bool" 42 true]
-                        {:oids [oid/int4]})
+                        {:oids [oid/int4 oid/bool]})
 
           res
           (jdbc/execute! conn
@@ -103,7 +102,7 @@
     (let [stmt
           (jdbc/prepare conn
                         ["select $1 as num, $2 as bool" 42 true]
-                        {:oids [oid/int4]})
+                        {:oids [oid/int4 oid/bool]})
 
           res
           (jdbc/execute! conn
@@ -118,7 +117,7 @@
   (with-open [conn (jdbc/get-connection CONFIG)]
     (let [res
           (jdbc/execute-one! conn
-                             ["select $1 as foo_bar" 42])]
+                             ["select $1::int as foo_bar" 42])]
       (is (= {:foo-bar 42} res)))))
 
 
@@ -127,7 +126,7 @@
               conn (jdbc/get-connection pool)]
     (let [res
           (jdbc/execute-one! conn
-                             ["select $1 as foo_bar" true])]
+                             ["select $1::bool as foo_bar" true])]
       (is (= {:foo-bar true} res)))))
 
 
@@ -153,7 +152,7 @@
   (with-open [conn (jdbc/get-connection CONFIG)]
     (let [res
           (jdbc/execute-one! conn
-                             ["select $1 as foo_bar" 42]
+                             ["select $1::int as foo_bar" 42]
                              {:kebab-keys? false})]
       (is (= {:foo_bar 42} res)))))
 
@@ -188,7 +187,7 @@
   (let [func
         (fn [conn]
           (jdbc/execute! conn
-                         ["select $1 as one" 42]))
+                         ["select $1::int as one" 42]))
 
         res
         (jdbc/transact CONFIG
@@ -206,7 +205,7 @@
     (let [func
           (fn [conn]
             (jdbc/execute! conn
-                           ["select $1 as one" 42]))
+                           ["select $1::int as one" 42]))
 
           res
           (jdbc/transact pool
@@ -231,7 +230,7 @@
       (reset! conn! conn)
       (let [res
             (jdbc/execute! conn
-                           ["select $1 as one" 42])]
+                           ["select $1::int as one" 42])]
         (is (= [{:one 42}] res))))
 
     (is (pg/connection? @conn!))
@@ -250,7 +249,7 @@
       (jdbc/with-transaction [TX foo opts]
         (let [res
               (jdbc/execute! TX
-                             ["select $1 as one" 42])]
+                             ["select $1::int as one" 42])]
           (is (= [{:one 42}] res)))))
     (is (pg/connection? @conn!))
     (is (pg/closed? @conn!))))
@@ -275,7 +274,7 @@
 
                 res
                 (jdbc/execute! TX
-                               ["select $1 as one" 42])]
+                               ["select $1::int as one" 42])]
 
             (is (= {:free 1 :used 1} stats2))
 
