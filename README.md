@@ -1544,16 +1544,16 @@ namespaces are not supported by the wrapper.
 
 ## JSON support
 
-Postgres is amazing when dealing with JSON. Here hardly can be a database that
-serves it better. Unfortunately, Postgres clients never respect that feature,
-which is horrible. Take JDBC, for example: when querying a JSON(b) value, you'll
-get a dull `PGObject` which might be decoded manually. The same applies to
-insertion: one cannot just pass a Clojure map or a vector. It should be packed
-into the `PGObject` as well.
+Postgres is amazing when dealing with JSON. There hardly can be a database that
+serves it better. Unfortunately, Postgres clients never respect the JSON
+feature, which is horrible. Take JDBC, for example: when querying a JSON(b)
+value, you'll get a dull `PGObject` which should be decoded manually. The same
+applies to insertion: one cannot just pass a Clojure map or a vector. It should
+be packed into the `PGObject` as well.
 
-Of course, this can be automated with extending certain protocols. But it's
-still slow as it's done on Clojure level (not Java), and it forces you to copy
-the same code from project to project.
+Of course, this can be automated by extending certain protocols. But it's still
+slow as it's done on Clojure level (not Java), and it forces you to copy the
+same code across projects.
 
 Fortunately, PG2 supports JSON out from the box. If you query a JSON value,
 you'll get its Clojure counter-part: a map, a vector, etc. To insert a JSON
@@ -1564,9 +1564,9 @@ are required.
 
 PG2 relies on [jsonista][jsonista] library to handle JSON. At the moment of
 writing, this is the fastest JSON library for Clojure. Jsonista uses a concept
-of Object Mapper: it's an object holding custom rules to encode and decode
-values. You can compose your own mapper with custom rules and pass it into the
-connection config.
+of object mappers: objects holding custom rules to encode and decode values. You
+can compose your own mapper with custom rules and pass it into the connection
+config.
 
 ### Basic usage
 
@@ -1597,9 +1597,8 @@ Now insert a row:
             {:params [{:some {:nested {:json 42}}}]})
 ~~~
 
-See? No need to encode a map manually nor wrap it into a sort of `PGObject`.
-
-Let's get the new row by its id:
+No need to encode a map manually nor wrap it into a sort of `PGObject`. Let's
+fetch the new row by id:
 
 ~~~clojure
 (pg/execute conn
@@ -1612,8 +1611,8 @@ Let's get the new row by its id:
 
 Again, the JSON data returns as a Clojure map with no wrappers.
 
-When using JSON with HoneySQL though, some circs are still needed. Namely,
-you've got to either wrap a map with `[:lift ...]` as follows:
+When using JSON with HoneySQL though, some circs are still needed. Namely, you
+have to wrap a value with `[:lift ...]` as follows:
 
 ~~~clojure
 (pgh/insert-one conn
@@ -1623,11 +1622,11 @@ you've got to either wrap a map with `[:lift ...]` as follows:
 {:id 2, :data {:another {:json {:value [1 2 3]}}}}
 ~~~
 
-Without the `[:lift ...]` tag, HoneySQL would think this is a nested SQL map and
-will try to render it as a string, which will fail of course or lead to a SQL
+Without the `[:lift ...]` tag, HoneySQL will treat the value as a nested SQL map
+and try to render it as a string, which will fail of course or lead to a SQL
 injection.
 
-Another way is to use HoneySQL params conception:
+Another way is to use HoneySQL parameters conception:
 
 ~~~clojure
 (pgh/insert-one conn
@@ -1651,9 +1650,9 @@ example with with a vector:
 
 ### Json Wrapper
 
-In rare cases you would like to store a string or a number in a JSON field. Say,
-123 is a valid JSON value but by default, it's treated as a numeric type. To
-tell Postgres it's a JSON indeed, wrap the value with `pg/json-wrap`:
+In rare cases you might store a string or a number in a JSON field. Say, 123 is
+a valid JSON value but it's treated as a number. To tell Postgres it's a JSON
+indeed, wrap the value with `pg/json-wrap`:
 
 ~~~clojure
 (pgh/insert-one conn
@@ -1663,8 +1662,8 @@ tell Postgres it's a JSON indeed, wrap the value with `pg/json-wrap`:
 {:id 4, :data 42}
 ~~~
 
-This wrapper is especially useful if you want to store a "null" JSON value: not
-the standard NULL but "null" which, when parsed, becomes nil. For this, pass
+The wrapper is especially useful to store a "null" JSON value: not the standard
+`NULL` but `"null"` which, when parsed, becomes `nil`. For this, pass
 `(pg/json-wrap nil)` as follows:
 
 ~~~clojure
@@ -1678,14 +1677,14 @@ the standard NULL but "null" which, when parsed, becomes nil. For this, pass
 ### Custom Object Mapper
 
 One great thing about Jsonista is a conception of mapper objects. A mapper is a
-set of rules how to encode and decode data. Jsonista provides a way to build
-your own mapper. Once built, it can be passed to a connection config so the JSON
+set of rules how to encode and decode data. Jsonista provides a way to build a
+custom mapper. Once built, it can be passed to a connection config so the JSON
 data is written and read back in a special way.
 
-Let's assume you're going to tag JSON values to track types. For example, by
-encoding a keyword `:foo`, you'll get a vector of `["!kw", "foo"]`. When
-decoding that vector, by the `"!kw"` string, the mapper understands it a keyword
-and coerces `"foo"` to `:foo`.
+Let's assume you're going to tag JSON sub-parts to track their types. For
+example, if encoding a keyword `:foo`, you'll get a vector of `["!kw",
+"foo"]`. When decoding that vector, by the `"!kw"` string, the mapper
+understands it a keyword and coerces `"foo"` to `:foo`.
 
 Here is how you create a mapper with Jsonista:
 
@@ -1714,9 +1713,9 @@ Here is how you create a mapper with Jsonista:
                            :decode set}}})]}))
 ~~~
 
-The `object-mapper` function accepts even more options which we skip for now.
+The `object-mapper` function accepts even more options but we skip them for now.
 
-Now that you have a mapper, pass it into the config for connection:
+Now that you have a mapper, pass it into a config:
 
 ~~~clojure
 (def config
@@ -1731,8 +1730,8 @@ Now that you have a mapper, pass it into the config for connection:
   (jdbc/get-connection config))
 ~~~
 
-All the JSON operations done withing this connection will reuse the passed
-object mapper. Let's insert a set of keywords:
+All the JSON operations made by this connection will use the passed object
+mapper. Let's insert a set of keywords:
 
 ~~~clojure
 (pg/execute conn
@@ -1749,7 +1748,7 @@ of keywords:
 [{:id 1, :data {:object #{:baz :bar :foo}}}]
 ~~~
 
-To peek a real JSON value, select it as a plain text and print (to avoid
+To peek a raw JSON value, select it as a plain text and print (just to avoid
 escaping quotes):
 
 ~~~clojure
@@ -1758,14 +1757,14 @@ escaping quotes):
 ;; [{:json_raw {"object": ["!set", [["!kw", "baz"], ["!kw", "bar"], ["!kw", "foo"]]]}}]
 ~~~
 
-Of course, when read from another connection with a default object mapper, the
-data is returned without tags expanding.
+If you read that row using another connection with a default object mapper, the
+data is returned without expanding tags.
 
 ### Utility pg.json namespace
 
-PG2 provides a dedicated namespace for JSON encoding and decoding. You can use
-it for utility purposes withing files, HTTP API, etc. It's a useful replacement
-for Cheshire and other JSON libraries. The namespace is `pg.json`:
+PG2 provides an utility namespace for JSON encoding and decoding. You can use it
+for files, HTTP API, etc. If you already have PG2 in the project, there is no
+need to plug in Cheshire or another JSON library. The namespace is `pg.json`:
 
 ~~~clojure
 (ns ...
@@ -1775,7 +1774,7 @@ for Cheshire and other JSON libraries. The namespace is `pg.json`:
 
 #### Reading JSON
 
-The `read-string` function loads a value from a JSON string:
+The `read-string` function reads a value from a JSON string:
 
 ~~~clojure
 (json/read-string "[1, 2, 3]")
@@ -1823,7 +1822,7 @@ mapper:
 
 The functions `write-stream` and `write-writer` act the same. The only
 difference is, they accept either an `OutputStream` or `Writer` objects. The
-first argument might be a mapper:
+first argument might be a mapper as well:
 
 ~~~clojure
 (let [out (new ByteArrayOutputStream)]
@@ -1841,11 +1840,11 @@ PG2 provides an HTTP Ring middleware for JSON. It acts like `wrap-json-request`
 and `wrap-json-response` middleware from the [ring-json][ring-json]
 library. Comparing to it, the PG2 stuff has the following advantages:
 
-- it's faster because Jsonista is faster than Cheshire;
-- it allows to wrap both request and response with one expression;
-- custom object mappers are supported.
+- it's faster because of Jsonista, whereas Ring-json relies on Cheshire;
+- it wraps both request and response at once with a shortcut;
+- it supports custom object mappers.
 
-Imagine you have a Ring handler what reads JSON from body and returns a JSON
+Imagine you have a Ring handler that reads JSON body and returns a JSON
 map. Something like this:
 
 ~~~clojure
@@ -1867,13 +1866,22 @@ Here is how you wrap it:
 
 (def app
   (-> api-handler
-      (wrap-this)
-      (wrap-json)
-      (wrap-that)))
+      (wrap-this-foo)
+      (wrap-json <opt>)
+      (wrap-that-bar)))
 ~~~
 
-Above, the `wrap-json` call is a combination of `wrap-json-request` and
-`wrap-json-response`. You can apply them both explicitly.
+Above, the `wrap-json` wrapper is a combination of `wrap-json-request` and
+`wrap-json-response`. You can apply them both explicitly:
+
+~~~clojure
+(def app
+  (-> api-handler
+      (wrap-this-foo)
+      (wrap-json-request <opt>)
+      (wrap-json-response <opt>)
+      (wrap-that-bar)))
+~~~
 
 All the three `wrap-json...` middleware accept a handler to wrap and a map of
 options. Here is the options supported:
@@ -1894,6 +1902,23 @@ Notes:
 
 2. The default malformed response is something like 400 "Malformed JSON" (plain
    text).
+
+A full example:
+
+~~~clojure
+(def json-opt
+  {:slot :data
+   :object-mapper tagged-mapper ;; see above
+   :malformed-response {:status 404
+                        :body "<h1>Bad JSON</h1>"
+                        :headers {"content-type" "text/html"}}})
+
+(def app
+  (-> api-handler
+      (wrap-this-foo)
+      (wrap-json json-opt)
+      (wrap-that-bar)))
+~~~~~~
 
 ## Arrays support
 
