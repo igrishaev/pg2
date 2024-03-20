@@ -1,5 +1,11 @@
 
-## 0.1.6-SNAPSHOT
+## 0.1.7-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.6
 
 - msg package split on msg.server and msg.client
 - ClientMessage and ServerMessage interfaces
