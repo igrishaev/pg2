@@ -1,6 +1,12 @@
 
 ## 0.1.8-SNAPSHOT
 
+- remove type hint class
+- jsonb version encoding and decoding
+- bpchar encoding and decoding
+- tests fixed
+- pass json(b) as a string
+
 ## 0.1.7
 
 - migrations

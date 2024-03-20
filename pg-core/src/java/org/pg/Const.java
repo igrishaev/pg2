@@ -26,4 +26,5 @@ public final class Const {
     public static final int POOL_SIZE_MAX = 8;
     public static final int POOL_MAX_LIFETIME = 1000 * 60 * 15;
     public static final long MS_CANCEL_TIMEOUT = 1000 * 5;
+    public static final byte JSONB_VERSION = 1;
 }

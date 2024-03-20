@@ -63,6 +63,21 @@
         (pg/encode-bin data oid/json)
 
         decoded
+        (pg/decode-bin encoded oid/json)]
+
+    (is (bb/bb? encoded))
+    (is (= data decoded))))
+
+
+(deftest test-jsonb-bin
+
+  (let [data
+        {:foo [1 2 3]}
+
+        encoded
+        (pg/encode-bin data oid/jsonb)
+
+        decoded
         (pg/decode-bin encoded oid/jsonb)]
 
     (is (bb/bb? encoded))

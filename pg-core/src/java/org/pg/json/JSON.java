@@ -101,10 +101,6 @@ public final class JSON {
     }
 
     public static Object readValueBinary (final ObjectMapper objectMapper, final ByteBuffer buf) {
-        // skip Start of Heading, if met
-        if (buf.get() != 1) {
-            buf.position(buf.position() - 1);
-        }
         return readValue(objectMapper, buf);
     }
 

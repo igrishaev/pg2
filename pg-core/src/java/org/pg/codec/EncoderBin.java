@@ -63,9 +63,16 @@ public final class EncoderBin {
             };
 
             case "java.lang.String" -> switch (oid) {
-                case TEXT, VARCHAR, NAME, JSON, JSONB, DEFAULT -> {
+                case TEXT, VARCHAR, NAME, JSON, DEFAULT -> {
                     byte[] bytes = getBytes((String)x, codecParams);
                     yield ByteBuffer.wrap(bytes);
+                }
+                case JSONB -> {
+                    byte[] bytes = getBytes((String)x, codecParams);
+                    final ByteBuffer buf = ByteBuffer.allocate(bytes.length + 1);
+                    buf.put(Const.JSONB_VERSION);
+                    buf.put(bytes);
+                    yield buf;
                 }
                 default -> binEncodingError(x, oid);
             };

@@ -1151,14 +1151,40 @@ drop table %1$s;
       (is (= {:obj {:foo 123}} res)))))
 
 
-(deftest test-client-json-write
-  (pg/with-connection [conn *CONFIG*]
+(deftest test-client-jsonb-parsing-version
+
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true)]
     (let [res
           (pg/execute conn
-                      "select $1::json as obj"
-                      {:params [{:foo 123}]
-                       :first? true})]
-      (is (= {:obj {:foo 123}} res)))))
+                      "select '[1, 2, 3]'::json as obj")]
+      (is (= [{:obj [1 2 3]}] res))))
+
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true)]
+    (let [res
+          (pg/execute conn
+                      "select '[1, 2, 3]'::jsonb as obj")]
+      (is (= [{:obj [1 2 3]}] res))))
+
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? false
+                                   :binary-decode? false)]
+    (let [res
+          (pg/execute conn
+                      "select '[1, 2, 3]'::jsonb as obj")]
+      (is (= [{:obj [1 2 3]}] res))))
+
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true)]
+    (let [res
+          (pg/execute conn
+                      "select $1::jsonb as obj"
+                      {:params ["[1, 2, 3]"]})]
+      (is (= [{:obj [1 2 3]}] res)))))
 
 
 (deftest test-client-json-write-no-hint

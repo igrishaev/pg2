@@ -8,6 +8,8 @@
   - json string
   - honeysql prepare params
   - honeysql readme docs
+  - common jsonb encode method
+  - test jsonb with wrapper
 
 - encode: reverse type->oid to oid->type?
 
