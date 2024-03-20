@@ -2419,7 +2419,7 @@ The same applies to rollback:
 (mig/rollback-all CONFIG)
 
 ;; rollback the current migration
-(mig/migrate-one CONFIG)
+(mig/rollback-one CONFIG)
 
 ;; rollback to the given migration
 (mig/rollback-to CONFIG 20230228)
