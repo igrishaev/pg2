@@ -1,9 +1,10 @@
 
 ## 0.1.7-SNAPSHOT
 
-- ?
-- ?
-- ?
+- migrations
+  - fix file names in readme
+  - fix file parser (dot vs hyphen)
+  - rename files (in jar as well)
 
 ## 0.1.6
 
