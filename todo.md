@@ -1,10 +1,6 @@
 
 - readme
 
-- oid hints
-  - honeysql prepare params
-  - honeysql readme docs
-
 - encode: reverse type->oid to oid->type?
 
 - json

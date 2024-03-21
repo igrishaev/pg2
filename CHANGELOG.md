@@ -4,8 +4,9 @@
 - remove type hint class
 - jsonb version encoding and decoding
 - bpchar encoding and decoding
-- tests fixed
 - pass json(b) as a string
+- EncoderBin common methods
+- tests fixed
 
 ## 0.1.7
 
