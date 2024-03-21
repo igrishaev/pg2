@@ -26,6 +26,7 @@
 
   :profiles
   {:test
-   {:resource-paths ["test/resources"]
+   {:main user
+    :resource-paths ["test/resources"]
     :dependencies
     []}})

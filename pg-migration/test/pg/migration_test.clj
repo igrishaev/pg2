@@ -20,6 +20,21 @@
     (is (instance? PersistentTreeMap migrations))))
 
 
+(deftest test-parse-file-simple
+  (is (= nil
+         (mig/parse-name "123-hello-foo.up.sql")))
+  (is (= ["123" "hello-foo" "up"]
+         (rest (mig/parse-name "123.hello-foo.up.sql"))))
+  (is (= ["123" "" "up"]
+         (rest (mig/parse-name "123.up.sql"))))
+  (is (= ["123" "" "up"]
+         (rest (mig/parse-name "some/prefix/999/123.up.sql"))))
+  (is (= ["123" "" "Up"]
+         (rest (mig/parse-name "Some/Prefix/999/123.Up.Sql"))))
+  (is (= nil
+         (mig/parse-name "555aaa..sql"))))
+
+
 (deftest test-text->slug
   (is (= "aaasss__fghj"
          (mig/text->slug " \r \n \t AAAsss@__#))$%^&FGHJ??|"))))
@@ -28,7 +43,7 @@
 (deftest test-parse-file
 
   (let [res
-        (-> "foo/bar/baz/0001-some-slug.UP.sql"
+        (-> "foo/bar/baz/0001.some-slug.UP.sql"
             io/file
             io/as-url
             mig/parse-url)]
@@ -37,7 +52,7 @@
            (dissoc res :url))))
 
   (let [res
-        (-> "foo/bar/baz/0001-some-slug.DoWn.sql"
+        (-> "foo/bar/baz/0001.some-slug.DoWn.sql"
             io/file
             io/as-url
             mig/parse-url)]
@@ -46,7 +61,7 @@
            (dissoc res :url))))
 
   (let [res
-        (-> "foo/bar/baz/0001-some-slug.next.sql"
+        (-> "foo/bar/baz/0001.some-slug.next.sql"
             io/file
             io/as-url
             mig/parse-url)]
@@ -55,7 +70,7 @@
            (dissoc res :url))))
 
   (let [res
-        (-> "foo/bar/baz/20221211235559-Hello World .Next.SQL"
+        (-> "foo/bar/baz/20221211235559.-Hello World .Next.SQL"
             io/file
             io/as-url
             mig/parse-url)]
@@ -66,7 +81,7 @@
            (dissoc res :url))))
 
   (let [res
-        (-> "foo/bar/baz/1aaa.prev.sql"
+        (-> "foo/bar/baz/1.aaa.prev.sql"
             io/file
             io/as-url
             mig/parse-url)]

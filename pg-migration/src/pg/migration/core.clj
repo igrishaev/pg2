@@ -26,7 +26,11 @@
 
 
 (def RE_FILE
-  #"(?i)^.*?/(\d+)(.*?)\.(prev|next|up|down)\.sql$")
+  #"(?i).*?(\d+)\.(.*?)\.?(prev|next|up|down)\.sql$")
+
+
+(defn parse-name [^String file-name]
+  (re-matches RE_FILE file-name))
 
 
 (def ^DateTimeFormatter DATETIME_PATTERN

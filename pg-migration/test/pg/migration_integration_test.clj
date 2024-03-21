@@ -1,4 +1,5 @@
-(ns pg.migration-integration-test
+(ns ^:integration
+    pg.migration-integration-test
   (:require
    [clojure.string :as str]
    [clojure.java.io :as io]
@@ -251,7 +252,7 @@
 
 (deftest test-migrate-weird-sql
   (let [path
-        "test/resources/migrations/999-weird-syntax.next.sql"
+        "test/resources/migrations/999.weird-syntax.next.sql"
         content
         "selekt 100500"]
     (with-file [path content]

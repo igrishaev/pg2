@@ -1978,9 +1978,9 @@ where:
 
 Examples:
 
-- `001-create-users.next.sql`
-- `012-next-only-migration.up.sql`
-- `153-add-some-table.next.sql`
+- `001.create-users.next.sql`
+- `012.next-only-migration.up.sql`
+- `153.add-some-table.next.sql`
 
 Above, the leading zeroes in ids are used for better alignment only. Infernally
 they are transferred into 1, 12 and 153 Long numbers. Thus, `001`, `01` and `1`
@@ -1993,8 +1993,8 @@ step will end up with an exception saying which files duplicate each other.
 
 | Filename                         | Parsed    |
 |----------------------------------|-----------|
-| `001-some-trivial-slug.next.sql` | (1, next) |
-| `001-some-simple-slug.next.sql`  | (1, next) |
+| `001.some-trivial-slug.next.sql` | (1, next) |
+| `001.some-simple-slug.next.sql`  | (1, next) |
 
 A migration might have only one direction, e.g. next/up or prev/down file only.
 
@@ -2005,7 +2005,7 @@ same map.
 ### SQL
 
 The files hold SQL expressions to be evaluated by the engine. Here is the
-content of the `001-create-users.next.sql` file:
+content of the `001.create-users.next.sql` file:
 
 ~~~sql
 create table IF NOT EXISTS test_users (
@@ -2040,14 +2040,14 @@ files named like this:
 
 ```
 # direct parts
-001-huge-update-step-1.next.sql
-002-huge-update-step-2.next.sql
-003-huge-update-step-3.next.sql
+001.huge-update-step-1.next.sql
+002.huge-update-step-2.next.sql
+003.huge-update-step-3.next.sql
 
 # backward counterparts
-003-huge-update-step-3.prev.sql
-002-huge-update-step-2.prev.sql
-001-huge-update-step-1.prev.sql
+003.huge-update-step-3.prev.sql
+002.huge-update-step-2.prev.sql
+001.huge-update-step-1.prev.sql
 ```
 
 ### No Code-Driven Migrations
@@ -2434,13 +2434,13 @@ sorted map without information about whether migrations have been applied:
 {1
  {:id 1
   :slug "create users"
-  :url-prev #object[java.net.URL "file:/.../migrations/001-create-users.prev.sql"]
-  :url-next #object[java.net.URL "file:/.../migrations/001-create-users.next.sql"]}
+  :url-prev #object[java.net.URL "file:/.../migrations/001.create-users.prev.sql"]
+  :url-next #object[java.net.URL "file:/.../migrations/001.create-users.next.sql"]}
  2
  {:id 2
   :slug "create profiles"
-  :url-prev #object[java.net.URL "file:/.../migrations/foobar/002-create-profiles.prev.sql"]
-  :url-next #object[java.net.URL "file:/.../migrations/foobar/002-create-profiles.next.sql"]}
+  :url-prev #object[java.net.URL "file:/.../migrations/foobar/002.create-profiles.prev.sql"]
+  :url-next #object[java.net.URL "file:/.../migrations/foobar/002.create-profiles.next.sql"]}
  ...}
 ~~~
 
