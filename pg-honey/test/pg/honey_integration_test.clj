@@ -39,13 +39,15 @@
   (testing "prepare explicit param"
     (pg/with-connection [conn CONFIG]
       (let [stmt
-            (pgh/prepare conn {:select [:*]
-                               :from TABLE
-                               :where [:= :id 0]})
+            (pgh/prepare conn
+                         {:select [:*]
+                          :from TABLE
+                          :where [:= :id 0]}
+                         {:oids [oid/int8]})
             res
             (pg/execute-statement conn stmt {:params [3]
                                              :first? true})]
-        (is (= "<Prepared statement, name: s1, param(s): 1, OIDs: [INT4], SQL: SELECT * FROM test003 WHERE id = $1>"
+        (is (= "<Prepared statement, name: s1, param(s): 1, OIDs: [INT8], SQL: SELECT * FROM test003 WHERE id = $1>"
                (str stmt)))
         (is (= {:name "Juan", :active true, :id 3}
                res)))))
