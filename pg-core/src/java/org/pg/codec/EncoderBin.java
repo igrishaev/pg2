@@ -37,8 +37,38 @@ public final class EncoderBin {
         );
     }
 
-    private static byte[] getBytes (String string, CodecParams codecParams) {
+    private static byte[] getBytes (final String string, final CodecParams codecParams) {
         return string.getBytes(codecParams.clientCharset());
+    }
+
+    private static ByteBuffer encodeJSON (final Object x, final CodecParams codecParams) {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
+        JSON.writeValue(codecParams.objectMapper(), out, x);
+        final byte[] bytes = out.toByteArray();
+        return ByteBuffer.wrap(bytes);
+    }
+
+    private static ByteBuffer encodeJSONB (final Object x, final CodecParams codecParams) {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
+        JSON.writeValue(codecParams.objectMapper(), out, x);
+        final byte[] bytes = out.toByteArray();
+        final ByteBuffer buf = ByteBuffer.allocate(bytes.length + 1);
+        buf.put(Const.JSONB_VERSION);
+        buf.put(bytes);
+        return buf;
+    }
+
+    private static ByteBuffer stringToJSONB(final String x, final CodecParams codecParams) {
+        final byte[] bytes = getBytes(x, codecParams);
+        final ByteBuffer buf = ByteBuffer.allocate(bytes.length + 1);
+        buf.put(Const.JSONB_VERSION);
+        buf.put(bytes);
+        return buf;
+    }
+
+    private static ByteBuffer stringToBytes(final String x, final CodecParams codecParams) {
+        final byte[] bytes = getBytes(x, codecParams);
+        return ByteBuffer.wrap(bytes);
     }
 
     public static ByteBuffer encode (Object x, OID oid, CodecParams codecParams) {
@@ -50,10 +80,7 @@ public final class EncoderBin {
         return switch (x.getClass().getCanonicalName()) {
 
             case "clojure.lang.Symbol" -> switch (oid) {
-                case TEXT, VARCHAR, DEFAULT -> {
-                    byte[] bytes = getBytes(x.toString(), codecParams);
-                    yield ByteBuffer.wrap(bytes);
-                }
+                case TEXT, VARCHAR, DEFAULT -> stringToBytes(x.toString(), codecParams);
                 default -> binEncodingError(x, oid);
             };
 
@@ -63,25 +90,13 @@ public final class EncoderBin {
             };
 
             case "java.lang.String" -> switch (oid) {
-                case TEXT, VARCHAR, NAME, JSON, DEFAULT -> {
-                    byte[] bytes = getBytes((String)x, codecParams);
-                    yield ByteBuffer.wrap(bytes);
-                }
-                case JSONB -> {
-                    byte[] bytes = getBytes((String)x, codecParams);
-                    final ByteBuffer buf = ByteBuffer.allocate(bytes.length + 1);
-                    buf.put(Const.JSONB_VERSION);
-                    buf.put(bytes);
-                    yield buf;
-                }
+                case TEXT, VARCHAR, NAME, JSON, DEFAULT -> stringToBytes((String)x, codecParams);
+                case JSONB -> stringToJSONB((String)x, codecParams);
                 default -> binEncodingError(x, oid);
             };
 
             case "org.pg.type.PGEnum" -> switch (oid) {
-                case DEFAULT, TEXT, VARCHAR -> {
-                    byte[] bytes = getBytes(((PGEnum)x).x(), codecParams);
-                    yield ByteBuffer.wrap(bytes);
-                }
+                case DEFAULT, TEXT, VARCHAR -> stringToBytes(((PGEnum)x).x(), codecParams);
                 default -> binEncodingError(x, oid);
             };
 
@@ -175,12 +190,8 @@ public final class EncoderBin {
             };
 
             case "org.pg.json.JSON.Wrapper" -> switch (oid) {
-                case JSON, JSONB, DEFAULT -> {
-                    // TODO; guess the size?
-                    ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
-                    JSON.writeValue(codecParams.objectMapper(), out, ((JSON.Wrapper)x).value());
-                    yield ByteBuffer.wrap(out.toByteArray());
-                }
+                case JSON, DEFAULT -> encodeJSON(((JSON.Wrapper)x).value(), codecParams);
+                case JSONB -> encodeJSONB(((JSON.Wrapper)x).value(), codecParams);
                 default -> binEncodingError(x, oid);
             };
 
@@ -190,12 +201,8 @@ public final class EncoderBin {
                     "clojure.lang.PersistentHashSet",
                     "clojure.lang.PersistentList",
                     "clojure.lang.PersistentVector" -> switch (oid) {
-                case JSON, JSONB, DEFAULT -> {
-                    // TODO; guess the size?
-                    ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
-                    JSON.writeValue(codecParams.objectMapper(), out, x);
-                    yield ByteBuffer.wrap(out.toByteArray());
-                }
+                case JSON, DEFAULT -> encodeJSON(x, codecParams);
+                case JSONB -> encodeJSONB(x, codecParams);
                 default -> binEncodingError(x, oid);
             };
 

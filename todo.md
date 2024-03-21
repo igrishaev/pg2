@@ -2,14 +2,8 @@
 - readme
 
 - oid hints
-  (pg/execute conn
-              "insert into test_json (data) values ($1)"
-              {:params ["[1, 2, 3]"]})
-  - json string
   - honeysql prepare params
   - honeysql readme docs
-  - common jsonb encode method
-  - test jsonb with wrapper
 
 - encode: reverse type->oid to oid->type?
 

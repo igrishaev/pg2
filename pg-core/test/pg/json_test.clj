@@ -84,6 +84,24 @@
     (is (= data decoded))))
 
 
+(deftest test-jsonb-bin-wrapper
+
+  (let [data
+        42
+
+        encoded
+        (pg/encode-bin (pg/json-wrap data) oid/jsonb)
+
+        decoded
+        (pg/decode-bin encoded oid/jsonb)]
+
+    (is (= [1 52 50]
+           (-> encoded .array vec)))
+
+    (is (bb/bb? encoded))
+    (is (= data decoded))))
+
+
 (deftest test-json-bin-string
 
   (let [data

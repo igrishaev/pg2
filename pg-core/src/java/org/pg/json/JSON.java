@@ -152,7 +152,7 @@ public final class JSON {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             encodeError(e, value);
-            return null;
+            return ""; // mute "might be null" note
         }
     }
 
