@@ -1,5 +1,7 @@
 
-## 0.1.7-SNAPSHOT
+## 0.1.8-SNAPSHOT
+
+## 0.1.7
 
 - migrations
   - fix file names in readme
