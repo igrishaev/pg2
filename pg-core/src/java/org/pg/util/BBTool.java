@@ -2,6 +2,7 @@ package org.pg.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.UUID;
 
 public final class BBTool {
 
@@ -32,6 +33,19 @@ public final class BBTool {
     public static ByteBuffer ofDouble (final double value) {
         final ByteBuffer buf = ByteBuffer.allocate(8);
         buf.putDouble(value);
+        return buf;
+    }
+
+    public static ByteBuffer ofUUID (final UUID uuid) {
+        final ByteBuffer buf = ByteBuffer.allocate(16);
+        buf.putLong(uuid.getMostSignificantBits());
+        buf.putLong(uuid.getLeastSignificantBits());
+        return buf;
+    }
+
+    public static ByteBuffer ofBool (final boolean value) {
+        final ByteBuffer buf = ByteBuffer.allocate(1);
+        buf.put(value ? (byte)1 : (byte)0);
         return buf;
     }
 

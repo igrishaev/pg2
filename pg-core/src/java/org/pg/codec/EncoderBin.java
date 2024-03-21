@@ -9,6 +9,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import clojure.lang.BigInt;
 
+import clojure.lang.IFn;
+import clojure.lang.Symbol;
 import org.pg.type.PGEnum;
 import org.pg.Const;
 import org.pg.error.PGError;
@@ -77,134 +79,232 @@ public final class EncoderBin {
             throw new PGError("cannot binary-encode a null value");
         }
 
+        return switch (oid) {
+
+            case DEFAULT -> {
+                if (x instanceof Short s) {
+                    yield BBTool.ofShort(s);
+                } else if (x instanceof Integer i) {
+                    yield BBTool.ofInt(i);
+                } else if (x instanceof Long l) {
+                    yield BBTool.ofLong(l);
+                } else if (x instanceof Float f) {
+                    yield BBTool.ofFloat(f);
+                } else if (x instanceof Double d) {
+                    yield BBTool.ofDouble(d);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+            
+            case INT2 -> {
+                if (x instanceof Short s) {
+                    yield BBTool.ofShort(s);
+                } else if (x instanceof Integer i) {
+                    yield BBTool.ofShort(i.shortValue());
+                } else if (x instanceof Long l) {
+                    yield BBTool.ofShort(l.shortValue());
+                } else if (x instanceof BigInteger bi) {
+                    yield BBTool.ofShort(bi.shortValue());
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+            
+            case INT4, OID -> {
+                if (x instanceof Short s) {
+                    yield BBTool.ofInt(s.intValue());
+                } else if (x instanceof Integer i) {
+                    yield BBTool.ofInt(i);
+                } else if (x instanceof Long l) {
+                    yield BBTool.ofInt(l.intValue());
+                } else if (x instanceof BigInteger bi) {
+                    yield BBTool.ofInt(bi.intValue());
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+
+            }
+            
+            case BYTEA -> {
+                if (x instanceof ByteBuffer bb) {
+                    yield bb;
+                } else if (x instanceof byte[] ba) {
+                    yield ByteBuffer.wrap(ba);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case TEXT, VARCHAR, CHAR, BPCHAR, NAME -> {
+                if (x instanceof String s) {
+                    yield stringToBytes(s, codecParams);
+                } else if (x instanceof Character c) {
+                    yield stringToBytes(c.toString(), codecParams);
+                } else if (x instanceof PGEnum e) {
+                    yield stringToBytes(e.x(), codecParams);
+                } else if (x instanceof Symbol s) {
+                    yield stringToBytes(s.toString(), codecParams);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case JSON -> {
+                if (x instanceof String s) {
+                    yield stringToBytes(s, codecParams);
+                } else if (x instanceof JSON.Wrapper w) {
+                    yield encodeJSON(w.value(), codecParams);
+                } else {
+                    yield encodeJSON(x, codecParams);
+                }
+            }
+
+            case JSONB -> {
+                if (x instanceof String s) {
+                    yield stringToJSONB(s, codecParams);
+                } else if (x instanceof JSON.Wrapper w) {
+                    yield encodeJSONB(w.value(), codecParams);
+                }
+                else {
+                    yield encodeJSONB(x, codecParams);
+                }
+            }
+
+            case FLOAT4 -> {
+                if (x instanceof Float f) {
+                    yield BBTool.ofFloat(f);
+                } else if (x instanceof Double d) {
+                    yield BBTool.ofFloat(d.floatValue());
+                } else if (x instanceof Short s) {
+                    yield BBTool.ofFloat(s.floatValue());
+                } else if (x instanceof Integer i) {
+                    yield BBTool.ofFloat(i.floatValue());
+                }  else if (x instanceof Long l) {
+                    yield BBTool.ofFloat(l.floatValue());
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case FLOAT8 -> {
+                if (x instanceof Float f) {
+                    yield BBTool.ofDouble(f.doubleValue());
+                } else if (x instanceof Double d) {
+                    yield BBTool.ofDouble(d);
+                } else if (x instanceof Short s) {
+                    yield BBTool.ofDouble(s.doubleValue());
+                } else if (x instanceof Integer i) {
+                    yield BBTool.ofDouble(i.doubleValue());
+                }  else if (x instanceof Long l) {
+                    yield BBTool.ofDouble(l.doubleValue());
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case UUID -> {
+                if (x instanceof UUID u) {
+                    yield BBTool.ofUUID(u);
+                } else if (x instanceof String s) {
+                    yield BBTool.ofUUID(UUID.fromString(s));
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case BOOL -> {
+                if (x instanceof Boolean b) {
+                    yield BBTool.ofBool(b);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case NUMERIC -> {
+                if (x instanceof BigDecimal bd) {
+                    yield NumericBin.encode(bd);
+                } else if (x instanceof BigInteger bi) {
+                    yield NumericBin.encode(new BigDecimal(bi));
+                } else if (x instanceof BigInt bi) {
+                    yield NumericBin.encode(bi.toBigDecimal());
+                } else if (x instanceof Long l) {
+                    yield NumericBin.encode(new BigDecimal(l));
+                } else if (x instanceof Integer i) {
+                    yield NumericBin.encode(new BigDecimal(i));
+                } else if (x instanceof Short s) {
+                    yield NumericBin.encode(new BigDecimal(s));
+                } else if (x instanceof Float f) {
+                    yield NumericBin.encode(new BigDecimal(f));
+                } else if (x instanceof Double d) {
+                    yield NumericBin.encode(new BigDecimal(d));
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case TIME -> {
+                if (x instanceof LocalTime lt) {
+                    yield DateTimeBin.encodeTIME(lt);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case TIMETZ -> {
+                if (x instanceof OffsetTime ot) {
+                    yield DateTimeBin.encodeTIMETZ(ot);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case DATE -> {
+                if (x instanceof LocalDate ld) {
+                    yield DateTimeBin.encodeDATE(ld);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case TIMESTAMP -> {
+                if (x instanceof OffsetDateTime odt) {
+                    yield DateTimeBin.encodeTIMESTAMP(odt);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            default -> binEncodingError(x, oid);
+        };
+
+
+
         return switch (x.getClass().getCanonicalName()) {
 
-            case "clojure.lang.Symbol" -> switch (oid) {
-                case TEXT, VARCHAR, DEFAULT -> stringToBytes(x.toString(), codecParams);
-                default -> binEncodingError(x, oid);
-            };
 
-            case "byte[]" -> switch (oid) {
-                case BYTEA, DEFAULT -> ByteBuffer.wrap((byte[])x);
-                default -> binEncodingError(x, oid);
-            };
 
-            case "java.lang.String" -> switch (oid) {
-                case TEXT, VARCHAR, NAME, JSON, DEFAULT -> stringToBytes((String)x, codecParams);
-                case JSONB -> stringToJSONB((String)x, codecParams);
-                default -> binEncodingError(x, oid);
-            };
 
-            case "org.pg.type.PGEnum" -> switch (oid) {
-                case DEFAULT, TEXT, VARCHAR -> stringToBytes(((PGEnum)x).x(), codecParams);
-                default -> binEncodingError(x, oid);
-            };
 
-            case "java.lang.Character" -> switch (oid) {
-                case TEXT, VARCHAR, CHAR, BPCHAR, DEFAULT -> {
-                    ByteBuffer buf = ByteBuffer.allocate(2);
-                    buf.put(x.toString().getBytes(codecParams.clientCharset()));
-                    yield buf;
-                }
-                default -> binEncodingError(x, oid);
-            };
 
-            case "java.lang.Short" -> switch (oid) {
-                case INT2, DEFAULT -> BBTool.ofShort((short)x);
-                case INT4, OID -> BBTool.ofInt((short)x);
-                case INT8 -> BBTool.ofLong((short)x);
-                case FLOAT4 -> BBTool.ofFloat((short)x);
-                case FLOAT8 -> BBTool.ofDouble((short)x);
-                default -> binEncodingError(x, oid);
-            };
+//            case "java.lang.Double" -> switch (oid) {
+//                case FLOAT4 -> {
+//                    float f = (float)x;
+//
+//                    if (Float.isInfinite(f)) {
+//                        throw new PGError("double->float coercion led to an infinite value: %s", x);
+//                    }
+//                    if (Float.isNaN(f)) {
+//                        throw new PGError("double->float coercion led to a NAN value: %s", x);
+//                    }
+//
+//                    yield BBTool.ofFloat(f);
+//                }
+//                case FLOAT8, DEFAULT -> BBTool.ofDouble((double)x);
+//                default -> binEncodingError(x, oid);
+//            };
 
-            case "java.lang.Integer" -> switch (oid) {
-                case INT2 -> BBTool.ofShort(((Integer)x).shortValue());
-                case INT4, OID, DEFAULT -> BBTool.ofInt((int)x);
-                case INT8 -> BBTool.ofLong((int)x);
-                case FLOAT4 -> BBTool.ofFloat((int)x);
-                case FLOAT8 -> BBTool.ofDouble((int)x);
-                default -> binEncodingError(x, oid);
-            };
 
-            case "java.lang.Long" -> switch (oid) {
-                case INT2 -> BBTool.ofShort(((Long)x).shortValue());
-                case INT4, OID -> BBTool.ofInt(((Long)x).intValue());
-                case INT8, DEFAULT -> BBTool.ofLong((long)x);
-                case FLOAT4 -> BBTool.ofFloat((long)x);
-                case FLOAT8 -> BBTool.ofDouble((long)x);
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.lang.Byte" -> switch (oid) {
-                case INT2, DEFAULT -> BBTool.ofShort((byte)x);
-                case INT4 -> BBTool.ofInt((byte)x);
-                case INT8 -> BBTool.ofLong((byte)x);
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.lang.Boolean" -> switch (oid) {
-                case BOOL, DEFAULT -> {
-                    ByteBuffer buf = ByteBuffer.allocate(1);
-                    buf.put((boolean)x ? (byte)1 : (byte)0);
-                    yield buf;
-                }
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.util.UUID" -> switch (oid) {
-                case UUID, DEFAULT -> {
-                    ByteBuffer buf = ByteBuffer.allocate(16);
-                    buf.putLong(((UUID)x).getMostSignificantBits());
-                    buf.putLong(((UUID)x).getLeastSignificantBits());
-                    yield buf;
-                }
-                case TEXT, VARCHAR -> {
-                    byte[] bytes = getBytes(x.toString(), codecParams);
-                    yield ByteBuffer.wrap(bytes);
-                }
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.lang.Float" -> switch (oid) {
-                case FLOAT4, DEFAULT -> BBTool.ofFloat((float)x);
-                case FLOAT8 -> BBTool.ofDouble((float)x);
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.lang.Double" -> switch (oid) {
-                case FLOAT4 -> {
-                    float f = (float)x;
-
-                    if (Float.isInfinite(f)) {
-                        throw new PGError("double->float coercion led to an infinite value: %s", x);
-                    }
-                    if (Float.isNaN(f)) {
-                        throw new PGError("double->float coercion led to a NAN value: %s", x);
-                    }
-
-                    yield BBTool.ofFloat(f);
-                }
-                case FLOAT8, DEFAULT -> BBTool.ofDouble((double)x);
-                default -> binEncodingError(x, oid);
-            };
-
-            case "org.pg.json.JSON.Wrapper" -> switch (oid) {
-                case JSON, DEFAULT -> encodeJSON(((JSON.Wrapper)x).value(), codecParams);
-                case JSONB -> encodeJSONB(((JSON.Wrapper)x).value(), codecParams);
-                default -> binEncodingError(x, oid);
-            };
-
-            case
-                    "clojure.lang.PersistentArrayMap",
-                    "clojure.lang.PersistentHashMap",
-                    "clojure.lang.PersistentHashSet",
-                    "clojure.lang.PersistentList",
-                    "clojure.lang.PersistentVector" -> switch (oid) {
-                case JSON, DEFAULT -> encodeJSON(x, codecParams);
-                case JSONB -> encodeJSONB(x, codecParams);
-                default -> binEncodingError(x, oid);
-            };
 
             case "java.util.Date" -> switch (oid) {
                 case DATE -> DateTimeBin.encodeDATE(LocalDate.ofInstant(((Date)x).toInstant(), ZoneOffset.UTC));
@@ -264,35 +364,9 @@ public final class EncoderBin {
                 default -> binEncodingError(x, oid);
             };
 
-            case "java.math.BigDecimal" -> switch (oid) {
-                case NUMERIC, DEFAULT -> NumericBin.encode((BigDecimal)x);
-                case INT2 -> BBTool.ofShort(((BigDecimal)x).shortValueExact());
-                case INT4 -> BBTool.ofInt(((BigDecimal)x).intValueExact());
-                case INT8 -> BBTool.ofLong(((BigDecimal)x).longValueExact());
-                case FLOAT4 -> BBTool.ofFloat(((BigDecimal)x).floatValue());
-                case FLOAT8 -> BBTool.ofDouble(((BigDecimal)x).doubleValue());
-                default -> binEncodingError(x, oid);
-            };
 
-            case "java.math.BigInteger" -> switch (oid) {
-                case NUMERIC, DEFAULT -> NumericBin.encode(new BigDecimal((BigInteger)x));
-                case INT2 -> BBTool.ofShort(((BigInteger)x).shortValueExact());
-                case INT4 -> BBTool.ofInt(((BigInteger)x).intValueExact());
-                case INT8 -> BBTool.ofLong(((BigInteger)x).longValueExact());
-                case FLOAT4 -> BBTool.ofFloat(((BigInteger)x).floatValue());
-                case FLOAT8 -> BBTool.ofDouble(((BigInteger)x).doubleValue());
-                default -> binEncodingError(x, oid);
-            };
 
-            case "clojure.lang.BigInt" -> switch (oid) {
-                case NUMERIC, DEFAULT -> NumericBin.encode(((BigInt)x).toBigDecimal());
-                case INT2 -> BBTool.ofShort(((BigInt)x).shortValue());
-                case INT4 -> BBTool.ofInt(((BigInt)x).intValue());
-                case INT8 -> BBTool.ofLong(((BigInt)x).longValue());
-                case FLOAT4 -> BBTool.ofFloat(((BigInt)x).floatValue());
-                case FLOAT8 -> BBTool.ofDouble(((BigInt)x).doubleValue());
-                default -> binEncodingError(x, oid);
-            };
+
 
             default -> binEncodingError(x, oid);
         };
