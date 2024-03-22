@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import clojure.lang.BigInt;
 
+import clojure.lang.IPersistentCollection;
 import clojure.lang.Symbol;
 import org.pg.type.PGEnum;
 import org.pg.Const;
@@ -113,13 +114,25 @@ public final class EncoderBin {
                     yield DateTimeBin.encodeTIMESTAMP(d.toInstant());
                 } else if (x instanceof Instant i) {
                     yield DateTimeBin.encodeTIMESTAMPTZ(i);
+                } else if (x instanceof IPersistentCollection pc) {
+                    yield encodeJSONB(pc, codecParams);
+                } else if (x instanceof LocalTime lt) {
+                    yield DateTimeBin.encodeTIMESTAMP(lt);
+                } else if (x instanceof OffsetTime ot) {
+                    yield DateTimeBin.encodeTIMETZ(ot);
+                } else if (x instanceof LocalDate ld) {
+                    yield DateTimeBin.encodeDATE(ld);
+                } else if (x instanceof LocalDateTime ldt) {
+                    yield DateTimeBin.encodeTIMESTAMP(ldt);
+                } else if (x instanceof OffsetDateTime odt) {
+                    yield DateTimeBin.encodeTIMESTAMPTZ(odt);
+                } else if (x instanceof ZonedDateTime zdt) {
+                    yield DateTimeBin.encodeTIMESTAMPTZ(zdt);
+                } else if (x instanceof Byte b) {
+                    yield BBTool.ofShort(b.shortValue());
                 } else {
                     yield binEncodingError(x, oid);
                 }
-
-                // PersistentCollection
-                // Localtime OffsetTime LocalDate LocalDateTime OffsetDateTime ZonedDateTime
-                //
             }
             
             case INT2 -> {
@@ -130,6 +143,10 @@ public final class EncoderBin {
                 } else if (x instanceof Long l) {
                     yield BBTool.ofShort(l.shortValue());
                 } else if (x instanceof BigInteger bi) {
+                    yield BBTool.ofShort(bi.shortValue());
+                } else if (x instanceof BigDecimal bc) {
+                    yield BBTool.ofShort(bc.shortValueExact());
+                } else if (x instanceof BigInt bi) {
                     yield BBTool.ofShort(bi.shortValue());
                 } else {
                     yield binEncodingError(x, oid);
@@ -145,6 +162,12 @@ public final class EncoderBin {
                     yield BBTool.ofInt(l.intValue());
                 } else if (x instanceof BigInteger bi) {
                     yield BBTool.ofInt(bi.intValue());
+                } else if (x instanceof Byte b) {
+                    yield BBTool.ofInt(b.intValue());
+                } else if (x instanceof BigDecimal bc) {
+                    yield BBTool.ofInt(bc.intValueExact());
+                } else if (x instanceof BigInt bi) {
+                    yield BBTool.ofInt(bi.intValue());
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -159,6 +182,12 @@ public final class EncoderBin {
                 } else if (x instanceof Long l) {
                     yield BBTool.ofLong(l);
                 } else if (x instanceof BigInteger bi) {
+                    yield BBTool.ofLong(bi.longValue());
+                } else if (x instanceof Byte b) {
+                    yield BBTool.ofLong(b.longValue());
+                } else if (x instanceof BigDecimal bc) {
+                    yield BBTool.ofLong(bc.longValueExact());
+                } else if (x instanceof BigInt bi) {
                     yield BBTool.ofLong(bi.longValue());
                 } else {
                     yield binEncodingError(x, oid);
@@ -221,6 +250,8 @@ public final class EncoderBin {
                     yield BBTool.ofFloat(i.floatValue());
                 }  else if (x instanceof Long l) {
                     yield BBTool.ofFloat(l.floatValue());
+                } else if (x instanceof BigDecimal bc) {
+                    yield BBTool.ofFloat(bc.floatValue());
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -237,6 +268,8 @@ public final class EncoderBin {
                     yield BBTool.ofDouble(i.doubleValue());
                 }  else if (x instanceof Long l) {
                     yield BBTool.ofDouble(l.doubleValue());
+                } else if (x instanceof BigDecimal bc) {
+                    yield BBTool.ofDouble(bc.doubleValue());
                 } else {
                     yield binEncodingError(x, oid);
                 }
