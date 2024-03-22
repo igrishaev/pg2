@@ -273,20 +273,29 @@
 
   ;; Instant
 
-  (let [val1 (Instant/parse "2023-07-27T01:25:55.297834Z")
-        buf (pg/encode-bin val1 oid/timestamptz)
-        val2 (pg/decode-bin buf oid/timestamptz)]
-    (is (= (OffsetDateTime/parse "2023-07-27T01:25:55.297834Z") val2)))
+  (testing "default"
+    (let [val1 (Instant/parse "2023-07-27T01:25:55.297834Z")
+          buf (pg/encode-bin val1)
+          val2 (pg/decode-bin buf oid/timestamptz)]
+      (is (= (OffsetDateTime/parse "2023-07-27T01:25:55.297834Z") val2))))
 
-  (let [val1 (Instant/parse "2023-07-27T01:25:55.297834Z")
-        buf (pg/encode-bin val1 oid/timestamp)
-        val2 (pg/decode-bin buf oid/timestamp)]
-    (is (= (LocalDateTime/parse "2023-07-27T01:25:55.297834") val2)))
+  (testing "timestamptz"
+    (let [val1 (Instant/parse "2023-07-27T01:25:55.297834Z")
+          buf (pg/encode-bin val1 oid/timestamptz)
+          val2 (pg/decode-bin buf oid/timestamptz)]
+      (is (= (OffsetDateTime/parse "2023-07-27T01:25:55.297834Z") val2))))
 
-  (let [val1 (Instant/parse "2023-07-27T01:25:55.297834Z")
-        buf (pg/encode-bin val1 oid/date)
-        val2 (pg/decode-bin buf oid/date)]
-    (is (= (LocalDate/parse "2023-07-27") val2)))
+  (testing "timestamp"
+    (let [val1 (Instant/parse "2023-07-27T01:25:55.297834Z")
+          buf (pg/encode-bin val1 oid/timestamp)
+          val2 (pg/decode-bin buf oid/timestamp)]
+      (is (= (LocalDateTime/parse "2023-07-27T01:25:55.297834") val2))))
+
+  (testing "date"
+    (let [val1 (Instant/parse "2023-07-27T01:25:55.297834Z")
+          buf (pg/encode-bin val1 oid/date)
+          val2 (pg/decode-bin buf oid/date)]
+      (is (= (LocalDate/parse "2023-07-27") val2))))
 
   ;; LocalDateTime
 
