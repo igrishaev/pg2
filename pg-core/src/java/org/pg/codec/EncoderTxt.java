@@ -97,6 +97,26 @@ public final class EncoderTxt {
                 }
             }
 
+            case TIME -> {
+                if (x instanceof LocalTime lt) {
+                    yield DateTimeTxt.encodeTIME(lt);
+                } else if (x instanceof OffsetTime ot) {
+                    yield DateTimeTxt.encodeTIME(ot.toLocalTime());
+                } else {
+                    yield txtEncodingError(x, oid);
+                }
+            }
+
+            case TIMETZ -> {
+                if (x instanceof LocalTime lt) {
+                    yield DateTimeTxt.encodeTIMETZ(lt.atOffset(ZoneOffset.UTC));
+                } else if (x instanceof OffsetTime ot) {
+                    yield DateTimeTxt.encodeTIMETZ(ot);
+                } else {
+                    yield txtEncodingError(x, oid);
+                }
+            }
+
             case TIMESTAMPTZ -> {
                 if (x instanceof OffsetDateTime odt) {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(odt);
@@ -116,6 +136,9 @@ public final class EncoderTxt {
                     yield DateTimeTxt.encodeTIMESTAMP(ldt.toInstant(ZoneOffset.UTC));
                 } else if (x instanceof ZonedDateTime zdt) {
                     yield DateTimeTxt.encodeTIMESTAMP(zdt.toLocalDateTime());
+                } else if (x instanceof LocalDate ld) {
+                    yield DateTimeTxt.encodeTIMESTAMP(LocalDateTime.of(ld))
+
                 } else {
                     yield txtEncodingError(x, oid);
                 }
@@ -128,6 +151,8 @@ public final class EncoderTxt {
                     yield DateTimeTxt.encodeDATE(ldt.toLocalDate());
                 } else if (x instanceof ZonedDateTime zdt) {
                     yield DateTimeTxt.encodeDATE(zdt.toLocalDate());
+                } else if (x instanceof LocalDate ld) {
+                    yield DateTimeTxt.encodeDATE(ld);
                 } else {
                     yield txtEncodingError(x, oid);
                 }
