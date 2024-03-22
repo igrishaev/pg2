@@ -1,7 +1,11 @@
 
 - readme
 
-- encode: reverse type->oid to oid->type?
+- reverse type->oid to oid->type
+  - encode bin
+  - encode bin default + tests
+  - encode txt
+  - encode txt default + tests
 
 - json
   - ring middleware object mapper

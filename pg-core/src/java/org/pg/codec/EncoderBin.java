@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import clojure.lang.BigInt;
 
-import clojure.lang.IFn;
 import clojure.lang.Symbol;
 import org.pg.type.PGEnum;
 import org.pg.Const;
@@ -82,7 +81,9 @@ public final class EncoderBin {
         return switch (oid) {
 
             case DEFAULT -> {
-                if (x instanceof Short s) {
+                if (x instanceof String s) {
+                    yield stringToBytes(s, codecParams);
+                } else if (x instanceof Short s) {
                     yield BBTool.ofShort(s);
                 } else if (x instanceof Integer i) {
                     yield BBTool.ofInt(i);
@@ -92,6 +93,18 @@ public final class EncoderBin {
                     yield BBTool.ofFloat(f);
                 } else if (x instanceof Double d) {
                     yield BBTool.ofDouble(d);
+                } else if (x instanceof BigDecimal bd) {
+                    yield NumericBin.encode(bd);
+                } else if (x instanceof BigInteger bi) {
+                    yield NumericBin.encode(new BigDecimal(bi));
+                } else if (x instanceof Boolean b) {
+                    yield BBTool.ofBool(b);
+                } else if (x instanceof UUID u) {
+                    yield BBTool.ofUUID(u);
+                } else if (x instanceof byte[] ba) {
+                    yield ByteBuffer.wrap(ba);
+                } else if (x instanceof PGEnum e) {
+                    yield stringToBytes(e.x(), codecParams);
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -124,6 +137,20 @@ public final class EncoderBin {
                     yield binEncodingError(x, oid);
                 }
 
+            }
+
+            case INT8 -> {
+                if (x instanceof Short s) {
+                    yield BBTool.ofLong(s.longValue());
+                } else if (x instanceof Integer i) {
+                    yield BBTool.ofLong(i.longValue());
+                } else if (x instanceof Long l) {
+                    yield BBTool.ofLong(l);
+                } else if (x instanceof BigInteger bi) {
+                    yield BBTool.ofLong(bi.longValue());
+                } else {
+                    yield binEncodingError(x, oid);
+                }
             }
             
             case BYTEA -> {
@@ -246,6 +273,8 @@ public final class EncoderBin {
             case TIME -> {
                 if (x instanceof LocalTime lt) {
                     yield DateTimeBin.encodeTIME(lt);
+                } else if (x instanceof OffsetTime ot) {
+                    yield DateTimeBin.encodeTIME(ot.toLocalTime());
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -254,6 +283,8 @@ public final class EncoderBin {
             case TIMETZ -> {
                 if (x instanceof OffsetTime ot) {
                     yield DateTimeBin.encodeTIMETZ(ot);
+                } else if (x instanceof LocalTime lt) {
+                    yield DateTimeBin.encodeTIMETZ(lt.atOffset(ZoneOffset.UTC));
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -262,14 +293,53 @@ public final class EncoderBin {
             case DATE -> {
                 if (x instanceof LocalDate ld) {
                     yield DateTimeBin.encodeDATE(ld);
+                } else if (x instanceof LocalDateTime ldt) {
+                    yield DateTimeBin.encodeDATE(ldt.toLocalDate());
+                } else if (x instanceof Date d) {
+                    yield DateTimeBin.encodeDATE(LocalDate.ofInstant(d.toInstant(), ZoneOffset.UTC));
+                } else if (x instanceof OffsetDateTime odt) {
+                    yield DateTimeBin.encodeDATE(odt.toLocalDate());
+                } else if (x instanceof ZonedDateTime zdt) {
+                    yield DateTimeBin.encodeDATE(zdt.toLocalDate());
+                } else if (x instanceof Instant i) {
+                    yield DateTimeBin.encodeDATE(LocalDate.ofInstant(i, ZoneOffset.UTC));
                 } else {
                     yield binEncodingError(x, oid);
                 }
             }
 
             case TIMESTAMP -> {
+                if (x instanceof LocalDateTime ldt) {
+                    yield DateTimeBin.encodeTIMESTAMP(OffsetDateTime.of(ldt, ZoneOffset.UTC));
+                } else if (x instanceof Instant i) {
+                    yield DateTimeBin.encodeTIMESTAMP(i);
+                } else if (x instanceof OffsetDateTime odt) {
+                    yield DateTimeBin.encodeTIMESTAMPTZ(odt);
+                } else if (x instanceof Date d) {
+                    yield DateTimeBin.encodeTIMESTAMP(d.toInstant());
+                } else if (x instanceof LocalDate ld) {
+                    yield DateTimeBin.encodeTIMESTAMP(ld.atStartOfDay(ZoneOffset.UTC).toInstant());
+                } else if (x instanceof ZonedDateTime zdt) {
+                    yield DateTimeBin.encodeTIMESTAMP(zdt.toInstant());
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
+
+            case TIMESTAMPTZ -> {
                 if (x instanceof OffsetDateTime odt) {
-                    yield DateTimeBin.encodeTIMESTAMP(odt);
+                    yield DateTimeBin.encodeTIMESTAMPTZ(odt);
+                } else if (x instanceof Instant i) {
+                    yield DateTimeBin.encodeTIMESTAMPTZ(i);
+                } else if (x instanceof LocalDate ld) {
+                    yield DateTimeBin.encodeTIMESTAMPTZ(ld.atStartOfDay(ZoneOffset.UTC).toInstant());
+                } else if (x instanceof LocalDateTime ldt) {
+                    yield DateTimeBin.encodeTIMESTAMPTZ(ldt.toInstant(ZoneOffset.UTC));
+                } else if (x instanceof Date d) {
+                    yield DateTimeBin.encodeTIMESTAMPTZ(d.toInstant());
+                } else if (x instanceof ZonedDateTime zdt) {
+                    yield DateTimeBin.encodeTIMESTAMPTZ(zdt);
+
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -280,13 +350,9 @@ public final class EncoderBin {
 
 
 
-        return switch (x.getClass().getCanonicalName()) {
-
-
-
-
-
-
+//        return switch (x.getClass().getCanonicalName()) {
+//
+//
 //            case "java.lang.Double" -> switch (oid) {
 //                case FLOAT4 -> {
 //                    float f = (float)x;
@@ -303,72 +369,68 @@ public final class EncoderBin {
 //                case FLOAT8, DEFAULT -> BBTool.ofDouble((double)x);
 //                default -> binEncodingError(x, oid);
 //            };
-
-
-
-            case "java.util.Date" -> switch (oid) {
-                case DATE -> DateTimeBin.encodeDATE(LocalDate.ofInstant(((Date)x).toInstant(), ZoneOffset.UTC));
-                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP(((Date)x).toInstant());
-                case TIMESTAMPTZ, DEFAULT -> DateTimeBin.encodeTIMESTAMPTZ(((Date)x).toInstant());
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.time.OffsetTime" -> switch (oid) {
-                case TIME -> DateTimeBin.encodeTIME(((OffsetTime)x).toLocalTime());
-                case TIMETZ, DEFAULT -> DateTimeBin.encodeTIMETZ((OffsetTime)x);
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.time.LocalTime" -> switch (oid) {
-                case TIME, DEFAULT -> DateTimeBin.encodeTIME((LocalTime)x);
-                case TIMETZ -> DateTimeBin.encodeTIMETZ(((LocalTime)x).atOffset(ZoneOffset.UTC));
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.time.LocalDate" -> switch (oid) {
-                case DATE, DEFAULT -> DateTimeBin.encodeDATE((LocalDate)x);
-                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP(
-                        ((LocalDate)x).atStartOfDay(ZoneOffset.UTC).toInstant()
-                );
-                case TIMESTAMPTZ -> DateTimeBin.encodeTIMESTAMPTZ(
-                        ((LocalDate)x).atStartOfDay(ZoneOffset.UTC).toInstant()
-                );
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.time.LocalDateTime" -> switch (oid) {
-                case DATE -> DateTimeBin.encodeDATE(((LocalDateTime)x).toLocalDate());
-                case TIMESTAMP, DEFAULT -> DateTimeBin.encodeTIMESTAMP(((LocalDateTime)x).toInstant(ZoneOffset.UTC));
-                case TIMESTAMPTZ -> DateTimeBin.encodeTIMESTAMPTZ(((LocalDateTime)x).toInstant(ZoneOffset.UTC));
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.time.ZonedDateTime" -> switch (oid) {
-                case DATE -> DateTimeBin.encodeDATE(((ZonedDateTime)x).toLocalDate());
-                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP((ZonedDateTime)x);
-                case TIMESTAMPTZ, DEFAULT -> DateTimeBin.encodeTIMESTAMPTZ((ZonedDateTime)x);
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.time.OffsetDateTime" -> switch (oid) {
-                case DATE -> DateTimeBin.encodeDATE(((OffsetDateTime)x).toLocalDate());
-                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP((OffsetDateTime)x);
-                case TIMESTAMPTZ, DEFAULT -> DateTimeBin.encodeTIMESTAMPTZ((OffsetDateTime)x);
-                default -> binEncodingError(x, oid);
-            };
-
-            case "java.time.Instant" -> switch (oid) {
-                case DATE -> DateTimeBin.encodeDATE(LocalDate.ofInstant((Instant)x, ZoneOffset.UTC));
-                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP((Instant)x);
-                case TIMESTAMPTZ, DEFAULT -> DateTimeBin.encodeTIMESTAMPTZ((Instant)x);
-                default -> binEncodingError(x, oid);
-            };
-
-
-
-
-
-            default -> binEncodingError(x, oid);
-        };
+//
+//
+//
+//            case "java.util.Date" -> switch (oid) {
+//                case DATE -> DateTimeBin.encodeDATE(LocalDate.ofInstant(((Date)x).toInstant(), ZoneOffset.UTC));
+//                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP(((Date)x).toInstant());
+//                case TIMESTAMPTZ, DEFAULT -> DateTimeBin.encodeTIMESTAMPTZ(((Date)x).toInstant());
+//                default -> binEncodingError(x, oid);
+//            };
+//
+//            case "java.time.OffsetTime" -> switch (oid) {
+//                case TIME -> DateTimeBin.encodeTIME(((OffsetTime)x).toLocalTime());
+//                case TIMETZ, DEFAULT -> DateTimeBin.encodeTIMETZ((OffsetTime)x);
+//                default -> binEncodingError(x, oid);
+//            };
+//
+//            case "java.time.LocalTime" -> switch (oid) {
+//                case TIME, DEFAULT -> DateTimeBin.encodeTIME((LocalTime)x);
+//                case TIMETZ -> DateTimeBin.encodeTIMETZ(((LocalTime)x).atOffset(ZoneOffset.UTC));
+//                default -> binEncodingError(x, oid);
+//            };
+//
+//            case "java.time.LocalDate" -> switch (oid) {
+//                case DATE, DEFAULT -> DateTimeBin.encodeDATE((LocalDate)x);
+//                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP(
+//                        ((LocalDate)x).atStartOfDay(ZoneOffset.UTC).toInstant()
+//                );
+//                case TIMESTAMPTZ -> DateTimeBin.encodeTIMESTAMPTZ(
+//                        ((LocalDate)x).atStartOfDay(ZoneOffset.UTC).toInstant()
+//                );
+//                default -> binEncodingError(x, oid);
+//            };
+//
+//            case "java.time.LocalDateTime" -> switch (oid) {
+//                case DATE -> DateTimeBin.encodeDATE(((LocalDateTime)x).toLocalDate());
+//                case TIMESTAMP, DEFAULT -> DateTimeBin.encodeTIMESTAMP(((LocalDateTime)x).toInstant(ZoneOffset.UTC));
+//                case TIMESTAMPTZ -> DateTimeBin.encodeTIMESTAMPTZ(((LocalDateTime)x).toInstant(ZoneOffset.UTC));
+//                default -> binEncodingError(x, oid);
+//            };
+//
+//            case "java.time.ZonedDateTime" -> switch (oid) {
+//                case DATE -> DateTimeBin.encodeDATE(((ZonedDateTime)x).toLocalDate());
+//                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP((ZonedDateTime)x);
+//                case TIMESTAMPTZ, DEFAULT -> DateTimeBin.encodeTIMESTAMPTZ((ZonedDateTime)x);
+//                default -> binEncodingError(x, oid);
+//            };
+//
+//            case "java.time.OffsetDateTime" -> switch (oid) {
+//                case DATE -> DateTimeBin.encodeDATE(((OffsetDateTime)x).toLocalDate());
+//                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP((OffsetDateTime)x);
+//                case TIMESTAMPTZ, DEFAULT -> DateTimeBin.encodeTIMESTAMPTZ((OffsetDateTime)x);
+//                default -> binEncodingError(x, oid);
+//            };
+//
+//            case "java.time.Instant" -> switch (oid) {
+//                case DATE -> DateTimeBin.encodeDATE(LocalDate.ofInstant((Instant)x, ZoneOffset.UTC));
+//                case TIMESTAMP -> DateTimeBin.encodeTIMESTAMP((Instant)x);
+//                case TIMESTAMPTZ, DEFAULT -> DateTimeBin.encodeTIMESTAMPTZ((Instant)x);
+//                default -> binEncodingError(x, oid);
+//            };
+//
+//            default -> binEncodingError(x, oid);
+        //}
     }
 }
