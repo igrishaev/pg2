@@ -117,7 +117,7 @@ public final class EncoderBin {
                     yield binEncodingError(x, oid);
                 }
 
-
+                // PersistentCollection
                 // Localtime OffsetTime LocalDate LocalDateTime OffsetDateTime ZonedDateTime
                 //
             }
