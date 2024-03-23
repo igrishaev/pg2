@@ -111,19 +111,19 @@ public final class EncoderBin {
                 } else if (x instanceof ByteBuffer bb) {
                     yield bb;
                 } else if (x instanceof Date d) {
-                    yield DateTimeBin.encodeTIMESTAMP(DT.toInstant(d));
+                    yield DateTimeBin.encodeDATE(DT.toLocalDate(d));
                 } else if (x instanceof Instant i) {
                     yield DateTimeBin.encodeTIMESTAMPTZ(i);
                 } else if (x instanceof IPersistentCollection pc) {
                     yield encodeJSONB(pc, codecParams);
                 } else if (x instanceof LocalTime lt) {
-                    yield DateTimeBin.encodeTIMESTAMP(lt);
+                    yield DateTimeBin.encodeTIME(lt);
                 } else if (x instanceof OffsetTime ot) {
                     yield DateTimeBin.encodeTIMETZ(ot);
                 } else if (x instanceof LocalDate ld) {
                     yield DateTimeBin.encodeDATE(ld);
                 } else if (x instanceof LocalDateTime ldt) {
-                    yield DateTimeBin.encodeTIMESTAMP(ldt);
+                    yield DateTimeBin.encodeTIMESTAMP(DT.toInstant(ldt));
                 } else if (x instanceof OffsetDateTime odt) {
                     yield DateTimeBin.encodeTIMESTAMPTZ(odt);
                 } else if (x instanceof ZonedDateTime zdt) {
