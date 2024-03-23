@@ -5,8 +5,9 @@
 - jsonb version encoding and decoding
 - bpchar encoding and decoding
 - pass json(b) as a string
-- EncoderBin common methods
-- tests fixed
+- refactor txt and bin encoder
+- refactor server message dispatch
+- remove phase enum
 
 ## 0.1.7
 
