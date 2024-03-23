@@ -5,7 +5,6 @@ import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import org.pg.auth.ScramSha256;
 import org.pg.clojure.LazyMap;
-import org.pg.enums.Phase;
 import org.pg.error.PGError;
 import org.pg.error.PGErrorResponse;
 import org.pg.msg.server.*;
@@ -74,7 +73,6 @@ public final class Accum {
          }
     }
 
-    public final Phase phase;
     public final ExecuteParams executeParams;
     private final ArrayList<Node> nodes;
     private ErrorResponse errorResponse;
@@ -101,8 +99,7 @@ public final class Accum {
         return newKeys;
     }
 
-    public Accum(final Phase phase, final ExecuteParams executeParams) {
-        this.phase = phase;
+    public Accum(final ExecuteParams executeParams) {
         this.executeParams = executeParams;
         nodes = new ArrayList<>(2);
         addNode();

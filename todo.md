@@ -2,17 +2,13 @@
 - readme
 
 - reverse type->oid to oid->type
-  - encode bin
-  - encode bin default + tests
-  - encode txt
-  - encode txt default + tests
+  - encode bin default tests
+  - encode txt default tests
 
 - json
   - ring middleware object mapper
   - object-mapper: change order?
   - readme
-
-- remove phase?
 
 - pool close conn test
 - keywords with namespaces (+ jdbc)
