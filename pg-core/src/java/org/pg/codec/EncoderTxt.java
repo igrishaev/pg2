@@ -2,14 +2,13 @@ package org.pg.codec;
 
 import clojure.lang.IPersistentCollection;
 import clojure.lang.Symbol;
-import org.pg.Const;
 import org.pg.error.PGError;
 import org.pg.enums.OID;
 
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.Date;
-import java.io.StringWriter;
+import java.util.UUID;
 
 import org.pg.type.PGEnum;
 import org.pg.util.HexTool;
@@ -39,21 +38,7 @@ public final class EncoderTxt {
         return HexTool.formatHex(ba, "\\x");
     }
 
-    public static LocalDate toLocalDate(final Date date) {
-        return LocalDate.ofInstant(date.toInstant(), ZoneOffset.UTC);
-    }
 
-    public static LocalDate toLocalDate(final Instant instant) {
-        return LocalDate.ofInstant(instant, ZoneOffset.UTC);
-    }
-
-    public static Instant toInstant(final LocalDate localDate) {
-        return localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-    }
-
-    public static Instant toInstant(final LocalDateTime localDateTime) {
-        return localDateTime.toInstant(ZoneOffset.UTC);
-    }
 
     public static String encode(final Object x, final OID oid, final CodecParams codecParams) {
 
@@ -66,12 +51,38 @@ public final class EncoderTxt {
             case DEFAULT -> {
                 if (x instanceof Boolean b) {
                     yield b ? "t" : "f";
+                } else if (x instanceof String s) {
+                    yield s;
+                } else if (x instanceof Character c) {
+                    yield c.toString();
+                } else if (x instanceof Symbol s) {
+                    yield s.toString();
+                } else if (x instanceof UUID u) {
+                    yield u.toString();
                 } else if (x instanceof IPersistentCollection) {
                     yield JSON.writeValueToString(codecParams.objectMapper(), x);
                 } else if (x instanceof byte[] ba) {
                     yield encodeByteArray(ba);
+                } else if (x instanceof Number n) {
+                    yield n.toString();
+                } else if (x instanceof OffsetTime ot) {
+                    yield DateTimeTxt.encodeTIMETZ(ot);
+                } else if (x instanceof LocalTime lt) {
+                    yield DateTimeTxt.encodeTIME(lt);
+                } else if (x instanceof OffsetDateTime odt) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(odt);
+                } else if (x instanceof LocalDateTime ldt) {
+                    yield DateTimeTxt.encodeTIMESTAMP(ldt);
+                } else if (x instanceof ZonedDateTime zdt) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(zdt);
+                } else if (x instanceof LocalDate ld) {
+                    yield DateTimeTxt.encodeDATE(ld);
+                } else if (x instanceof Instant i) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(i);
+                } else if (x instanceof Date d) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(DT.toInstant(d));
                 } else {
-                    yield x.toString();
+                    yield txtEncodingError(x, oid);
                 }
             }
 
@@ -117,7 +128,7 @@ public final class EncoderTxt {
                 if (x instanceof LocalTime lt) {
                     yield DateTimeTxt.encodeTIME(lt);
                 } else if (x instanceof OffsetTime ot) {
-                    yield DateTimeTxt.encodeTIME(ot.toLocalTime());
+                    yield DateTimeTxt.encodeTIME(DT.toLocalTime(ot));
                 } else {
                     yield txtEncodingError(x, oid);
                 }
@@ -125,7 +136,7 @@ public final class EncoderTxt {
 
             case TIMETZ -> {
                 if (x instanceof LocalTime lt) {
-                    yield DateTimeTxt.encodeTIMETZ(lt.atOffset(ZoneOffset.UTC));
+                    yield DateTimeTxt.encodeTIMETZ(DT.toOffsetTime(lt));
                 } else if (x instanceof OffsetTime ot) {
                     yield DateTimeTxt.encodeTIMETZ(ot);
                 } else {
@@ -137,11 +148,11 @@ public final class EncoderTxt {
                 if (x instanceof OffsetDateTime odt) {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(odt);
                 } else if (x instanceof LocalDateTime ldt) {
-                    yield DateTimeTxt.encodeTIMESTAMPTZ(ldt.toInstant(ZoneOffset.UTC));
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(DT.toInstant(ldt));
                 } else if (x instanceof ZonedDateTime zdt) {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(zdt);
                 } else if (x instanceof LocalDate ld) {
-                    yield DateTimeTxt.encodeTIMESTAMPTZ(ld.atStartOfDay(ZoneOffset.UTC).toInstant());
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(DT.toInstant(ld));
                 } else if (x instanceof Instant i) {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(i);
                 } else if (x instanceof Date d) {
@@ -155,15 +166,15 @@ public final class EncoderTxt {
                 if (x instanceof OffsetDateTime odt) {
                     yield DateTimeTxt.encodeTIMESTAMP(odt.toInstant());
                 } else if (x instanceof LocalDateTime ldt) {
-                    yield DateTimeTxt.encodeTIMESTAMP(ldt.toInstant(ZoneOffset.UTC));
+                    yield DateTimeTxt.encodeTIMESTAMP(DT.toInstant(ldt));
                 } else if (x instanceof ZonedDateTime zdt) {
-                    yield DateTimeTxt.encodeTIMESTAMP(zdt.toLocalDateTime());
+                    yield DateTimeTxt.encodeTIMESTAMP(DT.toLocalDateTime(zdt));
                 } else if (x instanceof LocalDate ld) {
-                    yield DateTimeTxt.encodeTIMESTAMP(toInstant(ld));
+                    yield DateTimeTxt.encodeTIMESTAMP(DT.toInstant(ld));
                 } else if (x instanceof Instant i) {
-                    yield DateTimeTxt.encodeTIMESTAMPTZ(i);
+                    yield DateTimeTxt.encodeTIMESTAMP(i);
                 } else if (x instanceof Date d) {
-                    yield DateTimeTxt.encodeTIMESTAMPTZ(d.toInstant());
+                    yield DateTimeTxt.encodeTIMESTAMP(DT.toInstant(d));
                 } else {
                     yield txtEncodingError(x, oid);
                 }
@@ -171,17 +182,17 @@ public final class EncoderTxt {
 
             case DATE -> {
                 if (x instanceof OffsetDateTime odt) {
-                    yield DateTimeTxt.encodeDATE(odt.toLocalDate());
+                    yield DateTimeTxt.encodeDATE(DT.toLocalDate(odt));
                 } else if (x instanceof LocalDateTime ldt) {
-                    yield DateTimeTxt.encodeDATE(ldt.toLocalDate());
+                    yield DateTimeTxt.encodeDATE(DT.toLocalDate(ldt));
                 } else if (x instanceof ZonedDateTime zdt) {
-                    yield DateTimeTxt.encodeDATE(zdt.toLocalDate());
+                    yield DateTimeTxt.encodeDATE(DT.toLocalDate(zdt));
                 } else if (x instanceof LocalDate ld) {
                     yield DateTimeTxt.encodeDATE(ld);
                 } else if (x instanceof Instant i) {
-                    yield DateTimeTxt.encodeDATE(toLocalDate(i));
+                    yield DateTimeTxt.encodeDATE(DT.toLocalDate(i));
                 } else if (x instanceof Date d) {
-                    yield DateTimeTxt.encodeDATE(toLocalDate(d));
+                    yield DateTimeTxt.encodeDATE(DT.toLocalDate(d));
                 } else {
                     yield txtEncodingError(x, oid);
                 }

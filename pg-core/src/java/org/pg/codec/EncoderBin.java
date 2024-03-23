@@ -111,7 +111,7 @@ public final class EncoderBin {
                 } else if (x instanceof ByteBuffer bb) {
                     yield bb;
                 } else if (x instanceof Date d) {
-                    yield DateTimeBin.encodeTIMESTAMP(d.toInstant());
+                    yield DateTimeBin.encodeTIMESTAMP(DT.toInstant(d));
                 } else if (x instanceof Instant i) {
                     yield DateTimeBin.encodeTIMESTAMPTZ(i);
                 } else if (x instanceof IPersistentCollection pc) {
@@ -319,7 +319,7 @@ public final class EncoderBin {
                 if (x instanceof LocalTime lt) {
                     yield DateTimeBin.encodeTIME(lt);
                 } else if (x instanceof OffsetTime ot) {
-                    yield DateTimeBin.encodeTIME(ot.toLocalTime());
+                    yield DateTimeBin.encodeTIME(DT.toLocalTime(ot));
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -329,7 +329,7 @@ public final class EncoderBin {
                 if (x instanceof OffsetTime ot) {
                     yield DateTimeBin.encodeTIMETZ(ot);
                 } else if (x instanceof LocalTime lt) {
-                    yield DateTimeBin.encodeTIMETZ(lt.atOffset(ZoneOffset.UTC));
+                    yield DateTimeBin.encodeTIMETZ(DT.toOffsetTime(lt));
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -341,13 +341,13 @@ public final class EncoderBin {
                 } else if (x instanceof LocalDateTime ldt) {
                     yield DateTimeBin.encodeDATE(ldt.toLocalDate());
                 } else if (x instanceof Date d) {
-                    yield DateTimeBin.encodeDATE(LocalDate.ofInstant(d.toInstant(), ZoneOffset.UTC));
+                    yield DateTimeBin.encodeDATE(DT.toLocalDate(d));
                 } else if (x instanceof OffsetDateTime odt) {
-                    yield DateTimeBin.encodeDATE(odt.toLocalDate());
+                    yield DateTimeBin.encodeDATE(DT.toLocalDate(odt));
                 } else if (x instanceof ZonedDateTime zdt) {
-                    yield DateTimeBin.encodeDATE(zdt.toLocalDate());
+                    yield DateTimeBin.encodeDATE(DT.toLocalDate(zdt));
                 } else if (x instanceof Instant i) {
-                    yield DateTimeBin.encodeDATE(LocalDate.ofInstant(i, ZoneOffset.UTC));
+                    yield DateTimeBin.encodeDATE(DT.toLocalDate(i));
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -355,17 +355,17 @@ public final class EncoderBin {
 
             case TIMESTAMP -> {
                 if (x instanceof LocalDateTime ldt) {
-                    yield DateTimeBin.encodeTIMESTAMP(OffsetDateTime.of(ldt, ZoneOffset.UTC));
+                    yield DateTimeBin.encodeTIMESTAMP(DT.toInstant(ldt));
                 } else if (x instanceof Instant i) {
                     yield DateTimeBin.encodeTIMESTAMP(i);
                 } else if (x instanceof OffsetDateTime odt) {
-                    yield DateTimeBin.encodeTIMESTAMPTZ(odt);
+                    yield DateTimeBin.encodeTIMESTAMP(odt);
                 } else if (x instanceof Date d) {
-                    yield DateTimeBin.encodeTIMESTAMP(d.toInstant());
+                    yield DateTimeBin.encodeTIMESTAMP(DT.toInstant(d));
                 } else if (x instanceof LocalDate ld) {
-                    yield DateTimeBin.encodeTIMESTAMP(ld.atStartOfDay(ZoneOffset.UTC).toInstant());
+                    yield DateTimeBin.encodeTIMESTAMP(DT.toInstant(ld));
                 } else if (x instanceof ZonedDateTime zdt) {
-                    yield DateTimeBin.encodeTIMESTAMP(zdt.toInstant());
+                    yield DateTimeBin.encodeTIMESTAMP(DT.toInstant(zdt));
                 } else {
                     yield binEncodingError(x, oid);
                 }
@@ -377,14 +377,13 @@ public final class EncoderBin {
                 } else if (x instanceof Instant i) {
                     yield DateTimeBin.encodeTIMESTAMPTZ(i);
                 } else if (x instanceof LocalDate ld) {
-                    yield DateTimeBin.encodeTIMESTAMPTZ(ld.atStartOfDay(ZoneOffset.UTC).toInstant());
+                    yield DateTimeBin.encodeTIMESTAMPTZ(DT.toInstant(ld));
                 } else if (x instanceof LocalDateTime ldt) {
-                    yield DateTimeBin.encodeTIMESTAMPTZ(ldt.toInstant(ZoneOffset.UTC));
+                    yield DateTimeBin.encodeTIMESTAMPTZ(DT.toInstant(ldt));
                 } else if (x instanceof Date d) {
-                    yield DateTimeBin.encodeTIMESTAMPTZ(d.toInstant());
+                    yield DateTimeBin.encodeTIMESTAMPTZ(DT.toInstant(d));
                 } else if (x instanceof ZonedDateTime zdt) {
                     yield DateTimeBin.encodeTIMESTAMPTZ(zdt);
-
                 } else {
                     yield binEncodingError(x, oid);
                 }
