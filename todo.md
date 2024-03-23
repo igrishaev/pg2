@@ -4,6 +4,7 @@
 - reverse type->oid to oid->type
   - encode bin default tests
   - encode txt default tests
+  - wrapper idempotent?
 
 - json
   - ring middleware object mapper

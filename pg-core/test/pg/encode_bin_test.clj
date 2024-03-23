@@ -146,6 +146,46 @@
     (is (= {"oof" 123} data))))
 
 
+(deftest test-json-encode-bin
+
+  (testing "json coll"
+    (let [bb (pg/encode-bin [1 2 3] oid/json)]
+      (is (= [91 49 44 50 44 51 93] (-> bb .array vec)))))
+
+  (testing "jsonb coll"
+    (let [bb (pg/encode-bin [1 2 3] oid/jsonb)]
+      (is (= [1 91 49 44 50 44 51 93] (-> bb .array vec)))))
+
+  (testing "default coll"
+    (let [bb (pg/encode-bin [1 2 3])]
+      (is (= [1 91 49 44 50 44 51 93]
+             (-> bb .array vec)))))
+
+  (testing "json string"
+    (let [bb (pg/encode-bin "[1,2,3]" oid/json)]
+      (is (= [91 49 44 50 44 51 93] (-> bb .array vec)))))
+
+  (testing "jsonb string"
+    (let [bb (pg/encode-bin "[1,2,3]" oid/jsonb)]
+      (is (= [1 91 49 44 50 44 51 93] (-> bb .array vec)))))
+
+  (testing "jsonb number"
+    (let [bb (pg/encode-bin 1 oid/jsonb)]
+      (is (= [1 49] (-> bb .array vec)))))
+
+  (testing "json number"
+    (let [bb (pg/encode-bin 1 oid/json)]
+      (is (= [49] (-> bb .array vec)))))
+
+  (testing "default wrapper number"
+    (let [bb (pg/encode-bin (pg/json-wrap 1))]
+      (is (= [1 49] (-> bb .array vec)))))
+
+  (testing "json wrapper number"
+    (let [bb (pg/encode-bin (pg/json-wrap 1) oid/json)]
+      (is (= [49] (-> bb .array vec))))))
+
+
 (deftest test-big-decimal
 
   (doseq [value ["0"
