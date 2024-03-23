@@ -38,7 +38,9 @@ public final class EncoderTxt {
         return HexTool.formatHex(ba, "\\x");
     }
 
-
+    public static String encodeBool(final boolean value) {
+        return value ? "t" : "f";
+    }
 
     public static String encode(final Object x, final OID oid, final CodecParams codecParams) {
 
@@ -50,7 +52,7 @@ public final class EncoderTxt {
 
             case DEFAULT -> {
                 if (x instanceof Boolean b) {
-                    yield b ? "t" : "f";
+                    yield encodeBool(b);
                 } else if (x instanceof String s) {
                     yield s;
                 } else if (x instanceof Character c) {
@@ -61,6 +63,8 @@ public final class EncoderTxt {
                     yield u.toString();
                 } else if (x instanceof IPersistentCollection) {
                     yield JSON.writeValueToString(codecParams.objectMapper(), x);
+                } else if (x instanceof JSON.Wrapper w) {
+                    yield JSON.writeValueToString(codecParams.objectMapper(), w.value());
                 } else if (x instanceof byte[] ba) {
                     yield encodeByteArray(ba);
                 } else if (x instanceof Number n) {
@@ -94,9 +98,39 @@ public final class EncoderTxt {
                 }
             }
 
+            case NUMERIC -> {
+                if (x instanceof Number n) {
+                    yield n.toString();
+                } else {
+                    yield txtEncodingError(x, oid);
+                }
+            }
+
+            case UUID -> {
+                if (x instanceof UUID u) {
+                    yield u.toString();
+                } else if (x instanceof String s) {
+                    yield s;
+                } else {
+                    yield txtEncodingError(x, oid);
+                }
+            }
+
+            case BOOL -> {
+                if (x instanceof Boolean b) {
+                    yield encodeBool(b);
+                } else {
+                    yield txtEncodingError(x, oid);
+                }
+            }
+
             case JSON, JSONB -> {
                 if (x instanceof IPersistentCollection) {
                     yield JSON.writeValueToString(codecParams.objectMapper(), x);
+                } else if (x instanceof String s) {
+                    yield s;
+                } else if (x instanceof JSON.Wrapper w) {
+                    yield JSON.writeValueToString(codecParams.objectMapper(), w.value());
                 } else {
                     yield txtEncodingError(x, oid);
                 }
