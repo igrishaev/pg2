@@ -407,21 +407,22 @@ from
   ;;     (quick-bench
   ;;      (pg/execute conn
   ;;                  QUERY_SELECT_RANDOM_SIMPLE))))
-  ;; (with-title "next.JDBC complex value select"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
 
-  ;;     (quick-bench
-  ;;      (jdbc/execute! conn
-  ;;                     [QUERY_SELECT_RANDOM_COMPLEX]
-  ;;                     {:as rs/as-unqualified-maps}))))
+  (with-title "next.JDBC complex value select"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+       (jdbc/execute! conn
+                      [QUERY_SELECT_RANDOM_COMPLEX]
+                      {:as rs/as-unqualified-maps}))))
 
-  ;; (with-title "pg complex value select"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;      (pg/execute conn
-  ;;                  QUERY_SELECT_RANDOM_COMPLEX))))
+  (with-title "pg complex value select"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+       (pg/execute conn
+                   QUERY_SELECT_RANDOM_COMPLEX))))
 
+  #_
   (with-title "next.JDBC random JSON select"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
@@ -431,6 +432,7 @@ from
                       [QUERY_SELECT_JSON]
                       {:as rs/as-unqualified-maps}))))
 
+  #_
   (with-title "pg random JSON select"
     (pg/with-connection [conn pg-config]
       (quick-bench

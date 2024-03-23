@@ -12,6 +12,8 @@
   - object-mapper: change order?
   - readme
 
+- remove phase?
+
 - pool close conn test
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
