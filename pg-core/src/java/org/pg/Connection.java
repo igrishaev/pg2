@@ -673,82 +673,70 @@ public final class Connection implements AutoCloseable {
         return interact(phase, ExecuteParams.INSTANCE);
     }
 
+    private static void noop() {}
+
     private void handleMessage(final IServerMessage msg, final Accum acc) {
-        switch (msg.getClass().getSimpleName()) {
-            case
-                    "NotificationResponse" ->
-                    handleNotificationResponse((NotificationResponse)msg);
-            case
-                    "NoData",
-                    "EmptyQueryResponse",
-                    "CloseComplete",
-                    "BindComplete",
-                    "AuthenticationOk",
-                    "CopyDone",
-                    "SkippedMessage"-> {}
-            case
-                    "AuthenticationCleartextPassword" ->
-                    handleAuthenticationCleartextPassword();
-            case
-                    "AuthenticationSASL" ->
-                    handleAuthenticationSASL((AuthenticationSASL)msg, acc);
-            case
-                    "AuthenticationSASLContinue" ->
-                    handleAuthenticationSASLContinue((AuthenticationSASLContinue)msg, acc);
-            case
-                    "AuthenticationSASLFinal" ->
-                    handleAuthenticationSASLFinal((AuthenticationSASLFinal)msg, acc);
-            case
-                    "NoticeResponse" ->
-                    handleNoticeResponse((NoticeResponse)msg);
-            case
-                    "ParameterStatus" ->
-                    handleParameterStatus((ParameterStatus)msg);
-            case
-                    "RowDescription" ->
-                    handleRowDescription((RowDescription)msg, acc);
-            case
-                    "DataRow" ->
-                    handleDataRow((DataRow)msg, acc);
-            case
-                    "ReadyForQuery" ->
-                    handleReadyForQuery((ReadyForQuery)msg);
-            case
-                    "PortalSuspended" ->
-                    handlePortalSuspended((PortalSuspended)msg, acc);
-            case
-                    "AuthenticationMD5Password" ->
-                    handleAuthenticationMD5Password((AuthenticationMD5Password)msg);
-            case
-                    "NegotiateProtocolVersion" ->
-                    handleNegotiateProtocolVersion((NegotiateProtocolVersion)msg);
-            case
-                    "CommandComplete" ->
-                    handleCommandComplete((CommandComplete)msg, acc);
-            case
-                    "ErrorResponse" ->
-                    handleErrorResponse((ErrorResponse)msg, acc);
-            case
-                    "BackendKeyData" ->
-                    handleBackendKeyData((BackendKeyData)msg);
-            case
-                    "ParameterDescription" ->
-                    handleParameterDescription((ParameterDescription)msg, acc);
-            case
-                    "ParseComplete" ->
-                    handleParseComplete((ParseComplete)msg, acc);
-            case
-                    "CopyOutResponse" ->
-                    handleCopyOutResponse((CopyOutResponse)msg, acc);
-            case
-                    "CopyData" ->
-                    handleCopyData((CopyData)msg, acc);
-            case
-                    "CopyInResponse" ->
-                    handleCopyInResponse(acc);
-            default ->
-                    throw new PGError("Cannot handle this message: %s", msg);
+
+        if (msg instanceof DataRow x) {
+            handleDataRow(x, acc);
+        } else if (msg instanceof NotificationResponse x) {
+            handleNotificationResponse(x);
+        } else if (msg instanceof AuthenticationCleartextPassword) {
+            handleAuthenticationCleartextPassword();
+        } else if (msg instanceof AuthenticationSASL x) {
+            handleAuthenticationSASL(x, acc);
+        } else if (msg instanceof AuthenticationSASLContinue x) {
+            handleAuthenticationSASLContinue(x, acc);
+        } else if (msg instanceof AuthenticationSASLFinal x) {
+            handleAuthenticationSASLFinal(x, acc);
+        } else if (msg instanceof NoticeResponse x) {
+            handleNoticeResponse(x);
+        } else if (msg instanceof ParameterStatus x) {
+            handleParameterStatus(x);
+        } else if (msg instanceof RowDescription x) {
+            handleRowDescription(x, acc);
+        } else if (msg instanceof ReadyForQuery x) {
+            handleReadyForQuery(x);
+        } else if (msg instanceof PortalSuspended x) {
+            handlePortalSuspended(x, acc);
+        } else if (msg instanceof AuthenticationMD5Password x) {
+            handleAuthenticationMD5Password(x);
+        } else if (msg instanceof NegotiateProtocolVersion x) {
+            handleNegotiateProtocolVersion(x);
+        } else if (msg instanceof CommandComplete x) {
+            handleCommandComplete(x, acc);
+        } else if (msg instanceof ErrorResponse x) {
+            handleErrorResponse(x, acc);
+        } else if (msg instanceof BackendKeyData x) {
+            handleBackendKeyData(x);
+        } else if (msg instanceof ParameterDescription x) {
+            handleParameterDescription(x, acc);
+        } else if (msg instanceof ParseComplete x) {
+            handleParseComplete(x, acc);
+        } else if (msg instanceof CopyOutResponse x) {
+            handleCopyOutResponse(x, acc);
+        } else if (msg instanceof CopyData x) {
+            handleCopyData(x, acc);
+        } else if (msg instanceof CopyInResponse) {
+            handleCopyInResponse(acc);
+        } else if (msg instanceof NoData) {
+            noop();
+        } else if (msg instanceof EmptyQueryResponse) {
+            noop();
+        } else if (msg instanceof CloseComplete) {
+            noop();
+        } else if (msg instanceof BindComplete) {
+            noop();
+        } else if (msg instanceof AuthenticationOk) {
+            noop();
+        } else if (msg instanceof CopyDone) {
+            noop();
+        } else if (msg instanceof SkippedMessage) {
+            noop();
+        } else {
+            throw new PGError("Cannot handle this message: %s", msg);
         }
+
     }
 
     private void handleAuthenticationSASL(final AuthenticationSASL msg, final Accum acc) {
