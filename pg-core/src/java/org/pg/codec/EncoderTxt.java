@@ -39,6 +39,22 @@ public final class EncoderTxt {
         return HexTool.formatHex(ba, "\\x");
     }
 
+    public static LocalDate toLocalDate(final Date date) {
+        return LocalDate.ofInstant(date.toInstant(), ZoneOffset.UTC);
+    }
+
+    public static LocalDate toLocalDate(final Instant instant) {
+        return LocalDate.ofInstant(instant, ZoneOffset.UTC);
+    }
+
+    public static Instant toInstant(final LocalDate localDate) {
+        return localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+    }
+
+    public static Instant toInstant(final LocalDateTime localDateTime) {
+        return localDateTime.toInstant(ZoneOffset.UTC);
+    }
+
     public static String encode(final Object x, final OID oid, final CodecParams codecParams) {
 
         if (x == null) {
@@ -124,6 +140,12 @@ public final class EncoderTxt {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(ldt.toInstant(ZoneOffset.UTC));
                 } else if (x instanceof ZonedDateTime zdt) {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(zdt);
+                } else if (x instanceof LocalDate ld) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(ld.atStartOfDay(ZoneOffset.UTC).toInstant());
+                } else if (x instanceof Instant i) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(i);
+                } else if (x instanceof Date d) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(d.toInstant());
                 } else {
                     yield txtEncodingError(x, oid);
                 }
@@ -137,8 +159,11 @@ public final class EncoderTxt {
                 } else if (x instanceof ZonedDateTime zdt) {
                     yield DateTimeTxt.encodeTIMESTAMP(zdt.toLocalDateTime());
                 } else if (x instanceof LocalDate ld) {
-                    yield DateTimeTxt.encodeTIMESTAMP(LocalDateTime.of(ld))
-
+                    yield DateTimeTxt.encodeTIMESTAMP(toInstant(ld));
+                } else if (x instanceof Instant i) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(i);
+                } else if (x instanceof Date d) {
+                    yield DateTimeTxt.encodeTIMESTAMPTZ(d.toInstant());
                 } else {
                     yield txtEncodingError(x, oid);
                 }
@@ -153,6 +178,10 @@ public final class EncoderTxt {
                     yield DateTimeTxt.encodeDATE(zdt.toLocalDate());
                 } else if (x instanceof LocalDate ld) {
                     yield DateTimeTxt.encodeDATE(ld);
+                } else if (x instanceof Instant i) {
+                    yield DateTimeTxt.encodeDATE(toLocalDate(i));
+                } else if (x instanceof Date d) {
+                    yield DateTimeTxt.encodeDATE(toLocalDate(d));
                 } else {
                     yield txtEncodingError(x, oid);
                 }
