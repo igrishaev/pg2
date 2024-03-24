@@ -2506,7 +2506,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                              "copy foo (id, name, active, note) from STDIN WITH (FORMAT CSV)"
                              maps
                              [:id :name :active :note]
-                             {:oids [oid/json nil oid/bool nil nil nil nil]
+                             {:oids [oid/int2 nil oid/float4 nil nil nil nil]
                               :copy-csv? true})
             (is false)
             (catch PGError e
