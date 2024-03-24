@@ -1,6 +1,8 @@
 
 ## 0.1.9-SNAPSHOT
 
+- ArrTool class added
+
 ## 0.1.8
 
 - remove type hint class
