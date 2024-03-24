@@ -1,6 +1,5 @@
 (ns pg.encode-txt-test
   (:import
-   org.pg.error.PGError
    java.math.BigDecimal
    java.math.BigInteger
    java.time.Instant
@@ -10,7 +9,8 @@
    java.time.OffsetDateTime
    java.time.OffsetTime
    java.time.ZonedDateTime
-   java.util.Date)
+   java.util.Date
+   org.pg.error.PGError)
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -265,3 +265,42 @@
         (j/read-value string)]
 
     (is (= {"oof" 123} data))))
+
+
+(deftest test-json-encode-txt
+
+  (testing "json coll"
+    (let [string (pg/encode-txt [1 2 3] oid/json)]
+      (is (= "[1,2,3]" string))))
+
+  (testing "jsonb coll"
+    (let [string (pg/encode-txt [1 2 3] oid/jsonb)]
+      (is (= "[1,2,3]" string))))
+
+  (testing "default coll"
+    (let [string (pg/encode-txt [1 2 3])]
+      (is (= "[1,2,3]" string))))
+
+  (testing "json string"
+    (let [string (pg/encode-txt "[1,2,3]" oid/json)]
+      (is (= "[1,2,3]" string))))
+
+  (testing "jsonb string"
+    (let [string (pg/encode-txt "[1,2,3]" oid/jsonb)]
+      (is (= "[1,2,3]" string))))
+
+  (testing "jsonb number"
+    (let [string (pg/encode-txt 1 oid/jsonb)]
+      (is (= "1" string))))
+
+  (testing "json number"
+    (let [string (pg/encode-txt 1 oid/json)]
+      (is (= "1" string))))
+
+  (testing "default wrapper number"
+    (let [string (pg/encode-txt (pg/json-wrap 1))]
+      (is (= "1" string))))
+
+  (testing "json wrapper number"
+    (let [string (pg/encode-txt (pg/json-wrap 1) oid/json)]
+      (is (= "1" string)))))

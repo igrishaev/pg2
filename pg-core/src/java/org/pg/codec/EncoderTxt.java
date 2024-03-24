@@ -125,14 +125,12 @@ public final class EncoderTxt {
             }
 
             case JSON, JSONB -> {
-                if (x instanceof IPersistentCollection) {
-                    yield JSON.writeValueToString(codecParams.objectMapper(), x);
-                } else if (x instanceof String s) {
+                if (x instanceof String s) {
                     yield s;
                 } else if (x instanceof JSON.Wrapper w) {
                     yield JSON.writeValueToString(codecParams.objectMapper(), w.value());
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield JSON.writeValueToString(codecParams.objectMapper(), x);
                 }
             }
 
