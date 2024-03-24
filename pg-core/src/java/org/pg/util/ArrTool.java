@@ -3,7 +3,9 @@ package org.pg.util;
 import org.pg.error.PGError;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public final class ArrTool {
 
@@ -11,7 +13,7 @@ public final class ArrTool {
         return Array.newInstance(Object.class, dims);
     }
 
-    public static void set(final Object array, final Object value, final int... dims) {
+    public static void setVal(final Object array, final Object value, final int... dims) {
         Object target = array;
         int i = 0;
         for (; i < dims.length - 1; i++) {
@@ -21,7 +23,7 @@ public final class ArrTool {
         Array.set(target, dims[i], value);
     }
 
-    public static Object get(final Object array, final int... dims) {
+    public static Object getVal(final Object array, final int... dims) {
         Object target = array;
         int i = 0;
         for (; i < dims.length - 1; i++) {
@@ -31,7 +33,7 @@ public final class ArrTool {
         return Array.get(target, dims[i]);
     }
 
-    public static void inc(final int[] dims, final int[] path) {
+    public static void incPath(final int[] dims, final int[] path) {
         int i = dims.length - 1;
         boolean isOverflow;
         path[i] += 1;
@@ -51,19 +53,38 @@ public final class ArrTool {
         }
     }
 
+    public static List<Integer> getDims(final Object array) {
+        final List<Integer> dims = new ArrayList<>();
+        Object target = array;
+        while (true) {
+            if (target instanceof Object[] oa) {
+                dims.add(oa.length);
+                if (oa.length > 0) {
+                    target = oa[0];
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        return dims;
+    }
+
     public static void main (final String[] args) {
-        final Object arr = create(2, 2, 2);
-        System.out.println(get(arr, 1, 1, 0));
-        System.out.println(get(arr, 1, 1, 1));
-        set(arr, 42, 1, 1, 1);
-        System.out.println(get(arr, 1, 1, 0));
-        System.out.println(get(arr, 1, 1, 1));
+        final Object arr = create(3, 3, 3);
+        System.out.println(getVal(arr, 1, 1, 0));
+        System.out.println(getVal(arr, 1, 1, 1));
+        setVal(arr, 42, 1, 1, 1);
+        System.out.println(getVal(arr, 1, 1, 0));
+        System.out.println(getVal(arr, 1, 1, 1));
 
-        final int[] dims = {3, 3, 3};
+        System.out.println(getDims(create(2, 4, 2)));
 
-        int[] path = {0, 0, 0};
 
-        System.out.println(Arrays.toString(path));
+//        final int[] dims = {3, 3, 3};
+//        int[] path = {0, 0, 0};
+//        System.out.println(Arrays.toString(path));
 
 //        while (true) {
 //            inc(dims, path);
