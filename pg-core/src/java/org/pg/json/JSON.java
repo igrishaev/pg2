@@ -100,12 +100,8 @@ public final class JSON {
         return readValue(defaultMapper, reader);
     }
 
-    public static Object readValueBinary (final ObjectMapper objectMapper, final ByteBuffer buf) {
-        return readValue(objectMapper, buf);
-    }
-
-    public static Object readValueBinary (final ByteBuffer buf) {
-        return readValueBinary(defaultMapper, buf);
+    public static Object readValue (final ByteBuffer buf) {
+        return readValue(defaultMapper, buf);
     }
 
     public static Object readValue (final ObjectMapper objectMapper, final ByteBuffer buf) {
@@ -116,10 +112,6 @@ public final class JSON {
         } catch (IOException e) {
             return decodeError(e);
         }
-    }
-
-    public static Object readValue (final ByteBuffer buf) {
-        return readValue(defaultMapper, buf);
     }
 
     public static void writeValue (final ObjectMapper objectMapper, final OutputStream outputStream, final Object value) {

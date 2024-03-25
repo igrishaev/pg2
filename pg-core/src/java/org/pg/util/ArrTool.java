@@ -13,14 +13,13 @@ public final class ArrTool {
         return Array.newInstance(Object.class, dims);
     }
 
-    public static void setVal(final Object array, final Object value, final int... dims) {
+    public static void setVal(final Object array, final Object value, final int... path) {
         Object target = array;
         int i = 0;
-        for (; i < dims.length - 1; i++) {
-            final int dim = dims[i];
-            target = Array.get(target, dim);
+        for (; i < path.length - 1; i++) {
+            target = Array.get(target, path[i]);
         }
-        Array.set(target, dims[i], value);
+        Array.set(target, path[i], value);
     }
 
     public static Object getVal(final Object array, final int... dims) {
@@ -53,12 +52,12 @@ public final class ArrTool {
         }
     }
 
-    public static List<Integer> getDims(final Object array) {
-        final List<Integer> dims = new ArrayList<>();
+    public static int[] getDims(final Object array) {
+        final List<Integer> dimsList = new ArrayList<>();
         Object target = array;
         while (true) {
             if (target instanceof Object[] oa) {
-                dims.add(oa.length);
+                dimsList.add(oa.length);
                 if (oa.length > 0) {
                     target = oa[0];
                 } else {
@@ -67,6 +66,10 @@ public final class ArrTool {
             } else {
                 break;
             }
+        }
+        final int[] dims = new int[dimsList.size()];
+        for (int i = 0; i < dims.length; i++) {
+            dims[i] = dimsList.get(i);
         }
         return dims;
     }
@@ -78,18 +81,8 @@ public final class ArrTool {
         setVal(arr, 42, 1, 1, 1);
         System.out.println(getVal(arr, 1, 1, 0));
         System.out.println(getVal(arr, 1, 1, 1));
-
-        System.out.println(getDims(create(2, 4, 2)));
-
-
-//        final int[] dims = {3, 3, 3};
-//        int[] path = {0, 0, 0};
-//        System.out.println(Arrays.toString(path));
-
-//        while (true) {
-//            inc(dims, path);
-//            System.out.println(Arrays.toString(path));
-//        }
+        System.out.println(Arrays.deepToString((Object[])arr));
+        System.out.println(Arrays.toString(getDims(create(2, 4, 2))));
     }
 
 }

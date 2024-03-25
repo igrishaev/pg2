@@ -41,10 +41,10 @@ public final class DecoderBin {
                     default: throw new PGError("incorrect binary boolean value");
                 }
             }
-            case JSON -> JSON.readValueBinary(codecParams.objectMapper(), buf);
+            case JSON -> JSON.readValue(codecParams.objectMapper(), buf);
             case JSONB -> {
                 buf.get(); // skip version
-                yield JSON.readValueBinary(codecParams.objectMapper(), buf);
+                yield JSON.readValue(codecParams.objectMapper(), buf);
             }
             case TIME -> DateTimeBin.decodeTIME(buf);
             case TIMETZ -> DateTimeBin.decodeTIMETZ(buf);
@@ -52,6 +52,7 @@ public final class DecoderBin {
             case TIMESTAMP -> DateTimeBin.decodeTIMESTAMP(buf);
             case TIMESTAMPTZ -> DateTimeBin.decodeTIMESTAMPTZ(buf);
             case NUMERIC -> NumericBin.decode(buf);
+            case _INT2, _INT4, _INT8 -> ArrayBin.decode(buf, oid, codecParams);
             default -> BBTool.getRestBytes(buf);
         };
     }
