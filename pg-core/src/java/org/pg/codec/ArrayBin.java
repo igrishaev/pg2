@@ -17,6 +17,9 @@ public final class ArrayBin {
         final OID elOid = OID.ofInt(buf.getInt());
         final int[] dims = new int[dimCount];
         final int[] path = new int[dimCount];
+        if (path.length > 0) {
+            path[dimCount - 1] = -1;
+        }
         int dim;
         int len;
         Object val;
@@ -32,12 +35,13 @@ public final class ArrayBin {
         }
         final Object array = ArrTool.create(dims);
         for (int i = 0; i < totalCount; i++) {
+            ArrTool.incPath(dims, path);
             len = buf.getInt();
             if (len != -1) {
                 val = DecoderBin.decode(buf, elOid, codecParams);
                 ArrTool.setVal(array, val, path);
             }
-            ArrTool.incPath(dims, path);
+
         }
         return array;
     }

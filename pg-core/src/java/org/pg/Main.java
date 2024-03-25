@@ -68,7 +68,8 @@ public final class Main {
 
         // System.out.println(conn.execute(""));
 
-        System.out.println(conn.execute("select '{1, 2, 3}'::int[] as arr"));
+        System.out.println(conn.execute("select '{1,2,3}'::int[] as arr"));
+        System.out.println(conn.execute("select '{{1,2,3},{4,5,6}}'::int[][] as arr"));
 
         String query = "select $1 as foo";
         // "select $1::int as foo, 'test' as string, 42 as num, now() as now"

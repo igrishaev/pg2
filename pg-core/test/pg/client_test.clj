@@ -2654,6 +2654,31 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= [] res-query)))))
 
 
+(deftest test-client-array-read-bin-simple
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true)]
+    (let [res (pg/execute conn
+                          "select '{1,2,3}'::int[] as arr"
+                          {:first? true})]
+      (is (= {:arr [1, 2, 3]}
+             (update res :arr vec))))))
+
+
+(deftest test-client-array-read-bin-multi
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true)]
+    (let [res (pg/execute conn
+                          "select '{{1,2,3},{4,5,6}}'::int[][] as arr"
+                          {:first? true})]
+      (is (= {:arr [[1, 2, 3], [4, 5, 6]]}
+             (-> res
+                 (update :arr vec)
+                 (update-in [:arr 0] vec)
+                 (update-in [:arr 1] vec)))))))
+
+
 ;; (deftest test-array-read-bin
 ;;   (pg/with-connection [conn (assoc *CONFIG* :binary-decode? true)]
 

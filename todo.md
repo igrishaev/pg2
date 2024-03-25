@@ -1,6 +1,14 @@
 
 - readme
 
+- arrays
+  - decode bin: all the array oid
+  - encode bin
+  - decode txt: all the array oid
+  - encode txt
+  - tests
+  - vectors maybe?
+
 - reverse type->oid to oid->type
   - encode bin default tests
   - encode txt default tests
@@ -21,11 +29,6 @@
 - pg.jdbc batch
 - pass jsonista custom object
 
-- arrays
-  - decode txt
-  - decode bin
-  - encode txt
-  - encode bin
 
 - int to float: tests
 - refactor locks? on Clojure level
