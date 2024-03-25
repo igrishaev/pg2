@@ -1,35 +1,33 @@
-package org.pg.util;
+package org.pg.codec;
 
+import clojure.lang.PersistentVector;
 import org.pg.error.PGError;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class ArrTool {
+public final class Matrix {
 
-    public static Object create(final int... dims) {
-        return Array.newInstance(Object.class, dims);
-    }
-
-    public static void setVal(final Object array, final Object value, final int... path) {
-        Object target = array;
-        int i = 0;
-        for (; i < path.length - 1; i++) {
-            target = Array.get(target, path[i]);
+    public static PersistentVector create(final int... dims) {
+        if (dims.length == 0) {
+            return null;
+        } else if (dims.length == 1) {
+            PersistentVector result = PersistentVector.EMPTY;
+            final int dim = dims[0];
+            for (int i = 0; i < dim; i++) {
+                result = result.cons(null);
+            }
+            return result;
+        } else {
+            PersistentVector result = PersistentVector.EMPTY;
+            final int dim = dims[0];
+            final int[] dimsNext = Arrays.copyOfRange(dims, 1, dims.length);
+            for (int i = 0; i < dim; i++) {
+                result = result.cons(create(dimsNext));
+            }
+            return result;
         }
-        Array.set(target, path[i], value);
-    }
-
-    public static Object getVal(final Object array, final int... dims) {
-        Object target = array;
-        int i = 0;
-        for (; i < dims.length - 1; i++) {
-            final int dim = dims[i];
-            target = Array.get(target, dim);
-        }
-        return Array.get(target, dims[i]);
     }
 
     public static void incPath(final int[] dims, final int[] path) {
@@ -74,15 +72,9 @@ public final class ArrTool {
         return dims;
     }
 
-    public static void main (final String[] args) {
-        final Object arr = create(3, 3, 3);
-        System.out.println(getVal(arr, 1, 1, 0));
-        System.out.println(getVal(arr, 1, 1, 1));
-        setVal(arr, 42, 1, 1, 1);
-        System.out.println(getVal(arr, 1, 1, 0));
-        System.out.println(getVal(arr, 1, 1, 1));
-        System.out.println(Arrays.deepToString((Object[])arr));
-        System.out.println(Arrays.toString(getDims(create(2, 4, 2))));
+
+    public static void main(String... args) {
+        System.out.println(create(1, 3, 3));
     }
 
 }

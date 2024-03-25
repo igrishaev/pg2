@@ -1,7 +1,7 @@
 package org.pg.codec;
 
 import org.pg.enums.OID;
-import org.pg.util.ArrTool;
+import clojure.core$assoc_in;
 
 import java.nio.ByteBuffer;
 
@@ -33,16 +33,16 @@ public final class ArrayBin {
         if (dims.length == 0) {
             totalCount = 0;
         }
-        final Object array = ArrTool.create(dims);
+        Object matrix = Matrix.create(dims);
         for (int i = 0; i < totalCount; i++) {
-            ArrTool.incPath(dims, path);
+            Matrix.incPath(dims, path);
             len = buf.getInt();
             if (len != -1) {
                 val = DecoderBin.decode(buf, elOid, codecParams);
-                ArrTool.setVal(array, val, path);
+                matrix = core$assoc_in.invokeStatic(matrix, path, val);
             }
 
         }
-        return array;
+        return matrix;
     }
 }
