@@ -1,5 +1,7 @@
 package org.pg.enums;
 
+import org.pg.error.PGError;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -224,6 +226,33 @@ public enum OID {
 
     public int toInt() {
         return code;
+    }
+
+    public OID toElementOID () {
+        return switch (this) {
+            case _TEXT -> TEXT;
+            case _VARCHAR -> VARCHAR;
+            case _NAME -> NAME;
+            case _INT2 -> INT2;
+            case _INT4 -> INT4;
+            case _INT8 -> INT8;
+            case _BOOL -> BOOL;
+            case _OID -> OID;
+            case _CHAR -> CHAR;
+            case _BPCHAR -> BPCHAR;
+            case _UUID -> UUID;
+            case _FLOAT4 -> FLOAT4;
+            case _FLOAT8 -> FLOAT8;
+            case _JSON -> JSON;
+            case _JSONB -> JSONB;
+            case _TIME -> TIME;
+            case _TIMETZ -> TIMETZ;
+            case _DATE -> DATE;
+            case _TIMESTAMP -> TIMESTAMP;
+            case _TIMESTAMPTZ -> TIMESTAMPTZ;
+            case _NUMERIC -> NUMERIC;
+            default -> throw new PGError("cannot infer element OID for array oid OID %s", this);
+        };
     }
 
 }

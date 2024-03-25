@@ -30,9 +30,9 @@ public final class ArrayBin {
         final int dimCount = dims.length;
         final int hasNulls = 1;
 
-        final OID oidEl = OID.INT4;
+        final OID oidEl = oidArray.toElementOID();
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         writeInt32(out, dimCount);
         writeInt32(out, hasNulls);

@@ -52,7 +52,9 @@ public final class DecoderBin {
             case TIMESTAMP -> DateTimeBin.decodeTIMESTAMP(buf);
             case TIMESTAMPTZ -> DateTimeBin.decodeTIMESTAMPTZ(buf);
             case NUMERIC -> NumericBin.decode(buf);
-            case _INT2, _INT4, _INT8 -> ArrayBin.decode(buf, oid, codecParams);
+            case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
+                    _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
+                    _TIMESTAMPTZ, _NUMERIC -> ArrayBin.decode(buf, oid, codecParams);
             default -> BBTool.getRestBytes(buf);
         };
     }

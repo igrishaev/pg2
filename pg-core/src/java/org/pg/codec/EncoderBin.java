@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import clojure.lang.BigInt;
 
 import clojure.lang.IPersistentCollection;
+import clojure.lang.IPersistentVector;
 import clojure.lang.Symbol;
 import org.pg.type.PGEnum;
 import org.pg.Const;
@@ -389,7 +390,15 @@ public final class EncoderBin {
                 }
             }
 
-            case _INT4 -> ArrayBin.encode(x, oid, codecParams);
+            case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
+                    _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
+                    _TIMESTAMPTZ, _NUMERIC -> {
+                if (x instanceof IPersistentCollection) {
+                    yield ArrayBin.encode(x, oid, codecParams);
+                } else {
+                    yield binEncodingError(x, oid);
+                }
+            }
 
             default -> binEncodingError(x, oid);
         };
