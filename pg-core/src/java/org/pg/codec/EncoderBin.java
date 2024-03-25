@@ -389,6 +389,8 @@ public final class EncoderBin {
                 }
             }
 
+            case _INT4 -> ArrayBin.encode(x, oid, codecParams);
+
             default -> binEncodingError(x, oid);
         };
 

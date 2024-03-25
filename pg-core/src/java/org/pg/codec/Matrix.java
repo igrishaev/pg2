@@ -1,13 +1,27 @@
 package org.pg.codec;
 
 import clojure.lang.PersistentVector;
+import clojure.lang.IPersistentCollection;
 import org.pg.error.PGError;
 
+import clojure.lang.RT;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public final class Matrix {
+
+    public static long getTotalCount(final int[] dims) {
+        if (dims.length == 0) {
+            return 0;
+        } else {
+            long totalCount = 1;
+            for (int dim: dims) {
+                totalCount *= dim;
+            }
+            return totalCount;
+        }
+    }
 
     public static PersistentVector create(final int... dims) {
         if (dims.length == 0) {
@@ -50,14 +64,24 @@ public final class Matrix {
         }
     }
 
-    public static int[] getDims(final Object array) {
+    public static int[] initPath(final int size) {
+        final int[] path = new int[size];
+        if (size > 0) {
+            path[size - 1] = -1;
+        }
+        return path;
+    }
+
+    public static int[] getDims(final Object matrix) {
         final List<Integer> dimsList = new ArrayList<>();
-        Object target = array;
+        int size;
+        Object target = matrix;
         while (true) {
-            if (target instanceof Object[] oa) {
-                dimsList.add(oa.length);
-                if (oa.length > 0) {
-                    target = oa[0];
+            if (target instanceof IPersistentCollection pc) {
+                size = pc.count();
+                dimsList.add(size);
+                if (size > 0) {
+                    target = RT.first(target);
                 } else {
                     break;
                 }
@@ -74,7 +98,12 @@ public final class Matrix {
 
 
     public static void main(String... args) {
-        System.out.println(create(1, 3, 3));
+        Object matrix = create(1, 1, 3, 3, 99);
+        System.out.println(matrix);
+        System.out.println(Arrays.toString(getDims(matrix)));
+        System.out.println(getTotalCount(new int[]{1, 2, 3}));
+        System.out.println(Arrays.toString(initPath(4)));
+
     }
 
 }
