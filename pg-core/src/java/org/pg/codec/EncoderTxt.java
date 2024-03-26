@@ -231,6 +231,16 @@ public final class EncoderTxt {
 
             }
 
+            case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
+                    _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
+                    _TIMESTAMPTZ, _NUMERIC -> {
+                if (x instanceof IPersistentCollection) {
+                    yield ArrayTxt.encode(x, oid, codecParams);
+                } else {
+                    yield txtEncodingError(x, oid);
+                }
+            }
+
             default -> txtEncodingError(x, oid);
         };
     }
