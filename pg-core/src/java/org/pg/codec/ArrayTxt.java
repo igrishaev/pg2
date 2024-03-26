@@ -3,18 +3,18 @@ package org.pg.codec;
 import clojure.lang.PersistentVector;
 import org.pg.enums.OID;
 import org.pg.error.PGError;
-import org.pg.msg.client.SSLRequest;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.io.PushbackReader;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public final class ArrayTxt {
+
+
+
+
 
     public static String quoteElement(final String element) {
         final StringBuilder sb = new StringBuilder();

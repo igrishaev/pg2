@@ -1,5 +1,6 @@
 package org.pg.codec;
 
+import clojure.lang.IPersistentVector;
 import clojure.lang.PersistentVector;
 import clojure.lang.IPersistentCollection;
 import org.pg.error.PGError;
@@ -8,8 +9,44 @@ import clojure.lang.RT;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public final class Matrix {
+
+    public static int head (final int[] array) {
+        return array[0];
+    }
+
+    public static int[] tail (final int[] array) {
+        return Arrays.copyOfRange(array, 1, array.length);
+    }
+
+    public static IPersistentVector assocVec(final PersistentVector _v, final int i, final Object x) {
+        final PersistentVector v = Objects.requireNonNullElse(_v, PersistentVector.EMPTY);
+        final int len = v.length();
+        if (i == len) {
+            return v.cons(x);
+        } else if (i < len) {
+            return v.assoc(i, x);
+        } else {
+            throw new PGError("assocIn index error: %s", i);
+        }
+    }
+
+    public static IPersistentVector assocVecIn(
+            final PersistentVector v,
+            final int[] path,
+            final Object x
+    ) {
+        return switch (path.length) {
+            case 0 -> v;
+            case 1 -> assocVec(v, path[0], x);
+            default -> {
+                final int i = path[0];
+                yield assocVec(v, i, assocVecIn(v.get(i), tail(path), x));
+            }
+        };
+    }
 
     public static long getTotalCount(final int[] dims) {
         if (dims.length == 0) {
@@ -36,7 +73,7 @@ public final class Matrix {
         } else {
             PersistentVector result = PersistentVector.EMPTY;
             final int dim = dims[0];
-            final int[] dimsNext = Arrays.copyOfRange(dims, 1, dims.length);
+            final int[] dimsNext = tail(dims);
             for (int i = 0; i < dim; i++) {
                 result = result.cons(create(dimsNext));
             }
