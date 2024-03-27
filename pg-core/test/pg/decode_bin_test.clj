@@ -182,13 +182,13 @@
     0,  0,  0,  3,  ;; 3
     0,  0,  0,  4,  ;; len
     0,  0,  0,  4,  ;; 4
-    -1, -1, -1, -1, ;; null
+   -1, -1, -1, -1,  ;; null
     0,  0,  0,  4,  ;; len = 4
     0,  0,  0,  6   ;; 6
     ]))
 
 
-(deftest test-arrays
+(deftest test-decode-array-bin
   (let [res
         (pg/decode-bin BUF-ARRAY-2X3-INT4 oid/_int4)]
     (is (= [[1 2 3] [4 nil 6]]

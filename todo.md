@@ -2,15 +2,11 @@
 - readme
 
 - arrays
-  - decode bin: all the array oid
   - encode bin
-  - decode txt: all the array oid
   - encode txt
   - tests
-  - vectors maybe?
 
 - reverse type->oid to oid->type
-  - encode bin default tests
   - encode txt default tests
   - wrapper idempotent?
 

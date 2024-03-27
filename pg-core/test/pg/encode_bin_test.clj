@@ -463,26 +463,76 @@
                 [[3 nil 1] [9 nil 7]]]
           buf (pg/encode-bin val1 oid/_int8)
           val2 (pg/decode-bin buf oid/_int8)]
-      (is (= [[[1 nil 3] [4 nil 6]]
-              [[3 nil 1] [9 nil 7]]]
-             val2))))
+      (is (= val1 val2))))
 
   (testing "multi-dim string"
     (let [val1 [[["hello" nil "foo"] ["a" nil "b"]]
                 [["aa" nil "bb"] [nil "foo" nil]]]
           buf (pg/encode-bin val1 oid/_text)
           val2 (pg/decode-bin buf oid/_text)]
-      (is (= [[["hello" nil "foo"] ["a" nil "b"]]
-              [["aa" nil "bb"] [nil "foo" nil]]]
+      (is (= val1 val2))))
+
+  (testing "multi-dim bool"
+    (let [val1 [[[true nil false] [false nil true]]
+                [[true true nil] [false false nil]]]
+          buf (pg/encode-bin val1 oid/_bool)
+          val2 (pg/decode-bin buf oid/_bool)]
+      (is (= val1 val2))))
+
+  (testing "multi-dim uuid"
+    (let [val1 [[#uuid "3264e20e-47d6-4a5f-babd-4cf965b333ef" nil]
+                [nil #uuid "1281b0d7-339a-4a91-8602-6a25c760b786"]]
+          buf (pg/encode-bin val1 oid/_uuid)
+          val2 (pg/decode-bin buf oid/_uuid)]
+      (is (= val1 val2))))
+
+  (testing "multi-dim float"
+    (let [val1 [[(float 1.2) nil]
+                [nil (float 2.3)]]
+          buf (pg/encode-bin val1 oid/_float4)
+          val2 (pg/decode-bin buf oid/_float4)]
+      (is (= val1 val2))))
+
+  (testing "multi-dim date"
+    (let [val1 [[(LocalDate/parse "2023-01-03") nil]
+                [nil (LocalDate/parse "2024-05-13")]]
+          buf (pg/encode-bin val1 oid/_date)
+          val2 (pg/decode-bin buf oid/_date)]
+      (is (= val1 val2))))
+
+  (testing "multi-dim time"
+    (let [val1 [[(LocalTime/parse "10:11:12") nil]
+                [nil (LocalTime/parse "13:14:15")]]
+          buf (pg/encode-bin val1 oid/_time)
+          val2 (pg/decode-bin buf oid/_time)]
+      (is (= val1 val2))))
+
+  (testing "multi-dim timetz"
+    (let [val1 [[(OffsetTime/parse "10:11:12+06:30") nil]
+                [nil (OffsetTime/parse "09:12:13+09:30")]]
+          buf (pg/encode-bin val1 oid/_timetz)
+          val2 (pg/decode-bin buf oid/_timetz)]
+      (is (= val1 val2))))
+
+  (testing "multi-dim timestamp"
+    (let [val1 [[(LocalDateTime/parse "2023-01-09T10:11:12") nil]
+                [nil (LocalDateTime/parse "2025-02-27T11:12:13")]]
+          buf (pg/encode-bin val1 oid/_timestamp)
+          val2 (pg/decode-bin buf oid/_timestamp)]
+      (is (= val1 val2))))
+
+  (testing "multi-dim timestamptz"
+    (let [val1 [[(OffsetDateTime/parse "2023-01-09T10:11:12Z") nil]
+                [nil (OffsetDateTime/parse "2025-02-27T11:12:13+09:30")]]
+          buf (pg/encode-bin val1 oid/_timestamptz)
+          val2 (pg/decode-bin buf oid/_timestamptz)]
+      (is (= [[(OffsetDateTime/parse "2023-01-09T10:11:12Z") nil]
+              [nil (OffsetDateTime/parse "2025-02-27T01:42:13Z")]]
              val2))))
 
-  ;; string
-  ;; bools
-  ;; uuids
-  ;; floats
-  ;; dates
-  ;; time
-  ;; datetime
-  ;; numeric
-
-  )
+  (testing "multi-dim numeric"
+    (let [val1 [[(bigdec 123.456) nil]
+                [nil (bigdec 456.789)]]
+          buf (pg/encode-bin val1 oid/_numeric)
+          val2 (pg/decode-bin buf oid/_numeric)]
+      (is (= val1 val2)))))

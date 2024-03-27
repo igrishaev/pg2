@@ -30,7 +30,7 @@ stream. You can COPY IN a set of rows without CSV-encoding them because it's
 held by the library. It also supports binary COPY format, which is faster.
 
 It **supports java.time.** classes. The ordinary JDBC clients still use
-`Timestamp` class for dates, which is horrible. In PG2, all the java.time.*
+`Timestamp` class for dates, which is horrible. In PG2, all the `java.time.*`
 classes are supported for reading and writing.
 
 ...And plenty of other features.
