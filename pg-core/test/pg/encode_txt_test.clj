@@ -370,14 +370,15 @@
                          oid/_bool)]
       (is (= "{{\"t\",NULL,\"f\"},{\"f\",NULL,\"t\"}}" result))))
 
+  ;; TODO: try without json-wrap?
   (testing "json(b)"
     (doseq [oid [oid/_json
                  oid/_jsonb]]
       (let [result
             (pg/encode-txt [[{:foo 1} nil {:bar "test"}]
-                            [[1, 2, 3] nil "lol"]]
+                            [(pg/json-wrap [1, 2, 3]) nil true]]
                            oid)]
-        (is (= 1 result)))))
+        (is (= "{{\"{\\\"foo\\\":1}\",NULL,\"{\\\"bar\\\":\\\"test\\\"}\"},{\"[1,2,3]\",NULL,\"true\"}}" result)))))
 
 
 
