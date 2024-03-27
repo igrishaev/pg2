@@ -188,8 +188,6 @@
     ]))
 
 
-;; TODO: implement arrays!
-#_
 (deftest test-arrays
   (let [res
         (pg/decode-bin BUF-ARRAY-2X3-INT4 oid/_int4)]

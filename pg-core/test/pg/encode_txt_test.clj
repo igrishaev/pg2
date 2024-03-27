@@ -304,3 +304,86 @@
   (testing "json wrapper number"
     (let [string (pg/encode-txt (pg/json-wrap 1) oid/json)]
       (is (= "1" string)))))
+
+
+(deftest test-array-encode-txt
+
+  (testing "plain"
+    (let [result
+          (pg/encode-txt [1 2 3]
+                         oid/_int4)]
+      (is (= "{\"1\",\"2\",\"3\"}" result))))
+
+  (testing "multi-dim"
+    (let [result
+          (pg/encode-txt [["aa" nil "bb"]
+                          ["cc" nil "dd"]]
+                         oid/_text)]
+      (is (= "{{\"aa\",NULL,\"bb\"},{\"cc\",NULL,\"dd\"}}" result))))
+
+  (testing "numbers"
+    (doseq [oid [oid/_int2
+                 oid/_int4
+                 oid/_int8
+                 oid/_oid
+                 oid/_float4
+                 oid/_float8
+                 oid/_numeric]]
+      (let [result
+            (pg/encode-txt [[1 nil 2]
+                            [3 nil 4]]
+                           oid)]
+        (is (= "{{\"1\",NULL,\"2\"},{\"3\",NULL,\"4\"}}" result)))))
+
+  (testing "text"
+    (doseq [oid [oid/_text
+                 oid/_varchar
+                 oid/_name
+                 oid/_char
+                 oid/_bpchar]]
+      (let [result
+            (pg/encode-txt [["a\\a" nil "b\"b"]
+                            ["cc" nil "dd"]]
+                           oid)]
+        (is (= "{{\"a\\\\a\",NULL,\"b\\\"b\"},{\"cc\",NULL,\"dd\"}}" result)))))
+
+  #_
+  (testing "uuid"
+    (doseq [oid [oid/_text
+                 oid/_uuid]]
+      (let [result
+            (pg/encode-txt [[#uuid "1bce0361-8791-4923-b3bc-9002c5498a24" nil]
+                            [nil #uuid "5abe9c84-266e-48b3-91b6-f344c61c660b"]] oid)]
+        (is (= 1 result)))))
+
+  (testing "bool"
+    (let [result
+          (pg/encode-txt [[true nil false]
+                          [false nil true]]
+                         oid/_bool)]
+      (is (= "{{\"t\",NULL,\"f\"},{\"f\",NULL,\"t\"}}" result))))
+
+  (testing "bool"
+    (let [result
+          (pg/encode-txt [[true nil false]
+                          [false nil true]]
+                         oid/_bool)]
+      (is (= "{{\"t\",NULL,\"f\"},{\"f\",NULL,\"t\"}}" result))))
+
+  (testing "json(b)"
+    (doseq [oid [oid/_json
+                 oid/_jsonb]]
+      (let [result
+            (pg/encode-txt [[{:foo 1} nil {:bar "test"}]
+                            [[1, 2, 3] nil "lol"]]
+                           oid)]
+        (is (= 1 result)))))
+
+
+
+  )
+
+
+;;
+;; ,  _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
+;; _TIMESTAMPTZ,

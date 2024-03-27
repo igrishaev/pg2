@@ -447,24 +447,33 @@
       (is (= (OffsetDateTime/parse "2023-07-25T01:00:00.123Z") val2)))))
 
 
-;; TODO: implement arrays
-#_
 (deftest test-arrays
 
-  ;; simple
-  (let [val1 [1 2 3]
-        buf (pg/encode-bin val1)
-        val2 (pg/decode-bin buf oid/_int8)]
-    (is (= [1 2 3] val2)))
+  ;; TODO: not json?
 
-  ;; multi-dim
-  (let [val1 [[[1 nil 3] [4 nil 6]]
+  (testing "plain array"
+    (let [val1 [1 2 3]
+          buf (pg/encode-bin val1 oid/_int8)
+          val2 (pg/decode-bin buf oid/_int8)]
+      (is (= [1 2 3] val2))))
+
+  (testing "multi-dim array"
+    (let [val1 [[[1 nil 3] [4 nil 6]]
+                [[3 nil 1] [9 nil 7]]]
+          buf (pg/encode-bin val1 oid/_int8)
+          val2 (pg/decode-bin buf oid/_int8)]
+      (is (= [[[1 nil 3] [4 nil 6]]
               [[3 nil 1] [9 nil 7]]]
-        buf (pg/encode-bin val1)
-        val2 (pg/decode-bin buf oid/_int8)]
-    (is (= [[[1 nil 3] [4 nil 6]]
-            [[3 nil 1] [9 nil 7]]]
-           val2)))
+             val2))))
+
+  #_
+  (testing "multi-dim string"
+    (let [val1 [[["hello" nil "foo"] ["a" nil "b"]]
+                [["aa" nil "bb"] [nil "foo" nil]]]
+          buf (pg/encode-bin val1 oid/_text)
+          val2 (pg/decode-bin buf oid/_text)]
+      (is (= 1
+             val2))))
 
   ;; string
   ;; bools

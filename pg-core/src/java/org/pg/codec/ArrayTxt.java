@@ -19,11 +19,17 @@ public final class ArrayTxt {
         sb.append('"');
         for (int i = 0; i < len; i++) {
             c = element.charAt(i);
-            sb.append(switch (c) {
-                case '"' -> "\\\"";
-                case '\\' -> "\\\\";
-                default -> c;
-            });
+            switch (c) {
+                case '\\', '"': {
+                    sb.append('\\');
+                    sb.append(c);
+                    break;
+                }
+                default: {
+                    sb.append(c);
+                    break;
+                }
+            }
         }
         sb.append('"');
         return sb.toString();
@@ -32,7 +38,7 @@ public final class ArrayTxt {
     public static String encode (final Object x, final OID oidArray, final CodecParams codecParams) {
         final OID oidEl = oidArray.toElementOID();
         Object val;
-        if (x instanceof Iterable<?> i) {
+        if (x instanceof Iterable<?> i) { // TODO: bug
             final Iterator<?> iterator = i.iterator();
             final StringBuilder sb = new StringBuilder();
             sb.append('{');
@@ -83,29 +89,30 @@ public final class ArrayTxt {
     }
 
     public static String readQuotedString (final Reader reader) {
-        readChar(reader);
+        readChar(reader); // skip leading "
         final StringBuilder sb = new StringBuilder();
-        char c;
+        char c1, c2;
         while (true) {
-            c = readChar(reader);
-            switch (c) {
-                case '"': {
+            c1 = readChar(reader);
+            switch (c1) {
+                case '"': { // the trailing "
                     return sb.toString();
                 }
                 case '\\': {
-                    c = readChar(reader);
-                    switch (c) {
+                    c2 = readChar(reader);
+                    switch (c2) {
                         case '\\', '"': {
-                            sb.append(c);
+                            sb.append(c2);
                             break;
                         }
                         default: {
                             throw new PGError("unexpected \\ character");
                         }
                     }
+                    break;
                 }
                 default: {
-                    sb.append(c);
+                    sb.append(c1);
                     break;
                 }
             }
@@ -198,14 +205,15 @@ public final class ArrayTxt {
     }
 
     public static void main(String... args) {
-        System.out.println(encode(
-                PersistentVector.create("a'a\\aa", "b\"bb", null, "he'l{}lo"),
-                OID._TEXT,
-                CodecParams.standard()
-        ));
-        System.out.println(readQuotedString(new PushbackReader(new StringReader("\"aaa\\\\aaa\""))));
-        System.out.println(readNonQuotedString(new PushbackReader(new StringReader("NuLL,"))));
-
-        System.out.println(decode("{{1,2,3},{4,null,6}}", OID._INT2, CodecParams.standard()));
+        System.out.println(quoteElement("{\"foo\": 123}"));
+//        System.out.println(encode(
+//                PersistentVector.create("a'a\\aa", "b\"bb", null, "hi \\\\test"),
+//                OID._TEXT,
+//                CodecParams.standard()
+//        ));
+        // System.out.println(readQuotedString(new PushbackReader(new StringReader("\"aaa\\\"bbb\""))));
+//        System.out.println(readNonQuotedString(new PushbackReader(new StringReader("NuLL,"))));
+//
+//        System.out.println(decode("{{1,2,3},{4,null,6}}", OID._INT2, CodecParams.standard()));
     }
 }

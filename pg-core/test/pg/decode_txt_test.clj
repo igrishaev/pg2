@@ -197,8 +197,6 @@
              (str res))))))
 
 
-;; TODO: implement arrays
-#_
 (deftest test-decode-array
 
   (testing "trivial ints"
