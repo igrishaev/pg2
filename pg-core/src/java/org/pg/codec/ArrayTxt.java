@@ -1,6 +1,8 @@
 package org.pg.codec;
 
 import clojure.lang.PersistentVector;
+import clojure.lang.RT;
+import clojure.lang.Sequential;
 import org.pg.enums.OID;
 import org.pg.error.PGError;
 
@@ -38,8 +40,8 @@ public final class ArrayTxt {
     public static String encode (final Object x, final OID oidArray, final CodecParams codecParams) {
         final OID oidEl = oidArray.toElementOID();
         Object val;
-        if (x instanceof Iterable<?> i) { // TODO: bug
-            final Iterator<?> iterator = i.iterator();
+        if (x instanceof Sequential s) {
+            final Iterator<?> iterator = RT.iter(s);
             final StringBuilder sb = new StringBuilder();
             sb.append('{');
             while (iterator.hasNext()) {
