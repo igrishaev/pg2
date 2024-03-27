@@ -12,10 +12,6 @@ import java.util.*;
 
 public final class ArrayTxt {
 
-
-
-
-
     public static String quoteElement(final String element) {
         final StringBuilder sb = new StringBuilder();
         final int len = element.length();
@@ -148,6 +144,7 @@ public final class ArrayTxt {
         final OID oidEl = arrayOid.toElementOID();
         final PushbackReader reader = new PushbackReader(new StringReader(array));
         final int[] dims = new int[16];
+        int[] path;
         int pos = -1;
         int r;
         char c;
@@ -155,12 +152,10 @@ public final class ArrayTxt {
         String buf;
         PersistentVector result = PersistentVector.EMPTY;
 
-        List<Object> elements = new ArrayList<>();
-
         while (true) {
             r = read(reader);
             if (r == -1) {
-                return elements;
+                return result;
             } else {
                c = (char) r;
             }
@@ -182,8 +177,8 @@ public final class ArrayTxt {
                     unread(reader, c);
                     buf = readQuotedString(reader);
                     obj = DecoderTxt.decode(buf, oidEl, codecParams);
-                    elements.add(obj);
-                    System.out.println(Arrays.toString(dims));
+                    path = Matrix.take(pos, dims);
+                    result = Matrix.assocVecIn(result, path, obj);
                     break;
                 }
                 default: {
@@ -194,10 +189,9 @@ public final class ArrayTxt {
                     } else {
                         obj = DecoderTxt.decode(buf, oidEl, codecParams);
                     }
-                    System.out.println(pos);
-                    System.out.println(obj);
-                    System.out.println(Arrays.toString(dims));
-                    elements.add(obj);
+                    path = Matrix.take(pos, dims);
+                    result = Matrix.assocVecIn(result, path, obj);
+                    break;
                 }
             }
         }

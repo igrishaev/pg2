@@ -13,37 +13,38 @@ import java.util.Objects;
 
 public final class Matrix {
 
-    public static int head (final int[] array) {
-        return array[0];
-    }
-
     public static int[] tail (final int[] array) {
         return Arrays.copyOfRange(array, 1, array.length);
     }
 
-    public static IPersistentVector assocVec(final PersistentVector _v, final int i, final Object x) {
-        final PersistentVector v = Objects.requireNonNullElse(_v, PersistentVector.EMPTY);
-        final int len = v.length();
+    public static int[] take (final int n, final int[] array) {
+        return Arrays.copyOfRange(array, 0, n+1);
+    }
+
+    public static PersistentVector assocVec(PersistentVector v, final int i, final Object x) {
+        final PersistentVector V = Objects.requireNonNullElse(v, PersistentVector.EMPTY);
+        final int len = V.length();
         if (i == len) {
-            return v.cons(x);
+            return (PersistentVector) RT.conj(V, x);
         } else if (i < len) {
-            return v.assoc(i, x);
+            return (PersistentVector) RT.assoc(V, i, x);
         } else {
             throw new PGError("assocIn index error: %s", i);
         }
     }
 
-    public static IPersistentVector assocVecIn(
+    public static PersistentVector assocVecIn(
             final PersistentVector v,
             final int[] path,
             final Object x
     ) {
+        final PersistentVector V = Objects.requireNonNullElse(v, PersistentVector.EMPTY);
         return switch (path.length) {
-            case 0 -> v;
-            case 1 -> assocVec(v, path[0], x);
+            case 0 -> V;
+            case 1 -> assocVec(V, path[0], x);
             default -> {
                 final int i = path[0];
-                yield assocVec(v, i, assocVecIn(v.get(i), tail(path), x));
+                yield assocVec(V, i, assocVecIn((PersistentVector) RT.get(V, i), tail(path), x));
             }
         };
     }
@@ -135,11 +136,14 @@ public final class Matrix {
 
 
     public static void main(String... args) {
-        Object matrix = create(1, 1, 3, 3, 99);
-        System.out.println(matrix);
-        System.out.println(Arrays.toString(getDims(matrix)));
-        System.out.println(getTotalCount(new int[]{1, 2, 3}));
-        System.out.println(Arrays.toString(initPath(4)));
+//        Object matrix = create(1, 1, 3, 3, 99);
+//        System.out.println(matrix);
+//        System.out.println(Arrays.toString(getDims(matrix)));
+//        System.out.println(getTotalCount(new int[]{1, 2, 3}));
+//        System.out.println(Arrays.toString(initPath(4)));
+        System.out.println(assocVecIn(PersistentVector.EMPTY, new int[]{0, 0, 0}, 42));
+        // System.out.println(assocVec(PersistentVector.create(1, 2), 2, 42));
+
 
     }
 
