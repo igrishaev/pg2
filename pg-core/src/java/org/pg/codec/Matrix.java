@@ -1,6 +1,5 @@
 package org.pg.codec;
 
-import clojure.lang.IPersistentVector;
 import clojure.lang.PersistentVector;
 import clojure.lang.IPersistentCollection;
 import org.pg.error.PGError;

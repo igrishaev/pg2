@@ -82,7 +82,10 @@ public final class ArrayBin {
             Matrix.incPath(dims, path);
             len = buf.getInt();
             if (len != -1) {
-                val = DecoderBin.decode(buf, elOid, codecParams);
+                final ByteBuffer bufEl = buf.slice();
+                bufEl.limit(len);
+                BBTool.skip(buf, len);
+                val = DecoderBin.decode(bufEl, elOid, codecParams);
                 matrix = core$assoc_in.invokeStatic(matrix, path, val);
             }
         }

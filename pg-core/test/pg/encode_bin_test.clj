@@ -450,6 +450,7 @@
 (deftest test-arrays
 
   ;; TODO: not json?
+  ;; TODO: not a map?
 
   (testing "plain array"
     (let [val1 [1 2 3]
@@ -466,81 +467,14 @@
               [[3 nil 1] [9 nil 7]]]
              val2))))
 
-  ;; TODO: bug
   (testing "multi-dim string"
     (let [val1 [[["hello" nil "foo"] ["a" nil "b"]]
                 [["aa" nil "bb"] [nil "foo" nil]]]
           buf (pg/encode-bin val1 oid/_text)
           val2 (pg/decode-bin buf oid/_text)]
-      (is (= 1 (-> buf .array vec)))
-      (is (= 1
+      (is (= [[["hello" nil "foo"] ["a" nil "b"]]
+              [["aa" nil "bb"] [nil "foo" nil]]]
              val2))))
-
-  #_
-  [0 0 0  3 ;; dims
-   0 0 0  1 ;; has nulls
-   0 0 0 25 ;; text
-   0 0 0  2 ;; dim 1
-   0 0 0  1 ;; ?
-   0 0 0  2 ;; dim 2
-   0 0 0  1 ;; ?
-   0 0 0  3 ;; dim 3
-   0 0 0  1 ;; ?
-   0 0 0  5 ;; len
-   104 101 108 108 111 ;; hello
-   -1 -1 -1 -1 ;; null
-   0
-   0
-   0
-   3
-   102
-   111
-   111
-   0
-   0
-   0
-   1
-   97
-   -1
-   -1
-   -1
-   -1
-   0
-   0
-   0
-   1
-   98
-   0
-   0
-   0
-   2
-   97
-   97
-   -1
-   -1
-   -1
-   -1
-   0
-   0
-   0
-   2
-   98
-   98
-   -1
-   -1
-   -1
-   -1
-   0
-   0
-   0
-   3
-   102
-   111
-   111
-   -1
-   -1
-   -1
-   -1]
 
   ;; string
   ;; bools
