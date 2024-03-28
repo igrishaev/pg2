@@ -84,6 +84,12 @@
     (is (= data decoded))))
 
 
+(deftest test-wrapper-is-important
+  (let [wrapper
+        (-> 42 pg/json-wrap pg/json-wrap pg/json-wrap)]
+    (is (= 42 @wrapper))))
+
+
 (deftest test-jsonb-bin-wrapper
 
   (let [data

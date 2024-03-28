@@ -347,14 +347,14 @@
                            oid)]
         (is (= "{{\"a\\\\a\",NULL,\"b\\\"b\"},{\"cc\",NULL,\"dd\"}}" result)))))
 
-  #_
   (testing "uuid"
     (doseq [oid [oid/_text
                  oid/_uuid]]
       (let [result
             (pg/encode-txt [[#uuid "1bce0361-8791-4923-b3bc-9002c5498a24" nil]
                             [nil #uuid "5abe9c84-266e-48b3-91b6-f344c61c660b"]] oid)]
-        (is (= 1 result)))))
+        (is (= "{{\"1bce0361-8791-4923-b3bc-9002c5498a24\",NULL},{NULL,\"5abe9c84-266e-48b3-91b6-f344c61c660b\"}}"
+               result)))))
 
   (testing "bool"
     (let [result
@@ -370,6 +370,7 @@
                          oid/_bool)]
       (is (= "{{\"t\",NULL,\"f\"},{\"f\",NULL,\"t\"}}" result))))
 
+  ;; TODO
   ;; TODO: try without json-wrap?
   (testing "json(b)"
     (doseq [oid [oid/_json
@@ -385,6 +386,7 @@
   )
 
 
+;; TODO: more tests
 ;;
 ;; ,  _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
 ;; _TIMESTAMPTZ,

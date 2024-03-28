@@ -943,7 +943,7 @@
   Wrap a value into a JSON.Wrapper class to force JSON encoding.
   "
   ^JSON$Wrapper [x]
-  (new JSON$Wrapper x))
+  (JSON/wrap x))
 
 
 ;;

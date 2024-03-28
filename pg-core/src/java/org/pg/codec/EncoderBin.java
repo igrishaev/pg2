@@ -7,11 +7,9 @@ import java.util.UUID;
 import java.util.Date;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import clojure.lang.BigInt;
 
-import clojure.lang.IPersistentCollection;
-import clojure.lang.IPersistentVector;
-import clojure.lang.Symbol;
+import clojure.lang.*;
+
 import org.pg.type.PGEnum;
 import org.pg.Const;
 import org.pg.error.PGError;
@@ -393,8 +391,8 @@ public final class EncoderBin {
             case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
                     _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
                     _TIMESTAMPTZ, _NUMERIC -> {
-                if (x instanceof IPersistentCollection) {
-                    yield ArrayBin.encode(x, oid, codecParams);
+                if (x instanceof Sequential s) {
+                    yield ArrayBin.encode(s, oid, codecParams);
                 } else {
                     yield binEncodingError(x, oid);
                 }

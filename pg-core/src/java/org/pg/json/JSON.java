@@ -1,5 +1,6 @@
 package org.pg.json;
 
+import clojure.lang.IDeref;
 import clojure.lang.Keyword;
 import clojure.lang.PersistentVector;
 import clojure.lang.PersistentHashMap;
@@ -26,11 +27,20 @@ import java.util.Map;
 
 public final class JSON {
 
-    public record Wrapper (Object value) {}
+    public record Wrapper (Object value) implements IDeref {
+        @Override
+        public Object deref() {
+            return value;
+        }
+    }
 
     @SuppressWarnings("unused")
     public static Wrapper wrap (final Object value) {
-        return new Wrapper(value);
+        if (value instanceof Wrapper w) {
+            return w;
+        } else {
+            return new Wrapper(value);
+        }
     }
 
     public static final ObjectMapper defaultMapper = new ObjectMapper();
@@ -66,6 +76,7 @@ public final class JSON {
         }
     }
 
+    @SuppressWarnings("unused")
     public static Object readValue (final String input) {
         return readValue(defaultMapper, input);
     }
@@ -134,6 +145,7 @@ public final class JSON {
         }
     }
 
+    @SuppressWarnings("unused")
     public static void writeValue (final Writer writer, final Object value) {
         writeValue(defaultMapper, writer, value);
     }

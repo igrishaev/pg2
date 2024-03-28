@@ -1,6 +1,7 @@
 package org.pg.codec;
 
 import clojure.lang.IPersistentCollection;
+import clojure.lang.Sequential;
 import clojure.lang.Symbol;
 import org.pg.error.PGError;
 import org.pg.enums.OID;
@@ -143,6 +144,8 @@ public final class EncoderTxt {
                     yield s.toString();
                 } else if (x instanceof PGEnum e) {
                     yield e.x();
+                } else if (x instanceof UUID u) {
+                    yield u.toString();
                 } else {
                     yield txtEncodingError(x, oid);
                 }
@@ -234,8 +237,8 @@ public final class EncoderTxt {
             case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
                     _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
                     _TIMESTAMPTZ, _NUMERIC -> {
-                if (x instanceof IPersistentCollection) {
-                    yield ArrayTxt.encode(x, oid, codecParams);
+                if (x instanceof Sequential s) {
+                    yield ArrayTxt.encode(s, oid, codecParams);
                 } else {
                     yield txtEncodingError(x, oid);
                 }
