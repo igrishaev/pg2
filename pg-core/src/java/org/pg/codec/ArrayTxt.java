@@ -1,4 +1,5 @@
 package org.pg.codec;
+import clojure.lang.Indexed;
 import clojure.lang.PersistentVector;
 
 import clojure.lang.RT;
@@ -40,8 +41,8 @@ public final class ArrayTxt {
     public static String encode (final Object x, final OID oidArray, final CodecParams codecParams) {
         final OID oidEl = oidArray.toElementOID();
         Object val;
-        if (x instanceof Sequential s) { // TODO
-            final Iterator<?> iterator = RT.iter(s);
+        if (x instanceof Indexed) {
+            final Iterator<?> iterator = RT.iter(x);
             final StringBuilder sb = new StringBuilder();
             sb.append('{');
             while (iterator.hasNext()) {
@@ -214,19 +215,13 @@ public final class ArrayTxt {
             dims[i] = pathMax[i] + 1;
         }
 
+        // plain array
         if (dims.length == 1) {
             return PersistentVector.create(elements);
         }
 
-        Object matrix = Matrix.create(dims);
-        final int[] pathMatrix = Matrix.initPath(dims.length);
-
-        for (Object val: elements) {
-            Matrix.incPath(dims, pathMatrix);
-            matrix = Matrix.assocIn(matrix, pathMatrix, val);
-        }
-
-        return matrix;
+        // multi-dim array
+        return Matrix.packElements(dims, elements);
 
     }
 

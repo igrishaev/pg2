@@ -1,5 +1,7 @@
 package org.pg.codec;
 
+import clojure.lang.ITransientCollection;
+import clojure.lang.PersistentVector;
 import org.pg.enums.OID;
 import clojure.core$get_in;
 import org.pg.error.PGError;
@@ -61,7 +63,7 @@ public final class ArrayBin {
 
     public static Object decode(
             final ByteBuffer buf,
-            final OID arrayOid,
+            final OID ignored,
             final CodecParams codecParams
     ) {
         final int dimCount = buf.getInt();
@@ -72,9 +74,28 @@ public final class ArrayBin {
             dims[i] = buf.getInt();
             buf.getInt(); // skip 4 bytes
         }
-        final int[] path = Matrix.initPath(dimCount);
+
         int len;
         Object val;
+
+        // plain array
+        if (dims.length == 1) {
+            ITransientCollection result = PersistentVector.EMPTY.asTransient();
+            for (int i = 0; i < dims[0]; i++) {
+                len = buf.getInt();
+                if (len != -1) {
+                    final ByteBuffer bufEl = buf.slice();
+                    bufEl.limit(len);
+                    BBTool.skip(buf, len);
+                    val = DecoderBin.decode(bufEl, elOid, codecParams);
+                    result = result.conj(val);
+                }
+            }
+            return result.persistent();
+        }
+
+        // multi-dim array
+        final int[] path = Matrix.initPath(dimCount);
         final long totalCount = Matrix.getTotalCount(dims);
         Object matrix = Matrix.create(dims);
         for (int i = 0; i < totalCount; i++) {

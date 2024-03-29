@@ -1,5 +1,6 @@
 package org.pg.codec;
 
+import clojure.lang.Indexed;
 import clojure.lang.PersistentVector;
 import clojure.lang.IPersistentCollection;
 import org.pg.error.PGError;
@@ -86,8 +87,8 @@ public final class Matrix {
         int size;
         Object target = matrix;
         while (true) {
-            if (target instanceof IPersistentCollection pc) {
-                size = pc.count();
+            if (target instanceof Indexed) {
+                size = RT.count(target);
                 dimsList.add(size);
                 if (size > 0) {
                     target = RT.first(target);
@@ -105,6 +106,17 @@ public final class Matrix {
         return dims;
     }
 
+    public static Object packElements(final int[] dims, final List<Object> elements) {
+        Object matrix = create(dims);
+        final int[] path = Matrix.initPath(dims.length);
+
+        for (Object val: elements) {
+            Matrix.incPath(dims, path);
+            matrix = Matrix.assocIn(matrix, path, val);
+        }
+
+        return matrix;
+    }
 
     public static void main(String... args) {
 //        Object matrix = create(1, 1, 3, 3, 99);

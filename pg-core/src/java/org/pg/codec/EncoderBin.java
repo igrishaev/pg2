@@ -113,7 +113,7 @@ public final class EncoderBin {
                     yield DateTimeBin.encodeDATE(DT.toLocalDate(d));
                 } else if (x instanceof Instant i) {
                     yield DateTimeBin.encodeTIMESTAMPTZ(i);
-                } else if (x instanceof IPersistentCollection pc) {
+                } else if (x instanceof IPersistentMap pc) {
                     yield encodeJSONB(pc, codecParams);
                 } else if (x instanceof LocalTime lt) {
                     yield DateTimeBin.encodeTIME(lt);
@@ -391,8 +391,8 @@ public final class EncoderBin {
             case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
                     _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
                     _TIMESTAMPTZ, _NUMERIC -> {
-                if (x instanceof Sequential s) {
-                    yield ArrayBin.encode(s, oid, codecParams);
+                if (x instanceof Indexed) {
+                    yield ArrayBin.encode(x, oid, codecParams);
                 } else {
                     yield binEncodingError(x, oid);
                 }
