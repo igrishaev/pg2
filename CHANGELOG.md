@@ -1,7 +1,12 @@
 
 ## 0.1.9-SNAPSHOT
 
-- ArrTool class added
+- Matrix class added
+- array encode/decode bin/text support
+- tests added
+- JSON wrapper is idempotent
+- JSON encode: default is IPersistentMap
+- OID.toElementOID method
 
 ## 0.1.8
 
