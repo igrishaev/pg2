@@ -157,9 +157,13 @@
       (is (= [1 91 49 44 50 44 51 93] (-> bb .array vec)))))
 
   (testing "default coll"
-    (let [bb (pg/encode-bin [1 2 3])]
-      (is (= [1 91 49 44 50 44 51 93]
-             (-> bb .array vec)))))
+    (try
+      (pg/encode-bin [1 2 3])
+      (is false "must not be reached")
+      (catch PGError e
+        (is (-> e
+                ex-message
+                (str/starts-with? "cannot binary-encode a value: [1 2 3], OID: DEFAULT"))))))
 
   (testing "json string"
     (let [bb (pg/encode-bin "[1,2,3]" oid/json)]
@@ -448,9 +452,6 @@
 
 
 (deftest test-arrays
-
-  ;; TODO: not json?
-  ;; TODO: not a map?
 
   (testing "plain array"
     (let [val1 [1 2 3]

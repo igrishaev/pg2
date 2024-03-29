@@ -69,13 +69,13 @@ public final class Main {
 
         // System.out.println(conn.execute(""));
 
-        System.out.println(conn.execute("select 42 as int, '{a,b,c}'::text[] as arr"));
-        System.out.println(conn.execute("select '{{1,2,3},{4,5,6}}'::int[][] as arr"));
+        System.out.println(conn.execute("select 42 as int, '{a,null,c}'::text[] as arr"));
+        // System.out.println(conn.execute("select '{{1,2,3},{4,5,6}}'::int[][] as arr"));
 
-        System.out.println(conn.execute(
-                "select $1::int[] as arr",
-                ExecuteParams.builder().params(List.of(PersistentVector.create(1, 2, 3))).build())
-        );
+//        System.out.println(conn.execute(
+//                "select $1::int[] as arr",
+//                ExecuteParams.builder().params(List.of(PersistentVector.create(1, 2, 3))).build())
+//        );
 
         String query = "select $1 as foo";
         // "select $1::int as foo, 'test' as string, 42 as num, now() as now"

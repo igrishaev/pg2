@@ -83,7 +83,9 @@ public final class ArrayBin {
             ITransientCollection result = PersistentVector.EMPTY.asTransient();
             for (int i = 0; i < dims[0]; i++) {
                 len = buf.getInt();
-                if (len != -1) {
+                if (len == -1) {
+                    result = result.conj(null);
+                } else {
                     final ByteBuffer bufEl = buf.slice();
                     bufEl.limit(len);
                     BBTool.skip(buf, len);
@@ -101,7 +103,9 @@ public final class ArrayBin {
         for (int i = 0; i < totalCount; i++) {
             Matrix.incPath(dims, path);
             len = buf.getInt();
-            if (len != -1) {
+            if (len == -1) {
+                matrix = Matrix.assocIn(matrix, path, null);
+            } else {
                 final ByteBuffer bufEl = buf.slice();
                 bufEl.limit(len);
                 BBTool.skip(buf, len);

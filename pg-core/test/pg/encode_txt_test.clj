@@ -277,9 +277,14 @@
     (let [string (pg/encode-txt [1 2 3] oid/jsonb)]
       (is (= "[1,2,3]" string))))
 
-  (testing "default coll"
-    (let [string (pg/encode-txt [1 2 3])]
-      (is (= "[1,2,3]" string))))
+  (testing "default coll error"
+    (try
+      (pg/encode-txt [1 2 3])
+      (is false "must not be reached")
+      (catch PGError e
+        (is (-> e
+                ex-message
+                (str/starts-with? "cannot text-encode a value: [1 2 3], OID: DEFAULT"))))))
 
   (testing "json string"
     (let [string (pg/encode-txt "[1,2,3]" oid/json)]
@@ -370,8 +375,6 @@
                          oid/_bool)]
       (is (= "{{\"t\",NULL,\"f\"},{\"f\",NULL,\"t\"}}" result))))
 
-  ;; TODO
-  ;; TODO: try without json-wrap?
   (testing "json(b)"
     (doseq [oid [oid/_json
                  oid/_jsonb]]
@@ -382,11 +385,42 @@
         (is (= "{{\"{\\\"foo\\\":1}\",NULL,\"{\\\"bar\\\":\\\"test\\\"}\"},{\"[1,2,3]\",NULL,\"true\"}}" result)))))
 
 
+  (testing "time"
+    (doseq [oid [oid/_time]]
+      (let [result
+            (pg/encode-txt [[(LocalTime/parse "10:30") nil]
+                            [(LocalTime/parse "12:30") nil]]
+                           oid)]
+        (is (= "{{\"10:30:00.000000\",NULL},{\"12:30:00.000000\",NULL}}" result)))))
 
-  )
+  (testing "timetz"
+    (doseq [oid [oid/_timetz]]
+      (let [result
+            (pg/encode-txt [[(OffsetTime/parse "10:30+04:30") nil]
+                            [(OffsetTime/parse "12:30-02:30") nil]]
+                           oid)]
+        (is (= "{{\"10:30:00.000000+0430\",NULL},{\"12:30:00.000000-0230\",NULL}}" result)))))
 
+  (testing "date"
+    (doseq [oid [oid/_date]]
+      (let [result
+            (pg/encode-txt [[(LocalDate/parse "2024-01-03") nil]
+                            [(LocalDate/parse "2025-03-19") nil]]
+                           oid)]
+        (is (= "{{\"2024-01-03\",NULL},{\"2025-03-19\",NULL}}" result)))))
 
-;; TODO: more tests
-;;
-;; ,  _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
-;; _TIMESTAMPTZ,
+  (testing "timestamp"
+    (doseq [oid [oid/_timestamp]]
+      (let [result
+            (pg/encode-txt [[(LocalDateTime/parse "2024-01-03T23:59:59") nil]
+                            [(LocalDateTime/parse "2025-02-03T23:59:00") nil]]
+                           oid)]
+        (is (= "{{\"2024-01-03 23:59:59.000000\",NULL},{\"2025-02-03 23:59:00.000000\",NULL}}" result)))))
+
+  (testing "timestamptz"
+    (doseq [oid [oid/_timestamptz]]
+      (let [result
+            (pg/encode-txt [[(OffsetDateTime/parse "2024-01-03T23:59:59Z") nil]
+                            [(OffsetDateTime/parse "2025-02-03T23:59:00-03") nil]]
+                           oid)]
+        (is (= "{{\"2024-01-03 23:59:59.000000+00\",NULL},{\"2025-02-04 02:59:00.000000+00\",NULL}}" result))))))
