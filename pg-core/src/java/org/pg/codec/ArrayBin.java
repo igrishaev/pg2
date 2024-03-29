@@ -1,7 +1,6 @@
 package org.pg.codec;
 
 import org.pg.enums.OID;
-import clojure.core$assoc_in;
 import clojure.core$get_in;
 import org.pg.error.PGError;
 import org.pg.util.BBTool;
@@ -86,7 +85,7 @@ public final class ArrayBin {
                 bufEl.limit(len);
                 BBTool.skip(buf, len);
                 val = DecoderBin.decode(bufEl, elOid, codecParams);
-                matrix = core$assoc_in.invokeStatic(matrix, path, val);
+                matrix = Matrix.assocIn(matrix, path, val);
             }
         }
         return matrix;

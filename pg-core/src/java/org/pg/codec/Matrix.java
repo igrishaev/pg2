@@ -4,48 +4,20 @@ import clojure.lang.PersistentVector;
 import clojure.lang.IPersistentCollection;
 import org.pg.error.PGError;
 
+import clojure.core$assoc_in;
 import clojure.lang.RT;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public final class Matrix {
 
+    public static Object assocIn(final Object matrix, final int[] path, final Object value) {
+        return core$assoc_in.invokeStatic(matrix, path, value);
+    }
+
     public static int[] tail (final int[] array) {
         return Arrays.copyOfRange(array, 1, array.length);
-    }
-
-    public static int[] take (final int n, final int[] array) {
-        return Arrays.copyOfRange(array, 0, n+1);
-    }
-
-    public static PersistentVector assocVec(PersistentVector v, final int i, final Object x) {
-        final PersistentVector V = Objects.requireNonNullElse(v, PersistentVector.EMPTY);
-        final int len = V.length();
-        if (i == len) {
-            return (PersistentVector) RT.conj(V, x);
-        } else if (i < len) {
-            return (PersistentVector) RT.assoc(V, i, x);
-        } else {
-            throw new PGError("assocIn index error: %s", i);
-        }
-    }
-
-    public static PersistentVector assocVecIn(
-            final PersistentVector v,
-            final int[] path,
-            final Object x
-    ) {
-        final PersistentVector V = Objects.requireNonNullElse(v, PersistentVector.EMPTY);
-        return switch (path.length) {
-            case 0 -> V;
-            case 1 -> assocVec(V, path[0], x);
-            default -> {
-                final int i = path[0];
-                yield assocVec(V, i, assocVecIn((PersistentVector) RT.get(V, i), tail(path), x));
-            }
-        };
     }
 
     public static long getTotalCount(final int[] dims) {
@@ -140,7 +112,7 @@ public final class Matrix {
 //        System.out.println(Arrays.toString(getDims(matrix)));
 //        System.out.println(getTotalCount(new int[]{1, 2, 3}));
 //        System.out.println(Arrays.toString(initPath(4)));
-        System.out.println(assocVecIn(PersistentVector.EMPTY, new int[]{0, 0, 0}, 42));
+        // System.out.println(assocVecIn(PersistentVector.EMPTY, new int[]{0, 0, 0}, 42));
         // System.out.println(assocVec(PersistentVector.create(1, 2), 2, 42));
 
 

@@ -1,6 +1,6 @@
 package org.pg.codec;
-
 import clojure.lang.PersistentVector;
+
 import clojure.lang.RT;
 import clojure.lang.Sequential;
 import org.pg.enums.OID;
@@ -40,7 +40,7 @@ public final class ArrayTxt {
     public static String encode (final Object x, final OID oidArray, final CodecParams codecParams) {
         final OID oidEl = oidArray.toElementOID();
         Object val;
-        if (x instanceof Sequential s) {
+        if (x instanceof Sequential s) { // TODO
             final Iterator<?> iterator = RT.iter(s);
             final StringBuilder sb = new StringBuilder();
             sb.append('{');
@@ -152,42 +152,47 @@ public final class ArrayTxt {
     public static Object decode(final String array, final OID arrayOid, final CodecParams codecParams) {
         final OID oidEl = arrayOid.toElementOID();
         final PushbackReader reader = new PushbackReader(new StringReader(array));
-        final int[] dims = new int[16];
-        int[] path;
+        final int limit = 16;
+        final int[] pathMax = new int[limit];
+        final int[] path = new int[limit];
         int pos = -1;
+        int posMax = 0;
         int r;
         char c;
         Object obj;
         String buf;
-        PersistentVector result = PersistentVector.EMPTY;
+        final List<Object> elements = new ArrayList<>();
 
         while (true) {
             r = read(reader);
             if (r == -1) {
-                return result;
+                break;
             } else {
                c = (char) r;
             }
             switch (c) {
                 case '{': {
                     pos++;
+                    posMax = pos;
                     break;
                 }
                 case '}': {
-                    dims[pos] = 0;
+                    path[pos] = 0;
                     pos--;
                     break;
                 }
                 case ',': {
-                    dims[pos] += 1;
+                    path[pos] += 1;
+                    if (pathMax[pos] < path[pos]) {
+                        pathMax[pos] += 1;
+                    }
                     break;
                 }
                 case '"': {
                     unread(reader, c);
                     buf = readQuotedString(reader);
                     obj = DecoderTxt.decode(buf, oidEl, codecParams);
-                    path = Matrix.take(pos, dims);
-                    result = Matrix.assocVecIn(result, path, obj);
+                    elements.add(obj);
                     break;
                 }
                 default: {
@@ -198,16 +203,38 @@ public final class ArrayTxt {
                     } else {
                         obj = DecoderTxt.decode(buf, oidEl, codecParams);
                     }
-                    path = Matrix.take(pos, dims);
-                    result = Matrix.assocVecIn(result, path, obj);
+                    elements.add(obj);
                     break;
                 }
             }
         }
+
+        final int[] dims = new int[posMax + 1];
+        for (int i = 0; i < posMax + 1; i ++) {
+            dims[i] = pathMax[i] + 1;
+        }
+
+        if (dims.length == 1) {
+            return PersistentVector.create(elements);
+        }
+
+        Object matrix = Matrix.create(dims);
+        final int[] pathMatrix = Matrix.initPath(dims.length);
+
+        for (Object val: elements) {
+            Matrix.incPath(dims, pathMatrix);
+            matrix = Matrix.assocIn(matrix, pathMatrix, val);
+        }
+
+        return matrix;
+
     }
 
     public static void main(String... args) {
-        System.out.println(quoteElement("{\"foo\": 123}"));
+        System.out.println(decode("{1,2,3}", OID._INT2, CodecParams.standard()));
+        System.out.println(decode("{{1,2,3},{1,2,3}}", OID._INT2, CodecParams.standard()));
+        System.out.println(decode("{{{1,2,3},{4,5,6}},{{1,2,3},{4,5,6}}}", OID._INT2, CodecParams.standard()));
+        // System.out.println(quoteElement("{\"foo\": 123}"));
 //        System.out.println(encode(
 //                PersistentVector.create("a'a\\aa", "b\"bb", null, "hi \\\\test"),
 //                OID._TEXT,
