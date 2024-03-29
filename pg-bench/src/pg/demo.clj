@@ -10,6 +10,9 @@
    [jsonista.tagged :as jt]
    [pg.honey :as pgh]
    [pg.json :as json]
+   [pg.oid :as oid]
+   [pg.jdbc :as jdbc]
+   [pg.pool :as pool]
    [pg.core :as pg]))
 
 
@@ -30,12 +33,6 @@
 
 (comment
 
-
-  (require '[pg.pool :as pool])
-
-  (require '[pg.jdbc :as jdbc])
-  (require '[pg.oid :as oid])
-
   (def config
     {:host "127.0.0.1"
      :port 10140
@@ -48,6 +45,19 @@
 
   (jdbc/on-connection [conn config]
     (println conn))
+
+
+  ;;
+  ;; Arrays
+  ;;
+
+  ;; plain array: table, insert, select
+  ;; 2d array: table, insert, select
+  ;; 3d array: table, insert, select
+  ;; array operators with params
+  ;; UUIDs, Time, JSON. JSON.Wrapper case
+  ;; oid hints
+
 
   ;;
   ;; JSON

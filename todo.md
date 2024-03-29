@@ -3,6 +3,7 @@
 
 - arrays
   - readme
+  - JSON: IPersistentMap only
 
 - hugsql adapter
 
