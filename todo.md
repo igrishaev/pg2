@@ -2,29 +2,18 @@
 - readme
 
 - arrays
-  - encode bin
-  - encode txt
-  - tests
-
-- reverse type->oid to oid->type
-  - encode txt default tests
-  - wrapper idempotent?
-
-- json
-  - ring middleware object mapper
-  - object-mapper: change order?
   - readme
+
+- hugsql adapter
+
+- oid wrapper?
 
 - pool close conn test
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
-- migration: no ragtime?
 - parse JDBC url
 - bulk statement execute
-- batch execute
 - pg.jdbc batch
-- pass jsonista custom object
-
 
 - int to float: tests
 - refactor locks? on Clojure level
@@ -48,13 +37,7 @@ migrations
   - geom.etc
   - inet/cidr
 
-- use COPY OUT for result?
-
 - Unix socket connection type
-
-- hugsql adapter
-
-- reduce java version by converting records to classes
 
 - honey helpers
   - get-by-ids-temp
