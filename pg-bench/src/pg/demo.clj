@@ -1,5 +1,6 @@
 (ns pg.demo
   (:import
+   java.time.OffsetDateTime
    clojure.lang.PersistentHashSet
    clojure.lang.Keyword
    java.util.UUID
@@ -51,60 +52,183 @@
   ;; Arrays
   ;;
 
-  ;; plain array: table, insert, select
-  ;; 2d array: table, insert, select
-  ;; 3d array: table, insert, select
-  ;; array operators with params
-  ;; UUIDs, Time, JSON. JSON.Wrapper case
   ;; oid hints
 
-  (pg/query conn "create table add_demo_1 (id serial, text_arr text[])")
+  (pg/query conn "create table arr_demo_1 (id serial, text_arr text[])")
 
   (pg/execute conn
-              "insert into add_demo_1 (text_arr) values ($1)"
+              "insert into arr_demo_1 (text_arr) values ($1)"
               {:params [["one" "two" "three"]]})
 
   (pg/execute conn
-              "insert into add_demo_1 (text_arr) values ($1)"
+              "insert into arr_demo_1 (text_arr) values ($1)"
               {:params [["foo" nil "bar"]]})
 
-  (pg/query conn "select * from add_demo_1")
+  (pg/query conn "select * from arr_demo_1")
 
   [{:id 1 :text_arr ["one" "two" "three"]}
    {:id 2 :text_arr ["foo" nil "bar"]}]
 
   (pg/execute conn
-              "select * from add_demo_1 where text_arr && $1"
+              "select * from arr_demo_1 where text_arr && $1"
               {:params [["three" "four" "five"]]})
 
   [{:text_arr ["one" "two" "three"], :id 1}]
 
   (pg/execute conn
-              "select * from add_demo_1 where text_arr @> $1"
+              "select * from arr_demo_1 where text_arr @> $1"
               {:params [["foo" "bar"]]})
 
 
   [{:text_arr ["foo" nil "bar"], :id 2}]
 
-  (pg/query conn "create table add_demo_2 (id serial, matrix bigint[][])")
+  (pg/query conn "create table arr_demo_2 (id serial, matrix bigint[][])")
 
   (pg/execute conn
-              "insert into add_demo_2 (matrix) values ($1)"
+              "insert into arr_demo_2 (matrix) values ($1)"
               {:params [[[[1 2] [3 4] [5 6]]
                          [[6 5] [4 3] [2 1]]]]})
 
   {:inserted 1}
 
-  (pg/query conn "select * from add_demo_2")
+  (pg/query conn "select * from arr_demo_2")
 
   [{:id 1 :matrix [[[1 2] [3 4] [5 6]]
                    [[6 5] [4 3] [2 1]]]}]
 
+  (pg/query conn "create table arr_demo_3 (id serial, matrix timestamp[][][])")
+
+  (def -matrix
+    [[[[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+      [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+      [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]]
+     [[[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+      [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+      [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]]
+     [[[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+      [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+      [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+       [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]]])
+
+  (pg/execute conn
+              "insert into arr_demo_3 (matrix) values ($1)"
+              {:params [-matrix]})
+
+  (pg/query conn "select * from arr_demo_3")
+
+  [{:matrix
+    [[[[#object[java.time.LocalDateTime 0x3035dff9 "2024-04-01T18:32:48.270825"]
+        #object[java.time.LocalDateTime 0x4a2a9cf1 "2024-04-01T18:32:48.271019"]
+        #object[java.time.LocalDateTime 0x77931c9a "2024-04-01T18:32:48.271067"]]
+       [#object[java.time.LocalDateTime 0x18f6873f "2024-04-01T18:32:48.271090"]
+        #object[java.time.LocalDateTime 0x42fa5463 "2024-04-01T18:32:48.271106"]
+        #object[java.time.LocalDateTime 0x23c936d7 "2024-04-01T18:32:48.271116"]]
+       [#object[java.time.LocalDateTime 0x68f23dde "2024-04-01T18:32:48.271126"]
+        #object[java.time.LocalDateTime 0x36dd7d78 "2024-04-01T18:32:48.271134"]
+        #object[java.time.LocalDateTime 0x49051b79 "2024-04-01T18:32:48.271145"]]]
+      [[#object[java.time.LocalDateTime 0x73059ee0 "2024-04-01T18:32:48.271162"]
+        #object[java.time.LocalDateTime 0xa3aa69 "2024-04-01T18:32:48.271172"]
+        #object[java.time.LocalDateTime 0x5d85569d "2024-04-01T18:32:48.271181"]]
+       [#object[java.time.LocalDateTime 0x4f6ef407 "2024-04-01T18:32:48.271194"]
+        #object[java.time.LocalDateTime 0x1595d97d "2024-04-01T18:32:48.271204"]
+        #object[java.time.LocalDateTime 0x424c5630 "2024-04-01T18:32:48.271212"]]
+       [#object[java.time.LocalDateTime 0x56910cbf "2024-04-01T18:32:48.271224"]
+        #object[java.time.LocalDateTime 0x18817f60 "2024-04-01T18:32:48.271235"]
+        #object[java.time.LocalDateTime 0x1f7c107e "2024-04-01T18:32:48.271244"]]]
+      [[#object[java.time.LocalDateTime 0x51bb519d "2024-04-01T18:32:48.271258"]
+        #object[java.time.LocalDateTime 0x33752714 "2024-04-01T18:32:48.271267"]
+        #object[java.time.LocalDateTime 0x36089c15 "2024-04-01T18:32:48.271275"]]
+       [#object[java.time.LocalDateTime 0x331b970c "2024-04-01T18:32:48.271285"]
+        #object[java.time.LocalDateTime 0x7c351e77 "2024-04-01T18:32:48.271294"]
+        #object[java.time.LocalDateTime 0x14b1106 "2024-04-01T18:32:48.271306"]]
+       [#object[java.time.LocalDateTime 0x58d20931 "2024-04-01T18:32:48.271317"]
+        #object[java.time.LocalDateTime 0x7c1e5428 "2024-04-01T18:32:48.271328"]
+        #object[java.time.LocalDateTime 0xe633b12 "2024-04-01T18:32:48.271338"]]]]
+     [[[#object[java.time.LocalDateTime 0x724338ef "2024-04-01T18:32:48.271361"]
+        #object[java.time.LocalDateTime 0x1b2d0c31 "2024-04-01T18:32:48.271374"]
+        #object[java.time.LocalDateTime 0x7eb9905a "2024-04-01T18:32:48.271384"]]
+       [#object[java.time.LocalDateTime 0x4fc0d877 "2024-04-01T18:32:48.271400"]
+        #object[java.time.LocalDateTime 0x38acfb4a "2024-04-01T18:32:48.271413"]
+        #object[java.time.LocalDateTime 0x477fa49f "2024-04-01T18:32:48.271425"]]
+       [#object[java.time.LocalDateTime 0x41b531ae "2024-04-01T18:32:48.271439"]
+        #object[java.time.LocalDateTime 0x2c13b65c "2024-04-01T18:32:48.271450"]
+        #object[java.time.LocalDateTime 0x41267bf3 "2024-04-01T18:32:48.271465"]]]
+      [[#object[java.time.LocalDateTime 0x1efc716d "2024-04-01T18:32:48.271486"]
+        #object[java.time.LocalDateTime 0x576b25cd "2024-04-01T18:32:48.271500"]
+        #object[java.time.LocalDateTime 0xacd3254 "2024-04-01T18:32:48.271516"]]
+       [#object[java.time.LocalDateTime 0x2a8755c6 "2024-04-01T18:32:48.271533"]
+        #object[java.time.LocalDateTime 0x3ec136b7 "2024-04-01T18:32:48.271550"]
+        #object[java.time.LocalDateTime 0x307e34d "2024-04-01T18:32:48.271563"]]
+       [#object[java.time.LocalDateTime 0x3bb0dc9e "2024-04-01T18:32:48.271577"]
+        #object[java.time.LocalDateTime 0x11bb2759 "2024-04-01T18:32:48.271762"]
+        #object[java.time.LocalDateTime 0x47accc02 "2024-04-01T18:32:48.271834"]]]
+      [[#object[java.time.LocalDateTime 0x2172ffa6 "2024-04-01T18:32:48.271854"]
+        #object[java.time.LocalDateTime 0x298f9797 "2024-04-01T18:32:48.271881"]
+        #object[java.time.LocalDateTime 0x795684ec "2024-04-01T18:32:48.271891"]]
+       [#object[java.time.LocalDateTime 0x54044d7b "2024-04-01T18:32:48.271903"]
+        #object[java.time.LocalDateTime 0x37a6c71f "2024-04-01T18:32:48.271912"]
+        #object[java.time.LocalDateTime 0x4319e2a "2024-04-01T18:32:48.272075"]]
+       [#object[java.time.LocalDateTime 0x1e41b90c "2024-04-01T18:32:48.272104"]
+        #object[java.time.LocalDateTime 0x169d0d9d "2024-04-01T18:32:48.272117"]
+        #object[java.time.LocalDateTime 0x5bcb3e44 "2024-04-01T18:32:48.272128"]]]]
+     [[[#object[java.time.LocalDateTime 0x5ed6e62b "2024-04-01T18:32:48.272169"]
+        #object[java.time.LocalDateTime 0xb9d6851 "2024-04-01T18:32:48.272197"]
+        #object[java.time.LocalDateTime 0x6e35ed84 "2024-04-01T18:32:48.272207"]]
+       [#object[java.time.LocalDateTime 0x213ba390 "2024-04-01T18:32:48.272216"]
+        #object[java.time.LocalDateTime 0x76c070ed "2024-04-01T18:32:48.272222"]
+        #object[java.time.LocalDateTime 0x42a4a3f2 "2024-04-01T18:32:48.272229"]]
+       [#object[java.time.LocalDateTime 0x7319d217 "2024-04-01T18:32:48.272236"]
+        #object[java.time.LocalDateTime 0x6153154d "2024-04-01T18:32:48.272241"]
+        #object[java.time.LocalDateTime 0x2e4ffd44 "2024-04-01T18:32:48.272247"]]]
+      [[#object[java.time.LocalDateTime 0x62d97ff8 "2024-04-01T18:32:48.272255"]
+        #object[java.time.LocalDateTime 0x37ddd252 "2024-04-01T18:32:48.272267"]
+        #object[java.time.LocalDateTime 0x14c48234 "2024-04-01T18:32:48.272273"]]
+       [#object[java.time.LocalDateTime 0x36560a84 "2024-04-01T18:32:48.272280"]
+        #object[java.time.LocalDateTime 0x604292d9 "2024-04-01T18:32:48.272312"]
+        #object[java.time.LocalDateTime 0x26e141b3 "2024-04-01T18:32:48.272347"]]
+       [#object[java.time.LocalDateTime 0x7ff9d655 "2024-04-01T18:32:48.272361"]
+        #object[java.time.LocalDateTime 0x1f757802 "2024-04-01T18:32:48.272372"]
+        #object[java.time.LocalDateTime 0x18f14d76 "2024-04-01T18:32:48.272395"]]]
+      [[#object[java.time.LocalDateTime 0x32c6e526 "2024-04-01T18:32:48.272405"]
+        #object[java.time.LocalDateTime 0x496a5bc6 "2024-04-01T18:32:48.272418"]
+        #object[java.time.LocalDateTime 0x283531ee "2024-04-01T18:32:48.272426"]]
+       [#object[java.time.LocalDateTime 0x4fa5a454 "2024-04-01T18:32:48.272435"]
+        #object[java.time.LocalDateTime 0x391c002e "2024-04-01T18:32:48.272443"]
+        #object[java.time.LocalDateTime 0x593a1368 "2024-04-01T18:32:48.272451"]]
+       [#object[java.time.LocalDateTime 0x677b3def "2024-04-01T18:32:48.272459"]
+        #object[java.time.LocalDateTime 0x46d5039f "2024-04-01T18:32:48.272467"]
+        #object[java.time.LocalDateTime 0x3d0b906 "2024-04-01T18:32:48.272475"]]]]],
+    :id 1}]
+
+  (pg/query conn "create table arr_demo_4 (id serial, json_arr jsonb[])")
 
 
+  (pg/execute conn
+              "insert into arr_demo_4 (json_arr) values ($1)"
+              {:params [[42 nil {:some "object"} (pg/json-wrap [1 2 3])]]})
 
+  (pg/query conn "select * from arr_demo_4")
 
+  (pg/query conn "select * from arr_demo_4")
 
+  [{:id 1, :json_arr [42 nil {:some "object"} [1 2 3]]}]
 
 
 
