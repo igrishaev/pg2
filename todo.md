@@ -10,6 +10,12 @@
 
 - oid wrapper?
 
+- Connectable wrapper
+
+- reorganize the docs
+
+- ring jdbc session middleware
+
 - pool close conn test
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
