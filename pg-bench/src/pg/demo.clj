@@ -58,6 +58,56 @@
   ;; UUIDs, Time, JSON. JSON.Wrapper case
   ;; oid hints
 
+  (pg/query conn "create table add_demo_1 (id serial, text_arr text[])")
+
+  (pg/execute conn
+              "insert into add_demo_1 (text_arr) values ($1)"
+              {:params [["one" "two" "three"]]})
+
+  (pg/execute conn
+              "insert into add_demo_1 (text_arr) values ($1)"
+              {:params [["foo" nil "bar"]]})
+
+  (pg/query conn "select * from add_demo_1")
+
+  [{:id 1 :text_arr ["one" "two" "three"]}
+   {:id 2 :text_arr ["foo" nil "bar"]}]
+
+  (pg/execute conn
+              "select * from add_demo_1 where text_arr && $1"
+              {:params [["three" "four" "five"]]})
+
+  [{:text_arr ["one" "two" "three"], :id 1}]
+
+  (pg/execute conn
+              "select * from add_demo_1 where text_arr @> $1"
+              {:params [["foo" "bar"]]})
+
+
+  [{:text_arr ["foo" nil "bar"], :id 2}]
+
+  (pg/query conn "create table add_demo_2 (id serial, matrix bigint[][])")
+
+  (pg/execute conn
+              "insert into add_demo_2 (matrix) values ($1)"
+              {:params [[[[1 2] [3 4] [5 6]]
+                         [[6 5] [4 3] [2 1]]]]})
+
+  {:inserted 1}
+
+  (pg/query conn "select * from add_demo_2")
+
+  [{:id 1 :matrix [[[1 2] [3 4] [5 6]]
+                   [[6 5] [4 3] [2 1]]]}]
+
+
+
+
+
+
+
+
+
 
   ;;
   ;; JSON
