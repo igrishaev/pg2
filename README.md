@@ -2079,9 +2079,7 @@ Now read it back:
      [[[#object[java.time.LocalDateTime 0x5ed6e62b "2024-04-01T18:32:48.272169"]
         #object[java.time.LocalDateTime 0xb9d6851 "2024-04-01T18:32:48.272197"]
         #object[java.time.LocalDateTime 0x6e35ed84 "2024-04-01T18:32:48.272207"]]
-       [#object[java.time.LocalDateTime 0x213ba390 "2024-04-01T18:32:48.272216"]
-        #object[java.time.LocalDateTime 0x76c070ed "2024-04-01T18:32:48.272222"]
-        #object[java.time.LocalDateTime 0x42a4a3f2 "2024-04-01T18:32:48.272229"]]
+       ...
        [#object[java.time.LocalDateTime 0x7319d217 "2024-04-01T18:32:48.272236"]
         #object[java.time.LocalDateTime 0x6153154d "2024-04-01T18:32:48.272241"]
         #object[java.time.LocalDateTime 0x2e4ffd44 "2024-04-01T18:32:48.272247"]]]
@@ -2089,16 +2087,46 @@ Now read it back:
       [[#object[java.time.LocalDateTime 0x32c6e526 "2024-04-01T18:32:48.272405"]
         #object[java.time.LocalDateTime 0x496a5bc6 "2024-04-01T18:32:48.272418"]
         #object[java.time.LocalDateTime 0x283531ee "2024-04-01T18:32:48.272426"]]
-       [#object[java.time.LocalDateTime 0x4fa5a454 "2024-04-01T18:32:48.272435"]
-        #object[java.time.LocalDateTime 0x391c002e "2024-04-01T18:32:48.272443"]
-        #object[java.time.LocalDateTime 0x593a1368 "2024-04-01T18:32:48.272451"]]
+       ...
        [#object[java.time.LocalDateTime 0x677b3def "2024-04-01T18:32:48.272459"]
         #object[java.time.LocalDateTime 0x46d5039f "2024-04-01T18:32:48.272467"]
         #object[java.time.LocalDateTime 0x3d0b906 "2024-04-01T18:32:48.272475"]]]]],
     :id 1}]
 ~~~
 
+You can have an array of JSON(b) objects, too:
 
+~~~clojure
+(pg/query conn "create table arr_demo_4 (id serial, json_arr jsonb[])")
+~~~
+
+Inserting an array of three objects:
+
+~~~clojure
+  (pg/execute conn
+              "insert into arr_demo_4 (json_arr) values ($1)"
+              {:params [[{:foo 1} {:bar 2} {:test [1 2 3]}]]})
+~~~
+
+Elements might be everything that can be JSON-encoded: numbers, strings,
+boolean, etc. The only tricky case is vectors. To not break the algorithm that
+traverses the matrix, wrap a vector element with `pg/json-wrap`:
+
+~~~clojure
+(pg/execute conn
+            "insert into arr_demo_4 (json_arr) values ($1)"
+            {:params [[42 nil {:some "object"} (pg/json-wrap [1 2 3])]]})
+
+;; Signals that the [1 2 3] is not a nested array but an element.
+~~~
+
+Now read it back:
+
+~~~clojure
+(pg/query conn "select * from arr_demo_4")
+
+[{:id 1, :json_arr [42 nil {:some "object"} [1 2 3]]}]
+~~~
 
 ## Notify/Listen (PubSub)
 

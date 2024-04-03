@@ -219,6 +219,9 @@
 
   (pg/query conn "create table arr_demo_4 (id serial, json_arr jsonb[])")
 
+  (pg/execute conn
+              "insert into arr_demo_4 (json_arr) values ($1)"
+              {:params [[{:foo 1} {:bar 2} {:test [1 2 3]}]]})
 
   (pg/execute conn
               "insert into arr_demo_4 (json_arr) values ($1)"
