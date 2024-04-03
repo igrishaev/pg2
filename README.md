@@ -1923,25 +1923,27 @@ A full example:
 
 ## Arrays support
 
-In JDBC, arrays have always been a pain. Every time you want to pass an array to
-the database or read it back, you've got to wrap your data with various Java
-classes, extend protocols, and multimethods. In Postgres, the array type is
-quite powerful but underestimated due to poor support in drivers. This yet
-another reason for running this project: to provide easy access to Postgres
+In JDBC, arrays have always been a pain. Every time you're about to pass an
+array to the database and read it back, you've got to wrap your data with
+various Java classes, extend protocols, and multimethods. In Postgres, the array
+type is quite powerful yet underestimated due to poor support of drivers. This
+is one more reason for running this project: to bring easy access to Postgres
 arrays.
 
-In short words, when one reads an array, they get it as an ordinary vector. And
-vice versa: to pass an array into a query, just submit a vector.
+In short words, in PG2, when reading arrays, you get a Clojure vector. And vice
+versa: to pass an array object into a query, just submit a vector.
 
-PG2 tries its best to provide seamless integration between Clojure vectors and
+PG2 tries its best to provide seamless connection between Clojure vectors and
 Postgres arrays. First, it supports arrays of any type: not only primitives like
 numbers and strings but `uuid`, `numeric`, `timestamp(tz)`, `json(b)`, and more
-as well. Second, arrays might have more than one dimension. If you have a 3D
-array of integers like `cube::int[][][]`, it will become a nested vector when
-read with PG2.
+as well.
 
-A technical note: PG2 supports both encoding and decoding of arrays in both text
-and binary modes.
+Second, arrays might have more than one dimension. Nothing prevents you from
+having a 3D array of integers like `cube::int[][][]`, and it becomes a nested
+vector when fetched by PG2.
+
+*A technical note: PG2 supports both encoding and decoding of arrays in both
+text and binary modes.*
 
 Here is a short demo session. Let's prepare a table with an array of strings:
 
@@ -1965,7 +1967,7 @@ In arrays, some elements might be NULL:
             {:params [["foo" nil "bar"]]})
 ~~~
 
-Now let's query what we've got so far:
+Now let's check what we've got so far:
 
 ~~~clojure
 (pg/query conn "select * from arr_demo_1")
@@ -1974,9 +1976,9 @@ Now let's query what we've got so far:
  {:id 2 :text_arr ["foo" nil "bar"]}]
 ~~~
 
-Postgres supports plenty of operators that accept arrays. Say, the `&&` one
-checks if there is at least one common element on both sides. Here is how we can
-find those items that have either "tree", "four", or "five":
+Postgres supports plenty of operators for arrays. Say, the `&&` one checks if
+there is at least one common element on both sides. Here is how we find those
+records that have either "tree", "four", or "five":
 
 ~~~clojure
 (pg/execute conn
@@ -1986,14 +1988,13 @@ find those items that have either "tree", "four", or "five":
 [{:text_arr ["one" "two" "three"], :id 1}]
 ~~~
 
-Another useful operator is `@>` that checks if the left array includes all
+Another useful operator is `@>` that checks if the left array contains all
 elements from the right array:
 
 ~~~clojure
 (pg/execute conn
             "select * from arr_demo_1 where text_arr @> $1"
             {:params [["foo" "bar"]]})
-
 
 [{:text_arr ["foo" nil "bar"], :id 2}]
 ~~~
@@ -2016,9 +2017,8 @@ Here is how you insert a matrix:
 {:inserted 1}
 ~~~
 
-Pay attention: each number (a final element) can be NULL, e.g. for `1` or
-`5`. But you cannot have NULL for a sub-array, e.g. for `[3 4]`. This will
-trigger an error response from Postgres.
+Pay attention: each number can be NULL but you cannot have NULL for an entire
+sub-array. This will trigger an error response from Postgres.
 
 Reading the matrix back:
 
@@ -2029,7 +2029,7 @@ Reading the matrix back:
                  [[6 5] [4 3] [2 1]]]}]
 ~~~
 
-A crazy example: let's have a three-dimension array of timestamp with a time
+A crazy example: let's have a three dimension array of timestamp with a time
 zone. No idea how it can be used but still:
 
 ~~~clojure
@@ -2100,7 +2100,7 @@ You can have an array of JSON(b) objects, too:
 (pg/query conn "create table arr_demo_4 (id serial, json_arr jsonb[])")
 ~~~
 
-Inserting an array of three objects:
+Inserting an array of three maps:
 
 ~~~clojure
   (pg/execute conn
@@ -2109,7 +2109,7 @@ Inserting an array of three objects:
 ~~~
 
 Elements might be everything that can be JSON-encoded: numbers, strings,
-boolean, etc. The only tricky case is vectors. To not break the algorithm that
+boolean, etc. The only tricky case is a vector. To not break the algorithm that
 traverses the matrix, wrap a vector element with `pg/json-wrap`:
 
 ~~~clojure
