@@ -1923,6 +1923,183 @@ A full example:
 
 ## Arrays support
 
+In JDBC, arrays have always been a pain. Every time you want to pass an array to
+the database or read it back, you've got to wrap your data with various Java
+classes, extend protocols, and multimethods. In Postgres, the array type is
+quite powerful but underestimated due to poor support in drivers. This yet
+another reason for running this project: to provide easy access to Postgres
+arrays.
+
+In short words, when one reads an array, they get it as an ordinary vector. And
+vice versa: to pass an array into a query, just submit a vector.
+
+PG2 tries its best to provide seamless integration between Clojure vectors and
+Postgres arrays. First, it supports arrays of any type: not only primitives like
+numbers and strings but `uuid`, `numeric`, `timestamp(tz)`, `json(b)`, and more
+as well. Second, arrays might have more than one dimension. If you have a 3D
+array of integers like `cube::int[][][]`, it will become a nested vector when
+read with PG2.
+
+A technical note: PG2 supports both encoding and decoding of arrays in both text
+and binary modes.
+
+Here is a short demo session. Let's prepare a table with an array of strings:
+
+~~~clojure
+(pg/query conn "create table arr_demo_1 (id serial, text_arr text[])")
+~~~
+
+Insert a simple item:
+
+~~~clojure
+(pg/execute conn
+            "insert into arr_demo_1 (text_arr) values ($1)"
+            {:params [["one" "two" "three"]]})
+~~~
+
+In arrays, some elements might be NULL:
+
+~~~clojure
+(pg/execute conn
+            "insert into arr_demo_1 (text_arr) values ($1)"
+            {:params [["foo" nil "bar"]]})
+~~~
+
+Now let's query what we've got so far:
+
+~~~clojure
+(pg/query conn "select * from arr_demo_1")
+
+[{:id 1 :text_arr ["one" "two" "three"]}
+ {:id 2 :text_arr ["foo" nil "bar"]}]
+~~~
+
+Postgres supports plenty of operators that accept arrays. Say, the `&&` one
+checks if there is at least one common element on both sides. Here is how we can
+find those items that have either "tree", "four", or "five":
+
+~~~clojure
+(pg/execute conn
+            "select * from arr_demo_1 where text_arr && $1"
+            {:params [["three" "four" "five"]]})
+
+[{:text_arr ["one" "two" "three"], :id 1}]
+~~~
+
+Another useful operator is `@>` that checks if the left array includes all
+elements from the right array:
+
+~~~clojure
+(pg/execute conn
+            "select * from arr_demo_1 where text_arr @> $1"
+            {:params [["foo" "bar"]]})
+
+
+[{:text_arr ["foo" nil "bar"], :id 2}]
+~~~
+
+Let's proceed with numeric two-dimensional arrays. They're widely used in math,
+statistics, graphics, and similar areas:
+
+~~~clojure
+(pg/query conn "create table arr_demo_2 (id serial, matrix bigint[][])")
+~~~
+
+Here is how you insert a matrix:
+
+~~~clojure
+(pg/execute conn
+            "insert into arr_demo_2 (matrix) values ($1)"
+            {:params [[[[1 2] [3 4] [5 6]]
+                       [[6 5] [4 3] [2 1]]]]})
+
+{:inserted 1}
+~~~
+
+Pay attention: each number (a final element) can be NULL, e.g. for `1` or
+`5`. But you cannot have NULL for a sub-array, e.g. for `[3 4]`. This will
+trigger an error response from Postgres.
+
+Reading the matrix back:
+
+~~~clojure
+(pg/query conn "select * from arr_demo_2")
+
+[{:id 1 :matrix [[[1 2] [3 4] [5 6]]
+                 [[6 5] [4 3] [2 1]]]}]
+~~~
+
+A crazy example: let's have a three-dimension array of timestamp with a time
+zone. No idea how it can be used but still:
+
+~~~clojure
+(pg/query conn "create table arr_demo_3 (id serial, matrix timestamp[][][])")
+
+(def -matrix
+  [[[[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+    [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+    [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]]
+   [[[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+    [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+    [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]]
+   [[[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+    [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]
+    [[(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]
+     [(OffsetDateTime/now) (OffsetDateTime/now) (OffsetDateTime/now)]]]])
+
+(pg/execute conn
+            "insert into arr_demo_3 (matrix) values ($1)"
+            {:params [-matrix]})
+~~~
+
+Now read it back:
+
+~~~clojure
+  (pg/query conn "select * from arr_demo_3")
+
+  [{:matrix
+    [... truncated
+     [[[#object[java.time.LocalDateTime 0x5ed6e62b "2024-04-01T18:32:48.272169"]
+        #object[java.time.LocalDateTime 0xb9d6851 "2024-04-01T18:32:48.272197"]
+        #object[java.time.LocalDateTime 0x6e35ed84 "2024-04-01T18:32:48.272207"]]
+       [#object[java.time.LocalDateTime 0x213ba390 "2024-04-01T18:32:48.272216"]
+        #object[java.time.LocalDateTime 0x76c070ed "2024-04-01T18:32:48.272222"]
+        #object[java.time.LocalDateTime 0x42a4a3f2 "2024-04-01T18:32:48.272229"]]
+       [#object[java.time.LocalDateTime 0x7319d217 "2024-04-01T18:32:48.272236"]
+        #object[java.time.LocalDateTime 0x6153154d "2024-04-01T18:32:48.272241"]
+        #object[java.time.LocalDateTime 0x2e4ffd44 "2024-04-01T18:32:48.272247"]]]
+      ...
+      [[#object[java.time.LocalDateTime 0x32c6e526 "2024-04-01T18:32:48.272405"]
+        #object[java.time.LocalDateTime 0x496a5bc6 "2024-04-01T18:32:48.272418"]
+        #object[java.time.LocalDateTime 0x283531ee "2024-04-01T18:32:48.272426"]]
+       [#object[java.time.LocalDateTime 0x4fa5a454 "2024-04-01T18:32:48.272435"]
+        #object[java.time.LocalDateTime 0x391c002e "2024-04-01T18:32:48.272443"]
+        #object[java.time.LocalDateTime 0x593a1368 "2024-04-01T18:32:48.272451"]]
+       [#object[java.time.LocalDateTime 0x677b3def "2024-04-01T18:32:48.272459"]
+        #object[java.time.LocalDateTime 0x46d5039f "2024-04-01T18:32:48.272467"]
+        #object[java.time.LocalDateTime 0x3d0b906 "2024-04-01T18:32:48.272475"]]]]],
+    :id 1}]
+~~~
+
+
+
 ## Notify/Listen (PubSub)
 
 ## Notices
