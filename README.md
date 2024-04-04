@@ -1924,11 +1924,10 @@ A full example:
 ## Arrays support
 
 In JDBC, arrays have always been a pain. Every time you're about to pass an
-array to the database and read it back, you've got to wrap your data with
-various Java classes, extend protocols, and multimethods. In Postgres, the array
-type is quite powerful yet underestimated due to poor support of drivers. This
-is one more reason for running this project: to bring easy access to Postgres
-arrays.
+array to the database and read it back, you've got to wrap your data in various
+Java classes, extend protocols, and multimethods. In Postgres, the array type is
+quite powerful yet underestimated due to poor support of drivers. This is one
+more reason for running this project: to bring easy access to Postgres arrays.
 
 PG2 tries its best to provide seamless connection between Clojure vectors and
 Postgres arrays. When reading an array, you get a Clojure vector. And vice
@@ -2071,26 +2070,26 @@ zone. No idea how it can be used but still:
 Now read it back:
 
 ~~~clojure
-  (pg/query conn "select * from arr_demo_3")
+(pg/query conn "select * from arr_demo_3")
 
-  [{:matrix
-    [... truncated
-     [[[#object[java.time.LocalDateTime 0x5ed6e62b "2024-04-01T18:32:48.272169"]
-        #object[java.time.LocalDateTime 0xb9d6851 "2024-04-01T18:32:48.272197"]
-        #object[java.time.LocalDateTime 0x6e35ed84 "2024-04-01T18:32:48.272207"]]
-       ...
-       [#object[java.time.LocalDateTime 0x7319d217 "2024-04-01T18:32:48.272236"]
-        #object[java.time.LocalDateTime 0x6153154d "2024-04-01T18:32:48.272241"]
-        #object[java.time.LocalDateTime 0x2e4ffd44 "2024-04-01T18:32:48.272247"]]]
-      ...
-      [[#object[java.time.LocalDateTime 0x32c6e526 "2024-04-01T18:32:48.272405"]
-        #object[java.time.LocalDateTime 0x496a5bc6 "2024-04-01T18:32:48.272418"]
-        #object[java.time.LocalDateTime 0x283531ee "2024-04-01T18:32:48.272426"]]
-       ...
-       [#object[java.time.LocalDateTime 0x677b3def "2024-04-01T18:32:48.272459"]
-        #object[java.time.LocalDateTime 0x46d5039f "2024-04-01T18:32:48.272467"]
-        #object[java.time.LocalDateTime 0x3d0b906 "2024-04-01T18:32:48.272475"]]]]],
-    :id 1}]
+[{:matrix
+  [... truncated
+   [[[#object[java.time.LocalDateTime 0x5ed6e62b "2024-04-01T18:32:48.272169"]
+      #object[java.time.LocalDateTime 0xb9d6851 "2024-04-01T18:32:48.272197"]
+      #object[java.time.LocalDateTime 0x6e35ed84 "2024-04-01T18:32:48.272207"]]
+     ...
+     [#object[java.time.LocalDateTime 0x7319d217 "2024-04-01T18:32:48.272236"]
+      #object[java.time.LocalDateTime 0x6153154d "2024-04-01T18:32:48.272241"]
+      #object[java.time.LocalDateTime 0x2e4ffd44 "2024-04-01T18:32:48.272247"]]]
+    ...
+    [[#object[java.time.LocalDateTime 0x32c6e526 "2024-04-01T18:32:48.272405"]
+      #object[java.time.LocalDateTime 0x496a5bc6 "2024-04-01T18:32:48.272418"]
+      #object[java.time.LocalDateTime 0x283531ee "2024-04-01T18:32:48.272426"]]
+     ...
+     [#object[java.time.LocalDateTime 0x677b3def "2024-04-01T18:32:48.272459"]
+      #object[java.time.LocalDateTime 0x46d5039f "2024-04-01T18:32:48.272467"]
+      #object[java.time.LocalDateTime 0x3d0b906 "2024-04-01T18:32:48.272475"]]]]],
+  :id 1}]
 ~~~
 
 You can have an array of JSON(b) objects, too:
