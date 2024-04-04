@@ -7,6 +7,8 @@
 - JSON wrapper is idempotent
 - JSON encode: default is IPersistentMap
 - OID.toElementOID method
+- array readme section
+- todo updated
 
 ## 0.1.8
 
