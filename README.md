@@ -1930,17 +1930,16 @@ type is quite powerful yet underestimated due to poor support of drivers. This
 is one more reason for running this project: to bring easy access to Postgres
 arrays.
 
-In short words, in PG2, when reading arrays, you get a Clojure vector. And vice
+PG2 tries its best to provide seamless connection between Clojure vectors and
+Postgres arrays. When reading an array, you get a Clojure vector. And vice
 versa: to pass an array object into a query, just submit a vector.
 
-PG2 tries its best to provide seamless connection between Clojure vectors and
-Postgres arrays. First, it supports arrays of any type: not only primitives like
-numbers and strings but `uuid`, `numeric`, `timestamp(tz)`, `json(b)`, and more
-as well.
+PG2 supports arrays of any type: not only primitives like numbers and strings
+but `uuid`, `numeric`, `timestamp(tz)`, `json(b)`, and more as well.
 
-Second, arrays might have more than one dimension. Nothing prevents you from
-having a 3D array of integers like `cube::int[][][]`, and it becomes a nested
-vector when fetched by PG2.
+Arrays might have more than one dimension. Nothing prevents you from having a 3D
+array of integers like `cube::int[][][]`, and it becomes a nested vector when
+fetched by PG2.
 
 *A technical note: PG2 supports both encoding and decoding of arrays in both
 text and binary modes.*
@@ -2029,7 +2028,7 @@ Reading the matrix back:
                  [[6 5] [4 3] [2 1]]]}]
 ~~~
 
-A crazy example: let's have a three dimension array of timestamp with a time
+A crazy example: let's have a three dimension array of timestamps with a time
 zone. No idea how it can be used but still:
 
 ~~~clojure
