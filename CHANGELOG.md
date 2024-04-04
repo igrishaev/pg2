@@ -1,5 +1,9 @@
 
-## 0.1.9-SNAPSHOT
+## 0.1.10-SNAPSHOT
+
+- ?
+
+## 0.1.9
 
 - Matrix class added
 - array encode/decode bin/text support
