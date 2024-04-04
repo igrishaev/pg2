@@ -18,7 +18,7 @@ toc-install:
 	npm install --save markdown-toc
 
 toc-build:
-	node_modules/.bin/markdown-toc -i README.md --maxdepth 3
+	node_modules/.bin/markdown-toc -i README.md --maxdepth 2
 
 install:
 	lein sub with-profile uberjar install
