@@ -29,6 +29,8 @@
 - int to float: tests
 - refactor locks? on Clojure level
 
+- async support?
+
 migrations
 - lein plugin
 
