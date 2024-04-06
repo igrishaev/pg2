@@ -6,6 +6,7 @@
    [clojure.string :as str]
    [less.awful.ssl :as ssl])
   (:import
+   clojure.lang.IPersistentMap
    clojure.lang.Keyword
    com.fasterxml.jackson.databind.ObjectMapper
    java.io.InputStream
@@ -22,6 +23,7 @@
    java.util.UUID
    javax.net.ssl.SSLContext
    org.pg.CancelTimer
+   org.pg.ConnConfig
    org.pg.ConnConfig$Builder
    org.pg.Connection
    org.pg.ExecuteParams
@@ -41,6 +43,7 @@
    org.pg.error.PGErrorResponse
    org.pg.json.JSON
    org.pg.json.JSON$Wrapper
+   org.pg.pool.Pool
    org.pg.reducer.IReducer
    org.pg.type.PGEnum))
 
@@ -1095,3 +1098,84 @@
 
 (defn error! [template & args]
   (throw (new PGError (apply format template args))))
+
+
+;;
+;; Connectable source abstraction
+;;
+
+(defprotocol IConnectable
+
+  (-borrow-connection [this])
+
+  (-return-connection [this conn]))
+
+
+(extend-protocol IConnectable
+
+  Connection
+
+  (-borrow-connection [^Connection this]
+    this)
+
+  (-return-connection [this ^Connection conn]
+    nil)
+
+  Pool
+
+  (-borrow-connection [this]
+    (.borrowConnection this))
+
+  (-return-connection [this ^Connection conn]
+    (.returnConnection this conn))
+
+  IPersistentMap
+
+  (-borrow-connection [this]
+    (connect this))
+
+  (-return-connection [this ^Connection conn]
+    (close conn))
+
+  ConnConfig
+
+  (-borrow-connection [this]
+    (new Connection this))
+
+  (-return-connection [this ^Connection conn]
+    (close conn))
+
+  Object
+
+  (-borrow-connection [this]
+    (error! "Unsupported connection source: %s" this))
+
+  (-return-connection [this ^Connection conn]
+    (error! "Unsupported connection source: %s" this))
+
+  nil
+
+  (-borrow-connection [this]
+    (error! "Connection source cannot be null"))
+
+  (-return-connection [this ^Connection conn]
+    (error! "Connection source cannot be null")))
+
+
+(defmacro on-connection
+  "
+  Perform a block of code while the `bind` symbol is bound
+  to a `Connection` object. If the source is a config map,
+  the connection gets closed. When the source is a pool,
+  the connection gets borrowed and returned afterwards.
+  For existing connection, nothing is happening at the end.
+  "
+  [[bind source] & body]
+  `(let [source#
+         ~source
+         ~(with-meta bind {:tag `Connection})
+         (-borrow-connection source#)]
+     (try
+       ~@body
+       (finally
+         (-return-connection source# ~bind)))))

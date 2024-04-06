@@ -2,15 +2,11 @@
 - readme
 
 - arrays
-  - readme
-  - list supported types
   - JSON: IPersistentMap only
 
 - hugsql adapter
 
 - oid wrapper?
-
-- Connectable wrapper
 
 - reorganize the docs
 

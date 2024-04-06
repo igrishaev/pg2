@@ -3,6 +3,8 @@
 
 - unused imports
 - KW class
+- on-connection macro in pg.core
+- IConnectable protocol on pg.core
 
 ## 0.1.9
 

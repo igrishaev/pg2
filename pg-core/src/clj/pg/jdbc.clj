@@ -20,80 +20,20 @@
   {:kebab-keys? true})
 
 
-;;
-;; Fetch connection from various sources (config, pool).
-;;
-
-(defprotocol IConnectable
-  (-connect [this]))
-
-
-(extend-protocol IConnectable
-
-  Connection
-
-  (-connect [this]
-    this)
-
-  Pool
-
-  (-connect [this]
-    (pool/borrow-connection this))
-
-  IPersistentMap
-
-  (-connect [this]
-    (pg/connect this))
-
-  Object
-
-  (-connect [this]
-    (pg/error! "Unsupported connection source: %s" this))
-
-  nil
-
-  (-connect [this]
-    (pg/error! "Connection source cannot be null")))
-
-
 (defn get-connection
   "
   Return a connection object from a source which might be
   a config map, a pool, or a connection. Not recommended
   to use as there is a chance to leave the connection not
-  closed. Consider `on-connection` instead.
+  closed. Consider `pg/on-connection` instead.
   "
   ^Connection [source]
-  (-connect source))
+  (pg/-borrow-connection source))
 
 
-(defmacro on-connection
-  "
-  Perform a block of code while the `bind` symbol is bound
-  to a `Connection` object. If the source is a config map,
-  the connection gets closed. When the source is a pool,
-  the connection gets borrowed and returned afterwards.
-  For existing connection, nothing is happening at the end.
-  "
-  [[bind source] & body]
-
-  `(let [source# ~source]
-     (cond
-
-       (pg/connection? source#)
-       (let [~bind source#]
-         (do ~@body))
-
-       (pool/pool? source#)
-       (pool/with-connection [~bind source#]
-         ~@body)
-
-       (map? source#)
-       (with-open [~bind (get-connection source#)]
-         ~@body)
-
-       :else
-       (pg/error! "Unsupported connection source: %s" source#))))
+(defmacro on-connection [[bind source] & body]
+  `(pg/on-connection [~bind ~source]
+     ~@body))
 
 
 (defn ->fn-execute ^IFn [expr]
@@ -128,7 +68,7 @@
          fn-execute
          (->fn-execute expr)]
 
-     (on-connection [conn source]
+     (pg/on-connection [conn source]
        (fn-execute conn
                    expr
                    (-> opt-defaults
@@ -150,7 +90,7 @@
          fn-execute
          (->fn-execute expr)]
 
-     (on-connection [conn source]
+     (pg/on-connection [conn source]
        (fn-execute conn
                    expr
                    (-> opt-defaults
@@ -183,7 +123,7 @@
 
   ([source sql-vec opt]
    (let [[sql & params] sql-vec]
-     (on-connection [conn source]
+     (pg/on-connection [conn source]
        (pg/prepare conn
                    sql
                    (assoc opt :params params))))))
@@ -223,7 +163,7 @@
   Return the result of the body block.
   "
   [[bind source opts] & body]
-  `(on-connection [~bind ~source]
+  `(pg/on-connection [~bind ~source]
      (pg/with-tx [~bind
                   ~@(when opts
                       `[(remap-tx-opts ~opts)])]
