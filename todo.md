@@ -19,6 +19,8 @@
 - json
   - test namespaces
 
+- rename Accum to Result
+
 - pool close conn test
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
