@@ -3,7 +3,6 @@ import clojure.lang.Indexed;
 import clojure.lang.PersistentVector;
 
 import clojure.lang.RT;
-import clojure.lang.Sequential;
 import org.pg.enums.OID;
 import org.pg.error.PGError;
 
