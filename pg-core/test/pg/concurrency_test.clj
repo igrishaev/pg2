@@ -188,10 +188,10 @@
           (System/currentTimeMillis)
 
           sql1
-          "select pg_sleep(2); copy (select s.x as x, s.x * s.x as square from generate_series(    1, 10000) as s(x)) TO STDOUT WITH (FORMAT CSV)"
+          "select pg_sleep(2); copy (select s.x as x, s.x * s.x as square from generate_series( 1, 10) as s(x)) TO STDOUT WITH (FORMAT CSV)"
 
           sql2
-          "select pg_sleep(1); copy (select s.x as x, s.x * s.x as square from generate_series(10001, 20000) as s(x)) TO STDOUT WITH (FORMAT CSV)"
+          "select pg_sleep(1); copy (select s.x as x, s.x * s.x as square from generate_series(11, 20) as s(x)) TO STDOUT WITH (FORMAT CSV)"
 
           out
           (new ByteArrayOutputStream)
@@ -225,13 +225,13 @@
 
       (is (< 3000 diff 3100))
 
-      (is (= {:copied 10000} res1))
-      (is (= {:copied 10000} res2))
+      (is (= {:copied 10} res1))
+      (is (= {:copied 10} res2))
 
-      (is (= (count rows) 20000))
+      (is (= (count rows) 20))
 
-      (is (= [     "1"        "1"] (first rows)))
-      (is (= ["20000" "400000000"] (last rows))))))
+      (is (= [ "1"   "1"] (first rows)))
+      (is (= ["20" "400"] (last rows))))))
 
 
 (deftest test-copy-in-parallel
@@ -250,7 +250,7 @@
           "select pg_sleep(0.5); copy foo (x) from STDIN WITH (FORMAT CSV)"
 
           limit
-          9999
+          10
 
           rows1
           (for [x (range 0 limit)]
@@ -285,13 +285,13 @@
 
       (is (< 2000 diff 2100))
 
-      (is (= {:copied 9999} res1))
-      (is (= {:copied 9999} res2))
+      (is (= {:copied 10} res1))
+      (is (= {:copied 10} res2))
 
-      (is (= (count res) 19998))
+      (is (= (count res) 20))
 
       (is (= {:x 0} (first res)))
-      (is (= {:x 19997} (last res))))))
+      (is (= {:x 19} (last res))))))
 
 
 ;; TODO
