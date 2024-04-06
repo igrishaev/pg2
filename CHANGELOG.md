@@ -5,6 +5,7 @@
 - KW class
 - on-connection macro in pg.core
 - IConnectable protocol on pg.core
+- fix concurrent tests
 
 ## 0.1.9
 
