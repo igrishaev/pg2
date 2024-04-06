@@ -1,9 +1,9 @@
 package org.pg.msg.server;
 
 import clojure.lang.IPersistentMap;
-import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentVector;
+import org.pg.clojure.KW;
 import org.pg.util.BBTool;
 import org.pg.clojure.IClojure;
 import java.nio.ByteBuffer;
@@ -18,10 +18,10 @@ public record NegotiateProtocolVersion(
 
     public IPersistentMap toClojure () {
         return PersistentHashMap.create(
-                Keyword.intern("msg"), Keyword.intern("NegotiateProtocolVersion"),
-                Keyword.intern("version"), version,
-                Keyword.intern("param-count"), paramCount,
-                Keyword.intern("params"), PersistentVector.create(Arrays.asList(params))
+                KW.msg, KW.NegotiateProtocolVersion,
+                KW.version, version,
+                KW.paramCount, paramCount,
+                KW.params, PersistentVector.create(Arrays.asList(params))
         );
     }
 

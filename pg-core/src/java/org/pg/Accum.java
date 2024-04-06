@@ -1,9 +1,9 @@
 package org.pg;
 
 import clojure.lang.IFn;
-import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import org.pg.auth.ScramSha256;
+import org.pg.clojure.KW;
 import org.pg.clojure.LazyMap;
 import org.pg.error.PGError;
 import org.pg.error.PGErrorResponse;
@@ -45,27 +45,27 @@ public final class Accum {
 
              return switch (lead) {
                  case "INSERT" -> PersistentHashMap.create(
-                         Keyword.intern("inserted"),
+                         KW.inserted,
                          Integer.parseInt(parts[2])
                  );
                  case "UPDATE" -> PersistentHashMap.create(
-                         Keyword.intern("updated"),
+                         KW.updated,
                          Integer.parseInt(parts[1])
                  );
                  case "DELETE" -> PersistentHashMap.create(
-                         Keyword.intern("deleted"),
+                         KW.deleted,
                          Integer.parseInt(parts[1])
                  );
                  case "SELECT" -> PersistentHashMap.create(
-                         Keyword.intern("selected"),
+                         KW.selected,
                          Integer.parseInt(parts[1])
                  );
                  case "COPY" -> PersistentHashMap.create(
-                         Keyword.intern("copied"),
+                         KW.copied,
                          Integer.parseInt(parts[1])
                  );
                  default -> PersistentHashMap.create(
-                         Keyword.intern("command"),
+                         KW.command,
                          command
                  );
              };

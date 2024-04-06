@@ -1,8 +1,8 @@
 package org.pg.msg.server;
 
 import clojure.lang.IPersistentMap;
-import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
+import org.pg.clojure.KW;
 import org.pg.util.BBTool;
 import org.pg.clojure.IClojure;
 
@@ -16,10 +16,10 @@ public record NotificationResponse(int pid,
 
     public IPersistentMap toClojure () {
         return PersistentHashMap.create(
-                Keyword.intern("msg"), Keyword.intern("NoticeResponse"),
-                Keyword.intern("pid"), pid,
-                Keyword.intern("channel"), channel,
-                Keyword.intern("message"), message
+                KW.msg, KW.NoticeResponse,
+                KW.pid, pid,
+                KW.channel, channel,
+                KW.message, message
         );
     }
 

@@ -1,7 +1,8 @@
 
 ## 0.1.10-SNAPSHOT
 
-- ?
+- unused imports
+- KW class
 
 ## 0.1.9
 

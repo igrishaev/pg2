@@ -2,6 +2,7 @@ package org.pg.msg.server;
 
 import clojure.lang.*;
 import org.pg.clojure.IClojure;
+import org.pg.clojure.KW;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -14,10 +15,7 @@ public record NoticeResponse(Map<String, String> fields) implements IClojure, IS
         for (Map.Entry<String, String> e: fields.entrySet()) {
             map = RT.assoc(map, Keyword.intern(e.getKey()), e.getValue());
         }
-        return map.assoc(
-                Keyword.intern("msg"),
-                Keyword.intern("NoticeResponse")
-        );
+        return map.assoc(KW.msg, KW.NoticeResponse);
     }
 
     public static NoticeResponse fromByteBuffer (final ByteBuffer buf, final Charset charset) {
