@@ -28,19 +28,57 @@
   {:adapter adapter})
 
 
-(deftest test-simple
+(deftest test-query-select-default
+  (pg/with-connection [conn CONFIG]
+    (let [result
+          (try-select-jsonb conn
+                            {:query "params"}
+                            {:command "params"})]
+      (is (= [{:json {:foo 42}}]
+             result)))))
+
+
+(deftest test-create-test-table-simple
+  (pg/with-connection [conn CONFIG]
+
+    (let [table
+          (str (gensym "tmp"))
+
+          result
+          (create-test-table conn
+                             {:table table})]
+
+      (is (= {:command "CREATE TABLE"}
+             result)))))
+
+
+(deftest test-insert-into-table
 
   (pg/with-connection [conn CONFIG]
 
-    (let [result
-          (try-select conn {:aaa 123}
+    (let [table
+          (str (gensym "tmp"))
 
-                      {:sdfsfds 55}
+          _
+          (create-test-table conn
+                             {:table table})
 
-                      )
-          ]
+          result-insert
+          (insert-into-table conn {:table table
+                                   :title "Hello!"})
 
-      (is (= 1 result))))
+          result-query
+          (select-from-table conn {:table table})]
 
+      (is (= 1
+             result-insert))
 
+      (is (= 1
+             result-query))))
   )
+
+;; todo: execute custom params
+;; insert returning
+;; insert n
+;; select where
+;; insert json
