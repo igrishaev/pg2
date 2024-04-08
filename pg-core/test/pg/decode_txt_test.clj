@@ -61,16 +61,16 @@
 (deftest test-strings
 
   (let [res (pg/decode-txt "test" oid/text)]
-    (is (instance? String res))
     (is (= "test" res)))
 
   (let [res (pg/decode-txt "test" oid/varchar)]
-    (is (instance? String res))
     (is (= "test" res)))
 
-  (let [res (pg/decode-txt "t" oid/char)]
-    (is (instance? Character res))
-    (is (= \t res))))
+  (let [res (pg/decode-txt "test" oid/char)]
+    (is (= \t res)))
+
+  (let [res (pg/decode-txt "test" oid/bpchar)]
+    (is (= "test" res))))
 
 
 (deftest test-oid-name

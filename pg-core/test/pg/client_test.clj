@@ -346,6 +346,30 @@ from
           (is (-> e ex-message (str/includes? "cannot execute CREATE TABLE in a read-only transaction"))))))))
 
 
+(deftest test-client-bpchar-txt
+  (pg/with-connection [conn *CONFIG*]
+    (pg/with-tx [conn]
+      (pg/execute conn "create temp table foo123 (data bpchar)")
+      (pg/execute conn "insert into foo123 values ('test')")
+      (testing "decode txt"
+        (let [res
+              (pg/execute conn "select * from foo123")]
+          (is (= [{:data "test"}] res)))))))
+
+
+(deftest test-client-bpchar-bin
+  (pg/with-connection [conn (assoc *CONFIG*
+                                   :binary-encode? true
+                                   :binary-decode? true)]
+    (pg/with-tx [conn]
+      (pg/execute conn "create temp table foo123 (data bpchar)")
+      (pg/execute conn "insert into foo123 values ('test')")
+      (testing "decode txt"
+        (let [res
+              (pg/execute conn "select * from foo123")]
+          (is (= [{:data "test"}] res)))))))
+
+
 (deftest test-exeplain-analyze
 
   (pg/with-connection [conn *CONFIG*]
@@ -1797,28 +1821,34 @@ drop table %1$s;
       (is (= [{:text "hello"}] res)))))
 
 
-(deftest test-decode-text-and-binary-bpchar
+(deftest test-decode-text-and-binary-char
   (pg/with-connection [conn (assoc *CONFIG*
                                    :binary-encode? true
                                    :binary-decode? true)]
 
-    (let [res (pg/execute conn "select 'ёё'::char as char")]
-      (is (= [{:char \ё}] res)))
+    (let [res (pg/execute conn "select 'abc'::\"char\" as char")]
+      (is (= [{:char \a}] res)))
 
+    (let [res (pg/execute conn "select ''::\"char\" as char")]
+      (is (= [{:char (char 0)}] res)))
 
-    (let [res (pg/execute conn "select $1::char as char" {:params [\ё]})]
-      (is (= [{:char \ё}] res))))
+    (let [res (pg/execute conn "select $1 as char" {:params [\a]
+                                                    :oids [oid/char]})]
+      (is (= [{:char \a}] res))))
 
   (pg/with-connection [conn (assoc *CONFIG*
                                    :binary-encode? false
                                    :binary-decode? false)]
 
-    (let [res (pg/execute conn "select 'ёё'::char as char")]
-      (is (= [{:char \ё}] res)))
+    (let [res (pg/execute conn "select 'abc'::\"char\" as char")]
+      (is (= [{:char \a}] res)))
 
+    (let [res (pg/execute conn "select ''::\"char\" as char")]
+      (is (= [{:char Character/MIN_VALUE}] res)))
 
-    (let [res (pg/execute conn "select $1::char as char" {:params [\ё]})]
-      (is (= [{:char \ё}] res)))))
+    (let [res (pg/execute conn "select $1 as char" {:params [\a]
+                                                    :oids [oid/char]})]
+      (is (= [{:char \a}] res)))))
 
 
 (deftest test-decode-oid

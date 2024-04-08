@@ -1,5 +1,6 @@
 package org.pg.codec;
 
+import org.pg.Const;
 import org.pg.error.PGError;
 import org.pg.enums.OID;
 import org.pg.util.HexTool;
@@ -31,7 +32,13 @@ public final class DecoderTxt {
             case INT4, OID -> Integer.parseInt(string);
             case INT8 -> Long.parseLong(string);
             case BYTEA -> HexTool.parseHex(string, 2, string.length());
-            case CHAR, BPCHAR -> string.charAt(0);
+            case CHAR -> {
+                if (string.isEmpty()) {
+                    yield Const.NULL_CHAR;
+                } else {
+                    yield string.charAt(0);
+                }
+            }
             case UUID -> UUID.fromString(string);
             case FLOAT4 -> Float.parseFloat(string);
             case FLOAT8 -> Double.parseDouble(string);

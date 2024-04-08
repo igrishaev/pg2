@@ -46,6 +46,33 @@
              (ex-message e))))))
 
 
+(deftest test-char-types
+
+  ;; text
+
+  (let [bb (pg/encode-bin "hello")
+        res (pg/decode-bin bb oid/text)]
+    (is (= "hello" res)))
+
+  ;; char
+
+  (let [bb (pg/encode-bin "hello" oid/char)
+        res (pg/decode-bin bb oid/char)]
+    (is (= \h res)))
+
+  ;; varchar
+
+  (let [bb (pg/encode-bin "hello" oid/varchar)
+        res (pg/decode-bin bb oid/varchar)]
+    (is (= "hello" res)))
+
+  ;; bpchar
+
+  (let [bb (pg/encode-bin "hello" oid/bpchar)
+        res (pg/decode-bin bb oid/bpchar)]
+    (is (= "hello" res))))
+
+
 (deftest test-numbers
 
   ;; int

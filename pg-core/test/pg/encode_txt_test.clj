@@ -29,10 +29,17 @@
     :decode-key-fn (comp keyword reverse-string)}))
 
 
-
 (deftest test-bytea
   (let [res (pg/encode-txt (.getBytes "hello" "UTF-8"))]
     (is (= "\\x68656c6c6f" res))))
+
+
+(deftest test-char-types
+  (doseq [oid [oid/text
+               oid/char
+               oid/varchar
+               oid/bpchar]]
+    (is (= "test" (pg/encode-txt "test" oid)))))
 
 
 (deftest test-encode-basic

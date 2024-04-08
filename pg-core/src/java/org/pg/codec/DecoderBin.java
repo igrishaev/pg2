@@ -4,6 +4,7 @@ package org.pg.codec;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
+import org.pg.Const;
 import org.pg.error.PGError;
 import org.pg.enums.OID;
 import org.pg.util.BBTool;
@@ -22,11 +23,18 @@ public final class DecoderBin {
             final CodecParams codecParams
     ) {
         return switch (oid) {
-            case TEXT, VARCHAR, NAME -> BBTool.getRestString(buf, codecParams.serverCharset());
+            case TEXT, VARCHAR, NAME, BPCHAR -> BBTool.getRestString(buf, codecParams.serverCharset());
             case INT2 -> buf.getShort();
             case INT4, OID -> buf.getInt();
             case INT8 -> buf.getLong();
-            case CHAR, BPCHAR -> BBTool.getRestString(buf, codecParams.serverCharset()).charAt(0);
+            case CHAR -> {
+                final String string = BBTool.getRestString(buf, codecParams.serverCharset());
+                if (string.isEmpty()) {
+                    yield Const.NULL_CHAR;
+                } else {
+                    yield string.charAt(0);
+                }
+            }
             case UUID -> {
                 final long hiBits = buf.getLong();
                 final long loBits = buf.getLong();
