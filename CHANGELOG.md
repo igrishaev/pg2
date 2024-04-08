@@ -1,11 +1,16 @@
 
-## 0.1.10-SNAPSHOT
+## 0.1.11-SNAPSHOT
+
+- ?
+
+## 0.1.10
 
 - unused imports
 - KW class
 - on-connection macro in pg.core
 - IConnectable protocol on pg.core
 - fix concurrent tests
+- fix bpchar decoding
 
 ## 0.1.9
 
