@@ -36,13 +36,17 @@
   ["pg-core"
    "pg-honey"
    "pg-component"
-   "pg-migration"]
+   "pg-migration"
+   "pg2-hugsql"]
 
   :managed-dependencies
   [[com.github.igrishaev/pg2-core :version]
    [com.github.igrishaev/pg2-honey :version]
    [com.github.igrishaev/pg2-component :version]
    [com.github.igrishaev/pg2-migration :version]
+   [com.github.igrishaev/pg2-hugsql :version]
+   [com.layerware/hugsql-core "0.5.3"]
+   [com.layerware/hugsql-adapter "0.5.3"]
    [org.clojure/clojure "1.11.1"]
    [org.clojure/tools.cli "1.1.230"]
    [com.github.seancorfield/honeysql "2.4.1078"]

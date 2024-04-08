@@ -19,6 +19,8 @@
 - json
   - test namespaces
 
+- pg-integration package?
+
 - rename Accum to Result
 
 - pool close conn test
