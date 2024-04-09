@@ -1,12 +1,9 @@
 (ns pg.honeysql-test
   (:require
-   [clojure.string :as string]
-   [hugsql.parameters :as p]
-   [pg.hugsql :as pg.hug]
-   [hugsql.core :as hugsql]
+   [pg.hugsql :as hugsql]
+   [clojure.java.io :as io]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
-   [clojure.java.io :as io]
    [pg.oid :as oid]
    [pg.pool :as pool]))
 
@@ -19,64 +16,7 @@
    :database "test"})
 
 
-(def adapter
-  (pg.hug/adapter))
-
-
-(def ^:dynamic *$* 0)
-
-
-(defn $next []
-  (set! *$* (inc *$*))
-  (format "$%d" *$*))
-
-
-(extend-type Object
-
-  p/ValueParam
-
-  (value-param [param data options]
-    (let [value
-          (get-in data (p/deep-get-vec (:name param)))]
-      [($next) value]))
-
-  p/ValueParamList
-
-  (value-param-list [param data options]
-    (let [coll
-          (get-in data (p/deep-get-vec (:name param)))
-
-          placeholders
-          (string/join "," (for [_ coll] ($next)))]
-
-      (into [placeholders] coll))))
-
-
-(defn wrap$ [f]
-  (fn [& args]
-    (binding [*$* 0]
-      (apply f args))))
-
-
-(defn intern-func [fn-name fn-meta fn-obj]
-  (let [sym
-        (-> fn-name name symbol)]
-    (intern *ns*
-            (with-meta sym fn-meta)
-            (wrap$ fn-obj))))
-
-
-;; TODO: move to pg.hugsql
-(defn load-funcs []
-  (let [defs
-        (hugsql/map-of-db-fns
-         (io/file "test/pg/db.sql")
-         {:adapter adapter})]
-
-    (doseq [[fn-name {fn-meta :meta
-                      fn-obj :fn}]
-            defs]
-      (intern-func fn-name fn-meta fn-obj))))
+(hugsql/def-db-fns (io/file "test/pg/db.sql"))
 
 
 (deftest test-query-select-default
