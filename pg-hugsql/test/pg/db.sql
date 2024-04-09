@@ -9,7 +9,7 @@ create temp table :i:table (id serial primary key, title text not null);
 insert into :i:table (title) values (:title);
 
 -- :name select-from-table :? :*
-select * from :i:table order by :id;
+select * from :i:table order by id;
 
 -- :name get-by-id :? :1
 select * from :i:table where id = :id limit 1;

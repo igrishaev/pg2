@@ -9,17 +9,18 @@
   adapter/HugsqlAdapter
 
   (execute [this db sqlvec options]
-    (println "execute" options)
+    (println "execute" sqlvec options)
     (let [[sql & params]
           sqlvec]
       (pg/execute db sql
                   (assoc defaults :params params))))
 
   (query [this db sqlvec options]
-    (println "query" options)
-    (let [[sql]
+    (println "query" sqlvec options)
+    (let [[sql & params]
           sqlvec]
-      (pg/execute db sql defaults)))
+      (pg/execute db sql
+                  (assoc defaults :params params))))
 
   (result-one [this result options]
     (println "result-one" options)
