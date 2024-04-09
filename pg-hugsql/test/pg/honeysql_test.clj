@@ -105,8 +105,39 @@
 
       )))
 
-;; todo: execute custom params
-;; insert returning
-;; insert n
-;; select where
-;; insert json
+
+(deftest test-select-json-from-param
+  (pg/with-connection [conn CONFIG]
+    (let [res
+          (select-json-from-param conn {:json {:foo {:bar 42}}})]
+      (is (= {:json {:foo {:bar 42}}} res)))))
+
+
+(deftest test-insert-into-table-ret
+
+  (pg/with-connection [conn CONFIG]
+    (let [table
+          (str (gensym "tmp"))
+
+          _
+          (create-test-table conn
+                             {:table table})
+
+          result-insert
+          (insert-into-table-ret conn {:table table
+                                       :title "Hello!"})]
+
+      (is (= [{:title "Hello!", :id 1}]
+             result-insert))))
+
+  )
+
+
+;; adapter defaults
+;; custom defaults
+;; remove prints
+;; test in
+;; test tuple
+;; test tuple list
+;; test id list
+;; test raw

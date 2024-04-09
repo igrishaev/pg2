@@ -46,29 +46,31 @@
   adapter/HugsqlAdapter
 
   (execute [this db sqlvec options]
-    (println "execute" sqlvec options)
-    (let [[sql & params]
-          sqlvec]
-      (pg/execute db sql
-                  (assoc defaults :params params))))
+
+    (let [{:keys [pg]}
+          options
+
+          [sql & params]
+          sqlvec
+
+          opt
+          (-> defaults
+              (merge pg)
+              (assoc :params params))]
+
+      (pg/on-connection [conn db]
+        (pg/execute db sql opt))))
 
   (query [this db sqlvec options]
-    (println "query" sqlvec options)
-    (let [[sql & params]
-          sqlvec]
-      (pg/execute db sql
-                  (assoc defaults :params params))))
+    (adapter/execute this db sqlvec options))
 
   (result-one [this result options]
-    (println "result-one" options)
     (first result))
 
   (result-many [this result options]
-    (println "result-many" options)
     result)
 
   (result-affected [this result options]
-    (println "result-affected" options)
     (or (:inserted result)
         (:updated result)
         (:deleted result)
@@ -76,7 +78,6 @@
         (:copied result)))
 
   (result-raw [this result options]
-    (println "result-raw" options)
     result)
 
   (on-exception [this exception]
