@@ -59,7 +59,7 @@
               (assoc :params params))]
 
       (pg/on-connection [conn db]
-        (pg/execute db sql opt))))
+        (pg/execute conn sql opt))))
 
   (query [this db sqlvec options]
     (adapter/execute this db sqlvec options))

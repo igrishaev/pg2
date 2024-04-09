@@ -21,6 +21,8 @@
 
 - pg-integration package?
 
+- on-connection in honey
+
 - rename Accum to Result
 
 - pool close conn test

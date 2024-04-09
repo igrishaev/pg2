@@ -16,7 +16,7 @@
    :database "test"})
 
 
-(hugsql/def-db-fns (io/file "test/pg/db.sql"))
+(hugsql/def-db-fns (io/file "test/pg/test.sql"))
 
 
 (deftest test-query-select-default
@@ -59,31 +59,6 @@
                                    :title "Hello!"})
 
           result-query
-          (select-from-table conn {:table table})]
-
-      (is (= 1
-             result-insert))
-
-      (is (= 1
-             result-query)))))
-
-
-(deftest test-insert-into-table
-
-  (pg/with-connection [conn CONFIG]
-
-    (let [table
-          (str (gensym "tmp"))
-
-          _
-          (create-test-table conn
-                             {:table table})
-
-          result-insert
-          (insert-into-table conn {:table table
-                                   :title "Hello!"})
-
-          result-query
           (select-from-table conn {:table table})
 
           result-get
@@ -101,9 +76,7 @@
       (is (= {:title "Hello!", :id 1}
              result-get))
 
-      (is (= nil result-miss))
-
-      )))
+      (is (= nil result-miss)))))
 
 
 (deftest test-select-json-from-param
@@ -128,16 +101,124 @@
                                        :title "Hello!"})]
 
       (is (= [{:title "Hello!", :id 1}]
-             result-insert))))
-
-  )
+             result-insert)))))
 
 
-;; adapter defaults
-;; custom defaults
-;; remove prints
-;; test in
-;; test tuple
-;; test tuple list
-;; test id list
-;; test raw
+(deftest test-select-value-list
+
+  (pg/with-connection [conn CONFIG]
+    (let [table
+          (str (gensym "tmp"))
+
+          _
+          (create-test-table conn
+                             {:table table})
+
+          _
+          (insert-into-table conn {:table table
+                                   :title "aaa"})
+
+          _
+          (insert-into-table conn {:table table
+                                   :title "bbb"})
+
+          _
+          (insert-into-table conn {:table table
+                                   :title "ccc"})
+
+          res
+          (select-value-list conn {:table table
+                                   :ids [1 3]})]
+
+      (is (= [{:title "aaa", :id 1} {:title "ccc", :id 3}]
+             res)))))
+
+
+(deftest test-select-tuple-param
+
+  (pg/with-connection [conn CONFIG]
+    (let [table
+          (str (gensym "tmp"))
+
+          _
+          (create-test-table conn
+                             {:table table})
+
+          _
+          (insert-into-table conn {:table table
+                                   :title "aaa"})
+
+          _
+          (insert-into-table conn {:table table
+                                   :title "bbb"})
+
+          res
+          (select-tuple-param conn {:table table
+                                    :pair [2 "bbb"]})]
+
+      (is (= [{:title "bbb", :id 2}]
+             res)))))
+
+(deftest test-insert-tuple-list
+
+  (pg/with-connection [conn CONFIG]
+    (let [table
+          (str (gensym "tmp"))
+
+          _
+          (create-test-table conn
+                             {:table table})
+
+          res
+          (insert-tuple-list conn {:table table
+                                   :rows
+                                   [[1 "aaa"]
+                                    [2 "bbb"]
+                                    [3 "ccc"]]})]
+
+      (is (= [{:title "aaa", :id 1}
+              {:title "bbb", :id 2}
+              {:title "ccc", :id 3}]
+             res)))))
+
+(deftest test-select-identifiers-list
+
+  (pg/with-connection [conn CONFIG]
+    (let [table
+          (str (gensym "tmp"))
+
+          _
+          (create-test-table conn
+                             {:table table})
+
+          _
+          (insert-tuple-list conn {:table table
+                                   :rows
+                                   [[1 "aaa"]
+                                    [2 "bbb"]
+                                    [3 "ccc"]]})
+
+          res
+          (select-identifiers-list conn {:table table
+                                         :fields ["title"]
+                                         :order-by "id"})]
+
+      (is (= [{:title "aaa"}
+              {:title "bbb"}
+              {:title "ccc"}]
+             res)))))
+
+
+(deftest test-pass-config
+  (let [result
+        (try-select-jsonb CONFIG
+                          {:query "params"}
+                          {:command "params"})]
+    (is (= [{:json {:foo 42}}]
+           result))))
+
+
+;; test adapter defaults
+;; test custom defaults
+
+;; test pool
