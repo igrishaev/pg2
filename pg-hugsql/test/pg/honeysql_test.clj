@@ -1,6 +1,7 @@
 (ns pg.honeysql-test
   (:require
    [pg.hugsql :as hugsql]
+   [clojure.string :as str]
    [clojure.java.io :as io]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
@@ -22,9 +23,7 @@
 (deftest test-query-select-default
   (pg/with-connection [conn CONFIG]
     (let [result
-          (try-select-jsonb conn
-                            {:query "params"}
-                            {:command "params"})]
+          (try-select-jsonb conn)]
       (is (= [{:json {:foo 42}}]
              result)))))
 
@@ -211,14 +210,37 @@
 
 (deftest test-pass-config
   (let [result
-        (try-select-jsonb CONFIG
-                          {:query "params"}
-                          {:command "params"})]
+        (try-select-jsonb CONFIG)]
     (is (= [{:json {:foo 42}}]
            result))))
 
 
-;; test adapter defaults
-;; test custom defaults
+(deftest test-pass-pool
+  (pool/with-pool [pool CONFIG]
+    (let [result
+          (try-select-jsonb pool)]
+      (is (= [{:json {:foo 42}}]
+             result)))))
 
-;; test pool
+
+(deftest test-adapter-override-defaults
+  (pg/with-connection [conn CONFIG]
+    (let [result
+          (try-select-jsonb conn
+                            nil
+                            {:fn-key str/upper-case})]
+      (is (= [{"JSON" {:foo 42}}]
+             result)))))
+
+
+(deftest test-adapter-defaults
+  (pg/with-connection [conn CONFIG]
+    (let [adapter
+          (hugsql/make-adapter {:fn-key str/upper-case})
+
+          result
+          (try-select-jsonb conn
+                            nil
+                            {:adapter adapter})]
+      (is (= [{"JSON" {:foo 42}}]
+             result)))))

@@ -47,19 +47,23 @@
 
   (execute [this db sqlvec options]
 
-    (let [{:keys [pg]}
-          options
-
-          [sql & params]
+    (let [[sql & params]
           sqlvec
 
           opt
-          (-> defaults
-              (merge pg)
-              (assoc :params params))]
+          (-> options
+              (dissoc :quoting
+                      :adapter
+                      :fn-name
+                      :command
+                      :result)
+              (assoc :params params))
+
+          opt-full
+          (merge defaults opt)]
 
       (pg/on-connection [conn db]
-        (pg/execute conn sql opt))))
+        (pg/execute conn sql opt-full))))
 
   (query [this db sqlvec options]
     (adapter/execute this db sqlvec options))
@@ -105,10 +109,10 @@
   ([file]
    (def-db-fns file nil nil))
 
-  ([file options]
-   (def-db-fns file options nil))
+  ([file defaults]
+   (def-db-fns file defaults nil))
 
-  ([file options defaults]
+  ([file defaults options]
 
    (let [adapter
          (make-adapter defaults)

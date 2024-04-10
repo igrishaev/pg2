@@ -8,6 +8,7 @@
 
   :dependencies
   [[com.github.igrishaev/pg2-core]
+   [com.layerware/hugsql-core]
    [com.layerware/hugsql-adapter]]
 
   :parent-project
@@ -24,4 +25,4 @@
   :profiles
   {:test
    {:dependencies
-    [[com.layerware/hugsql-core]]}})
+    []}})

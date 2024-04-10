@@ -5,6 +5,9 @@
   - JSON: IPersistentMap only
 
 - hugsql adapter
+  - docstrings
+  - readme
+  - release
 
 - oid wrapper?
 
