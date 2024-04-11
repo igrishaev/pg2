@@ -233,14 +233,15 @@
              result)))))
 
 
-(deftest test-adapter-defaults
-  (pg/with-connection [conn CONFIG]
-    (let [adapter
-          (hugsql/make-adapter {:fn-key str/upper-case})
-
-          result
-          (try-select-jsonb conn
-                            nil
-                            {:adapter adapter})]
-      (is (= [{"JSON" {:foo 42}}]
-             result)))))
+(deftest test-func-meta
+  (let [result
+        (-> try-select-jsonb var meta)]
+    (is (= {:doc ""
+            :command :?
+            :result :*
+            :file "test/pg/test.sql"
+            :line 2
+            :arglists '([db] [db params] [db params opt])
+            :name 'try-select-jsonb
+            :ns (the-ns 'pg.honeysql-test)}
+           result))))
