@@ -4,6 +4,8 @@
 - arrays
   - JSON: IPersistentMap only
 
+- enable binary by default?
+
 - hugsql adapter
   - demo
   - readme
