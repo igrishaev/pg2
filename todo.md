@@ -17,6 +17,8 @@
 
 - reorganize the docs
 
+- copy in/out tab format
+
 - ring jdbc session middleware
 
 - lazy map
