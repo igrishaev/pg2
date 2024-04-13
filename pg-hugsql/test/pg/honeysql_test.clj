@@ -245,3 +245,31 @@
             :name 'try-select-jsonb
             :ns (the-ns 'pg.honeysql-test)}
            result))))
+
+
+(deftest test-transaction
+
+  (pg/with-connection [conn CONFIG]
+
+    (let [table
+          (str (gensym "tmp"))
+
+          _
+          (create-test-table conn
+                             {:table table})
+
+          result-inner
+          (pg/with-tx [conn {:rollback? true}]
+            (insert-into-table conn {:table table
+                                     :title "AAA"})
+            (insert-into-table conn {:table table
+                                     :title "BBB"})
+            (select-from-table conn {:table table}))
+
+          result-outter
+          (select-from-table conn {:table table})]
+
+      (is (= [{:title "AAA", :id 1}
+              {:title "BBB", :id 2}]
+             result-inner))
+      (is (= [] result-outter)))))
