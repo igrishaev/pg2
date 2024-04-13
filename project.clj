@@ -37,7 +37,7 @@
    "pg-honey"
    "pg-component"
    "pg-migration"
-   "pg2-hugsql"]
+   "pg-hugsql"]
 
   :managed-dependencies
   [[com.github.igrishaev/pg2-core :version]

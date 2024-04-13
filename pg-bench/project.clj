@@ -11,6 +11,7 @@
   :dependencies
   [[com.github.igrishaev/pg2-core]
    [com.github.igrishaev/pg2-honey]
+   [com.github.igrishaev/pg2-hugsql]
    [metosin/jsonista]
    [com.github.seancorfield/next.jdbc]
    [org.postgresql/postgresql]

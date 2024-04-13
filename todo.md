@@ -7,7 +7,7 @@
 - enable binary by default?
 
 - hugsql adapter
-  - demo
+  - test transaction
   - readme
   - release
 
