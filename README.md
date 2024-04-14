@@ -128,6 +128,19 @@ rollback, create, list applied migrations and so on.
 com.github.igrishaev/pg2-migration {:mvn/version "0.1.10"}
 ~~~
 
+[hugsql]: https://www.hugsql.org/
+
+**HugSQL support**: a small wrapper on top of the well-known [HugSQL
+library][hugsql] which creates Clojure function out from SQL files.
+
+~~~clojure
+;; lein
+[com.github.igrishaev/pg2-hugsql "0.1.10]
+
+;; deps
+com.github.igrishaev/pg2-hugsql {:mvn/version "0.1.10"}
+~~~
+
 ## Quick start (Demo)
 
 This is a very brief passage through the library:
@@ -1200,6 +1213,17 @@ syntax. Also, we produce a pretty-formatted SQL for better logs:
 
 For more options, please refer to the official [HoneySQL
 documentation][honeysql].
+
+## HugSQL Support
+
+The `pg2-hugsql` package brings integration with [HugSQL library][hugsql].
+Namely, it creates functions out from SQL files like HugSQL does but these
+functions use the PG2 client but not JDBC. Under the hood, there is a special
+database adapter as well as a slight override of protocols to make inner HugSQL
+stuff compatible with PG2.
+
+Since the package already depends on core HugSQL functionality, there is no need
+to add the latter to dependencies: having `pg2-hugsql` by itself will be enough.
 
 ## next.JDBC API layer
 
