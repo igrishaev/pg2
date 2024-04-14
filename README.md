@@ -86,10 +86,10 @@ decoding, COPY IN/OUT, SSL:
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-core "0.1.9<"]
+[com.github.igrishaev/pg2-core "0.1.11"]
 
 ;; deps
-com.github.igrishaev/pg2-core {:mvn/version "0.1.10"}
+com.github.igrishaev/pg2-core {:mvn/version "0.1.11"}
 ~~~
 
 **HoneySQL integration**: special version of `query` and `execute` that accept
@@ -99,10 +99,10 @@ etc).
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-honey "0.1.10"]
+[com.github.igrishaev/pg2-honey "0.1.11"]
 
 ;; deps
-com.github.igrishaev/pg2-honey {:mvn/version "0.1.10"}
+com.github.igrishaev/pg2-honey {:mvn/version "0.1.11"}
 ~~~
 
 [component]: https://github.com/stuartsierra/component
@@ -112,10 +112,10 @@ objects with the `Lifecycle` protocol from the [Component][component] library.
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-component "0.1.10"]
+[com.github.igrishaev/pg2-component "0.1.11"]
 
 ;; deps
-com.github.igrishaev/pg2-component {:mvn/version "0.1.10"}
+com.github.igrishaev/pg2-component {:mvn/version "0.1.11"}
 ~~~
 
 **Migrations**: a package that provides migration management: migrate forward,
@@ -123,10 +123,10 @@ rollback, create, list applied migrations and so on.
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-migration "0.1.10]
+[com.github.igrishaev/pg2-migration "0.1.11]
 
 ;; deps
-com.github.igrishaev/pg2-migration {:mvn/version "0.1.10"}
+com.github.igrishaev/pg2-migration {:mvn/version "0.1.11"}
 ~~~
 
 [hugsql]: https://www.hugsql.org/
@@ -136,10 +136,10 @@ library][hugsql] which creates Clojure functions out from SQL files.
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-hugsql "0.1.10]
+[com.github.igrishaev/pg2-hugsql "0.1.11]
 
 ;; deps
-com.github.igrishaev/pg2-hugsql {:mvn/version "0.1.10"}
+com.github.igrishaev/pg2-hugsql {:mvn/version "0.1.11"}
 ~~~
 
 ## Quick start (Demo)
@@ -778,11 +778,11 @@ Now it's ready for new queries again.
 
 [honeysql]: https://github.com/seancorfield/honeysql
 
-The `pg-honey` package allows you to call `query` and `execute` functions using
-maps rather than string SQL expressions. Internally, maps are transformed into
-SQL using the great [HoneySQL library][honeysql]. With HoneySQL, you don't need
-to format strings to build a SQL, which is clumsy and dangerous in terms of
-injections.
+The `pg-honey` package (see [Installation](#installation)) allows you to call
+`query` and `execute` functions using maps rather than string SQL
+expressions. Internally, maps are transformed into SQL using the great [HoneySQL
+library][honeysql]. With HoneySQL, you don't need to format strings to build a
+SQL, which is clumsy and dangerous in terms of injections.
 
 The package also provides several shortcuts for such common dutiles as get a
 single row by id, get a bunch of rows by their ids, insert a row having a map of
@@ -2447,7 +2447,7 @@ Now read it back:
 ## Migrations
 
 PG2 provides its own migration engine through the `pg2-migration` package (see
-the "Installation" section). Like Migratus or Ragtime, it allows to grow the
+[Installation](#installation)). Like Migratus or Ragtime, it allows to grow the
 database schema continuously, track changes and apply them with care.
 
 ### Concepts

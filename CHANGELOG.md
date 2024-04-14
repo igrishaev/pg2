@@ -1,7 +1,13 @@
 
-## 0.1.11-SNAPSHOT
+## 0.1.12-SNAPSHOT
 
 - ?
+
+## 0.1.11
+
+- HugSQL support via pg2-hugsql package
+- minor changes in readme
+- future todos added
 
 ## 0.1.10
 
