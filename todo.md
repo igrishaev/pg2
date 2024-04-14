@@ -6,10 +6,6 @@
 
 - enable binary by default?
 
-- hugsql adapter
-  - readme
-  - release
-
 - client_test: add CONFIG_TXT and CONFIG_BIN vars
 
 - oid wrapper?
