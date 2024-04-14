@@ -132,7 +132,7 @@ com.github.igrishaev/pg2-migration {:mvn/version "0.1.10"}
 [hugsql]: https://www.hugsql.org/
 
 **HugSQL support**: a small wrapper on top of the well-known [HugSQL
-library][hugsql] which creates Clojure function out from SQL files.
+library][hugsql] which creates Clojure functions out from SQL files.
 
 ~~~clojure
 ;; lein
@@ -1217,19 +1217,20 @@ documentation][honeysql].
 
 ## HugSQL Support
 
-The `pg2-hugsql` package brings integration with [HugSQL library][hugsql].
-Namely, it creates functions out from SQL files like HugSQL does but these
-functions use the PG2 client but not JDBC. Under the hood, there is a special
-database adapter as well as a slight override of protocols to make inner HugSQL
-stuff compatible with PG2.
+The `pg2-hugsql` package brings integration with the [HugSQL library][hugsql].
+It creates functions out from SQL files like HugSQL does but these functions use
+the PG2 client instead of JDBC. Under the hood, there is a special database
+adapter as well as a slight override of protocols to make inner HugSQL stuff
+compatible with PG2.
 
 Since the package already depends on core HugSQL functionality, there is no need
-to add the latter to dependencies: having `pg2-hugsql` by itself will be enough.
+to add the latter to dependencies: having `pg2-hugsql` by itself will be enough
+(see [Installation](#installation)).
 
 ### Basic Usage
 
-Let's go through a short demo. Prepare a .sql file with your queries like this
-one:
+Let's go through a short demo. Imagine we have a `demo.sql` file with the
+following queries:
 
 ~~~sql
 -- :name create-demo-table :!
@@ -1260,7 +1261,7 @@ update :i:table set title = :title where id = :id returning *;
 delete from :i:table;
 ~~~
 
-Then prepare a namespace with imports:
+Prepare a namespace with all the imports:
 
 ~~~clojure
 (ns pg.demo
@@ -1270,16 +1271,16 @@ Then prepare a namespace with imports:
    [pg.core :as pg]))
 ~~~
 
-To inject functions from the .sql file, call the `def-db-fns` function from the
-`pg.hugsql` namespace:
+To inject functions from the file, pass it into the `pg.hugsql/def-db-fns`
+function:
 
 ~~~clojure
 (hug/def-db-fns (io/file "test/demo.sql"))
 ~~~
 
-The function accepts either a string path to a file, a resource, or a `File`
+It accepts either a string path to a file, a resource, or a `File`
 object. Should there were no exceptions, and the file was correct, the current
-namespace will obtain new functions made from the file. Let's examine them and
+namespace will get new functions declared in the file. Let's examine them and
 their metadata:
 
 ~~~clojure
@@ -1298,7 +1299,7 @@ create-demo-table
  :ns #namespace[pg.demo]}
 ~~~
 
-Each newborn function has at most three bodies, namely:
+Each newborn function has at most three bodies:
 
 - `[db]`
 - `[db params]`
@@ -1306,14 +1307,13 @@ Each newborn function has at most three bodies, namely:
 
 where:
 
-- `db` is a source of a connection with the database. It might either a
-  Connection object, a plain Clojure config map, or a Pool object.
-- `params` is a map of HugSQL parameters;
-- `opt` is a map of PG2 execute parameters that affect processing the current
+- `db` is a source of a connection. It might either a `Connection` object, a
+  plain Clojure config map, or a `Pool` object.
+- `params` is a map of HugSQL parameters like `{:id 42}`;
+- `opt` is a map of `pg/execute` parameters that affect processing the current
   query.
 
-Now that we have function, let's call them. But we need to establish a
-connection first:
+Now that we have functions, let's call them. Establish a connection first:
 
 ~~~clojure
 (def config
@@ -1327,7 +1327,7 @@ connection first:
   (jdbc/get-connection config))
 ~~~
 
-Let's create a table for testing our queries:
+Let's create a table using the `create-demo-table` function:
 
 ~~~clojure
 (def TABLE "demo123")
@@ -1336,7 +1336,7 @@ Let's create a table for testing our queries:
 {:command "CREATE TABLE"}
 ~~~
 
-Then insert something into the table:
+Insert something into the table:
 
 ~~~clojure
 (insert-into-table conn {:table TABLE
@@ -1344,11 +1344,11 @@ Then insert something into the table:
 1
 ~~~
 
-The `insert-into-table` function has the `:n` flag in the source .sql
-file. Thus, it returns the number of rows affected by the command. Above, there
-was a single record inserted.
+The `insert-into-table` function has the `:n` flag in the source SQL file. Thus,
+it returns the number of rows affected by the command. Above, there was a single
+record inserted.
 
-Let's try an expression that inserts somethin and returns the data:
+Let's try an expression that inserts something and returns the data:
 
 ~~~clojure
 (insert-into-table-returning conn
@@ -1357,7 +1357,7 @@ Let's try an expression that inserts somethin and returns the data:
 [{:title "test", :id 2}]
 ~~~
 
-Now that we have something in the table, let's select it:
+Now that the table is not empty any longer, let's select from it:
 
 ~~~clojure
 (select-from-table conn {:table TABLE})
@@ -1366,8 +1366,8 @@ Now that we have something in the table, let's select it:
  {:title "test", :id 2}]
 ~~~
 
-The `get-by-id` shortcut fetches a single row by its primary key. It returs nil
-for a missing key:
+The `get-by-id` shortcut fetches a single row by its primary key. It returs
+`nil` for a missing key:
 
 ~~~clojure
 (get-by-id conn {:table TABLE
@@ -1379,9 +1379,9 @@ for a missing key:
 nil
 ~~~
 
-Its bulk counterpart `get-by-ids` relies on the `in (:v*:ids)` syntax which
-expands into the following SQL vector: `["... where id in ($1, $2, ... )" 1 2
-...]`
+Its bulk version called `get-by-ids` relies on the `in (:v*:ids)` HugSQL
+syntax. It expands into the following SQL vector: `["... where id in ($1, $2,
+... )" 1 2 ...]`
 
 ~~~sql
 -- :name get-by-ids :? :*
@@ -1404,8 +1404,6 @@ list". Such a parameter expects a sequence of sequences:
 -- :name insert-rows :<!
 insert into :i:table (id, title) values :t*:rows returning *;
 ~~~
-
-Pay attention it returns the rows created:
 
 ~~~clojure
 (insert-rows conn {:table TABLE
@@ -1435,25 +1433,26 @@ Finally, clean up the table:
 
 ### Passing the Source of a Connection
 
-Above, we've been passing a `Connection` object into the functions as the first
-argument. But it can be something else as well: a config map or a pool
-object. Here is an example with a plain config map:
+Above, we've been passing a `Connection` object called `conn` to all
+functions. But it can be something else as well: a config map or a pool
+object. Here is an example with a map:
 
 ~~~clojure
-(insert-rows config {:table TABLE
-                     :rows [[10 "test10"]
-                            [11 "test11"]
-                            [12 "test12"]]})
+(insert-rows {:host "..." :port ... :user "..."}
+             {:table TABLE
+              :rows [[10 "test10"]
+                     [11 "test11"]
+                     [12 "test12"]]})
 ~~~
 
 Pay attention that, when the first argument is a config map, a Connection object
-is established from it, and it gets closed afterward before exiting a
-function. This might break the pipeline if you need a sort of a state shared
-across a single connection. A temporary table is a good example. Once you close
-a connection, all the temporary tables created within this connection get
-wiped. Thus, if you created a temp table in the first function, and going to
-select from it from the second function, and you pass a plain config map, that
-won't work: the second function won't know anything about that table.
+is established from it, and then it gets closed afterward before exiting a
+function. This might break a pipeline if you rely on a state stored in a
+connection. A temporary table is a good example. Once you close a connection,
+all the temporary tables created within this connection get wiped. Thus, if you
+create a temp table in the first function, and select from it using the second
+function passing a config map, that won't work: the second function won't know
+anything about that table.
 
 The first argument might be a Pool instsance as well:
 
@@ -1470,13 +1469,13 @@ The first argument might be a Pool instsance as well:
 
 When the source a pool, each function call borrows a connection from it and
 returns it back afterwards. But you cannot be sure that both `get-by-id` calls
-share the same connection. Any parallel thread that uses the same pool may
-interfere and borrow a connection used in the first `get-by-id` before the
-second `get-by-id` call borrows it. As a result, any pipeline that relies on a
-shared state across two subsequent function calls might break.
+share the same connection. A parallel thread may interfere and borrow a
+connection used in the first `get-by-id` before the second `get-by-id` call
+acquires it. As a result, any pipeline that relies on a shared state across two
+subsequent function calls might break.
 
-To ensure the functions share the same connection, use `pg/with-connection` or
-`pool/with-connection` macros:
+To ensure the functions share the same connection, use either
+`pg/with-connection` or `pool/with-connection` macros:
 
 ~~~clojure
 (pool/with-pool [pool config]
@@ -1488,7 +1487,7 @@ To ensure the functions share the same connection, use `pg/with-connection` or
 
 Above, there is 100% guarantee that both `insert-into-table` calls share the
 same `conn` object borrowed from the pool. It is also wrapped into transaction
-which produces the following `BEGIN/COMMIT` session:
+which produces the following session:
 
 ~~~sql
 BEGIN
@@ -1502,8 +1501,8 @@ COMMIT
 ### Passing Options
 
 PG2 supports a lot of options when processing a query. To use them, pass a map
-into the third parameter of any function. Above, we'd like to override a
-function that processes column names. Let it be not the default `keyword` but
+into the third parameter of any function. Above, we override a function that
+processes column names. Let it be not the default `keyword` but
 `clojure.string/upper-case`:
 
 ~~~clojure
@@ -1514,9 +1513,8 @@ function that processes column names. Let it be not the default `keyword` but
 {"TITLE" "AAA", "ID" 1}
 ~~~
 
-If you need keys as strings in upper case everywhere, passing this map into each
-call might be inconvenient. The `def-db-fns` function accepts a map of
-predefined overrides:
+If you need such keys everywhere, submitting a map into each call might be
+inconvenient. The `def-db-fns` function accepts a map of predefined overrides:
 
 ~~~clojure
 (hug/def-db-fns
@@ -1524,8 +1522,8 @@ predefined overrides:
   {:fn-key str/upper-case})
 ~~~
 
-Now, all the generated functions will return string column names in upper case
-by default:
+Now, all the generated functions return string column names in upper case by
+default:
 
 ~~~clojure
 (get-by-id config
@@ -1533,6 +1531,9 @@ by default:
 
 {"TITLE" "AAA", "ID" 1}
 ~~~
+
+For more details, refer to the official [HugSQL][hugsql] documentation.
+
 
 ## Next.JDBC API layer
 
