@@ -14,6 +14,8 @@
 
 - copy in/out tab format
 
+- begin: iso level + read only at one query
+
 - ring jdbc session middleware
 
 - lazy map
