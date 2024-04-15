@@ -16,6 +16,8 @@
 
 - begin: iso level + read only at one query
 
+- read-only? conn opt: SET default_transaction_read_only = on
+
 - ring jdbc session middleware
 
 - lazy map
