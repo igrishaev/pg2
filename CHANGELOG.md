@@ -2,6 +2,7 @@
 ## 0.1.12-SNAPSHOT
 
 - pg.integration: config-txt and config-bin vars
+- pg.honey: on-connection wrapper
 
 ## 0.1.11
 

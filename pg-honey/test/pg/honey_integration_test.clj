@@ -68,16 +68,15 @@
 
 
 (deftest test-query
-  (pg/with-connection [conn CONFIG]
-    (let [res
-          (pgh/query conn
-                     {:select [:id]
-                      :from TABLE
-                      :where [:raw "active"]
-                      :limit [:raw 1]}
-                     {:fn-key identity
-                      :first? true})]
-      (is (= {"id" 1} res)))))
+  (let [res
+        (pgh/query CONFIG
+                   {:select [:id]
+                    :from TABLE
+                    :where [:raw "active"]
+                    :limit [:raw 1]}
+                   {:fn-key identity
+                    :first? true})]
+    (is (= {"id" 1} res))))
 
 
 (deftest test-queries
@@ -298,16 +297,15 @@
 
 (deftest test-delete-all
   (testing "delete all"
-    (pg/with-connection [conn CONFIG]
-      (let [res
-            (pgh/delete conn TABLE)
-            data
-            (pg/query conn "select * from test003")]
-        (is (= [{:name "Ivan", :active true, :id 1}
-                {:name "Huan", :active false, :id 2}
-                {:name "Juan", :active true, :id 3}]
-               res))
-        (is (= [] data))))))
+    (let [res
+          (pgh/delete CONFIG TABLE)
+          data
+          (pgh/find CONFIG TABLE)]
+      (is (= [{:name "Ivan", :active true, :id 1}
+              {:name "Huan", :active false, :id 2}
+              {:name "Juan", :active true, :id 3}]
+             res))
+      (is (= [] data)))))
 
 
 (deftest test-delete-with-extra-opts
@@ -354,12 +352,12 @@
 (deftest test-find-first
 
   (testing "simple find first"
-    (pg/with-connection [conn CONFIG]
-      (let [res
-            (pgh/find-first conn TABLE
-                            {:active true})]
-        (is (= {:name "Ivan", :active true, :id 1}
-               res)))))
+    (let [res
+          (pgh/find-first CONFIG
+                          TABLE
+                          {:active true})]
+      (is (= {:name "Ivan", :active true, :id 1}
+             res))))
 
   (testing "find fist with options"
     (pg/with-connection [conn CONFIG]

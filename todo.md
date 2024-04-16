@@ -1,26 +1,24 @@
 
 - readme
 
+- honey: docs about source
+- honey: transaction test
+
 - arrays
   - JSON: IPersistentMap only
-
-- on-connection in honey
 
 - json
   - test namespaces
 
 - enable binary by default?
-
-- oid wrapper?
-
-- reorganize the docs
-
-- copy in/out tab format
-
 - begin: iso level + read only at one query
-
 - read-only? conn opt: SET default_transaction_read_only = on
 
+- oid wrapper?
+- reorganize the docs
+- copy in/out tab format
+
+- pg.ring package (move json middleware)
 - ring jdbc session middleware
 
 - lazy map
