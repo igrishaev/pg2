@@ -4,9 +4,12 @@
 - arrays
   - JSON: IPersistentMap only
 
-- enable binary by default?
+- on-connection in honey
 
-- client_test: add CONFIG_TXT and CONFIG_BIN vars
+- json
+  - test namespaces
+
+- enable binary by default?
 
 - oid wrapper?
 
@@ -24,12 +27,7 @@
   - optional flag
   - deref realized
 
-- json
-  - test namespaces
-
 - pg-integration package?
-
-- on-connection in honey
 
 - rename Accum to Result
 

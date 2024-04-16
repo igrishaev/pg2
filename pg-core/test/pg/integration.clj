@@ -30,6 +30,19 @@
    :database DATABASE})
 
 
+(def ^:dynamic *CONFIG-TXT*
+  (assoc *CONFIG*
+         :binary-encode? false
+         :binary-decode? false))
+
+
+(def ^:dynamic *CONFIG-BIN*
+  (assoc *CONFIG*
+         :binary-encode? true
+         :binary-decode? true))
+
+
+
 (def ^:dynamic *DB-SPEC*
   {:dbtype "postgres"
    :port nil
@@ -45,6 +58,12 @@
 
               *CONFIG*
               (assoc *CONFIG* :port port)
+
+              *CONFIG-TXT*
+              (assoc *CONFIG-TXT* :port port)
+
+              *CONFIG-BIN*
+              (assoc *CONFIG-BIN* :port port)
 
               *DB-SPEC*
               (assoc *DB-SPEC* :port port)]

@@ -1,7 +1,7 @@
 
 ## 0.1.12-SNAPSHOT
 
-- ?
+- pg.integration: config-txt and config-bin vars
 
 ## 0.1.11
 

@@ -28,7 +28,8 @@
    [pg.component :as pgc]
    [pg.core :as pg]
    [pg.honey :as pgh]
-   [pg.integration :refer [*CONFIG*
+   [pg.integration :refer [*CONFIG-TXT*
+                           *CONFIG-BIN*
                            *PORT*
                            fix-multi-port]]
    [pg.oid :as oid]
@@ -58,7 +59,7 @@
 
 (deftest test-client-tx-status
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (is (= :I (pg/status conn)))
 
@@ -109,23 +110,21 @@ from
 
 
 (deftest test-client-complex-txt
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/query conn QUERY_SELECT_RANDOM_COMPLEX)]
       (is true))))
 
 
 (deftest test-client-complex-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/query conn QUERY_SELECT_RANDOM_COMPLEX)]
       (is true))))
 
 
 (deftest test-client-conn-str-print
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [repr
           (format "<PG connection test@127.0.0.1:%s/test>" *PORT*)]
       (is (= repr (str conn)))
@@ -134,15 +133,15 @@ from
 
 
 (deftest test-client-conn-equals
-  (pg/with-connection [conn1 *CONFIG*]
-    (pg/with-connection [conn2 *CONFIG*]
+  (pg/with-connection [conn1 *CONFIG-TXT*]
+    (pg/with-connection [conn2 *CONFIG-TXT*]
       (is (= conn1 conn1))
       (is (not= conn1 conn2)))))
 
 
 (deftest test-client-ok
   (let [result
-        (pg/with-connection [conn *CONFIG*]
+        (pg/with-connection [conn *CONFIG-TXT*]
           (pg/execute conn "select 1 as foo, 'hello' as bar"))]
     (is (= [{:foo 1 :bar "hello"}]
            result))))
@@ -151,7 +150,7 @@ from
 (deftest test-client-query-multiple
 
   (let [result
-        (pg/with-connection [conn *CONFIG*]
+        (pg/with-connection [conn *CONFIG-TXT*]
           (pg/query conn "select 1 as foo; select 'two' as bar"))]
 
     (is (= [[{:foo 1}]
@@ -162,7 +161,7 @@ from
 (deftest test-client-empty-query
 
   (let [result
-        (pg/with-connection [conn *CONFIG*]
+        (pg/with-connection [conn *CONFIG-TXT*]
           (pg/query conn ""))]
 
     (is (nil? result))))
@@ -170,27 +169,27 @@ from
 
 (deftest test-client-fn-column
   (let [result
-        (pg/with-connection [conn *CONFIG*]
+        (pg/with-connection [conn *CONFIG-TXT*]
           (pg/execute conn "select 1 as foo" {:fn-key str/upper-case}))]
     (is (= [{"FOO" 1}] result))))
 
 
 (deftest test-client-fn-column-kebab
   (let [result
-        (pg/with-connection [conn *CONFIG*]
+        (pg/with-connection [conn *CONFIG-TXT*]
           (pg/execute conn "select 1 as just_one" {:kebab-keys? true}))]
     (is (= [{:just-one 1}] result))))
 
 
 (deftest test-client-keyword-with-ns
   (let [result
-        (pg/with-connection [conn *CONFIG*]
+        (pg/with-connection [conn *CONFIG-TXT*]
           (pg/execute conn "select 1 as \"user/foo-bar\""))]
     (is (= [{:user/foo-bar 1}] result))))
 
 
 (deftest test-client-exception-in-the-middle
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (try
       (pg/execute conn "select $1 as foo" {:params [(new Object)]})
       (is false)
@@ -206,7 +205,7 @@ from
 
 
 (deftest test-client-reuse-conn
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res1
           (pg/query conn "select 1 as foo")
           res2
@@ -216,7 +215,7 @@ from
 
 
 (deftest test-client-lazy-map
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [[row1]
           (pg/query conn "select 42 as foo, 'test' as bar")]
 
@@ -244,7 +243,7 @@ from
 
 
 (deftest test-client-lazy-vector
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [[_ row1]
           (pg/query conn
                     "select 42 as foo, 'test' as bar, 43 as foo"
@@ -270,7 +269,7 @@ from
 
 (deftest test-client-socket-opt
 
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :so-keep-alive? true
                                    :so-tcp-no-delay? true
                                    :so-timeout 999
@@ -285,7 +284,7 @@ from
 
 (deftest test-client-65k-params-execute
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [ids
           (range 1 (inc 0xFFFF))
@@ -307,14 +306,14 @@ from
 
 
 (deftest test-client-with-tx-check
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-tx [conn]
       (is (pg/connection? conn)))))
 
 
 (deftest test-client-with-transaction-ok
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [res1
           (pg/with-tx [conn]
@@ -330,7 +329,7 @@ from
 
 (deftest test-client-with-transaction-read-only
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [res1
           (pg/with-tx [conn {:read-only? true}]
@@ -347,7 +346,7 @@ from
 
 
 (deftest test-client-bpchar-txt
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-tx [conn]
       (pg/execute conn "create temp table foo123 (data bpchar)")
       (pg/execute conn "insert into foo123 values ('test')")
@@ -358,9 +357,7 @@ from
 
 
 (deftest test-client-bpchar-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (pg/with-tx [conn]
       (pg/execute conn "create temp table foo123 (data bpchar)")
       (pg/execute conn "insert into foo123 values ('test')")
@@ -372,7 +369,7 @@ from
 
 (deftest test-exeplain-analyze
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [result
           (pg/execute conn "explain analyze select 42")
@@ -393,7 +390,7 @@ from
   (let [table
         (gen-table)]
 
-    (pg/with-connection [conn *CONFIG*]
+    (pg/with-connection [conn *CONFIG-TXT*]
 
       (pg/execute conn (format "create table %s (id integer)" table))
 
@@ -404,7 +401,7 @@ from
               (pg/execute conn (format "select * from %s" table))
 
               res2
-              (pg/with-connection [conn2 *CONFIG*]
+              (pg/with-connection [conn2 *CONFIG-TXT*]
                 (pg/execute conn2 (format "select * from %s" table)))]
 
           (is (= [{:id 1} {:id 2}] res1))
@@ -418,9 +415,7 @@ from
         type-name
         (gen-type)]
 
-    (pg/with-connection [conn (assoc *CONFIG*
-                                     :binary-encode? true
-                                     :binary-decode? true)]
+    (pg/with-connection [conn *CONFIG-BIN*]
       (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
       (pg/execute conn (format "create table %s (id integer, foo %s)" table type-name))
       (pg/execute conn (format "insert into %s values (1, 'foo'), (2, 'bar')" table))
@@ -452,7 +447,7 @@ from
   (let [table
         (gen-table)]
 
-    (pg/with-connection [conn *CONFIG*]
+    (pg/with-connection [conn *CONFIG-TXT*]
 
       (pg/execute conn (format "create table %s (id integer)" table))
 
@@ -466,7 +461,7 @@ from
 
 
 (deftest test-client-create-table
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -491,7 +486,7 @@ from
           (swap! capture! conj msg))
 
         config+
-        (assoc *CONFIG* :fn-notification fn-notification)]
+        (assoc *CONFIG-BIN* :fn-notification fn-notification)]
 
     (pg/with-connection [conn config+]
 
@@ -547,7 +542,7 @@ from
               (swap! capture! conj e))))
 
         config+
-        (assoc *CONFIG* :fn-notification fn-notification)]
+        (assoc *CONFIG-TXT* :fn-notification fn-notification)]
 
     (pg/with-connection [conn config+]
 
@@ -594,9 +589,9 @@ from
           (swap! capture! conj msg))
 
         config+
-        (assoc *CONFIG* :fn-notification fn-notification)]
+        (assoc *CONFIG-TXT* :fn-notification fn-notification)]
 
-    (pg/with-connection [conn1 *CONFIG*]
+    (pg/with-connection [conn1 *CONFIG-TXT*]
       (pg/with-connection [conn2 config+]
 
         (let [pid1 (pg/pid conn1)
@@ -622,7 +617,7 @@ from
 
 
 (deftest test-client-broken-query
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (try
       (pg/execute conn "selekt 1")
       (is false "must have been an error")
@@ -636,7 +631,7 @@ from
 
 (deftest test-client-error-response
   (let [config
-        (assoc *CONFIG* :pg-params {"pg_foobar" "111"})]
+        (assoc *CONFIG-TXT* :pg-params {"pg_foobar" "111"})]
     (try
       (pg/with-connection [conn config]
         42)
@@ -648,7 +643,7 @@ from
 
 (deftest test-pg-error-response-fields
   (let [config
-        (assoc *CONFIG* :pg-params {"pg_foobar" "111"})]
+        (assoc *CONFIG-TXT* :pg-params {"pg_foobar" "111"})]
     (try
       (pg/with-connection [conn config]
         42)
@@ -669,7 +664,7 @@ from
 (deftest test-client-wrong-startup-params
 
   (let [config
-        (assoc *CONFIG* :pg-params {"application_name" "Clojure"
+        (assoc *CONFIG-TXT* :pg-params {"application_name" "Clojure"
                                     "DateStyle" "ISO, MDY"})]
 
     (pg/with-connection [conn config]
@@ -679,14 +674,14 @@ from
 
 
 (deftest test-terminate-closed
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/close conn)
     (is (pg/closed? conn))))
 
 
 (deftest test-client-prepare
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query1
           "prepare foo as select $1::integer as num"
@@ -713,7 +708,7 @@ from
 
 (deftest test-client-cursor
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -762,7 +757,7 @@ from
         (atom [])
 
         config
-        (assoc *CONFIG*
+        (assoc *CONFIG-TXT*
                :protocol-version 196609
                :fn-protocol-version
                (fn [msg]
@@ -781,7 +776,7 @@ from
 
 (deftest test-client-wrong-major-protocol
   (let [config
-        (assoc *CONFIG* :protocol-version 296608)]
+        (assoc *CONFIG-TXT* :protocol-version 296608)]
     (try
       (pg/with-connection [conn config]
         (pg/execute conn "select 1 as foo"))
@@ -792,7 +787,7 @@ from
 
 
 (deftest test-client-empty-select
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -813,7 +808,7 @@ from
 
 
 (deftest test-client-insert-result-returning
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -840,7 +835,7 @@ from
         (atom nil)
 
         config
-        (assoc *CONFIG* :fn-notice
+        (assoc *CONFIG-TXT* :fn-notice
                (fn [message]
                  (reset! capture! message)))]
 
@@ -862,7 +857,7 @@ from
 
 
 (deftest test-client-insert-result-no-returning
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -883,7 +878,7 @@ from
 
 
 (deftest test-client-select-fn-first
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -910,14 +905,14 @@ from
 
 
 (deftest test-prepare-result
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/prepare conn "select $1::integer as foo")]
       (is (pg/prepared-statement? res)))))
 
 
 (deftest test-prepare-with-oids
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [stmt
           (pg/prepare conn
                       "select $1 as foo"
@@ -931,7 +926,7 @@ from
 
 
 (deftest test-statement-params-wrong-count
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-statement [stmt conn "select $1::integer as foo, $2::integer as bar"]
       (try
         (pg/execute-statement conn stmt {:params [1]})
@@ -942,7 +937,7 @@ from
 
 
 (deftest test-statement-params-nil
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-statement [stmt conn "select 42 as answer"]
       (let [res (pg/execute-statement conn stmt {:params nil})]
         (is (= [{:answer 42}] res))))))
@@ -950,7 +945,7 @@ from
 
 (deftest test-prepare-execute
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/with-statement [stmt conn "select $1::integer as foo"]
 
@@ -966,7 +961,7 @@ from
 
 (deftest test-prepare-execute-with-options
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/with-statement [stmt conn "select $1::integer as foo"]
 
@@ -983,7 +978,7 @@ from
 
 
 (deftest test-client-delete-result
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -1010,7 +1005,7 @@ from
 
 
 (deftest test-client-update-result
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -1037,7 +1032,7 @@ from
 
 
 (deftest test-client-mixed-result
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -1070,7 +1065,7 @@ drop table %1$s;
 
 
 (deftest test-client-truncate-result
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -1097,21 +1092,21 @@ drop table %1$s;
 
 
 (deftest test-client-select-multi
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/query conn "select 1 as foo; select 2 as bar")]
       (is (= [[{:foo 1}] [{:bar 2}]] res)))))
 
 
 (deftest test-client-field-duplicates
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn "select 1 as id, 2 as id")]
       (is (= [{:id 1 :id_1 2}] res)))))
 
 
 (deftest test-client-insert-simple
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [table
           (gen-table)
 
@@ -1132,21 +1127,21 @@ drop table %1$s;
 
 
 (deftest test-client-json-read
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn "select '[1, 2, 3]'::json as arr")]
       (is (= [{:arr [1 2 3]}] res)))))
 
 
 (deftest test-client-jsonb-read
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn "select '{\"foo\": 123}'::jsonb as obj")]
       (is (= [{:obj {:foo 123}}] res)))))
 
 
 (deftest test-client-json-wrapper
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select $1::json as obj"
@@ -1156,7 +1151,7 @@ drop table %1$s;
 
 
 (deftest test-client-json-wrapper-nil
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select $1::json as obj"
@@ -1166,7 +1161,7 @@ drop table %1$s;
 
 
 (deftest test-client-json-write
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select $1::json as obj"
@@ -1177,33 +1172,25 @@ drop table %1$s;
 
 (deftest test-client-jsonb-parsing-version
 
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn
                       "select '[1, 2, 3]'::json as obj")]
       (is (= [{:obj [1 2 3]}] res))))
 
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn
                       "select '[1, 2, 3]'::jsonb as obj")]
       (is (= [{:obj [1 2 3]}] res))))
 
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? false
-                                   :binary-decode? false)]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select '[1, 2, 3]'::jsonb as obj")]
       (is (= [{:obj [1 2 3]}] res))))
 
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn
                       "select $1::jsonb as obj"
@@ -1212,7 +1199,7 @@ drop table %1$s;
 
 
 (deftest test-client-json-write-no-hint
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select $1::json as obj"
@@ -1222,7 +1209,7 @@ drop table %1$s;
 
 
 (deftest test-client-json-write-oid-hint
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select $1 as obj"
@@ -1233,7 +1220,7 @@ drop table %1$s;
 
 
 (deftest test-client-jsonb-write
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [json
           [1 2 [true {:foo 1}]]
 
@@ -1246,7 +1233,7 @@ drop table %1$s;
 
 
 (deftest test-client-json-read-txt-object-mapper
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? false
                                    :binary-decode? false
                                    :object-mapper custom-mapper)]
@@ -1256,7 +1243,7 @@ drop table %1$s;
 
 
 (deftest test-client-json-read-bin-object-mapper
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? true
                                    :binary-decode? true
                                    :object-mapper custom-mapper)]
@@ -1266,7 +1253,7 @@ drop table %1$s;
 
 
 (deftest test-client-json-write-txt-object-mapper
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? false
                                    :binary-decode? false
                                    :object-mapper custom-mapper)]
@@ -1278,7 +1265,7 @@ drop table %1$s;
 
 
 (deftest test-client-json-write-bin-object-mapper
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? true
                                    :binary-decode? true
                                    :object-mapper custom-mapper)]
@@ -1290,32 +1277,32 @@ drop table %1$s;
 
 
 (deftest test-client-default-oid-long
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select $1::int8 as foo" {:params [42]})]
       (is (= [{:foo 42}] res)))))
 
 
 (deftest test-client-default-oid-uuid
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [uid (random-uuid)
           res (pg/execute conn "select $1::uuid as foo" {:params [uid]})]
       (is (= [{:foo uid}] res)))))
 
 
 (deftest test-client-execute-sqlvec
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select $1 as foo" {:params ["hi"]})]
       (is (= [{:foo "hi"}] res)))))
 
 
 (deftest test-client-execute-sqlvec-no-params
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select 42 as foo")]
       (is (= [{:foo 42}] res)))))
 
 
 (deftest test-client-timestamptz-read
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '2022-01-01 23:59:59.123+03'::timestamptz as obj")
           obj (-> res first :obj)]
       (is (instance? OffsetDateTime obj))
@@ -1323,7 +1310,7 @@ drop table %1$s;
 
 
 (deftest test-client-timestamptz-pass
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-statement [stmt conn "select $1::timestamptz as obj"]
       (let [inst
             (Instant/parse "2022-01-01T20:59:59.123456Z")
@@ -1336,7 +1323,7 @@ drop table %1$s;
 
 
 (deftest test-client-timestamp-read
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '2022-01-01 23:59:59.123+03'::timestamp as obj")
           obj (-> res first :obj)]
       (is (instance? LocalDateTime obj))
@@ -1344,7 +1331,7 @@ drop table %1$s;
 
 
 (deftest test-client-timestamp-pass
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-statement [stmt conn "select $1::timestamp as obj"]
       (let [inst
             (Instant/parse "2022-01-01T20:59:59.000000123Z")
@@ -1356,7 +1343,7 @@ drop table %1$s;
 
 
 (deftest test-client-instant-date-read
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '2022-01-01 23:59:59.123+03'::date as obj")
           obj (-> res first :obj)]
       (is (instance? LocalDate obj))
@@ -1364,7 +1351,7 @@ drop table %1$s;
 
 
 (deftest test-client-pass-date-timestamptz
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [date
           (new Date 85 11 31 23 59 59)
 
@@ -1380,7 +1367,7 @@ drop table %1$s;
 
 (deftest test-client-date-pass-date
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [date
           (new Date 85 11 31 23 59 59)
 
@@ -1393,7 +1380,7 @@ drop table %1$s;
 
 (deftest test-client-read-time
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn "select now()::time as time")
 
@@ -1405,7 +1392,7 @@ drop table %1$s;
 
 (deftest test-client-pass-time
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [time1
           (LocalTime/now)
 
@@ -1420,7 +1407,7 @@ drop table %1$s;
 
 (deftest test-client-read-timetz
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn "select now()::timetz as timetz")
 
@@ -1432,7 +1419,7 @@ drop table %1$s;
 
 (deftest test-client-pass-timetz
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [time1
           (OffsetTime/now)
 
@@ -1446,14 +1433,14 @@ drop table %1$s;
 
 
 (deftest test-client-conn-with-open
-  (with-open [conn (pg/connect *CONFIG*)]
+  (with-open [conn (pg/connect *CONFIG-TXT*)]
     (let [res (pg/execute conn "select 1 as one")]
       (is (= [{:one 1}] res)))))
 
 
 (deftest test-client-prepare-&-close-ok
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [stmt
           (pg/prepare conn "select 1 as foo")]
@@ -1474,7 +1461,7 @@ drop table %1$s;
 
 
 (deftest test-execute-row-limit
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo as (values (1, 2), (3, 4), (5, 6)) select * from foo"]
@@ -1489,7 +1476,7 @@ drop table %1$s;
 
 
 (deftest test-execute-recover-from-exception
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo as (values (1, 2), (3, 4), (5, 6)) select * from foo"]
@@ -1511,7 +1498,7 @@ drop table %1$s;
 
 
 (deftest test-execute-row-limit-int32-unsigned
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo as (values (1, 2), (3, 4), (5, 6)) select * from foo"]
@@ -1529,7 +1516,7 @@ drop table %1$s;
 
 (deftest test-acc-as-java
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
@@ -1551,7 +1538,7 @@ drop table %1$s;
 
 (deftest test-acc-as-index-by
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
@@ -1568,7 +1555,7 @@ drop table %1$s;
 
 (deftest test-acc-as-group-by
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
@@ -1584,7 +1571,7 @@ drop table %1$s;
 
 (deftest test-acc-as-kv
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
@@ -1600,7 +1587,7 @@ drop table %1$s;
 
 (deftest test-acc-as-run
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
@@ -1623,7 +1610,7 @@ drop table %1$s;
 
 (deftest test-query-recover-from-exception
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [capture!
           (atom [])
@@ -1654,7 +1641,7 @@ drop table %1$s;
 
 (deftest test-acc-as-fold
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
@@ -1671,7 +1658,7 @@ drop table %1$s;
 
 (deftest test-acc-as-matrix
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
@@ -1688,7 +1675,7 @@ drop table %1$s;
 
 (deftest test-acc-as-first
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
@@ -1700,7 +1687,7 @@ drop table %1$s;
 
 
 (deftest test-conn-params
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [params (pg/get-parameters conn)]
       (is (= {"IntervalStyle" "postgres"
               "client_encoding" "UTF8"
@@ -1726,7 +1713,7 @@ drop table %1$s;
 
 
 (deftest test-two-various-params
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select $1::int8 = $1::int4 as eq"
@@ -1735,16 +1722,14 @@ drop table %1$s;
 
 
 (deftest test-pass-and-get-nil
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select null as one, $1::int2 as two"
                       {:params [nil]})]
       (is (= [{:one nil, :two nil}] res))))
 
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn
                       "select null as one, $1::int2 as two"
@@ -1753,7 +1738,7 @@ drop table %1$s;
 
 
 (deftest test-execute-weird-param
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [stmt
           (pg/prepare conn "select $1::int8 = $1::int4 as eq")]
 
@@ -1771,7 +1756,7 @@ drop table %1$s;
 (deftest test-statement-repr
   (let [repr
         "<Prepared statement, name: s1, param(s): 1, OIDs: [INT4], SQL: select $1::int4 as foo>"]
-    (pg/with-connection [conn *CONFIG*]
+    (pg/with-connection [conn *CONFIG-TXT*]
       (pg/with-statement [stmt conn "select $1::int4 as foo"]
         (is (= repr (str stmt)))
         (is (= repr (with-out-str
@@ -1779,52 +1764,50 @@ drop table %1$s;
 
 
 (deftest test-empty-select
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select")]
       (is (= [{}] res)))))
 
 
 (deftest test-encode-binary-simple
-  (pg/with-connection [conn (assoc *CONFIG* :binary-encode? true)]
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :binary-encode? true)]
     (let [res (pg/execute conn "select $1::integer as num" {:params [42]})]
       (is (= [{:num 42}] res)))))
 
 
 (deftest test-decode-binary-simple
-  (pg/with-connection [conn (assoc *CONFIG* :binary-decode? true)]
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :binary-decode? true)]
     (let [res (pg/execute conn "select $1::integer as num" {:params [42]})]
       (is (= [{:num 42}] res)))))
 
 
 (deftest test-decode-binary-unsupported
-  (pg/with-connection [conn (assoc *CONFIG* :binary-decode? true)]
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :binary-decode? true)]
     (let [res (pg/execute conn "select '1 year 1 second'::interval as interval")]
       (is (= [{:interval [0 0 0 0 0 15 66 64 0 0 0 0 0 0 0 12]}]
              (update-in res [0 :interval] vec))))))
 
 
 (deftest test-decode-text-unsupported
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '1 year 1 second'::interval as interval")]
       (is (= [{:interval "1 year 00:00:01"}] res)))))
 
 
 (deftest test-decode-binary-text
-  (pg/with-connection [conn (assoc *CONFIG* :binary-decode? true)]
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :binary-decode? true)]
     (let [res (pg/execute conn "select 'hello'::text as text")]
       (is (= [{:text "hello"}] res)))))
 
 
 (deftest test-decode-binary-varchar
-  (pg/with-connection [conn (assoc *CONFIG* :binary-decode? true)]
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :binary-decode? true)]
     (let [res (pg/execute conn "select 'hello'::varchar as text")]
       (is (= [{:text "hello"}] res)))))
 
 
 (deftest test-decode-text-and-binary-char
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
 
     (let [res (pg/execute conn "select 'abc'::\"char\" as char")]
       (is (= [{:char \a}] res)))
@@ -1836,7 +1819,7 @@ drop table %1$s;
                                                     :oids [oid/char]})]
       (is (= [{:char \a}] res))))
 
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? false
                                    :binary-decode? false)]
 
@@ -1852,21 +1835,19 @@ drop table %1$s;
 
 
 (deftest test-decode-oid
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select $1::oid as oid" {:params [42]})]
       (is (= [{:oid 42}] res)))))
 
 
 (deftest test-decode-oid-binary
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res (pg/execute conn "select $1::oid as oid" {:params [42]})]
       (is (= [{:oid 42}] res)))))
 
 
 (deftest test-uuid-text
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [uuid
           (random-uuid)
           res
@@ -1875,9 +1856,7 @@ drop table %1$s;
 
 
 (deftest test-uuid-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [uuid
           (random-uuid)
           res
@@ -1886,9 +1865,7 @@ drop table %1$s;
 
 
 (deftest test-time-bin-read
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn "select '12:01:59.123456789+03'::time as time")
           time
@@ -1898,9 +1875,7 @@ drop table %1$s;
 
 
 (deftest test-timetz-bin-read
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn "select '12:01:59.123456789+03'::timetz as timetz")
           timetz
@@ -1910,9 +1885,7 @@ drop table %1$s;
 
 
 (deftest test-timestamp-bin-read
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn "select '2022-01-01 12:01:59.123456789+03'::timestamp as ts")
           ts
@@ -1922,9 +1895,7 @@ drop table %1$s;
 
 
 (deftest test-timestamptz-bin-read
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn "select '2022-01-01 12:01:59.123456789+03'::timestamptz as tstz")
           tstz
@@ -1934,9 +1905,7 @@ drop table %1$s;
 
 
 (deftest test-date-bin-read
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res
           (pg/execute conn "select '2022-01-01 12:01:59.123456789+03'::date as date")
           date
@@ -1946,9 +1915,7 @@ drop table %1$s;
 
 
 (deftest test-pass-zoned-time-timetz-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
           (OffsetTime/now)
 
@@ -1964,9 +1931,7 @@ drop table %1$s;
 
 
 (deftest test-pass-local-time-time-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
           (LocalTime/now)
 
@@ -1981,9 +1946,7 @@ drop table %1$s;
 
 
 (deftest test-pass-instant-timestamptz-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
           (Instant/now)
 
@@ -1997,9 +1960,7 @@ drop table %1$s;
 
 
 (deftest test-pass-instant-timestamp-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
           (Instant/parse "2023-07-25T12:36:15.981981Z")
 
@@ -2014,9 +1975,7 @@ drop table %1$s;
 
 
 (deftest test-pass-date-timestamp-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
           (new Date 123123123123123)
           ;; 5871-08-14T03:32:03.123-00:00
@@ -2031,9 +1990,7 @@ drop table %1$s;
 
 
 (deftest test-pass-date-timestamptz-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
           (new Date 123123123123123)
           ;; 5871-08-14T03:32:03.123-00:00
@@ -2048,7 +2005,7 @@ drop table %1$s;
 
 
 (deftest test-read-write-numeric-txt
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [x1
           (bigdec "-123.456")
 
@@ -2062,9 +2019,7 @@ drop table %1$s;
 
 
 (deftest test-read-write-numeric-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
           (bigdec "-123.456")
 
@@ -2078,7 +2033,7 @@ drop table %1$s;
 
 
 (deftest test-with-timeout-no-cancell
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-timeout [conn 2000]
       (let [res
             (pg/query conn "select pg_sleep(1) as sleep")]
@@ -2090,7 +2045,7 @@ drop table %1$s;
 
 
 (deftest test-with-timeout-do-cancell
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-timeout [conn 100]
       (try
         (pg/query conn "select pg_sleep(999) as sleep")
@@ -2107,7 +2062,7 @@ drop table %1$s;
 (deftest test-cancel-query
 
   (let [conn1
-        (pg/connect *CONFIG*)
+        (pg/connect *CONFIG-TXT*)
 
         fut
         (future
@@ -2138,7 +2093,7 @@ drop table %1$s;
 
 (deftest test-copy-out-broken-stream
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [sql
           "copy (select s.x as x, s.x * s.x as square from generate_series(1, 9) as s(x)) TO STDOUT WITH (FORMAT CSV)"
@@ -2164,7 +2119,7 @@ drop table %1$s;
 
 (deftest test-copy-out-api-txt
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [sql
           "copy (select s.x as x, s.x * s.x as square from generate_series(1, 9) as s(x)) TO STDOUT WITH (FORMAT CSV)"
@@ -2197,7 +2152,7 @@ drop table %1$s;
 
 (deftest test-copy-out-api-bin
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [sql
           "copy (select s.x as x, s.x * s.x as square from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT BINARY)"
@@ -2216,7 +2171,7 @@ drop table %1$s;
 
 (deftest test-copy-out-api-multiple-expressions
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [sql
           "select 42; copy (select s.x as x, s.x * s.x as square from generate_series(1, 9) as s(x)) TO STDOUT WITH (FORMAT CSV)"
@@ -2236,7 +2191,7 @@ drop table %1$s;
 
 (deftest test-copy-out-query
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [sql
           "
@@ -2274,7 +2229,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-stream-csv
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id bigint, name text, active boolean)")
 
@@ -2309,7 +2264,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-stream-csv-broken-stream
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id bigint, name text, active boolean)")
 
@@ -2334,7 +2289,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-rows-exception-in-the-middle
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id bigint, name text, active boolean, note text)")
 
@@ -2362,7 +2317,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-rows-ok-csv
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id bigint, name text, active boolean, note text)")
 
@@ -2392,7 +2347,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-rows-null-values
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id bigint, name text, active boolean, note text)")
 
@@ -2418,7 +2373,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-rows-ok-csv-wrong-oids
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2)")
 
@@ -2435,7 +2390,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-rows-ok-bin
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2, name text, active boolean, note text)")
 
@@ -2462,7 +2417,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-broken-csv
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id bigint, name text, active boolean)")
 
@@ -2488,7 +2443,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-maps-ok-csv
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2, name text, active boolean, note text)")
 
@@ -2519,7 +2474,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-maps-wrong-oid
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2, name text, active boolean, note text)")
 
@@ -2550,7 +2505,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-maps-ok-bin
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2, name text, active boolean, note text)")
 
@@ -2581,7 +2536,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-maps-error-in-the-middle
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2, name text, active boolean, note text)")
 
@@ -2613,7 +2568,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-rows-empty-csv
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2, name text, active boolean, note text)")
 
@@ -2633,7 +2588,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-maps-some-rows-null
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2, name text, active boolean, note text)")
 
@@ -2665,7 +2620,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-copy-in-maps-empty-bin
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2, name text, active boolean, note text)")
 
@@ -2685,9 +2640,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-client-array-read-bin-simple
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res (pg/execute conn
                           "select '{1,2,3}'::int[] as arr"
                           {:first? true})]
@@ -2696,9 +2649,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-client-array-read-bin-multi
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [res (pg/execute conn
                           "select '{{1,2,3},{4,5,6}}'::int[][] as arr"
                           {:first? true})]
@@ -2710,7 +2661,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-array-read-bin
-  (pg/with-connection [conn (assoc *CONFIG* :binary-decode? true)]
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :binary-decode? true)]
 
     (let [res (pg/execute conn "select '{1,2,3}'::int[] as array")]
       (is (= [{:array [1 2 3]}] res)))
@@ -2753,9 +2704,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-array-weird-text-bin
-  (pg/with-connection [conn (assoc *CONFIG*
-                                   :binary-encode? true
-                                   :binary-decode? true)]
+  (pg/with-connection [conn *CONFIG-BIN*]
     (let [weird-word
           "\"{}(),,'''\" !@#$%^&*()_\\+AS<>??~\\\\sfd \\\r\n\t\bsdf"
 
@@ -2771,7 +2720,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-array-weird-text-txt
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? false
                                    :binary-decode? false)]
     (let [weird-word
@@ -2789,7 +2738,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-array-null-string-bin-txt
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? true
                                    :binary-decode? false)]
     (let [arr [nil "null" "NULL" nil "!!@#$%^&*()\"\\{}[]--`\r\b\n\f\tkek"]
@@ -2800,7 +2749,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-array-null-string-txt-bin
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? false
                                    :binary-decode? true)]
     (let [arr [nil "null" "NULL" nil "!!@#$%^&*()\"\\{}[]--`\r\b\n\f\tkek"]
@@ -2811,7 +2760,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-array-multi-dim-bin-txt
-  (pg/with-connection [conn (assoc *CONFIG*
+  (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? true
                                    :binary-decode? false)]
     (let [arr
@@ -2829,7 +2778,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-array-in-array
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [arr [1 2 3]
           res (pg/execute conn
                           "select 2 = ANY ($1) as in_array"
@@ -2839,7 +2788,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-honey-query
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pgh/query conn
                      {:select [[[:inline "string"] :foo]]}
@@ -2850,7 +2799,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-honey-execute
 
-  (pg/with-connection [conn *CONFIG*]
+  (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [table
           (gen-table)
@@ -2888,7 +2837,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 (deftest test-component-connection
 
   (let [c-init
-        (pgc/connection *CONFIG*)
+        (pgc/connection *CONFIG-TXT*)
 
         c-started
         (component/start c-init)
@@ -2908,7 +2857,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 (deftest test-component-pool
 
   (let [c-init
-        (pgc/pool *CONFIG*)
+        (pgc/pool *CONFIG-TXT*)
 
         c-started
         (component/start c-init)
