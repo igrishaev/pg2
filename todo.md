@@ -31,6 +31,12 @@
 
 - rename Accum to Result
 
+- docs:
+  - pool
+  - execute parameters
+  - reducers
+  - enums
+
 - pool close conn test
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
