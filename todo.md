@@ -1,14 +1,7 @@
 
 - readme
 
-- honey: docs about source
 - honey: transaction test
-
-- arrays
-  - JSON: IPersistentMap only
-
-- json
-  - test namespaces
 
 - enable binary by default?
 - begin: iso level + read only at one query

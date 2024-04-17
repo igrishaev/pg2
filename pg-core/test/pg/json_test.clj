@@ -28,6 +28,22 @@
     :decode-key-fn (comp keyword reverse-string)}))
 
 
+(deftest test-json-namespaces
+
+  (let [data
+        {:foo/bar [:aaa/test {:test/aaa 42}]}
+
+        encoded
+        (pg/encode-txt data oid/json)
+
+        decoded
+        (pg/decode-txt encoded oid/jsonb)]
+
+    (is (string? encoded))
+    (is (= {:foo/bar ["aaa/test" {:test/aaa 42}]}
+           decoded))))
+
+
 (deftest test-json-txt
 
   (let [data

@@ -52,7 +52,7 @@ classes are supported for reading and writing.
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
 - [Connection state](#connection-state)
-- [HoneySQL Integration & Shortcuts](#honeysql-integration--shortcuts)
+- [HoneySQL Integration](#honeysql-integration)
 - [HugSQL Support](#hugsql-support)
 - [Next.JDBC API layer](#nextjdbc-api-layer)
 - [Enums](#enums)
@@ -774,7 +774,7 @@ true
 
 Now it's ready for new queries again.
 
-## HoneySQL Integration & Shortcuts
+## HoneySQL Integration
 
 [honeysql]: https://github.com/seancorfield/honeysql
 
@@ -826,6 +826,9 @@ default:
 (pgh/get-by-id conn :test003 1)
 ;; {:name "Ivan", :active true, :id 1}
 ~~~
+
+*Here and below: pass a `Connection` object to the first argument but it could
+be a plain config map or a `Pool` instance as well.*
 
 With options, you can specify the name of the primary key and the column names
 you're interested in:
@@ -1940,18 +1943,11 @@ Another way is to use HoneySQL parameters conception:
                 {:honey {:params {:data {:some [:json {:map [1 2 3]}]}}}})
 ~~~
 
-For details, see the "HoneySQL Integration" section.
+For details, see the [HoneySQL Integration](#honeysql-integration) section.
 
-PG2 supports not only Clojure maps but vectors, sets, and lists. Here is an
-example with with a vector:
-
-~~~clojure
-(pg/execute conn
-            "insert into test_json (data) values ($1)"
-            {:params [[:some :vector [:nested :vector]]]})
-
-{:id 3, :data ["some" "vector" ["nested" "vector"]]}
-~~~
+PG2 supports only Clojure maps when encoding values into JSON. Vectors and other
+sequential values are treated as arrays. For details, see the [Arrays
+support](#arrays-support) section.
 
 ### Json Wrapper
 

@@ -78,36 +78,43 @@ public record ConnConfig(
             this.pgParams.put("application_name", Const.APP_NAME);
         }
 
+        @SuppressWarnings("unused")
         public Builder sslContext(final SSLContext sslContext) {
             this.sslContext = sslContext;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder objectMapper(final ObjectMapper objectMapper) {
             this.objectMapper = objectMapper;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder cancelTimeoutMs(final long cancelTimeoutMs) {
             this.cancelTimeoutMs = cancelTimeoutMs;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder protocolVersion(final int protocolVersion) {
             this.protocolVersion = protocolVersion;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder logLevel(final System.Logger.Level level) {
             this.logLevel = level;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder binaryEncode(final boolean binaryEncode) {
             this.binaryEncode = binaryEncode;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder fnNotification(final IFn fnNotification) {
             this.fnNotification = Objects.requireNonNull(
                     fnNotification,
@@ -116,6 +123,7 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder fnNotice(final IFn fnNotice) {
             this.fnNotice = Objects.requireNonNull(
                     fnNotice,
@@ -124,6 +132,7 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder fnProtocolVersion(final IFn fnProtocolVersion) {
             this.fnProtocolVersion = Objects.requireNonNull(
                     fnProtocolVersion,
@@ -137,16 +146,19 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder useSSL(final boolean useSSL) {
             this.useSSL = useSSL;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder pgParams(final Map<String, String> pgParams) {
             this.pgParams.putAll(pgParams);
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder pgParam(final String param, final String value) {
             this.pgParams.put(param, value);
             return this;
@@ -171,31 +183,37 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOTCPnoDelay(final boolean SOTCPnoDelay) {
             this.SOTCPnoDelay = SOTCPnoDelay;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOTimeout(final int SOTimeout) {
             this.SOTimeout = SOTimeout;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOReceiveBufSize(final int SOReceiveBufSize) {
             this.SOReceiveBufSize = SOReceiveBufSize;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOSendBufSize(final int SOSendBufSize) {
             this.SOSendBufSize = SOSendBufSize;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder inStreamBufSize(final int inStreamBufSize) {
             this.inStreamBufSize = inStreamBufSize;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder outStreamBufSize(final int outStreamBufSize) {
             this.outStreamBufSize = outStreamBufSize;
             return this;
