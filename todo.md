@@ -2,8 +2,8 @@
 - readme
 
 - begin: iso level + read only at one query
-- enable binary by default?
 - read-only? conn opt: SET default_transaction_read_only = on
+- enable binary by default?
 
 - honey: transaction test
 
@@ -33,7 +33,6 @@
 - bulk statement execute
 - pg.jdbc batch
 
-- int to float: tests
 - refactor locks? on Clojure level
 
 - async support?
