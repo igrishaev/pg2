@@ -519,9 +519,9 @@ public final class Connection implements AutoCloseable {
         sendDescribeStatement(statement);
         sendSync();
         sendFlush();
-        final Accum acc = interact();
-        final ParameterDescription paramDesc = acc.getParameterDescription();
-        final RowDescription rowDescription = acc.getRowDescription();
+        final Result res = interact();
+        final ParameterDescription paramDesc = res.getParameterDescription();
+        final RowDescription rowDescription = res.getRowDescription();
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
@@ -656,81 +656,81 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private Accum interact(final ExecuteParams executeParams) {
+    private Result interact(final ExecuteParams executeParams) {
         return interact(executeParams, false);
     }
 
-    private Accum interact(final ExecuteParams executeParams, final boolean isAuth) {
+    private Result interact(final ExecuteParams executeParams, final boolean isAuth) {
         flush();
-        final Accum acc = new Accum(executeParams);
+        final Result res = new Result(executeParams);
         while (true) {
-            final IServerMessage msg = readMessage(acc.hasException());
+            final IServerMessage msg = readMessage(res.hasException());
             if (isDebug) {
                 logger.log(config.logLevel(), " -> {0}", msg);
             }
-            handleMessage(msg, acc);
+            handleMessage(msg, res);
             if (isEnough(msg, isAuth)) {
                 break;
             }
         }
-        acc.maybeThrowError();
-        return acc;
+        res.maybeThrowError();
+        return res;
     }
 
-    private Accum interact(final boolean isAuth) {
+    private Result interact(final boolean isAuth) {
         return interact(ExecuteParams.INSTANCE, isAuth);
     }
 
-    private Accum interact() {
+    private Result interact() {
         return interact(ExecuteParams.INSTANCE, false);
     }
 
     private static void noop() {}
 
-    private void handleMessage(final IServerMessage msg, final Accum acc) {
+    private void handleMessage(final IServerMessage msg, final Result res) {
 
         if (msg instanceof DataRow x) {
-            handleDataRow(x, acc);
+            handleDataRow(x, res);
         } else if (msg instanceof NotificationResponse x) {
             handleNotificationResponse(x);
         } else if (msg instanceof AuthenticationCleartextPassword) {
             handleAuthenticationCleartextPassword();
         } else if (msg instanceof AuthenticationSASL x) {
-            handleAuthenticationSASL(x, acc);
+            handleAuthenticationSASL(x, res);
         } else if (msg instanceof AuthenticationSASLContinue x) {
-            handleAuthenticationSASLContinue(x, acc);
+            handleAuthenticationSASLContinue(x, res);
         } else if (msg instanceof AuthenticationSASLFinal x) {
-            handleAuthenticationSASLFinal(x, acc);
+            handleAuthenticationSASLFinal(x, res);
         } else if (msg instanceof NoticeResponse x) {
             handleNoticeResponse(x);
         } else if (msg instanceof ParameterStatus x) {
             handleParameterStatus(x);
         } else if (msg instanceof RowDescription x) {
-            handleRowDescription(x, acc);
+            handleRowDescription(x, res);
         } else if (msg instanceof ReadyForQuery x) {
             handleReadyForQuery(x);
         } else if (msg instanceof PortalSuspended x) {
-            handlePortalSuspended(x, acc);
+            handlePortalSuspended(x, res);
         } else if (msg instanceof AuthenticationMD5Password x) {
             handleAuthenticationMD5Password(x);
         } else if (msg instanceof NegotiateProtocolVersion x) {
             handleNegotiateProtocolVersion(x);
         } else if (msg instanceof CommandComplete x) {
-            handleCommandComplete(x, acc);
+            handleCommandComplete(x, res);
         } else if (msg instanceof ErrorResponse x) {
-            handleErrorResponse(x, acc);
+            handleErrorResponse(x, res);
         } else if (msg instanceof BackendKeyData x) {
             handleBackendKeyData(x);
         } else if (msg instanceof ParameterDescription x) {
-            handleParameterDescription(x, acc);
+            handleParameterDescription(x, res);
         } else if (msg instanceof ParseComplete x) {
-            handleParseComplete(x, acc);
+            handleParseComplete(x, res);
         } else if (msg instanceof CopyOutResponse x) {
-            handleCopyOutResponse(x, acc);
+            handleCopyOutResponse(x, res);
         } else if (msg instanceof CopyData x) {
-            handleCopyData(x, acc);
+            handleCopyData(x, res);
         } else if (msg instanceof CopyInResponse) {
-            handleCopyInResponse(acc);
+            handleCopyInResponse(res);
         } else if (msg instanceof NoData) {
             noop();
         } else if (msg instanceof EmptyQueryResponse) {
@@ -751,9 +751,9 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    private void handleAuthenticationSASL(final AuthenticationSASL msg, final Accum acc) {
+    private void handleAuthenticationSASL(final AuthenticationSASL msg, final Result res) {
 
-        acc.scramPipeline = ScramSha256.pipeline();
+        res.scramPipeline = ScramSha256.pipeline();
 
         if (msg.isScramSha256()) {
             final ScramSha256.Step1 step1 = ScramSha256.step1_clientFirstMessage(
@@ -763,7 +763,7 @@ public final class Connection implements AutoCloseable {
                     SASL.SCRAM_SHA_256,
                     step1.clientFirstMessage()
             );
-            acc.scramPipeline.step1 = step1;
+            res.scramPipeline.step1 = step1;
             sendMessage(msgSASL);
             flush();
         }
@@ -773,35 +773,35 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void handleAuthenticationSASLContinue(final AuthenticationSASLContinue msg, final Accum acc) {
-        final ScramSha256.Step1 step1 = acc.scramPipeline.step1;
+    private void handleAuthenticationSASLContinue(final AuthenticationSASLContinue msg, final Result res) {
+        final ScramSha256.Step1 step1 = res.scramPipeline.step1;
         final String serverFirstMessage = msg.serverFirstMessage();
         final ScramSha256.Step2 step2 = ScramSha256.step2_serverFirstMessage(serverFirstMessage);
         final ScramSha256.Step3 step3 = ScramSha256.step3_clientFinalMessage(step1, step2);
-        acc.scramPipeline.step2 = step2;
-        acc.scramPipeline.step3 = step3;
+        res.scramPipeline.step2 = step2;
+        res.scramPipeline.step3 = step3;
         final SASLResponse msgSASL = new SASLResponse(step3.clientFinalMessage());
         sendMessage(msgSASL);
         flush();
     }
 
-    private void handleAuthenticationSASLFinal(final AuthenticationSASLFinal msg, final Accum acc) {
+    private void handleAuthenticationSASLFinal(final AuthenticationSASLFinal msg, final Result res) {
         final String serverFinalMessage = msg.serverFinalMessage();
         final ScramSha256.Step4 step4 = ScramSha256.step4_serverFinalMessage(serverFinalMessage);
-        acc.scramPipeline.step4 = step4;
-        final ScramSha256.Step3 step3 = acc.scramPipeline.step3;
+        res.scramPipeline.step4 = step4;
+        final ScramSha256.Step3 step3 = res.scramPipeline.step3;
         ScramSha256.step5_verifyServerSignature(step3, step4);
     }
 
-    private void handleCopyInResponseStream(Accum acc) {
+    private void handleCopyInResponseStream(Result res) {
 
-        final int bufSize = acc.executeParams.copyBufSize();
+        final int bufSize = res.executeParams.copyBufSize();
         final byte[] buf = new byte[bufSize];
 
         final ByteBuffer bbLead = ByteBuffer.allocate(5);
         bbLead.put((byte)'d');
 
-        InputStream inputStream = acc.executeParams.inputStream();
+        InputStream inputStream = res.executeParams.inputStream();
 
         Throwable e = null;
         int read;
@@ -830,13 +830,13 @@ public final class Connection implements AutoCloseable {
             sendCopyDone();
         }
         else {
-            acc.setException(e);
+            res.setException(e);
             sendCopyFail(Const.COPY_FAIL_EXCEPTION_MSG);
         }
     }
 
-    private void handleCopyInResponseData (final Accum acc, final Iterator<List<Object>> rows) {
-        final ExecuteParams executeParams = acc.executeParams;
+    private void handleCopyInResponseData (final Result res, final Iterator<List<Object>> rows) {
+        final ExecuteParams executeParams = res.executeParams;
         final CopyFormat format = executeParams.copyFormat();
         Throwable e = null;
 
@@ -885,49 +885,49 @@ public final class Connection implements AutoCloseable {
             sendCopyDone();
         }
         else {
-            acc.setException(e);
+            res.setException(e);
             sendCopyFail(Const.COPY_FAIL_EXCEPTION_MSG);
         }
     }
 
-    private void handleCopyInResponseRows (final Accum acc) {
-        final Iterator<List<Object>> iterator = acc.executeParams.copyInRows()
+    private void handleCopyInResponseRows (final Result res) {
+        final Iterator<List<Object>> iterator = res.executeParams.copyInRows()
                 .stream()
                 .filter(Objects::nonNull)
                 .iterator();
-        handleCopyInResponseData(acc, iterator);
+        handleCopyInResponseData(res, iterator);
     }
 
-    private void handleCopyInResponseMaps(final Accum acc) {
-        final List<Object> keys = acc.executeParams.copyInKeys();
-        final Iterator<List<Object>> iterator = acc.executeParams.copyInMaps()
+    private void handleCopyInResponseMaps(final Result res) {
+        final List<Object> keys = res.executeParams.copyInKeys();
+        final Iterator<List<Object>> iterator = res.executeParams.copyInMaps()
                 .stream()
                 .filter(Objects::nonNull)
                 .map(map -> mapToRow(map, keys))
                 .iterator();
-        handleCopyInResponseData(acc, iterator);
+        handleCopyInResponseData(res, iterator);
     }
 
-    private void handleCopyInResponse(Accum acc) {
+    private void handleCopyInResponse(Result res) {
 
         // These three methods only send data but do not read.
         // Thus, we rely on sendBytes which doesn't trigger flushing
         // the output stream. Flushing is expensive and thus must be called
         // manually when all the data has been sent.
-        if (acc.executeParams.isCopyInRows()) {
-            handleCopyInResponseRows(acc);
+        if (res.executeParams.isCopyInRows()) {
+            handleCopyInResponseRows(res);
         }
-        else if (acc.executeParams.isCopyInMaps()) {
-            handleCopyInResponseMaps(acc);
+        else if (res.executeParams.isCopyInMaps()) {
+            handleCopyInResponseMaps(res);
         } else {
-            handleCopyInResponseStream(acc);
+            handleCopyInResponseStream(res);
         }
         // Finally, we flush the output stream so all unsent bytes get sent.
         flush();
     }
 
-    private void handlePortalSuspended(final PortalSuspended msg, final Accum acc) {
-        acc.handlePortalSuspended(msg);
+    private void handlePortalSuspended(final PortalSuspended msg, final Result res) {
+        res.handlePortalSuspended(msg);
     }
 
     private void handlerCall(final IFn f, final Object arg) {
@@ -963,20 +963,20 @@ public final class Connection implements AutoCloseable {
         flush();
     }
 
-    private void handleCopyOutResponse(final CopyOutResponse msg, final Accum acc) {
-        acc.handleCopyOutResponse(msg);
+    private void handleCopyOutResponse(final CopyOutResponse msg, final Result res) {
+        res.handleCopyOutResponse(msg);
     }
 
-    private void handleCopyData(final CopyData msg, final Accum acc) {
+    private void handleCopyData(final CopyData msg, final Result res) {
         try {
-            handleCopyDataUnsafe(msg, acc);
+            handleCopyDataUnsafe(msg, res);
         } catch (Throwable e) {
-            acc.setException(e);
+            res.setException(e);
         }
     }
 
-    private void handleCopyDataUnsafe(final CopyData msg, final Accum acc) throws IOException {
-        final OutputStream outputStream = acc.executeParams.outputStream();
+    private void handleCopyDataUnsafe(final CopyData msg, final Result res) throws IOException {
+        final OutputStream outputStream = res.executeParams.outputStream();
         final byte[] bytes = msg.buf().array();
         outputStream.write(bytes);
     }
@@ -990,8 +990,8 @@ public final class Connection implements AutoCloseable {
     public Object copy (final String sql, final ExecuteParams executeParams) {
         try (TryLock ignored = lock.get()) {
             sendQuery(sql);
-            final Accum acc = interact(executeParams);
-            return acc.getResult();
+            final Result res = interact(executeParams);
+            return res.getResult();
         }
     }
 
@@ -1003,12 +1003,12 @@ public final class Connection implements AutoCloseable {
         return row;
     }
 
-    private void handleParseComplete(final ParseComplete msg, final Accum acc) {
-        acc.handleParseComplete(msg);
+    private void handleParseComplete(final ParseComplete msg, final Result res) {
+        res.handleParseComplete(msg);
     }
 
-    private void handleParameterDescription (final ParameterDescription msg, final Accum acc) {
-        acc.handleParameterDescription(msg);
+    private void handleParameterDescription (final ParameterDescription msg, final Result res) {
+        res.handleParameterDescription(msg);
     }
 
     private void handleAuthenticationCleartextPassword() {
@@ -1020,23 +1020,23 @@ public final class Connection implements AutoCloseable {
         setParam(msg.param(), msg.value());
     }
 
-    private static void handleRowDescription(final RowDescription msg, final Accum acc) {
-        acc.handleRowDescription(msg);
+    private static void handleRowDescription(final RowDescription msg, final Result res) {
+        res.handleRowDescription(msg);
     }
 
-    private void handleDataRowUnsafe(final DataRow msg, final Accum acc) {
-        final RowDescription rowDescription = acc.getRowDescription();
-        final Map<Object, Short> keysIndex = acc.getCurrentKeysIndex();
+    private void handleDataRowUnsafe(final DataRow msg, final Result res) {
+        final RowDescription rowDescription = res.getRowDescription();
+        final Map<Object, Short> keysIndex = res.getCurrentKeysIndex();
         final LazyMap lazyMap = new LazyMap(msg, rowDescription, keysIndex, codecParams);
-        acc.addClojureRow(lazyMap);
+        res.addClojureRow(lazyMap);
     }
 
-    private void handleDataRow(final DataRow msg, final Accum acc) {
+    private void handleDataRow(final DataRow msg, final Result res) {
         try {
-            handleDataRowUnsafe(msg, acc);
+            handleDataRowUnsafe(msg, res);
         }
         catch (Throwable e) {
-            acc.setException(e);
+            res.setException(e);
         }
     }
 
@@ -1044,12 +1044,12 @@ public final class Connection implements AutoCloseable {
         txStatus = msg.txStatus();
     }
 
-    private static void handleCommandComplete(final CommandComplete msg, final Accum acc) {
-        acc.handleCommandComplete(msg);
+    private static void handleCommandComplete(final CommandComplete msg, final Result res) {
+        res.handleCommandComplete(msg);
     }
 
-    private static void handleErrorResponse(final ErrorResponse msg, final Accum acc) {
-        acc.addErrorResponse(msg);
+    private static void handleErrorResponse(final ErrorResponse msg, final Result res) {
+        res.addErrorResponse(msg);
     }
 
     private void handleBackendKeyData(final BackendKeyData msg) {

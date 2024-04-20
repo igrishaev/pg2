@@ -1,11 +1,11 @@
 
 - readme
 
-- honey: transaction test
-
-- enable binary by default?
 - begin: iso level + read only at one query
+- enable binary by default?
 - read-only? conn opt: SET default_transaction_read_only = on
+
+- honey: transaction test
 
 - oid wrapper?
 - reorganize the docs
@@ -19,8 +19,6 @@
   - deref realized
 
 - pg-integration package?
-
-- rename Accum to Result
 
 - docs:
   - pool
