@@ -94,6 +94,7 @@
                 run
                 kv
                 first?
+                column
 
                 ;; format
                 binary-encode?
@@ -164,6 +165,9 @@
 
       first?
       (.first)
+
+      column
+      (.column column)
 
       (and fold init)
       (.fold fold init)

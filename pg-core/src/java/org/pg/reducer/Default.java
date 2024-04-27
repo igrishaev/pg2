@@ -5,9 +5,9 @@ import clojure.core$conj_BANG_;
 import clojure.lang.PersistentVector;
 import org.pg.clojure.LazyMap;
 
-public class Default implements IReducer {
+public final class Default implements IReducer {
 
-    public static IReducer INSTANCE = new Default();
+    public final static IReducer INSTANCE = new Default();
 
     public Object initiate(final Object[] ignored) {
         return PersistentVector.EMPTY.asTransient();

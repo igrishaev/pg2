@@ -4,8 +4,6 @@
 - read-only? conn opt: SET default_transaction_read_only = on
 - enable binary by default?
 
-- column reducer
-
 - honey: transaction test
 
 - oid wrapper?

@@ -2,9 +2,9 @@ package org.pg.reducer;
 
 import org.pg.clojure.LazyMap;
 
-public class First implements IReducer {
+public final class First implements IReducer {
 
-    public static IReducer INSTANCE = new First();
+    public final static IReducer INSTANCE = new First();
 
     public Object initiate (final Object[] ignored) {
         return new Object[1];

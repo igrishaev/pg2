@@ -1695,6 +1695,28 @@ drop table %1$s;
       (is (= {:a 1 :b 2} res)))))
 
 
+(deftest test-reducer-column
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (let [query
+          "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
+
+          res-keyword
+          (pg/execute conn query {:column :a})
+
+          res-miss
+          (pg/execute conn query {:column "lol"})
+
+          res-string
+          (pg/execute conn query {:fn-key identity
+                                  :column "a"})]
+
+      (is (= [1 3 5] res-keyword))
+      (is (= [nil nil nil] res-miss))
+      (is (= [1 3 5] res-string)))))
+
+
 (deftest test-conn-params
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [params (pg/get-parameters conn)]

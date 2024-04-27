@@ -6,6 +6,7 @@
 - test json namespaces
 - rename Accum to Result
 - begin extended syntax (level, read only)
+- column reducer
 
 ## 0.1.11
 
