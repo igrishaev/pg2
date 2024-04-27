@@ -643,30 +643,6 @@
    (.query conn sql (->execute-params opt))))
 
 
-(defn begin
-  "
-  Open a new transaction.
-  "
-  [^Connection conn]
-  (.begin conn))
-
-
-(defn commit
-  "
-  Commit the current transaction.
-  "
-  [^Connection conn]
-  (.commit conn))
-
-
-(defn rollback
-  "
-  Rollback the current transaction.
-  "
-  [^Connection conn]
-  (.rollback conn))
-
-
 (defn clone
   "
   Create a new Connection from a configuration of the given connection.
@@ -819,6 +795,42 @@
     TxLevel/READ_UNCOMMITTED))
 
 
+(defn begin
+  "
+  Open a new transaction. Possible arguments:
+
+  - `tx-level`: the custom isolation level, either a `:kebab-case`
+     keyword, or a CAPS STRING, for example `:read-committed`
+     or `'READ COMMITTED'`;
+  - `read-only?`: whether to run the transaction in read-only mode
+    (default is false).
+  "
+  ([^Connection conn]
+   (.begin conn))
+
+  ([^Connection conn tx-level]
+   (.begin conn (->tx-level tx-level)))
+
+  ([^Connection conn tx-level read-only?]
+   (.begin conn (->tx-level tx-level) (boolean read-only?))))
+
+
+(defn commit
+  "
+  Commit the current transaction.
+  "
+  [^Connection conn]
+  (.commit conn))
+
+
+(defn rollback
+  "
+  Rollback the current transaction.
+  "
+  [^Connection conn]
+  (.rollback conn))
+
+
 (defn set-tx-level
   "
   Set transaction isolation level for the current transaction.
@@ -852,51 +864,50 @@
   - rollback?: to ROLLBACK a transaction even if it was successful.
 
   "
+  {:arglists '([[conn] & body]
+               [[conn {:keys [isolation-level
+                              read-only?
+                              rollback?]}] & body])}
   [[conn opts] & body]
 
-  (let [bind
+  (let [CONN
         (with-meta (gensym "CONN")
           {:tag `Connection})
 
-        ISOLVL
-        (gensym "ISOLVL")
+        OPTS
+        (gensym "OPTS")]
 
-        RO?
-        (gensym "RO?")
+    `(let [~CONN ~conn
+           ~OPTS ~opts
 
-        ROLL?
-        (gensym "ROLL?")]
+           iso-level#
+           ~(if opts
+              `(or (some-> ~OPTS :isolation-level ->tx-level)
+                   TxLevel/NONE)
+              `TxLevel/NONE)
 
-    `(let [~bind ~conn
+           read-only?#
+           ~(if opts
+              `(boolean (:read-only? ~OPTS))
+              `false)
 
-           ~@(when opts
-               `[{~ISOLVL :isolation-level
-                  ~RO? :read-only?
-                  ~ROLL? :rollback?}
-                 ~opts])]
+           rollback?#
+           ~(if opts
+              `(boolean (:rollback? ~OPTS))
+              `false)]
 
-       (with-lock [~bind]
+       (with-lock [~CONN]
 
-         (.begin ~bind)
-
-         ~@(when opts
-             `[(when ~ISOLVL
-                 (set-tx-level ~bind ~ISOLVL))])
-
-         ~@(when opts
-             `[(when ~RO?
-                 (set-read-only ~bind))])
+         (.begin ~CONN iso-level# read-only?#)
 
          (try
            (let [result# (do ~@body)]
-             ~@(if opts
-                 `[(if ~ROLL?
-                     (.rollback ~bind)
-                     (.commit ~bind))]
-                 `[(.commit ~bind)])
+             (if rollback?#
+               (.rollback ~CONN)
+               (.commit ~CONN))
              result#)
            (catch Throwable e#
-             (.rollback ~bind)
+             (.rollback ~CONN)
              (throw e#)))))))
 
 

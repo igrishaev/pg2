@@ -5,6 +5,7 @@
 - pg.honey: on-connection wrapper
 - test json namespaces
 - rename Accum to Result
+- begin extended syntax (level, read only)
 
 ## 0.1.11
 

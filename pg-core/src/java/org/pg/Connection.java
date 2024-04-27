@@ -1080,8 +1080,25 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public void begin () {
+        begin(TxLevel.NONE, false);
+    }
+
+    @SuppressWarnings("unused")
+    public void begin (final TxLevel txLevel) {
+        begin(txLevel, false);
+    }
+
+    @SuppressWarnings("unused")
+    public void begin (final TxLevel txLevel, final boolean readOnly) {
+        String query = "BEGIN TRANSACTION";
+        if (txLevel != TxLevel.NONE) {
+            query += " ISOLATION LEVEL " + txLevel.getCode();
+        }
+        if (readOnly) {
+            query += " READ ONLY";
+        }
         try (TryLock ignored = lock.get()) {
-            sendQuery("BEGIN");
+            sendQuery(query);
             interact();
         }
     }

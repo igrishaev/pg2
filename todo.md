@@ -1,7 +1,6 @@
 
 - readme
 
-- begin: iso level + read only at one query
 - read-only? conn opt: SET default_transaction_read_only = on
 - enable binary by default?
 

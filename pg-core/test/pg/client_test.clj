@@ -408,6 +408,15 @@ from
           (is (= [] res2)))))))
 
 
+(deftest test-client-with-transaction-complex
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (pg/with-tx [conn {:isolation-level "SERIALIZABLE"
+                       :read-only? true
+                       :rollback? true}]
+      (let [res (pg/execute conn "select 42 as number")]
+        (is (= [{:number 42}] res))))))
+
+
 (deftest test-client-enum-type
   (let [table
         (gen-table)

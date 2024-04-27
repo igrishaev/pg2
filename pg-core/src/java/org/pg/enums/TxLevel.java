@@ -12,7 +12,10 @@ public enum TxLevel {
     REPEATABLE_READ("REPEATABLE READ"),
 
     @SuppressWarnings("unused")
-    SERIALIZABLE("SERIALIZABLE");
+    SERIALIZABLE("SERIALIZABLE"),
+
+    @SuppressWarnings("unused")
+    NONE("NONE");
 
     private final String code;
 
