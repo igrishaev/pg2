@@ -2,6 +2,8 @@ package org.pg.reducer;
 
 import clojure.lang.PersistentVector;
 import org.pg.clojure.LazyMap;
+import clojure.core$persistent_BANG_;
+import clojure.core$conj_BANG_;
 
 public final class Column implements IReducer {
 
@@ -19,11 +21,11 @@ public final class Column implements IReducer {
     @Override
     public Object append(final Object acc, LazyMap row) {
         final Object value = row.get(column);
-        return clojure.core$conj_BANG_.invokeStatic(acc, value);
+        return core$conj_BANG_.invokeStatic(acc, value);
     }
 
     @Override
     public Object finalize(final Object acc) {
-        return clojure.core$persistent_BANG_.invokeStatic(acc);
+        return core$persistent_BANG_.invokeStatic(acc);
     }
 }
