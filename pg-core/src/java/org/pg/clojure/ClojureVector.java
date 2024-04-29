@@ -106,14 +106,14 @@ public final class ClojureVector extends ArrayList<Object> implements IPersisten
 
     @Override
     public Object valAt(final Object key, final Object notFound) {
-        if (key instanceof Integer i) {
-            return nth(i, notFound);
-        } else if (key instanceof Long l) {
+        if (key instanceof Long l) {
             return nth(l.intValue(), notFound);
+        } else if (key instanceof Integer i) {
+            return nth(i, notFound);
         } else if (key instanceof Short s) {
             return nth(s.intValue(), notFound);
         } else {
-            return null;
+            return notFound;
         }
     }
 
