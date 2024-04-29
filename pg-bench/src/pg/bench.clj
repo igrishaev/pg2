@@ -327,12 +327,12 @@ from
   #_
   (with-title "pg simple select with ASSOC"
     (pg/with-connection [conn pg-config]
-      (quick-bench
-          (let [rows
-                (pg/execute conn
-                            QUERY_SELECT_RANDOM_SIMPLE)]
-            (doseq [row rows]
-              (assoc row :extra 42))))))
+      (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_SIMPLE]
+        (quick-bench
+            (let [rows
+                  (pg/execute-statement conn stmt)]
+              (doseq [row rows]
+                (assoc row :extra 42)))))))
 
   #_
   (with-title "JDBC pool"
