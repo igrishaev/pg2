@@ -6,6 +6,7 @@ import org.pg.codec.DecoderBin;
 import org.pg.codec.DecoderTxt;
 import org.pg.msg.server.DataRow;
 import org.pg.msg.server.RowDescription;
+import org.pg.util.TryLock;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -13,6 +14,7 @@ import java.util.*;
 public final class LazyMap extends APersistentMap {
 
     private int[] ToC = null;
+    private final TryLock lock;
     private final DataRow dataRow;
     private final RowDescription rowDescription;
     private final Map<Object, Short> keysIndex;
@@ -20,12 +22,14 @@ public final class LazyMap extends APersistentMap {
     private final Object[] parsedValues;
     private final boolean[] parsedKeys;
 
-    public LazyMap(final DataRow dataRow,
+    public LazyMap(final TryLock lock,
+                   final DataRow dataRow,
                    final RowDescription rowDescription,
                    final Map<Object, Short> keysIndex,
                    final CodecParams codecParams
     ) {
         final int count = dataRow.count();
+        this.lock = lock;
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
         this.keysIndex = keysIndex;
@@ -75,6 +79,13 @@ public final class LazyMap extends APersistentMap {
         if (parsedKeys[i]) {
             return parsedValues[i];
         }
+
+        try (TryLock ignored = lock.get()) {
+            return getValueByIndex_unsafe(i);
+        }
+    }
+
+    private Object getValueByIndex_unsafe (final int i) {
 
         if (ToC == null) {
             ToC = dataRow.ToC();

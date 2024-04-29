@@ -1027,7 +1027,13 @@ public final class Connection implements AutoCloseable {
     private void handleDataRowUnsafe(final DataRow msg, final Result res) {
         final RowDescription rowDescription = res.getRowDescription();
         final Map<Object, Short> keysIndex = res.getCurrentKeysIndex();
-        final LazyMap lazyMap = new LazyMap(msg, rowDescription, keysIndex, codecParams);
+        final LazyMap lazyMap = new LazyMap(
+                lock,
+                msg,
+                rowDescription,
+                keysIndex,
+                codecParams
+        );
         res.addClojureRow(lazyMap);
     }
 
