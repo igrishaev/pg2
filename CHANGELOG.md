@@ -9,6 +9,7 @@
 - column reducer
 - ClojureVector type & default reducer
 - lazy ToC and DataRow
+- lazymap: lock passed
 
 ## 0.1.11
 
