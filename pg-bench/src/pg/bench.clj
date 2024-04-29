@@ -313,7 +313,7 @@ from
 
 
   #_
-  (with-title "next.JDBC simple value select with ASSOC"
+  (with-title "next.JDBC simple value select key access"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
       (quick-bench
@@ -322,17 +322,17 @@ from
                                [QUERY_SELECT_RANDOM_SIMPLE]
                                {:as rs/as-unqualified-maps})]
             (doseq [row rows]
-              (assoc row :extra 42))))))
+              (:x row))))))
 
   #_
-  (with-title "pg simple select with ASSOC"
+  (with-title "pg simple select key access"
     (pg/with-connection [conn pg-config]
       (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_SIMPLE]
         (quick-bench
             (let [rows
                   (pg/execute-statement conn stmt)]
               (doseq [row rows]
-                (assoc row :extra 42)))))))
+                (:x row)))))))
 
   #_
   (with-title "JDBC pool"
