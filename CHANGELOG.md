@@ -7,6 +7,7 @@
 - rename Accum to Result
 - begin extended syntax (level, read only)
 - column reducer
+- ClojureVector type & default reducer
 
 ## 0.1.11
 
