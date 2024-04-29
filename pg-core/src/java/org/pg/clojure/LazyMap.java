@@ -12,6 +12,7 @@ import java.util.*;
 
 public final class LazyMap extends APersistentMap {
 
+    private int[] ToC = null;
     private final DataRow dataRow;
     private final RowDescription rowDescription;
     private final Map<Object, Short> keysIndex;
@@ -75,10 +76,12 @@ public final class LazyMap extends APersistentMap {
             return parsedValues[i];
         }
 
-        final int[][] ToC = dataRow.ToC();
+        if (ToC == null) {
+            ToC = dataRow.ToC();
+        }
 
-        final int offset = ToC[i][0];
-        final int length = ToC[i][1];
+        final int offset = ToC[i * 2];
+        final int length = ToC[i * 2 + 1];
 
         if (length == -1) {
             parsedKeys[i] = true;
@@ -86,7 +89,7 @@ public final class LazyMap extends APersistentMap {
             return null;
         }
 
-        final byte[] payload = dataRow.payload();
+        final byte[] payload = dataRow.buf().array();
         final RowDescription.Column col = rowDescription.columns()[i];
 
         final Object value = switch (col.format()) {

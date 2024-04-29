@@ -5,28 +5,26 @@ import org.pg.util.BBTool;
 import java.nio.ByteBuffer;
 
 public record DataRow (
-        int[][] ToC,
-        byte[] payload
+        short count,
+        ByteBuffer buf
 ) implements IServerMessage {
 
-    public int count () {
-        return ToC.length;
-    }
-
-    public static DataRow fromByteBuffer(final ByteBuffer buf) {
-
+    public int[] ToC() {
+        buf.rewind();
         final short size = buf.getShort();
-        final int[][] ToC = new int[size][2];
-
+        final int[] ToC = new int[size * 2];
         for (short i = 0; i < size; i++) {
             final int length = buf.getInt();
-            ToC[i][0] = buf.position();
-            ToC[i][1] = length;
+            ToC[i * 2] = buf.position();
+            ToC[i * 2 + 1] = length;
             if (length > 0) {
                 BBTool.skip(buf, length);
             }
         }
+        return ToC;
+    }
 
-        return new DataRow(ToC, buf.array());
+    public static DataRow fromByteBuffer(final ByteBuffer buf) {
+        return new DataRow(buf.getShort(), buf);
     }
 }
