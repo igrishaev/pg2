@@ -2,6 +2,8 @@
 - readme
 
 - read-only? conn opt: SET default_transaction_read_only = on
+- rollback ClojureVector?
+- skip toc parsing in DataRow?
 - enable binary by default?
 
 - honey: transaction test
