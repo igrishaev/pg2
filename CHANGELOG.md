@@ -8,6 +8,7 @@
 - begin extended syntax (level, read only)
 - column reducer
 - ClojureVector type & default reducer
+- lazy ToC and DataRow
 
 ## 0.1.11
 
