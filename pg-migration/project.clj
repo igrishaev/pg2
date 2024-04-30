@@ -1,4 +1,4 @@
-(defproject com.github.igrishaev/pg2-migration "0.1.12-SNAPSHOT"
+(defproject com.github.igrishaev/pg2-migration "0.1.12"
 
   :description
   "Migration utilities for PG2"
