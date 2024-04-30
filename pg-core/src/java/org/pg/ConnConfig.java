@@ -34,7 +34,8 @@ public record ConnConfig(
         SSLContext sslContext,
         System.Logger.Level logLevel,
         long cancelTimeoutMs,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        boolean readOnly
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -56,8 +57,8 @@ public record ConnConfig(
         private boolean binaryEncode = false;
         private boolean binaryDecode = false;
         private boolean useSSL = false;
-        private boolean SOKeepAlive = true;
-        private boolean SOTCPnoDelay = true;
+        private boolean SOKeepAlive = Const.SO_KEEP_ALIVE;
+        private boolean SOTCPnoDelay = Const.SO_TCP_NO_DELAY;
         private int SOTimeout = Const.SO_TIMEOUT;
         int SOReceiveBufSize = Const.SO_RECV_BUF_SIZE;
         int SOSendBufSize = Const.SO_SEND_BUF_SIZE;
@@ -70,6 +71,7 @@ public record ConnConfig(
         private System.Logger.Level logLevel = System.Logger.Level.INFO;
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
         private ObjectMapper objectMapper = JSON.defaultMapper;
+        private boolean readOnly = false;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -163,6 +165,7 @@ public record ConnConfig(
             this.pgParams.put(param, value);
             return this;
         }
+
         public Builder port(final int port) {
             this.port = port;
             return this;
@@ -219,6 +222,12 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
+        public Builder readOnly() {
+            this.readOnly = true;
+            return pgParam("default_transaction_read_only", "on");
+        }
+
         public ConnConfig build() {
             return new ConnConfig(
                     this.user,
@@ -244,7 +253,8 @@ public record ConnConfig(
                     this.sslContext,
                     this.logLevel,
                     this.cancelTimeoutMs,
-                    this.objectMapper
+                    this.objectMapper,
+                    this.readOnly
             );
         }
     }

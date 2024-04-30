@@ -294,6 +294,9 @@
                 ;; json
                 ^ObjectMapper object-mapper
 
+                ;; read only
+                read-only?
+
                 ;; misc
                 cancel-timeout-ms
                 protocol-version]}
@@ -369,6 +372,9 @@
 
       cancel-timeout-ms
       (.cancelTimeoutMs cancel-timeout-ms)
+
+      read-only?
+      (.readOnly)
 
       :finally
       (.build))))

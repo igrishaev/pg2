@@ -1100,7 +1100,10 @@ public final class Connection implements AutoCloseable {
         if (txLevel != TxLevel.NONE) {
             query += " ISOLATION LEVEL " + txLevel.getCode();
         }
-        if (readOnly) {
+
+        final boolean readOnlyFinal = config.readOnly() || readOnly;
+
+        if (readOnlyFinal) {
             query += " READ ONLY";
         }
         try (TryLock ignored = lock.get()) {

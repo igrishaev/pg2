@@ -181,6 +181,38 @@ from
     (is (= [{:just-one 1}] result))))
 
 
+(deftest test-client-read-only-on
+
+  (let [res
+        (pg/with-connection [conn (assoc *CONFIG-TXT* :read-only? true)]
+          (pg/query conn "show default_transaction_read_only"))]
+    (is (= [{:default_transaction_read_only "on"}] res)))
+
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :read-only? true)]
+    (try
+      (pg/query conn "create table foo(id serial)")
+      (is false)
+      (catch PGErrorResponse e
+        (is (-> e
+                (ex-message)
+                (str/includes? "cannot execute CREATE TABLE in a read-only transaction"))))))
+
+  (let [res
+        (pg/with-connection [conn (assoc *CONFIG-TXT* :read-only? true)]
+          (pg/query conn "show transaction_read_only"))]
+    (is (= [{:transaction_read_only "on"}] res)))
+
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :read-only? true)]
+    (pg/with-tx [conn {:read-only? false}]
+      (try
+        (pg/query conn "create table foo(id serial)")
+        (is false)
+        (catch PGErrorResponse e
+          (is (-> e
+                  (ex-message)
+                  (str/includes? "cannot execute CREATE TABLE in a read-only transaction"))))))))
+
+
 (deftest test-client-keyword-with-ns
   (let [result
         (pg/with-connection [conn *CONFIG-TXT*]
