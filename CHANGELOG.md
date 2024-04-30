@@ -1,7 +1,15 @@
 
 ## 0.1.12-SNAPSHOT
 
-- ?
+- pg.integration: config-txt and config-bin vars
+- pg.honey: on-connection wrapper
+- test json namespaces
+- rename Accum to Result
+- begin extended syntax (level, read only)
+- column reducer
+- ClojureVector type & default reducer
+- lazy ToC and DataRow
+- lazymap: lock passed
 
 ## 0.1.11
 

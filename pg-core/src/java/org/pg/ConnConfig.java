@@ -34,7 +34,8 @@ public record ConnConfig(
         SSLContext sslContext,
         System.Logger.Level logLevel,
         long cancelTimeoutMs,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        boolean readOnly
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -56,8 +57,8 @@ public record ConnConfig(
         private boolean binaryEncode = false;
         private boolean binaryDecode = false;
         private boolean useSSL = false;
-        private boolean SOKeepAlive = true;
-        private boolean SOTCPnoDelay = true;
+        private boolean SOKeepAlive = Const.SO_KEEP_ALIVE;
+        private boolean SOTCPnoDelay = Const.SO_TCP_NO_DELAY;
         private int SOTimeout = Const.SO_TIMEOUT;
         int SOReceiveBufSize = Const.SO_RECV_BUF_SIZE;
         int SOSendBufSize = Const.SO_SEND_BUF_SIZE;
@@ -70,6 +71,7 @@ public record ConnConfig(
         private System.Logger.Level logLevel = System.Logger.Level.INFO;
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
         private ObjectMapper objectMapper = JSON.defaultMapper;
+        private boolean readOnly = false;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -78,36 +80,43 @@ public record ConnConfig(
             this.pgParams.put("application_name", Const.APP_NAME);
         }
 
+        @SuppressWarnings("unused")
         public Builder sslContext(final SSLContext sslContext) {
             this.sslContext = sslContext;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder objectMapper(final ObjectMapper objectMapper) {
             this.objectMapper = objectMapper;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder cancelTimeoutMs(final long cancelTimeoutMs) {
             this.cancelTimeoutMs = cancelTimeoutMs;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder protocolVersion(final int protocolVersion) {
             this.protocolVersion = protocolVersion;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder logLevel(final System.Logger.Level level) {
             this.logLevel = level;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder binaryEncode(final boolean binaryEncode) {
             this.binaryEncode = binaryEncode;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder fnNotification(final IFn fnNotification) {
             this.fnNotification = Objects.requireNonNull(
                     fnNotification,
@@ -116,6 +125,7 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder fnNotice(final IFn fnNotice) {
             this.fnNotice = Objects.requireNonNull(
                     fnNotice,
@@ -124,6 +134,7 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder fnProtocolVersion(final IFn fnProtocolVersion) {
             this.fnProtocolVersion = Objects.requireNonNull(
                     fnProtocolVersion,
@@ -137,20 +148,24 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder useSSL(final boolean useSSL) {
             this.useSSL = useSSL;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder pgParams(final Map<String, String> pgParams) {
             this.pgParams.putAll(pgParams);
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder pgParam(final String param, final String value) {
             this.pgParams.put(param, value);
             return this;
         }
+
         public Builder port(final int port) {
             this.port = port;
             return this;
@@ -171,34 +186,46 @@ public record ConnConfig(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOTCPnoDelay(final boolean SOTCPnoDelay) {
             this.SOTCPnoDelay = SOTCPnoDelay;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOTimeout(final int SOTimeout) {
             this.SOTimeout = SOTimeout;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOReceiveBufSize(final int SOReceiveBufSize) {
             this.SOReceiveBufSize = SOReceiveBufSize;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOSendBufSize(final int SOSendBufSize) {
             this.SOSendBufSize = SOSendBufSize;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder inStreamBufSize(final int inStreamBufSize) {
             this.inStreamBufSize = inStreamBufSize;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder outStreamBufSize(final int outStreamBufSize) {
             this.outStreamBufSize = outStreamBufSize;
             return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder readOnly() {
+            this.readOnly = true;
+            return pgParam("default_transaction_read_only", "on");
         }
 
         public ConnConfig build() {
@@ -226,7 +253,8 @@ public record ConnConfig(
                     this.sslContext,
                     this.logLevel,
                     this.cancelTimeoutMs,
-                    this.objectMapper
+                    this.objectMapper,
+                    this.readOnly
             );
         }
     }

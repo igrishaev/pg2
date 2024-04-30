@@ -52,7 +52,7 @@ classes are supported for reading and writing.
 - [Prepared Statements](#prepared-statements)
 - [Transactions](#transactions)
 - [Connection state](#connection-state)
-- [HoneySQL Integration & Shortcuts](#honeysql-integration--shortcuts)
+- [HoneySQL Integration](#honeysql-integration)
 - [HugSQL Support](#hugsql-support)
 - [Next.JDBC API layer](#nextjdbc-api-layer)
 - [Enums](#enums)
@@ -335,6 +335,7 @@ rest have predefined values.
 | `:pg-params`           | map          | {}                 | A map of session params like {string string}                                    |
 | `:binary-encode?`      | bool         | false              | Whether to use binary data encoding                                             |
 | `:binary-decode?`      | bool         | false              | Whether to use binary data decoding                                             |
+| `:read-only?`          | bool         | false              | Whether to initiate this connection in READ ONLY mode (see below)               |
 | `:in-stream-buf-size`  | integer      | 0xFFFF             | Size of the input buffered socket stream                                        |
 | `:out-stream-buf-size` | integer      | 0xFFFF             | Size of the output buffered socket stream                                       |
 | `:fn-notification`     | 1-arg fn     | logging fn         | A function to handle notifications                                              |
@@ -352,6 +353,10 @@ rest have predefined values.
 | `:protocol-version`    | integ        | 196608             | Postgres protocol version                                                       |
 | `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section) |
 
+### Parameter notes
+
+#### Logging
+
 Possible `:log-level` values are:
 
 - `:all` to render all the events
@@ -360,6 +365,23 @@ Possible `:log-level` values are:
 - `:info`
 - `:error`
 - `:off`, `false`, or `nil` to disable logging.
+
+#### Read Only Mode
+
+The `:read-only?` connection parameter does two things under the hood:
+
+1. It appends the `default_transaction_read_only` parameter to the startup
+   message set to `on`. Thus, any transaction gets started on `READ ONLY` mode.
+
+2. It prevents the `:read-only?` flag from overriding in the `with-tx`
+   macro. Say, even if the macro is called like this:
+
+~~~clojure
+(pg/with-tx [conn {:read-only? false}] ;; try to mute the global :read-only? flag
+  (pg/query conn "delete from students"))
+~~~
+
+The transaction will be in `READ ONLY` mode anyway.
 
 ## Query
 
@@ -774,7 +796,7 @@ true
 
 Now it's ready for new queries again.
 
-## HoneySQL Integration & Shortcuts
+## HoneySQL Integration
 
 [honeysql]: https://github.com/seancorfield/honeysql
 
@@ -826,6 +848,9 @@ default:
 (pgh/get-by-id conn :test003 1)
 ;; {:name "Ivan", :active true, :id 1}
 ~~~
+
+*Here and below: pass a `Connection` object to the first argument but it could
+be a plain config map or a `Pool` instance as well.*
 
 With options, you can specify the name of the primary key and the column names
 you're interested in:
@@ -1940,18 +1965,11 @@ Another way is to use HoneySQL parameters conception:
                 {:honey {:params {:data {:some [:json {:map [1 2 3]}]}}}})
 ~~~
 
-For details, see the "HoneySQL Integration" section.
+For details, see the [HoneySQL Integration](#honeysql-integration) section.
 
-PG2 supports not only Clojure maps but vectors, sets, and lists. Here is an
-example with with a vector:
-
-~~~clojure
-(pg/execute conn
-            "insert into test_json (data) values ($1)"
-            {:params [[:some :vector [:nested :vector]]]})
-
-{:id 3, :data ["some" "vector" ["nested" "vector"]]}
-~~~
+PG2 supports only Clojure maps when encoding values into JSON. Vectors and other
+sequential values are treated as arrays. For details, see the [Arrays
+support](#arrays-support) section.
 
 ### Json Wrapper
 

@@ -9,7 +9,7 @@ import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
-public class IndexBy implements IReducer {
+public final class IndexBy implements IReducer {
 
     private final IFn f;
 

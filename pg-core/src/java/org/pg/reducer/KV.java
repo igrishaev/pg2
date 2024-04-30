@@ -9,7 +9,7 @@ import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
-public class KV implements IReducer {
+public final class KV implements IReducer {
 
     private final IFn fk, fv;
 

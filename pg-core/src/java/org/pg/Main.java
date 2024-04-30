@@ -35,6 +35,8 @@ public final class Main {
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());
 
+        conn.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10000000)");
+
         // System.out.println(conn.execute("select '{\"foo\": 555}'::jsonb as obj"));
 
         // System.out.println(conn.execute("select '1 year 1 second'::interval as interval"));
@@ -69,7 +71,7 @@ public final class Main {
 
         // System.out.println(conn.execute(""));
 
-        System.out.println(conn.execute("select 'ё'::\"char\" as char"));
+        // System.out.println(conn.execute("select 'ё'::\"char\" as char"));
         // System.out.println(conn.execute("select '{{1,2,3},{4,5,6}}'::int[][] as arr"));
 
 //        System.out.println(conn.execute(
@@ -77,12 +79,12 @@ public final class Main {
 //                ExecuteParams.builder().params(List.of(PersistentVector.create(1, 2, 3))).build())
 //        );
 
-        String query = "select $1 as foo";
-        // "select $1::int as foo, 'test' as string, 42 as num, now() as now"
-        PreparedStatement ps = conn.prepare(query, ExecuteParams.builder().OIDs(List.of(OID.BOOL)).build());
-        // List<Object> params = List.of(1);
-        Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(List.of(true)).build());
-        conn.closeStatement(ps);
+//        String query = "select $1 as foo";
+//        // "select $1::int as foo, 'test' as string, 42 as num, now() as now"
+//        PreparedStatement ps = conn.prepare(query, ExecuteParams.builder().OIDs(List.of(OID.BOOL)).build());
+//        // List<Object> params = List.of(1);
+//        Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(List.of(true)).build());
+//        conn.closeStatement(ps);
         // System.out.println(res2.toString());
 
           //Object res3 = conn.execute("select 'ёёёё'::char as char");

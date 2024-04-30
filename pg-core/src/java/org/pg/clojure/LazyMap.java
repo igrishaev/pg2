@@ -6,12 +6,15 @@ import org.pg.codec.DecoderBin;
 import org.pg.codec.DecoderTxt;
 import org.pg.msg.server.DataRow;
 import org.pg.msg.server.RowDescription;
+import org.pg.util.TryLock;
 
 import java.nio.ByteBuffer;
 import java.util.*;
 
 public final class LazyMap extends APersistentMap {
 
+    private int[] ToC = null;
+    private final TryLock lock;
     private final DataRow dataRow;
     private final RowDescription rowDescription;
     private final Map<Object, Short> keysIndex;
@@ -19,12 +22,14 @@ public final class LazyMap extends APersistentMap {
     private final Object[] parsedValues;
     private final boolean[] parsedKeys;
 
-    public LazyMap(final DataRow dataRow,
+    public LazyMap(final TryLock lock,
+                   final DataRow dataRow,
                    final RowDescription rowDescription,
                    final Map<Object, Short> keysIndex,
                    final CodecParams codecParams
     ) {
         final int count = dataRow.count();
+        this.lock = lock;
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
         this.keysIndex = keysIndex;
@@ -75,10 +80,19 @@ public final class LazyMap extends APersistentMap {
             return parsedValues[i];
         }
 
-        final int[][] ToC = dataRow.ToC();
+        try (TryLock ignored = lock.get()) {
+            return getValueByIndex_unsafe(i);
+        }
+    }
 
-        final int offset = ToC[i][0];
-        final int length = ToC[i][1];
+    private Object getValueByIndex_unsafe (final int i) {
+
+        if (ToC == null) {
+            ToC = dataRow.ToC();
+        }
+
+        final int offset = ToC[i * 2];
+        final int length = ToC[i * 2 + 1];
 
         if (length == -1) {
             parsedKeys[i] = true;
@@ -86,7 +100,7 @@ public final class LazyMap extends APersistentMap {
             return null;
         }
 
-        final byte[] payload = dataRow.payload();
+        final byte[] payload = dataRow.buf().array();
         final RowDescription.Column col = rowDescription.columns()[i];
 
         final Object value = switch (col.format()) {

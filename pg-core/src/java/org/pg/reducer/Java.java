@@ -5,7 +5,7 @@ import org.pg.clojure.LazyMap;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Java implements IReducer {
+public final class Java implements IReducer {
 
     public static IReducer INSTANCE = new Java();
 

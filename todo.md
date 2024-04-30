@@ -1,37 +1,28 @@
 
 - readme
 
-- arrays
-  - JSON: IPersistentMap only
-
 - enable binary by default?
 
-- client_test: add CONFIG_TXT and CONFIG_BIN vars
+- honey: transaction test
 
 - oid wrapper?
-
 - reorganize the docs
-
 - copy in/out tab format
 
-- begin: iso level + read only at one query
-
-- read-only? conn opt: SET default_transaction_read_only = on
-
+- pg.ring package (move json middleware)
 - ring jdbc session middleware
 
 - lazy map
   - optional flag
   - deref realized
 
-- json
-  - test namespaces
-
 - pg-integration package?
 
-- on-connection in honey
-
-- rename Accum to Result
+- docs:
+  - pool
+  - execute parameters
+  - reducers
+  - enums
 
 - pool close conn test
 - keywords with namespaces (+ jdbc)
@@ -40,7 +31,6 @@
 - bulk statement execute
 - pg.jdbc batch
 
-- int to float: tests
 - refactor locks? on Clojure level
 
 - async support?

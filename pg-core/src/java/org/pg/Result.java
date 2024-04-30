@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class Accum {
+public final class Result {
 
      public final static class Node {
 
@@ -99,7 +99,7 @@ public final class Accum {
         return newKeys;
     }
 
-    public Accum(final ExecuteParams executeParams) {
+    public Result(final ExecuteParams executeParams) {
         this.executeParams = executeParams;
         nodes = new ArrayList<>(2);
         addNode();

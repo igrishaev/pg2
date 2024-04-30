@@ -5,7 +5,7 @@ import clojure.core$conj_BANG_;
 import clojure.lang.PersistentVector;
 import org.pg.clojure.LazyMap;
 
-public class Matrix implements IReducer {
+public final class Matrix implements IReducer {
 
     public static IReducer INSTANCE = new Matrix();
 

@@ -1,23 +1,22 @@
 package org.pg.reducer;
 
-import clojure.core$persistent_BANG_;
-import clojure.core$conj_BANG_;
-import clojure.lang.PersistentVector;
+import org.pg.clojure.ClojureVector;
 import org.pg.clojure.LazyMap;
 
-public class Default implements IReducer {
+public final class Default implements IReducer {
 
-    public static IReducer INSTANCE = new Default();
+    public final static IReducer INSTANCE = new Default();
 
     public Object initiate(final Object[] ignored) {
-        return PersistentVector.EMPTY.asTransient();
+        return new ClojureVector();
     }
 
     public Object append(final Object acc, final LazyMap row) {
-        return core$conj_BANG_.invokeStatic(acc, row);
+        ((ClojureVector)acc).add(row);
+        return acc;
     }
 
     public Object finalize(final Object acc) {
-        return core$persistent_BANG_.invokeStatic(acc);
+        return acc;
     }
 }

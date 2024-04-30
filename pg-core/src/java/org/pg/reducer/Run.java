@@ -6,7 +6,7 @@ import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
-public class Run implements IReducer {
+public final class Run implements IReducer {
 
     private final IFn f;
 

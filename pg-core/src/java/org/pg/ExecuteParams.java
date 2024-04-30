@@ -177,6 +177,12 @@ public record ExecuteParams (
             return this;
         }
 
+        @SuppressWarnings("unused")
+        public Builder column (final Object column) {
+            this.reducer = new Column(column);
+            return this;
+        }
+
         public Builder maxRows (final long maxRows) {
             this.maxRows = maxRows;
             return this;
@@ -188,6 +194,7 @@ public record ExecuteParams (
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder binaryDecode (final boolean binaryDecode) {
             this.binaryDecode = binaryDecode;
             return this;

@@ -2,7 +2,8 @@ package org.pg.reducer;
 
 import org.pg.clojure.LazyMap;
 
-public class Dummy implements IReducer {
+@SuppressWarnings("unused")
+public final class Dummy implements IReducer {
 
     public static IReducer INSTANCE = new Dummy();
 

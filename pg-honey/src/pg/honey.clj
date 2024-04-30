@@ -35,7 +35,7 @@
   which gets rendered into a SQL string.
 
   Arguments:
-  - conn: a Connection object;
+  - src: a connectable source;
   - sql-map: a map like {:select [:this :that] :from [...]}
   - opt: PG2 options; pass the `:honey` key for HoneySQL params.
 
@@ -43,14 +43,15 @@
   - the same as `pg.core/query`.
   "
 
-  ([conn sql-map]
-   (query conn sql-map nil))
+  ([src sql-map]
+   (query src sql-map nil))
 
-  ([conn sql-map {:as opt :keys [honey]}]
+  ([src sql-map {:as opt :keys [honey]}]
 
    (let [[sql]
          (format sql-map honey)]
-     (pg/query conn sql opt))))
+     (pg/on-connection [conn src]
+       (pg/query conn sql opt)))))
 
 
 (defn queries
@@ -58,10 +59,10 @@
   Like `query` but accepts a vector of SQL maps.
   Returns a vector of results.
   "
-  ([conn sql-maps]
-   (queries conn sql-maps nil))
+  ([src sql-maps]
+   (queries src sql-maps nil))
 
-  ([conn sql-maps {:as opt :keys [honey]}]
+  ([src sql-maps {:as opt :keys [honey]}]
 
    (let [sql-vecs
          (for [sql-map sql-maps]
@@ -72,7 +73,8 @@
               (map first)
               (str/join "; "))]
 
-     (pg/query conn sql opt))))
+     (pg/on-connection [conn src]
+       (pg/query conn sql opt)))))
 
 
 (defn execute
@@ -82,7 +84,7 @@
   and parameters.
 
   Arguments:
-  - conn: a Connection object;
+  - conn: a connectable source;
   - sql-map: a map like {:select [:this :that] :from [...]}
   - opt: PG2 options; pass the `:honey` key for HoneySQL params.
 
@@ -90,15 +92,16 @@
   - same as `pg.core/execute`.
   "
 
-  ([conn sql-map]
-   (execute conn sql-map nil))
+  ([src sql-map]
+   (execute src sql-map nil))
 
-  ([conn sql-map {:as opt :keys [honey]}]
+  ([src sql-map {:as opt :keys [honey]}]
    (let [[sql & params]
          (format sql-map honey)]
-     (pg/execute conn
-                 sql
-                 (assoc opt :params params)))))
+     (pg/on-connection [conn src]
+       (pg/execute conn
+                   sql
+                   (assoc opt :params params))))))
 
 
 (defn prepare
@@ -116,15 +119,16 @@
   Return an instance of `PreparedStatement` class.
   "
 
-  ([conn sql-map]
-   (prepare conn sql-map nil))
+  ([src sql-map]
+   (prepare src sql-map nil))
 
-  ([conn sql-map {:as opt :keys [honey]}]
+  ([src sql-map {:as opt :keys [honey]}]
    (let [[sql & params]
          (format sql-map honey)]
-     (pg/prepare conn
-                 sql
-                 (assoc opt :params params)))))
+     (pg/on-connection [conn src]
+       (pg/prepare conn
+                   sql
+                   (assoc opt :params params))))))
 
 
 ;;
@@ -141,21 +145,21 @@
   The optimal `:fields` vector specifies which
   columns to return, `[:*]` by default.
   "
-  ([conn table id]
-   (get-by-id conn table id nil))
+  ([src table id]
+   (get-by-id src table id nil))
 
-  ([conn table id {:as opt
-                   :keys [pk
-                          fields]
-                   :or {pk :id
-                        fields [:*]}}]
+  ([src table id {:as opt
+                  :keys [pk
+                         fields]
+                  :or {pk :id
+                       fields [:*]}}]
    (let [sql-map
          {:select fields
           :from table
           :where [:= pk id]
           :limit 1}]
 
-     (execute conn
+     (execute src
               sql-map
               (assoc opt :first? true)))))
 
@@ -172,15 +176,15 @@
   Returns a vector of rows.
   "
 
-  ([conn table ids]
-   (get-by-ids conn table ids nil))
+  ([src table ids]
+   (get-by-ids src table ids nil))
 
-  ([conn table ids {:as opt
-                    :keys [pk
-                           fields
-                           order-by]
-                    :or {pk :id
-                         fields [:*]}}]
+  ([src table ids {:as opt
+                   :keys [pk
+                          fields
+                          order-by]
+                   :or {pk :id
+                        fields [:*]}}]
    (let [sql-map
          (cond-> {:select fields
                   :from table
@@ -189,7 +193,7 @@
            order-by
            (assoc :order-by order-by))]
 
-     (execute conn sql-map opt))))
+     (execute src sql-map opt))))
 
 
 (defn insert
@@ -209,15 +213,15 @@
   By default, it will be a vector of inserted rows.
   "
 
-  ([conn table kvs]
-   (insert conn table kvs nil))
+  ([src table kvs]
+   (insert src table kvs nil))
 
-  ([conn table kvs {:as opt
-                    :keys [returning
-                           on-conflict
-                           do-update-set
-                           do-nothing]
-                    :or {returning [:*]}}]
+  ([src table kvs {:as opt
+                   :keys [returning
+                          on-conflict
+                          do-update-set
+                          do-nothing]
+                   :or {returning [:*]}}]
    (let [sql-map
          (cond-> {:insert-into table
                   :values kvs}
@@ -234,7 +238,7 @@
            do-nothing
            (assoc :do-nothing do-nothing))]
 
-     (execute conn sql-map opt))))
+     (execute src sql-map opt))))
 
 
 (defn insert-one
@@ -245,15 +249,15 @@
   is a single inserted row.
   "
 
-  ([conn table kv]
-   (insert-one conn table kv nil))
+  ([src table kv]
+   (insert-one src table kv nil))
 
-  ([conn table kv {:as opt
-                   :keys [returning
-                          on-conflict
-                          do-update-set
-                          do-nothing]
-                   :or {returning [:*]}}]
+  ([src table kv {:as opt
+                  :keys [returning
+                         on-conflict
+                         do-update-set
+                         do-nothing]
+                  :or {returning [:*]}}]
    (let [sql-map
          (cond-> {:insert-into table
                   :values [kv]}
@@ -273,7 +277,7 @@
            do-nothing
            (assoc :do-nothing do-nothing))]
 
-     (execute conn
+     (execute src
               sql-map
               (assoc opt :first? true)))))
 
@@ -288,13 +292,13 @@
   - `where` which acts like a filter when updating the rows;
   - `returning` which determines what columns to return.
   "
-  ([conn table kv]
-   (update conn table kv nil))
+  ([src table kv]
+   (update src table kv nil))
 
-  ([conn table kv {:as opt
-                   :keys [where
-                          returning]
-                   :or {returning [:*]}}]
+  ([src table kv {:as opt
+                  :keys [where
+                         returning]
+                  :or {returning [:*]}}]
 
    (let [sql-map
          (cond-> {:update table
@@ -306,17 +310,17 @@
            returning
            (assoc :returning returning))]
 
-     (execute conn sql-map opt))))
+     (execute src sql-map opt))))
 
 
 (defn delete
-  ([conn table]
-   (delete conn table nil))
+  ([src table]
+   (delete src table nil))
 
-  ([conn table {:as opt
-                :keys [where
-                       returning]
-                :or {returning [:*]}}]
+  ([src table {:as opt
+               :keys [where
+                      returning]
+               :or {returning [:*]}}]
 
    (let [sql-map
          (cond-> {:delete-from table}
@@ -327,7 +331,7 @@
            returning
            (assoc :returning returning))]
 
-     (execute conn sql-map opt))))
+     (execute src sql-map opt))))
 
 
 (defn find
@@ -344,15 +348,18 @@
   - offset
   - order-by
   "
-  ([conn table kv]
-   (find conn table kv nil))
+  ([src table]
+   (find src table nil nil))
 
-  ([conn table kv {:as opt
-                   :keys [fields
-                          limit
-                          offset
-                          order-by]
-                   :or {fields [:*]}}]
+  ([src table kv]
+   (find src table kv nil))
+
+  ([src table kv {:as opt
+                  :keys [fields
+                         limit
+                         offset
+                         order-by]
+                  :or {fields [:*]}}]
 
    (let [where
          (when (seq kv)
@@ -364,8 +371,10 @@
 
          sql-map
          (cond-> {:select fields
-                  :from table
-                  :where where}
+                  :from table}
+
+           where
+           (assoc :where where)
 
            limit
            (assoc :limit limit)
@@ -376,7 +385,7 @@
            order-by
            (assoc :order-by order-by))]
 
-     (execute conn sql-map opt))))
+     (execute src sql-map opt))))
 
 
 (defn find-first
@@ -385,14 +394,14 @@
   limit 1 expression to the query. Supports the same
   optional arguments.
   "
-  ([conn table kv]
-   (find-first conn table kv nil))
+  ([src table kv]
+   (find-first src table kv nil))
 
-  ([conn table kv {:as opt
-                   :keys [fields
-                          offset
-                          order-by]
-                   :or {fields [:*]}}]
+  ([src table kv {:as opt
+                  :keys [fields
+                         offset
+                         order-by]
+                  :or {fields [:*]}}]
 
    (let [where
          (when (seq kv)
@@ -414,6 +423,6 @@
            order-by
            (assoc :order-by order-by))]
 
-     (execute conn
+     (execute src
               sql-map
               (assoc opt :first? true)))))

@@ -270,85 +270,94 @@ from
 
 (defn -main [& args]
 
-  ;; (with-title "generating CSV"
-  ;;   (generate-csv))
+  #_
+  (with-title "generating CSV"
+    (generate-csv))
 
-  ;; (with-title "next.JDBC select many fields NO ASSOC"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (quick-bench
-  ;;      (jdbc/execute! conn
-  ;;                     [QUERY_SELECT_RANDOM_MANY_FIELDS]
-  ;;                     {:as rs/as-unqualified-maps}))))
+  #_
+  (with-title "next.JDBC select many fields NO ASSOC"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+          (jdbc/execute! conn
+                         [QUERY_SELECT_RANDOM_MANY_FIELDS]
+                         {:as rs/as-unqualified-maps}))))
 
-  ;; (with-title "pg select many fields NO ASSOC"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;      (pg/execute conn
-  ;;                  QUERY_SELECT_RANDOM_MANY_FIELDS))))
+  #_
+  (with-title "pg select many fields NO ASSOC"
+    (pg/with-connection [conn pg-config]
+      (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_MANY_FIELDS]
+        (quick-bench
+            (pg/execute-statement conn stmt)))))
 
-  ;; (with-title "next.JDBC select many fields WITH ASSOC"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (quick-bench
-  ;;      (let [rows
-  ;;            (jdbc/execute! conn
-  ;;                           [QUERY_SELECT_RANDOM_MANY_FIELDS]
-  ;;                           {:as rs/as-unqualified-maps})]
-  ;;        (doseq [row rows]
-  ;;          (assoc row :extra 42))))))
+  #_
+  (with-title "next.JDBC select many fields WITH ASSOC"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+          (let [rows
+                (jdbc/execute! conn
+                               [QUERY_SELECT_RANDOM_MANY_FIELDS]
+                               {:as rs/as-unqualified-maps})]
+            (doseq [row rows]
+              (assoc row :extra 42))))))
 
-  ;; (with-title "pg select many fields WITH ASSOC"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;       (let [rows
-  ;;             (pg/execute conn
-  ;;                         QUERY_SELECT_RANDOM_MANY_FIELDS)]
-  ;;         (doseq [row rows]
-  ;;           (assoc row :extra 42))))))
+  #_
+  (with-title "pg select many fields WITH ASSOC"
+    (pg/with-connection [conn pg-config]
+      (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_MANY_FIELDS]
+        (quick-bench
+            (let [rows (pg/execute-statement conn stmt)]
+              (doseq [row rows]
+                (assoc row :extra 42)))))))
 
 
-  ;; (with-title "next.JDBC simple value select with ASSOC"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (quick-bench
-  ;;      (let [rows
-  ;;            (jdbc/execute! conn
-  ;;                           [QUERY_SELECT_RANDOM_SIMPLE]
-  ;;                           {:as rs/as-unqualified-maps})]
-  ;;        (doseq [row rows]
-  ;;          (assoc row :extra 42))))))
+  #_
+  (with-title "next.JDBC simple value select key access"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+          (let [rows
+                (jdbc/execute! conn
+                               [QUERY_SELECT_RANDOM_SIMPLE]
+                               {:as rs/as-unqualified-maps})]
+            (doseq [row rows]
+              (:x row))))))
 
-  ;; (with-title "pg simple select with ASSOC"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;       (let [rows
-  ;;             (pg/execute conn
-  ;;                         QUERY_SELECT_RANDOM_SIMPLE)]
-  ;;         (doseq [row rows]
-  ;;           (assoc row :extra 42))))))
+  #_
+  (with-title "pg simple select key access"
+    (pg/with-connection [conn pg-config]
+      (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_SIMPLE]
+        (quick-bench
+            (let [rows
+                  (pg/execute-statement conn stmt)]
+              (doseq [row rows]
+                (:x row)))))))
 
-  ;; (with-title "JDBC pool"
-  ;;   (with-open [^HikariDataSource datasource
-  ;;               (cp/make-datasource cp-options)]
-  ;;     (quick-bench
-  ;;      (with-open [conn
-  ;;                  (jdbc/get-connection datasource)]
-  ;;        (jdbc/execute! conn [QUERY_SELECT_JSON])))))
+  #_
+  (with-title "JDBC pool"
+    (with-open [^HikariDataSource datasource
+                (cp/make-datasource cp-options)]
+      (quick-bench
+          (with-open [conn
+                      (jdbc/get-connection datasource)]
+            (jdbc/execute! conn [QUERY_SELECT_JSON])))))
 
-  ;; (with-title "PG pool"
-  ;;   (pool/with-pool [pool pg-config]
-  ;;     (quick-bench
-  ;;      (pool/with-connection [conn pool]
-  ;;        (pg/execute conn QUERY_SELECT_JSON)))))
+  #_
+  (with-title "PG pool"
+    (pool/with-pool [pool pg-config]
+      (quick-bench
+          (pool/with-connection [conn pool]
+            (pg/execute conn QUERY_SELECT_JSON)))))
 
-  ;; (with-title "next.JDBC reduce run!"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (quick-bench
-  ;;      (let [result
-  ;;            (jdbc/plan conn [QUERY_SELECT_RANDOM_SIMPLE])]
-  ;;        (run! process-row result)))))
+  #_
+  (with-title "next.JDBC reduce run!"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+          (let [result
+                (jdbc/plan conn [QUERY_SELECT_RANDOM_SIMPLE])]
+            (run! process-row result)))))
 
   #_
   (with-title "pg reduce run!"
@@ -361,27 +370,31 @@ from
                                   stmt
                                   {:run process-row})))))
 
-  ;; (with-title "pg reduce map"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (pg/with-statement [stmt
-  ;;                         conn
-  ;;                         QUERY_SELECT_RANDOM_SIMPLE]
-  ;;       (quick-bench
-  ;;        (pg/execute-statement conn
-  ;;                              stmt
-  ;;                              {:fold fold-row
-  ;;                               :init {}})))))
-  ;; (with-title "next.JDBC reduce map"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
+  #_
+  (with-title "pg reduce map"
+    (pg/with-connection [conn pg-config]
+      (pg/with-statement [stmt
+                          conn
+                          QUERY_SELECT_RANDOM_SIMPLE]
+        (quick-bench
+            (pg/execute-statement conn
+                                  stmt
+                                  {:fold fold-row
+                                   :init {}})))))
 
-  ;;     (quick-bench
-  ;;      (let [result
-  ;;            (jdbc/plan conn [QUERY_SELECT_RANDOM_SIMPLE])]
-  ;;        (reduce fold-row
-  ;;                {}
-  ;;                result)))))
+  #_
+  (with-title "next.JDBC reduce map"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
 
+      (quick-bench
+          (let [result
+                (jdbc/plan conn [QUERY_SELECT_RANDOM_SIMPLE])]
+            (reduce fold-row
+                    {}
+                    result)))))
+
+  #_
   (with-title "pg simple select"
     (pg/with-connection [conn pg-config]
       (pg/with-statement [stmt
@@ -390,6 +403,7 @@ from
         (quick-bench
             (pg/execute-statement conn stmt)))))
 
+  #_
   (with-title "pure JDBC simple select"
     (let [^java.sql.Connection conn
           (DriverManager/getConnection JDBC-URL USER USER)
@@ -403,13 +417,14 @@ from
                 (.put m "x" (.getString rs "x"))
                 (.add l m)))))))
 
+  #_
   (with-title "next.JDBC simple value select"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
       (quick-bench
-       (jdbc/execute! conn
-                      [QUERY_SELECT_RANDOM_SIMPLE]
-                      {:as rs/as-unqualified-maps}))))
+          (jdbc/execute! conn
+                         [QUERY_SELECT_RANDOM_SIMPLE]
+                         {:as rs/as-unqualified-maps}))))
 
   #_
   (with-title "next.JDBC complex value select"
@@ -443,164 +458,174 @@ from
        (pg/execute conn
                    QUERY_SELECT_JSON))))
 
-  ;; (with-title "pg insert values in TRANSACTION"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (pg/with-statement [stmt
-  ;;                         conn
-  ;;                         QUERY_INSERT_PG]
-  ;;       (quick-bench
-  ;;        (let [x (rand-int 10000)]
-  ;;          (pg/with-tx [conn]
-  ;;            (pg/execute-statement conn
-  ;;                                  stmt
-  ;;                                  {:params [x,
-  ;;                                            (format "name%s" x)
-  ;;                                            (LocalDateTime/now)]})))))))
+  #_
+  (with-title "pg insert values in TRANSACTION"
+    (pg/with-connection [conn pg-config]
+      (pg/with-statement [stmt
+                          conn
+                          QUERY_INSERT_PG]
+        (quick-bench
+            (let [x (rand-int 10000)]
+              (pg/with-tx [conn]
+                (pg/execute-statement conn
+                                      stmt
+                                      {:params [x,
+                                                (format "name%s" x)
+                                                (LocalDateTime/now)]})))))))
 
-  ;; (with-title "next.JDBC insert values in TRANSACTION"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
+  #_
+  (with-title "next.JDBC insert values in TRANSACTION"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
 
-  ;;     (quick-bench
-  ;;      (let [x (rand-int 10000)]
-  ;;        (jdbc/with-transaction [tx conn]
-  ;;          (jdbc/execute! tx
-  ;;                         [QUERY_INSERT_JDBC
-  ;;                          x,
-  ;;                          (format "name%s" x)
-  ;;                          (LocalDateTime/now)]))))))
+      (quick-bench
+          (let [x (rand-int 10000)]
+            (jdbc/with-transaction [tx conn]
+              (jdbc/execute! tx
+                             [QUERY_INSERT_JDBC
+                              x,
+                              (format "name%s" x)
+                              (LocalDateTime/now)]))))))
 
-  ;; ;; ---
 
-  ;; (with-title "pg insert values"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (pg/with-statement [stmt
-  ;;                         conn
-  ;;                         QUERY_INSERT_PG]
-  ;;       (quick-bench
-  ;;        (let [x (rand-int 10000)]
-  ;;          (pg/execute-statement conn
-  ;;                                stmt
-  ;;                                {:params [x,
-  ;;                                          (format "name%s" x)
-  ;;                                          (LocalDateTime/now)]}))))))
+  #_
+  (with-title "pg insert values"
+    (pg/with-connection [conn pg-config]
+      (pg/with-statement [stmt
+                          conn
+                          QUERY_INSERT_PG]
+        (quick-bench
+            (let [x (rand-int 10000)]
+              (pg/execute-statement conn
+                                    stmt
+                                    {:params [x,
+                                              (format "name%s" x)
+                                              (LocalDateTime/now)]}))))))
 
-  ;; (with-title "next.JDBC insert values"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (quick-bench
-  ;;      (let [x (rand-int 10000)]
-  ;;        (jdbc/execute! conn
-  ;;                       [QUERY_INSERT_JDBC
-  ;;                        x,
-  ;;                        (format "name%s" x)
-  ;;                        (LocalDateTime/now)])))))
+  #_
+  (with-title "next.JDBC insert values"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+          (let [x (rand-int 10000)]
+            (jdbc/execute! conn
+                           [QUERY_INSERT_JDBC
+                            x,
+                            (format "name%s" x)
+                            (LocalDateTime/now)])))))
 
-  ;; ;; ---
+  #_
+  (with-title "JDBC COPY in from a stream"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+          (let [copy
+                (new CopyManager conn)]
 
-  ;; (with-title "JDBC COPY in from a stream"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (quick-bench
-  ;;      (let [copy
-  ;;            (new CopyManager conn)]
+            (.copyIn copy
+                     ^String QUERY_IN_STREAM
+                     ^InputStream (-> SAMPLE_CSV io/file io/input-stream))))))
 
-  ;;        (.copyIn copy
-  ;;                 ^String QUERY_IN_STREAM
-  ;;                 ^InputStream (-> SAMPLE_CSV io/file io/input-stream))))))
+  #_
+  (with-title "PG COPY in from a stream"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+          (pg/copy-in conn
+                      QUERY_IN_STREAM
+                      (-> SAMPLE_CSV io/file io/input-stream)))))
 
-  ;; (with-title "PG COPY in from a stream"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;      (pg/copy-in conn
-  ;;                  QUERY_IN_STREAM
-  ;;                  (-> SAMPLE_CSV io/file io/input-stream)))))
+  #_
+  (with-title "JDBC COPY in from rows CSV"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (let [rows (generate-rows)]
+        (quick-bench
+            (let [input-stream
+                  (rows->csv-input-stream rows)
 
-  ;; ;; ---
+                  copy
+                  (new CopyManager conn)]
 
-  ;; (with-title "JDBC COPY in from rows CSV"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (let [rows (generate-rows)]
-  ;;       (quick-bench
-  ;;        (let [input-stream
-  ;;              (rows->csv-input-stream rows)
+              (.copyIn copy
+                       ^String QUERY_IN_STREAM
+                       ^InputStream input-stream))))))
 
-  ;;              copy
-  ;;              (new CopyManager conn)]
+  #_
+  (with-title "PG COPY in from rows CSV"
+    (pg/with-connection [conn pg-config]
+      (let [rows (generate-rows)]
+        (quick-bench
+            (pg/copy-in-rows conn
+                             QUERY_IN_STREAM
+                             rows)))))
 
-  ;;          (.copyIn copy
-  ;;                   ^String QUERY_IN_STREAM
-  ;;                   ^InputStream input-stream))))))
+  #_
+  (with-title "PG COPY in from rows BIN"
+    (pg/with-connection [conn pg-config]
+      (let [rows (generate-rows)]
+        (quick-bench
+            (pg/copy-in-rows conn
+                             QUERY_IN_STREAM_BIN
+                             rows
+                             {:copy-bin? true
+                              :oids [oid/int4 oid/text oid/timestamp]})))))
 
-  ;; (with-title "PG COPY in from rows CSV"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (let [rows (generate-rows)]
-  ;;       (quick-bench
-  ;;        (pg/copy-in-rows conn
-  ;;                         QUERY_IN_STREAM
-  ;;                         rows)))))
+  #_
+  (with-title "PG COPY in from maps BIN"
+    (pg/with-connection [conn pg-config]
+      (let [rows (generate-maps)]
+        (quick-bench
+            (pg/copy-in-maps conn
+                             QUERY_IN_STREAM_BIN
+                             rows
+                             [:id :name :created_at]
+                             {:copy-bin? true
+                              :oids [oid/int4 oid/text oid/timestamp]})))))
 
-  ;; (with-title "PG COPY in from rows BIN"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (let [rows (generate-rows)]
-  ;;       (quick-bench
-  ;;        (pg/copy-in-rows conn
-  ;;                         QUERY_IN_STREAM_BIN
-  ;;                         rows
-  ;;                         {:copy-bin? true
-  ;;                          :oids [oid/int4 oid/text oid/timestamp]})))))
+  #_
+  (with-title "PG COPY in from maps CSV"
+    (pg/with-connection [conn pg-config]
+      (let [rows (generate-maps)]
+        (quick-bench
+            (pg/copy-in-maps conn
+                             QUERY_IN_STREAM
+                             rows
+                             [:id :name :created_at])))))
 
-  ;; (with-title "PG COPY in from maps BIN"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (let [rows (generate-maps)]
-  ;;       (quick-bench
-  ;;        (pg/copy-in-maps conn
-  ;;                         QUERY_IN_STREAM_BIN
-  ;;                         rows
-  ;;                         [:id :name :created_at]
-  ;;                         {:copy-bin? true
-  ;;                          :oids [oid/int4 oid/text oid/timestamp]})))))
+  #_
+  (with-title "PG COPY out"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+          (pg/copy-out conn
+                       QUERY_OUT_STREAM
+                       (OutputStream/nullOutputStream)))))
 
-  ;; (with-title "PG COPY in from maps CSV"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (let [rows (generate-maps)]
-  ;;       (quick-bench
-  ;;        (pg/copy-in-maps conn
-  ;;                         QUERY_IN_STREAM
-  ;;                         rows
-  ;;                         [:id :name :created_at])))))
+  #_
+  (with-title "JDBC COPY out"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+          (let [copy
+                (new CopyManager conn)]
+            (.copyOut copy
+                      ^String QUERY_OUT_STREAM
+                      ^OutputStream (OutputStream/nullOutputStream))))))
 
-  ;; (with-title "PG COPY out"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;      (pg/copy-out conn
-  ;;                   QUERY_OUT_STREAM
-  ;;                   (OutputStream/nullOutputStream)))))
+  #_
+  (with-title "PG virtual threads"
+    (pg/with-connection [conn pg-config]
+      (quick-bench
+          (with-virt-exe [8]
+            (pg/execute conn QUERY_SELECT_JSON)))))
 
-  ;; (with-title "JDBC COPY out"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (quick-bench
-  ;;      (let [copy
-  ;;            (new CopyManager conn)]
-  ;;        (.copyOut copy
-  ;;                  ^String QUERY_OUT_STREAM
-  ;;                  ^OutputStream (OutputStream/nullOutputStream))))))
-
-  ;; (with-title "PG virtual threads"
-  ;;   (pg/with-connection [conn pg-config]
-  ;;     (quick-bench
-  ;;      (with-virt-exe [8]
-  ;;        (pg/execute conn QUERY_SELECT_JSON)))))
-
-  ;; (with-title "JDBC virtual threads"
-  ;;   (with-open [conn (jdbc/get-connection
-  ;;                     jdbc-config)]
-  ;;     (quick-bench
-  ;;      (with-virt-exe [8]
-  ;;        (jdbc/execute! conn
-  ;;                       [QUERY_SELECT_JSON]
-  ;;                       {:as rs/as-unqualified-maps})))))
+  #_
+  (with-title "JDBC virtual threads"
+    (with-open [conn (jdbc/get-connection
+                      jdbc-config)]
+      (quick-bench
+          (with-virt-exe [8]
+            (jdbc/execute! conn
+                           [QUERY_SELECT_JSON]
+                           {:as rs/as-unqualified-maps})))))
 
   )

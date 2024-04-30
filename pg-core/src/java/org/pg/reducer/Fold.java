@@ -6,7 +6,7 @@ import org.pg.clojure.LazyMap;
 
 import java.util.Objects;
 
-public class Fold implements IReducer {
+public final class Fold implements IReducer {
 
     private final IFn f;
     private final Object init;

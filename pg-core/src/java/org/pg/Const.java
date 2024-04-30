@@ -13,6 +13,8 @@ public final class Const {
     public static final String PG_HOST = "127.0.0.1";
     public static final int IN_STREAM_BUF_SIZE = 0xFFFF;
     public static final int OUT_STREAM_BUF_SIZE = 0xFFFF;
+    public static final boolean SO_KEEP_ALIVE = true;
+    public static final boolean SO_TCP_NO_DELAY = true;
     public static final long EXE_MAX_ROWS = 0xFFFFFFFFL;
     public static final int JSON_ENC_BUF_SIZE = 256;
     public static final String APP_NAME = "pg2";
