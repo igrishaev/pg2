@@ -140,7 +140,12 @@ from
 
 
 (def JETTY {:port 18080
-            :join? true})
+            :join? true
+            :thread-pool
+            nil #_
+            (doto (new QueuedThreadPool 8)
+              (.setVirtualThreadsExecutor
+               (Executors/newVirtualThreadPerTaskExecutor)))})
 
 
 (defn make-pg-handler [pool]

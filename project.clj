@@ -59,7 +59,8 @@
    [metosin/jsonista "0.3.8"]
    [criterium "0.4.6"]
    [ring/ring-json "0.5.1"]
-   [ring/ring-jetty-adapter "1.7.1"]]
+   [ring/ring-core "1.12.1"]
+   [ring/ring-jetty-adapter "1.12.1"]]
 
   :profiles
   {:dev

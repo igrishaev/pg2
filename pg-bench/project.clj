@@ -19,6 +19,7 @@
    [hikari-cp]
    [criterium]
    [ring/ring-json]
+   [ring/ring-core]
    [ring/ring-jetty-adapter]]
 
   :main pg.bench

@@ -12,4 +12,4 @@ bench:
 type ?= $(error Please specify the type=... argument: pg | jdbc)
 
 server:
-	lein run -m pg.server ${type}
+	JAVA_HOME=${java_home} lein run -m pg.server ${type}
