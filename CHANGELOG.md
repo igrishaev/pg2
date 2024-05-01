@@ -14,6 +14,7 @@
 - ClojureVector type & default reducer
 - lazy ToC and DataRow
 - lazymap: lock passed
+- read-only? conn param
 
 ## 0.1.11
 
