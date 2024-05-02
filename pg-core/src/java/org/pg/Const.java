@@ -7,6 +7,8 @@ public final class Const {
     public static final int COPY_BUFFER_SIZE = 0xFFFF;
     public static final String COPY_FAIL_EXCEPTION_MSG = "Terminated due to an exception on the client side";
     public static final int PG_PORT = 5432;
+    public static final boolean BIN_ENCODE = false;
+    public static final boolean BIN_DECODE = false;
     public static final int SO_TIMEOUT = 15 * 1000;
     public static final int SO_RECV_BUF_SIZE = 0xFFFF;
     public static final int SO_SEND_BUF_SIZE = 0xFFFF;

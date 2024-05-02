@@ -54,8 +54,8 @@ public record ConnConfig(
         private String host = Const.PG_HOST;
         private int protocolVersion = Const.PROTOCOL_VERSION;
         private final Map<String, String> pgParams = new HashMap<>();
-        private boolean binaryEncode = false;
-        private boolean binaryDecode = false;
+        private boolean binaryEncode = Const.BIN_ENCODE;
+        private boolean binaryDecode = Const.BIN_DECODE;
         private boolean useSSL = false;
         private boolean SOKeepAlive = Const.SO_KEEP_ALIVE;
         private boolean SOTCPnoDelay = Const.SO_TCP_NO_DELAY;
