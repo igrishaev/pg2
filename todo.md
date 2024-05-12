@@ -18,6 +18,8 @@
 - pg.ring package (move json middleware)
 - ring jdbc session middleware
 
+- Connection and Pool: refactor constructors
+
 - lazy map
   - optional flag
   - deref realized
