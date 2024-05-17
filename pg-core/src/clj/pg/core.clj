@@ -390,10 +390,10 @@
   "
 
   (^Connection [config]
-   (new Connection (->conn-config config)))
+   (Connection/connect (->conn-config config)))
 
   (^Connection [^String host ^Integer port ^String user ^String password ^String database]
-   (new Connection host port user password database)))
+   (Connection/connect host port user password database)))
 
 
 (let [-mapping
@@ -1161,7 +1161,7 @@
   ConnConfig
 
   (-borrow-connection [this]
-    (new Connection this))
+    (Connection/connect this))
 
   (-return-connection [this ^Connection conn]
     (close conn))

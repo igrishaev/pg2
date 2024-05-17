@@ -54,35 +54,42 @@ public final class Connection implements AutoCloseable {
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
 
-    public Connection(final String host,
-                      final int port,
-                      final String user,
-                      final String password,
-                      final String database
-    ) {
-        this(ConnConfig.builder(user, database)
-                .host(host)
-                .port(port)
-                .password(password)
-                .build());
-    }
-
-    public Connection(final ConnConfig config, final boolean sendStartup) {
+    private Connection(final ConnConfig config) {
         this.config = config;
         this.params = new HashMap<>();
         this.codecParams = CodecParams.builder().objectMapper(config.objectMapper()).build();
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
-        connect();
-        setSocketOptions();
-        preSSLStage();
-        if (sendStartup) {
-            authenticate();
-        }
     }
 
-    public Connection(final ConnConfig config) {
-        this(config, true);
+    public static Connection connect(final ConnConfig config, final boolean sendStartup) {
+        final Connection conn = new Connection(config);
+        conn._connect();
+        conn._setSocketOptions();
+        conn._preSSLStage();
+        if (sendStartup) {
+            conn._authenticate();
+        }
+        return conn;
+    }
+
+    @SuppressWarnings("unused")
+    public static Connection connect(final ConnConfig config) {
+        return connect(config, true);
+    }
+
+    @SuppressWarnings("unused")
+    public static Connection connect(final String host,
+                                     final int port,
+                                     final String user,
+                                     final String password,
+                                     final String database)
+    {
+        return new Connection(ConnConfig.builder(user, database)
+                .host(host)
+                .port(port)
+                .password(password)
+                .build());
     }
 
     public void close () {
@@ -97,7 +104,7 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    private void setSocketOptions () {
+    private void _setSocketOptions () {
         try {
             socket.setTcpNoDelay(config.SOTCPnoDelay());
             socket.setSoTimeout(config.SOTimeout());
@@ -110,7 +117,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private int nextInt() {
+    private int nextInt () {
         try (TryLock ignored = lock.get()) {
             return ++counter;
         }
@@ -128,7 +135,7 @@ public final class Connection implements AutoCloseable {
     }
 
     @SuppressWarnings("unused")
-    public long getCreatedAt() {
+    public long getCreatedAt () {
         return createdAt;
     }
 
@@ -222,7 +229,7 @@ public final class Connection implements AutoCloseable {
                              getDatabase());
     }
 
-    public void authenticate () {
+    private void _authenticate () {
         sendStartupMessage();
         interact(true);
     }
@@ -281,7 +288,7 @@ public final class Connection implements AutoCloseable {
         isSSL = true;
     }
 
-    private void preSSLStage () {
+    private void _preSSLStage () {
         if (config.useSSL()) {
             final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
             sendMessage(msg);
@@ -307,7 +314,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void connect () {
+    private void _connect () {
         try (TryLock ignored = lock.get()) {
             _connect_unlocked();
         }
@@ -656,11 +663,11 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private Result interact(final ExecuteParams executeParams) {
+    private Result interact (final ExecuteParams executeParams) {
         return interact(executeParams, false);
     }
 
-    private Result interact(final ExecuteParams executeParams, final boolean isAuth) {
+    private Result interact (final ExecuteParams executeParams, final boolean isAuth) {
         flush();
         final Result res = new Result(executeParams);
         while (true) {
@@ -677,17 +684,17 @@ public final class Connection implements AutoCloseable {
         return res;
     }
 
-    private Result interact(final boolean isAuth) {
+    private Result interact (final boolean isAuth) {
         return interact(ExecuteParams.INSTANCE, isAuth);
     }
 
-    private Result interact() {
+    private Result interact () {
         return interact(ExecuteParams.INSTANCE, false);
     }
 
-    private static void noop() {}
+    private static void noop () {}
 
-    private void handleMessage(final IServerMessage msg, final Result res) {
+    private void handleMessage (final IServerMessage msg, final Result res) {
 
         if (msg instanceof DataRow x) {
             handleDataRow(x, res);
@@ -751,7 +758,7 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    private void handleAuthenticationSASL(final AuthenticationSASL msg, final Result res) {
+    private void handleAuthenticationSASL (final AuthenticationSASL msg, final Result res) {
 
         res.scramPipeline = ScramSha256.pipeline();
 
@@ -773,7 +780,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void handleAuthenticationSASLContinue(final AuthenticationSASLContinue msg, final Result res) {
+    private void handleAuthenticationSASLContinue (final AuthenticationSASLContinue msg, final Result res) {
         final ScramSha256.Step1 step1 = res.scramPipeline.step1;
         final String serverFirstMessage = msg.serverFirstMessage();
         final ScramSha256.Step2 step2 = ScramSha256.step2_serverFirstMessage(serverFirstMessage);
@@ -785,7 +792,7 @@ public final class Connection implements AutoCloseable {
         flush();
     }
 
-    private void handleAuthenticationSASLFinal(final AuthenticationSASLFinal msg, final Result res) {
+    private void handleAuthenticationSASLFinal (final AuthenticationSASLFinal msg, final Result res) {
         final String serverFinalMessage = msg.serverFinalMessage();
         final ScramSha256.Step4 step4 = ScramSha256.step4_serverFinalMessage(serverFinalMessage);
         res.scramPipeline.step4 = step4;
@@ -793,7 +800,7 @@ public final class Connection implements AutoCloseable {
         ScramSha256.step5_verifyServerSignature(step3, step4);
     }
 
-    private void handleCopyInResponseStream(Result res) {
+    private void handleCopyInResponseStream (Result res) {
 
         final int bufSize = res.executeParams.copyBufSize();
         final byte[] buf = new byte[bufSize];
@@ -898,7 +905,7 @@ public final class Connection implements AutoCloseable {
         handleCopyInResponseData(res, iterator);
     }
 
-    private void handleCopyInResponseMaps(final Result res) {
+    private void handleCopyInResponseMaps (final Result res) {
         final List<Object> keys = res.executeParams.copyInKeys();
         final Iterator<List<Object>> iterator = res.executeParams.copyInMaps()
                 .stream()
@@ -908,7 +915,7 @@ public final class Connection implements AutoCloseable {
         handleCopyInResponseData(res, iterator);
     }
 
-    private void handleCopyInResponse(Result res) {
+    private void handleCopyInResponse (Result res) {
 
         // These three methods only send data but do not read.
         // Thus, we rely on sendBytes which doesn't trigger flushing
@@ -926,11 +933,11 @@ public final class Connection implements AutoCloseable {
         flush();
     }
 
-    private void handlePortalSuspended(final PortalSuspended msg, final Result res) {
+    private void handlePortalSuspended (final PortalSuspended msg, final Result res) {
         res.handlePortalSuspended(msg);
     }
 
-    private void handlerCall(final IFn f, final Object arg) {
+    private void handlerCall (final IFn f, final Object arg) {
         if (f == null) {
             logger.log(config.logLevel(), arg);
         }
@@ -941,19 +948,19 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void handleNotificationResponse(final NotificationResponse msg) {
+    private void handleNotificationResponse (final NotificationResponse msg) {
         handlerCall(config.fnNotification(), msg.toClojure());
     }
 
-    private void handleNoticeResponse(final NoticeResponse msg) {
+    private void handleNoticeResponse (final NoticeResponse msg) {
         handlerCall(config.fnNotice(), msg.toClojure());
     }
 
-    private void handleNegotiateProtocolVersion(final NegotiateProtocolVersion msg) {
+    private void handleNegotiateProtocolVersion (final NegotiateProtocolVersion msg) {
         handlerCall(config.fnProtocolVersion(), msg.toClojure());
     }
 
-    private void handleAuthenticationMD5Password(final AuthenticationMD5Password msg) {
+    private void handleAuthenticationMD5Password (final AuthenticationMD5Password msg) {
         final String hashed = MD5.hashPassword(
                 config.user(),
                 config.password(),
@@ -963,11 +970,11 @@ public final class Connection implements AutoCloseable {
         flush();
     }
 
-    private void handleCopyOutResponse(final CopyOutResponse msg, final Result res) {
+    private void handleCopyOutResponse (final CopyOutResponse msg, final Result res) {
         res.handleCopyOutResponse(msg);
     }
 
-    private void handleCopyData(final CopyData msg, final Result res) {
+    private void handleCopyData (final CopyData msg, final Result res) {
         try {
             handleCopyDataUnsafe(msg, res);
         } catch (Throwable e) {
@@ -975,7 +982,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void handleCopyDataUnsafe(final CopyData msg, final Result res) throws IOException {
+    private void handleCopyDataUnsafe (final CopyData msg, final Result res) throws IOException {
         final OutputStream outputStream = res.executeParams.outputStream();
         final byte[] bytes = msg.buf().array();
         outputStream.write(bytes);
@@ -995,7 +1002,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private static List<Object> mapToRow(final Map<?,?> map, final List<Object> keys) {
+    private static List<Object> mapToRow (final Map<?,?> map, final List<Object> keys) {
         final List<Object> row = new ArrayList<>(keys.size());
         for (final Object key: keys) {
             row.add(map.get(key));
@@ -1003,7 +1010,7 @@ public final class Connection implements AutoCloseable {
         return row;
     }
 
-    private void handleParseComplete(final ParseComplete msg, final Result res) {
+    private void handleParseComplete (final ParseComplete msg, final Result res) {
         res.handleParseComplete(msg);
     }
 
@@ -1011,20 +1018,20 @@ public final class Connection implements AutoCloseable {
         res.handleParameterDescription(msg);
     }
 
-    private void handleAuthenticationCleartextPassword() {
+    private void handleAuthenticationCleartextPassword () {
         sendPassword(config.password());
         flush();
     }
 
-    private void handleParameterStatus(final ParameterStatus msg) {
+    private void handleParameterStatus (final ParameterStatus msg) {
         setParam(msg.param(), msg.value());
     }
 
-    private static void handleRowDescription(final RowDescription msg, final Result res) {
+    private static void handleRowDescription (final RowDescription msg, final Result res) {
         res.handleRowDescription(msg);
     }
 
-    private void handleDataRowUnsafe(final DataRow msg, final Result res) {
+    private void handleDataRowUnsafe (final DataRow msg, final Result res) {
         final RowDescription rowDescription = res.getRowDescription();
         final Map<Object, Short> keysIndex = res.getCurrentKeysIndex();
         final LazyMap lazyMap = new LazyMap(
@@ -1037,7 +1044,7 @@ public final class Connection implements AutoCloseable {
         res.addClojureRow(lazyMap);
     }
 
-    private void handleDataRow(final DataRow msg, final Result res) {
+    private void handleDataRow (final DataRow msg, final Result res) {
         try {
             handleDataRowUnsafe(msg, res);
         }
@@ -1046,19 +1053,19 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void handleReadyForQuery(final ReadyForQuery msg) {
+    private void handleReadyForQuery (final ReadyForQuery msg) {
         txStatus = msg.txStatus();
     }
 
-    private static void handleCommandComplete(final CommandComplete msg, final Result res) {
+    private static void handleCommandComplete (final CommandComplete msg, final Result res) {
         res.handleCommandComplete(msg);
     }
 
-    private static void handleErrorResponse(final ErrorResponse msg, final Result res) {
+    private static void handleErrorResponse (final ErrorResponse msg, final Result res) {
         res.addErrorResponse(msg);
     }
 
-    private void handleBackendKeyData(final BackendKeyData msg) {
+    private void handleBackendKeyData (final BackendKeyData msg) {
         pid = msg.pid();
         secretKey = msg.secretKey();
     }
@@ -1073,13 +1080,13 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public static Connection clone (final Connection conn) {
-        return new Connection(conn.config);
+        return Connection.connect(conn.config);
     }
 
     @SuppressWarnings("unused")
     public static void cancelRequest(final Connection conn) {
         final CancelRequest msg = new CancelRequest(Const.CANCEL_CODE, conn.pid, conn.secretKey);
-        final Connection temp = new Connection(conn.config, false);
+        final Connection temp = Connection.connect(conn.config, false);
         temp.sendMessage(msg);
         temp.close();
     }

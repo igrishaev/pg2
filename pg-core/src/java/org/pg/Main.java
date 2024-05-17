@@ -30,7 +30,7 @@ public final class Main {
                 .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
-        Connection conn = new Connection(config);
+        Connection conn = Connection.connect(config);
 
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());

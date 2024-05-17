@@ -35,7 +35,7 @@ public final class Pool implements AutoCloseable {
 
     private void initiate () {
         for (int i = 0; i < poolConfig.minSize(); i++) {
-            final Connection conn = new Connection(connConfig);
+            final Connection conn = Connection.connect(connConfig);
             connsFree.add(conn);
         }
     }
@@ -117,7 +117,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private Connection spawnConnection() {
-        final Connection conn = new Connection(connConfig);
+        final Connection conn = Connection.connect(connConfig);
         addUsed(conn);
         logger.log(
                 poolConfig.logLevel(),
