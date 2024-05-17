@@ -1,7 +1,12 @@
 
-## 0.1.13-SNAPSHOT
+## 0.1.14-SNAPSHOT
 
 - ?
+
+## 0.1.13
+
+- refactor BIN/TXT constants
+- refactor Connection constructor
 
 ## 0.1.12
 
