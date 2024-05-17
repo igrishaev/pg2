@@ -7,6 +7,7 @@
 
 - refactor BIN/TXT constants
 - refactor Connection constructor
+- refactor Pool constructor
 
 ## 0.1.12
 

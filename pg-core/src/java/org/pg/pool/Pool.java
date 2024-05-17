@@ -21,19 +21,24 @@ public final class Pool implements AutoCloseable {
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
     private final TryLock lock = new TryLock();
 
-    public Pool (final ConnConfig connConfig) {
-        this(connConfig, PoolConfig.standard());
-    }
-
-    public Pool (final ConnConfig connConfig, final PoolConfig poolConfig) {
+    private Pool (final ConnConfig connConfig, final PoolConfig poolConfig) {
         this.connConfig = connConfig;
         this.poolConfig = poolConfig;
         this.connsUsed = new HashMap<>(poolConfig.maxSize());
         this.connsFree = new ArrayDeque<>(poolConfig.maxSize());
-        initiate();
     }
 
-    private void initiate () {
+    public static Pool create (final ConnConfig connConfig) {
+        return create(connConfig, PoolConfig.standard());
+    }
+
+    public static Pool create (final ConnConfig connConfig, final PoolConfig poolConfig) {
+        final Pool pool = new Pool(connConfig, poolConfig);
+        pool._initiate();
+        return pool;
+    }
+
+    private void _initiate () {
         for (int i = 0; i < poolConfig.minSize(); i++) {
             final Connection conn = Connection.connect(connConfig);
             connsFree.add(conn);

@@ -68,9 +68,8 @@
   Run a new Pool from a config map.
   "
   ^Pool [^Map opt]
-  (new Pool
-       (pg/->conn-config opt)
-       (->pool-config opt)))
+  (Pool/create (pg/->conn-config opt)
+               (->pool-config opt)))
 
 
 (defn close
