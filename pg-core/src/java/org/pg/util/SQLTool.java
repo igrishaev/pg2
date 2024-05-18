@@ -2,7 +2,7 @@ package org.pg.util;
 
 import org.pg.enums.TxLevel;
 
-public final class SQL {
+public final class SQLTool {
 
     public static String quoteChannel (final String sql) {
         return String.format("\"%s\"", sql.replaceAll("\"", "\"\""));

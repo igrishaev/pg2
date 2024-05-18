@@ -19,11 +19,9 @@ public final class Result {
 
      public final static class Node {
 
-         private CopyOutResponse copyOutResponse;
          private PortalSuspended portalSuspended;
          private RowDescription rowDescription;
          private CommandComplete commandComplete;
-         private ParseComplete parseComplete;
          private ParameterDescription parameterDescription;
          private Map<Object, Short> keysIndex;
          private Object acc;
@@ -126,20 +124,12 @@ public final class Result {
         addNode();
     }
 
-    public void handleCopyOutResponse (final CopyOutResponse msg) {
-        current.copyOutResponse = msg;
-    }
-
     public RowDescription getRowDescription () {
         return current.rowDescription;
     }
 
     public ParameterDescription getParameterDescription () {
         return current.parameterDescription;
-    }
-
-    public void handleParseComplete(final ParseComplete msg) {
-        current.parseComplete = msg;
     }
 
     public Map<Object, Short> getCurrentKeysIndex () {

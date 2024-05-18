@@ -970,9 +970,7 @@ public final class Connection implements AutoCloseable {
         flush();
     }
 
-    private void handleCopyOutResponse (final CopyOutResponse msg, final Result res) {
-        res.handleCopyOutResponse(msg);
-    }
+    private void handleCopyOutResponse (final CopyOutResponse msg, final Result res) {}
 
     private void handleCopyData (final CopyData msg, final Result res) {
         try {
@@ -1010,9 +1008,7 @@ public final class Connection implements AutoCloseable {
         return row;
     }
 
-    private void handleParseComplete (final ParseComplete msg, final Result res) {
-        res.handleParseComplete(msg);
-    }
+    private void handleParseComplete (final ParseComplete msg, final Result res) {}
 
     private void handleParameterDescription (final ParameterDescription msg, final Result res) {
         res.handleParameterDescription(msg);
@@ -1159,7 +1155,7 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public void setTxLevel (final TxLevel level) {
         try (TryLock ignored = lock.get()) {
-            sendQuery(SQL.SQLSetTxLevel(level));
+            sendQuery(SQLTool.SQLSetTxLevel(level));
             interact();
         }
     }
@@ -1167,7 +1163,7 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public void setTxReadOnly () {
         try (TryLock ignored = lock.get()) {
-            sendQuery(SQL.SQLSetTxReadOnly);
+            sendQuery(SQLTool.SQLSetTxReadOnly);
             interact();
         }
     }
@@ -1175,14 +1171,14 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public void listen (final String channel) {
         try (TryLock ignored = lock.get()) {
-            query(String.format("listen %s", SQL.quoteChannel(channel)));
+            query(String.format("listen %s", SQLTool.quoteChannel(channel)));
         }
     }
 
     @SuppressWarnings("unused")
     public void unlisten (final String channel) {
         try (TryLock ignored = lock.get()) {
-            query(String.format("unlisten %s", SQL.quoteChannel(channel)));
+            query(String.format("unlisten %s", SQLTool.quoteChannel(channel)));
         }
     }
 
