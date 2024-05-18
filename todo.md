@@ -1,6 +1,9 @@
 
 - readme
 
+- pool log level
+- pool min size -> pool init size?
+
 - enable binary by default?
 
 - honey: transaction test
