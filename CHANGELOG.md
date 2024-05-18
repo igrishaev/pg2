@@ -8,6 +8,7 @@
 - refactor BIN/TXT constants
 - refactor Connection constructor
 - refactor Pool constructor
+- pool lifetime opt renamed
 
 ## 0.1.12
 

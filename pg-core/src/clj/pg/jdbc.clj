@@ -9,7 +9,7 @@
    clojure.lang.IPersistentMap
    clojure.lang.IFn
    org.pg.Connection
-   org.pg.pool.Pool)
+   org.pg.Pool)
   (:require
    [clojure.set :as set]
    [pg.core :as pg]

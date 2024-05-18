@@ -21,9 +21,7 @@
    java.io.Writer
    java.util.Map
    org.pg.Connection
-   org.pg.pool.Pool
-   org.pg.pool.PoolConfig
-   org.pg.pool.PoolConfig$Builder))
+   org.pg.Pool))
 
 
 (defn pool?
@@ -34,42 +32,15 @@
   (instance? Pool x))
 
 
-(defn ->pool-config
-  "
-  Build a PoolConfig instance from a Clojure map.
-  "
-  ^PoolConfig [opt]
-  (let [{:keys [pool-min-size
-                pool-max-size
-                pool-ms-lifetime
-                pool-log-level]}
-        opt]
-
-    (cond-> (PoolConfig/builder)
-
-      pool-min-size
-      (.minSize pool-min-size)
-
-      pool-max-size
-      (.maxSize pool-max-size)
-
-      pool-ms-lifetime
-      (.msLifetime pool-ms-lifetime)
-
-      pool-log-level
-      (.logLevel (pg/->LogLevel pool-log-level))
-
-      :finally
-      (.build))))
-
-
 (defn pool
   "
   Run a new Pool from a config map.
   "
-  ^Pool [^Map opt]
-  (Pool/create (pg/->conn-config opt)
-               (->pool-config opt)))
+  (^Pool [^Map opt]
+   (Pool/create (pg/->config opt)))
+
+  (^Pool [^String host ^Integer port ^String user ^String password ^String database]
+   (Pool/create host port user password database)))
 
 
 (defn close

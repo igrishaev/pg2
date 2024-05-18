@@ -9,16 +9,16 @@
 - reorganize the docs
 - copy in/out tab format
 
-- pool: common config
-- pool: min size -> init size
 - pool: test conn closed in the background
+- pool check leaked conns
+
+- pg common lazy row?
+- lazy row deref
 
 - PGErrorResponse: extend ExceptionInfo?
 
 - pg.ring package (move json middleware)
 - ring jdbc session middleware
-
-- Connection and Pool: refactor constructors
 
 - lazy map
   - optional flag

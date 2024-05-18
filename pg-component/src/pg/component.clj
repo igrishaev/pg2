@@ -1,7 +1,7 @@
 (ns pg.component
   (:import
    org.pg.Connection
-   org.pg.pool.Pool)
+   org.pg.Pool)
   (:require
    [com.stuartsierra.component :as component]
    [pg.core :as pg]

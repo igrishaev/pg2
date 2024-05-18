@@ -23,8 +23,8 @@
    java.util.UUID
    javax.net.ssl.SSLContext
    org.pg.CancelTimer
-   org.pg.ConnConfig
-   org.pg.ConnConfig$Builder
+   org.pg.Config
+   org.pg.Config$Builder
    org.pg.Connection
    org.pg.ExecuteParams
    org.pg.ExecuteParams$Builder
@@ -43,7 +43,7 @@
    org.pg.error.PGErrorResponse
    org.pg.json.JSON
    org.pg.json.JSON$Wrapper
-   org.pg.pool.Pool
+   org.pg.Pool
    org.pg.reducer.IReducer
    org.pg.type.PGEnum))
 
@@ -247,13 +247,13 @@
     System$Logger$Level/OFF))
 
 
-(defn ->conn-config
+(defn ->config
   "
-  Turn a Clojure map into an instance of ConnConfig.Builder.
+  Turn a Clojure map into an instance of Config.Builder.
   "
-  ^ConnConfig$Builder [params]
+  ^Config$Builder [params]
 
-  (let [{:keys [;; general
+  (let [{:keys [ ;; general
                 user
                 database
                 host
@@ -299,13 +299,18 @@
 
                 ;; misc
                 cancel-timeout-ms
-                protocol-version]}
+                protocol-version
+
+                ;; pool
+                pool-min-size
+                pool-max-size
+                pool-lifetime-ms]}
         params
 
         DB
         (or database dbname)]
 
-    (cond-> (new ConnConfig$Builder user DB)
+    (cond-> (new Config$Builder user DB)
 
       password
       (.password password)
@@ -376,6 +381,16 @@
       read-only?
       (.readOnly)
 
+      ;; TODO: refactor
+      pool-min-size
+      (.poolMinSize pool-min-size)
+
+      pool-max-size
+      (.poolMaxSize pool-max-size)
+
+      pool-lifetime-ms
+      (.poolLifetimeMs pool-lifetime-ms)
+
       :finally
       (.build))))
 
@@ -390,7 +405,7 @@
   "
 
   (^Connection [config]
-   (Connection/connect (->conn-config config)))
+   (Connection/connect (->config config)))
 
   (^Connection [^String host ^Integer port ^String user ^String password ^String database]
    (Connection/connect host port user password database)))
@@ -1158,7 +1173,7 @@
   (-return-connection [this ^Connection conn]
     (close conn))
 
-  ConnConfig
+  Config
 
   (-borrow-connection [this]
     (Connection/connect this))

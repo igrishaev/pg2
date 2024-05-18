@@ -83,7 +83,7 @@
    :log-level :info
    :pool-min-size POOL_CONN_MIN
    :pool-max-size POOL_CONN_MAX
-   :pool-ms-lifetime 100000
+   :pool-lifetime-ms 100000
    :pool-log-level :info})
 
 

@@ -1,11 +1,5 @@
 package org.pg;
 
-import clojure.lang.PersistentVector;
-import org.pg.enums.OID;
-
-import java.util.Collections;
-import java.util.List;
-
 public final class Main {
 
     public static void main (final String[] args) {
@@ -20,7 +14,7 @@ public final class Main {
 //                .binaryDecode(true)
 //                .build();
 
-        ConnConfig config = ConnConfig.builder("test", "test")
+        Config config = Config.builder("test", "test")
                 .port(10140)
                 .host("127.0.0.1")
                 .password("test")

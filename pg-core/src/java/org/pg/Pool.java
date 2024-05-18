@@ -1,7 +1,5 @@
-package org.pg.pool;
+package org.pg;
 
-import org.pg.ConnConfig;
-import org.pg.Connection;
 import org.pg.error.PGError;
 import org.pg.util.TryLock;
 
@@ -13,40 +11,47 @@ import java.util.HashMap;
 
 public final class Pool implements AutoCloseable {
 
-    private final ConnConfig connConfig;
-    private final PoolConfig poolConfig;
+    private final Config config;
     private final Map<UUID, Connection> connsUsed;
     private final Deque<Connection> connsFree;
     private boolean isClosed = false;
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
     private final TryLock lock = new TryLock();
 
-    private Pool (final ConnConfig connConfig, final PoolConfig poolConfig) {
-        this.connConfig = connConfig;
-        this.poolConfig = poolConfig;
-        this.connsUsed = new HashMap<>(poolConfig.maxSize());
-        this.connsFree = new ArrayDeque<>(poolConfig.maxSize());
+    private Pool (final Config config) {
+        this.config = config;
+        this.connsUsed = new HashMap<>(config.poolMaxSize());
+        this.connsFree = new ArrayDeque<>(config.poolMaxSize());
     }
 
-    public static Pool create (final ConnConfig connConfig) {
-        return create(connConfig, PoolConfig.standard());
+    public static Pool create (final String host,
+                               final int port,
+                               final String user,
+                               final String password,
+                               final String database)
+    {
+        return create(Config.builder(user, database)
+                .host(host)
+                .port(port)
+                .password(password)
+                .build());
     }
 
-    public static Pool create (final ConnConfig connConfig, final PoolConfig poolConfig) {
-        final Pool pool = new Pool(connConfig, poolConfig);
+    public static Pool create (final Config config) {
+        final Pool pool = new Pool(config);
         pool._initiate();
         return pool;
     }
 
     private void _initiate () {
-        for (int i = 0; i < poolConfig.minSize(); i++) {
-            final Connection conn = Connection.connect(connConfig);
+        for (int i = 0; i < config.poolMinSize(); i++) {
+            final Connection conn = Connection.connect(config);
             connsFree.add(conn);
         }
     }
 
     private boolean isExpired (final Connection conn) {
-        return System.currentTimeMillis() - conn.getCreatedAt() > poolConfig.msLifetime();
+        return System.currentTimeMillis() - conn.getCreatedAt() > config.poolLifetimeMs();
     }
 
     private void addUsed (final Connection conn) {
@@ -75,19 +80,21 @@ public final class Pool implements AutoCloseable {
             throw new PGError("Cannot get a connection: the pool has been closed");
         }
 
+        final int maxSize = config.poolMaxSize();
+
         while (true) {
             final Connection conn = connsFree.poll();
             if (conn == null) {
-                if (connsUsed.size() < poolConfig.maxSize()) {
+                if (connsUsed.size() < maxSize) {
                     return spawnConnection();
                 }
                 else {
                     final String message = String.format(
                             "The pool is exhausted: %s out of %s connections are in use",
                             connsUsed.size(),
-                            poolConfig.maxSize()
+                            maxSize
                     );
-                    logger.log(poolConfig.logLevel(), message);
+                    logger.log(config.logLevel(), message);
                     throw new PGError(message);
                 }
             }
@@ -96,7 +103,7 @@ public final class Pool implements AutoCloseable {
                         "Connection %s has been already closed",
                         conn.getId()
                 );
-                logger.log(poolConfig.logLevel(), message);
+                logger.log(config.logLevel(), message);
                 continue;
             }
             if (isExpired(conn)) {
@@ -112,25 +119,25 @@ public final class Pool implements AutoCloseable {
     private void utilizeConnection(final Connection conn) {
         conn.close();
         logger.log(
-                poolConfig.logLevel(),
+                config.logLevel(),
                 "the connection {0} has been closed, free: {1}, used: {2}, max: {3}",
                 conn.getId(),
                 connsFree.size(),
                 connsUsed.size(),
-                poolConfig.maxSize()
+                config.poolMaxSize()
         );
     }
 
     private Connection spawnConnection() {
-        final Connection conn = Connection.connect(connConfig);
+        final Connection conn = Connection.connect(config);
         addUsed(conn);
         logger.log(
-                poolConfig.logLevel(),
+                config.logLevel(),
                 "connection {0} has been created, free: {1}, used: {2}, max: {3}",
                 conn.getId(),
                 connsFree.size(),
                 connsUsed.size(),
-                poolConfig.maxSize()
+                config.poolMaxSize()
         );
         return conn;
     }
@@ -226,9 +233,9 @@ public final class Pool implements AutoCloseable {
         try (TryLock ignored = lock.get()) {
             return String.format(
                     "<PG pool, min: %s, max: %s, lifetime: %s>",
-                    poolConfig.minSize(),
-                    poolConfig.maxSize(),
-                    poolConfig.msLifetime()
+                    config.poolMinSize(),
+                    config.poolMaxSize(),
+                    config.poolLifetimeMs()
             );
         }
     }

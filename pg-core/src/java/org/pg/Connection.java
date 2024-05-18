@@ -36,7 +36,7 @@ public final class Connection implements AutoCloseable {
                     .getOrDefault("PG_DEBUG", "")
                     .equals("1");
 
-    private final ConnConfig config;
+    private final Config config;
     private final UUID id;
     private final long createdAt;
     private int counter = 0;
@@ -54,7 +54,7 @@ public final class Connection implements AutoCloseable {
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
 
-    private Connection(final ConnConfig config) {
+    private Connection(final Config config) {
         this.config = config;
         this.params = new HashMap<>();
         this.codecParams = CodecParams.builder().objectMapper(config.objectMapper()).build();
@@ -62,7 +62,7 @@ public final class Connection implements AutoCloseable {
         this.createdAt = System.currentTimeMillis();
     }
 
-    public static Connection connect(final ConnConfig config, final boolean sendStartup) {
+    public static Connection connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
         conn._connect();
         conn._setSocketOptions();
@@ -74,7 +74,7 @@ public final class Connection implements AutoCloseable {
     }
 
     @SuppressWarnings("unused")
-    public static Connection connect(final ConnConfig config) {
+    public static Connection connect(final Config config) {
         return connect(config, true);
     }
 
@@ -85,7 +85,7 @@ public final class Connection implements AutoCloseable {
                                      final String password,
                                      final String database)
     {
-        return new Connection(ConnConfig.builder(user, database)
+        return new Connection(Config.builder(user, database)
                 .host(host)
                 .port(port)
                 .password(password)
@@ -196,7 +196,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    public ConnConfig getConfig () {
+    public Config getConfig () {
         return config;
     }
 

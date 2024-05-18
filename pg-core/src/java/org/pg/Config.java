@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.Objects;
 
-public record ConnConfig(
+public record Config(
         String user,
         String database,
         String password,
@@ -35,14 +35,17 @@ public record ConnConfig(
         System.Logger.Level logLevel,
         long cancelTimeoutMs,
         ObjectMapper objectMapper,
-        boolean readOnly
+        boolean readOnly,
+        int poolMinSize,
+        int poolMaxSize,
+        int poolLifetimeMs
 ) {
 
     public static Builder builder (final String user, final String database) {
         return new Builder(user, database);
     }
 
-    public static ConnConfig standard (final String user, final String database) {
+    public static Config standard (final String user, final String database) {
         return builder(user, database).build();
     }
 
@@ -72,6 +75,9 @@ public record ConnConfig(
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
         private ObjectMapper objectMapper = JSON.defaultMapper;
         private boolean readOnly = false;
+        private int poolMinSize = Const.POOL_SIZE_MIN;
+        private int poolMaxSize = Const.POOL_SIZE_MAX;
+        private int poolLifetimeMs = Const.POOL_MAX_LIFETIME;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -228,8 +234,26 @@ public record ConnConfig(
             return pgParam("default_transaction_read_only", "on");
         }
 
-        public ConnConfig build() {
-            return new ConnConfig(
+        @SuppressWarnings("unused")
+        public Builder poolMinSize(final int poolMinSize) {
+            this.poolMinSize = poolMinSize;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder poolMaxSize(final int poolMaxSize) {
+            this.poolMaxSize = poolMaxSize;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder poolLifetimeMs(final int poolLifetimeMs) {
+            this.poolLifetimeMs = poolLifetimeMs;
+            return this;
+        }
+
+        public Config build() {
+            return new Config(
                     this.user,
                     this.database,
                     this.password,
@@ -254,7 +278,10 @@ public record ConnConfig(
                     this.logLevel,
                     this.cancelTimeoutMs,
                     this.objectMapper,
-                    this.readOnly
+                    this.readOnly,
+                    this.poolMinSize,
+                    this.poolMaxSize,
+                    this.poolLifetimeMs
             );
         }
     }

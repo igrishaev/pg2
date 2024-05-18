@@ -105,7 +105,7 @@
         (assoc *CONFIG*
                :pool-min-size 1
                :pool-max-size 1
-               :pool-ms-lifetime 300)]
+               :pool-lifetime-ms 300)]
 
     (pool/with-pool [pool config]
 
