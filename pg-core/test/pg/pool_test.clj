@@ -104,6 +104,7 @@
         config
         (assoc *CONFIG*
                :pool-min-size 1
+               :pool-init-size 1
                :pool-max-size 1
                :pool-lifetime-ms 300)]
 
@@ -140,6 +141,7 @@
 (deftest test-pool-in-transaction-state
   (pool/with-pool [pool (assoc *CONFIG*
                                :pool-min-size 1
+                               :pool-init-size 1
                                :pool-max-size 1)]
 
     (let [id1
@@ -175,6 +177,7 @@
 (deftest test-pool-in-error-state
   (pool/with-pool [pool (assoc *CONFIG*
                                :pool-min-size 1
+                               :pool-init-size 1
                                :pool-max-size 1)]
 
     (let [id1
@@ -233,6 +236,7 @@
         config
         (assoc *CONFIG*
                :pool-min-size 0
+               :pool-init-size 1
                :pool-max-size 1)]
 
     (with-open [pool (pool/pool config)]

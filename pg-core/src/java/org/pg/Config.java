@@ -2,6 +2,7 @@ package org.pg;
 
 import clojure.lang.IFn;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pg.error.PGError;
 import org.pg.json.JSON;
 
 import javax.net.ssl.SSLContext;
@@ -37,6 +38,7 @@ public record Config(
         ObjectMapper objectMapper,
         boolean readOnly,
         int poolMinSize,
+        int poolInitSize,
         int poolMaxSize,
         int poolLifetimeMs
 ) {
@@ -45,6 +47,7 @@ public record Config(
         return new Builder(user, database);
     }
 
+    @SuppressWarnings("unused")
     public static Config standard (final String user, final String database) {
         return builder(user, database).build();
     }
@@ -76,6 +79,7 @@ public record Config(
         private ObjectMapper objectMapper = JSON.defaultMapper;
         private boolean readOnly = false;
         private int poolMinSize = Const.POOL_SIZE_MIN;
+        private int poolInitSize = Const.POOL_SIZE_INIT;
         private int poolMaxSize = Const.POOL_SIZE_MAX;
         private int poolLifetimeMs = Const.POOL_MAX_LIFETIME;
 
@@ -241,6 +245,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder poolInitSize(final int poolInitSize) {
+            this.poolInitSize = poolInitSize;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         public Builder poolMaxSize(final int poolMaxSize) {
             this.poolMaxSize = poolMaxSize;
             return this;
@@ -252,7 +262,22 @@ public record Config(
             return this;
         }
 
+        @SuppressWarnings("unused")
+        private void _validate() {
+            if (!(poolMinSize <= poolInitSize)) {
+                throw new PGError("pool init size (%s) must be <= pool init size (%s)",
+                        poolMinSize, poolInitSize
+                );
+            }
+            if (!(poolInitSize <= poolMaxSize)) {
+                throw new PGError("pool init size (%s) must be <= pool max size (%s)",
+                        poolInitSize, poolMaxSize
+                );
+            }
+        }
+
         public Config build() {
+            _validate();
             return new Config(
                     this.user,
                     this.database,
@@ -280,6 +305,7 @@ public record Config(
                     this.objectMapper,
                     this.readOnly,
                     this.poolMinSize,
+                    this.poolInitSize,
                     this.poolMaxSize,
                     this.poolLifetimeMs
             );

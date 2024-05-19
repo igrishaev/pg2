@@ -1,8 +1,10 @@
 
 - readme
 
-- pool log level
+pool
+- add pool tests
 - pool min size -> pool init size?
+- pool log level
 
 - enable binary by default?
 

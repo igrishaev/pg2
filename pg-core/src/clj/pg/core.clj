@@ -303,6 +303,7 @@
 
                 ;; pool
                 pool-min-size
+                pool-init-size
                 pool-max-size
                 pool-lifetime-ms]}
         params
@@ -381,9 +382,11 @@
       read-only?
       (.readOnly)
 
-      ;; TODO: refactor
       pool-min-size
       (.poolMinSize pool-min-size)
+
+      pool-init-size
+      (.poolInitSize pool-init-size)
 
       pool-max-size
       (.poolMaxSize pool-max-size)

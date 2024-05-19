@@ -45,8 +45,7 @@ public final class Pool implements AutoCloseable {
 
     private void _initiate () {
         for (int i = 0; i < config.poolMinSize(); i++) {
-            final Connection conn = Connection.connect(config);
-            connsFree.add(conn);
+            spawnConnection();
         }
     }
 
@@ -76,6 +75,9 @@ public final class Pool implements AutoCloseable {
     @SuppressWarnings("unused")
     private Connection _borrowConnection_unlocked () {
 
+        int gap;
+        Connection conn;
+
         if (isClosed()) {
             throw new PGError("Cannot get a connection: the pool has been closed");
         }
@@ -83,11 +85,25 @@ public final class Pool implements AutoCloseable {
         final int maxSize = config.poolMaxSize();
 
         while (true) {
-            final Connection conn = connsFree.poll();
-            if (conn == null) {
-                if (connsUsed.size() < maxSize) {
-                    return spawnConnection();
+            conn = connsFree.poll();
+            if (conn == null) { // No free connections
+
+                // fill up missing connections
+                gap = config.poolMinSize() - connsUsed.size();
+                if (gap > 0) {
+                    for (var i = 0; i < gap; i++) {
+                        conn = spawnConnection();
+                    }
+                    addUsed(conn);
+                    return conn;
                 }
+
+                if (connsUsed.size() < maxSize) {
+                    conn = spawnConnection();
+                    addUsed(conn);
+                    return conn;
+             }
+
                 else {
                     final String message = String.format(
                             "The pool is exhausted: %s out of %s connections are in use",
@@ -100,7 +116,7 @@ public final class Pool implements AutoCloseable {
             }
             if (conn.isClosed()) {
                 final String message = String.format(
-                        "Connection %s has been already closed",
+                        "Connection %s has been already closed, ignoring",
                         conn.getId()
                 );
                 logger.log(config.logLevel(), message);
@@ -108,6 +124,7 @@ public final class Pool implements AutoCloseable {
             }
             if (isExpired(conn)) {
                 utilizeConnection(conn);
+                continue;
             }
             else {
                 addUsed(conn);
@@ -130,7 +147,7 @@ public final class Pool implements AutoCloseable {
 
     private Connection spawnConnection() {
         final Connection conn = Connection.connect(config);
-        addUsed(conn);
+        offerConnection(conn);
         logger.log(
                 config.logLevel(),
                 "connection {0} has been created, free: {1}, used: {2}, max: {3}",
@@ -153,6 +170,12 @@ public final class Pool implements AutoCloseable {
         }
     }
 
+    private void offerConnection (final Connection conn) {
+        if (!connsFree.offer(conn)) {
+            throw new PGError("could not return connection %s to the pool", conn.getId());
+        }
+    }
+
     private void _returnConnection_unlocked (final Connection conn, final boolean forceClose) {
 
         if (!isUsed(conn)) {
@@ -167,6 +190,11 @@ public final class Pool implements AutoCloseable {
         }
 
         if (conn.isClosed()) {
+            logger.log(
+                    config.logLevel(),
+                    "connection {0} has bin closed, ignoring",
+                    conn.getId()
+            );
             return;
         }
 
@@ -176,21 +204,42 @@ public final class Pool implements AutoCloseable {
         }
 
         if (isExpired(conn)) {
+            logger.log(
+                    config.logLevel(),
+                    "connection {0} has expired, closing",
+                    conn.getId()
+            );
             utilizeConnection(conn);
             return;
         }
 
         if (conn.isTxError()) {
+            logger.log(
+                    config.logLevel(),
+                    "connection {0} is in error state, rolling back",
+                    conn.getId()
+            );
             conn.rollback();
             utilizeConnection(conn);
             return;
         }
 
         if (conn.isTransaction()) {
+            logger.log(
+                    config.logLevel(),
+                    "connection {0} is in transaction, rolling back",
+                    conn.getId()
+            );
             conn.rollback();
         }
 
-        connsFree.offer(conn);
+        offerConnection(conn);
+
+        logger.log(
+                config.logLevel(),
+                "connection {0} has been returned to the pool",
+                conn.getId()
+        );
     }
 
     public void close () {
