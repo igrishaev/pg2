@@ -14,6 +14,10 @@ pool
 - reorganize the docs
 - copy in/out tab format
 
+- MERGE result
+
+- UnparsedTxt, UnparsedBin types?
+
 - pool: test conn closed in the background
 - pool check leaked conns
 
