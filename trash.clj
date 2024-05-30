@@ -75,3 +75,31 @@
  :id 5,
  :created_at
  #object[java.time.OffsetDateTime 0x21782713 "2024-01-17T21:57:58.660012+03:00"]}
+
+
+
+private boolean _is_used_too_long (final long startTime) {
+        return System.currentTimeMillis() - startTime > 123;
+    }
+
+    private void _pre_foo_bar () {
+        Connection conn;
+        for (Map.Entry<UUID, Long> entry : connUsedSince.entrySet()) {
+            if (_is_used_too_long(entry.getValue())) {
+                conn = connsUsed.get(entry.getKey());
+                final String message = String.format(
+                        "Connection %s has been considered as leaked, closing",
+                        conn.getId()
+                );
+                logger.log(config.logLevel(), message);
+                removeUsed(conn);
+                utilizeConnection(conn);
+            }
+        }
+    }
+
+
+private final Map<UUID, Long> connUsedSince;
+this.connUsedSince = new HashMap<>(config.poolMaxSize());
+connUsedSince.remove(conn.getId());
+connUsedSince.put(conn.getId(), System.currentTimeMillis());

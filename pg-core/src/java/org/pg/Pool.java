@@ -85,19 +85,18 @@ public final class Pool implements AutoCloseable {
             conn = connsFree.poll();
             if (conn == null) { // No free connections
 
-                // fill up missing connections
+                // replenish missing connections
                 gap = config.poolMinSize() - connsUsed.size();
                 if (gap > 0) {
                     for (var i = 0; i < gap; i++) {
-                        conn = spawnConnection();
+                        spawnConnection();
                     }
-                    return conn;
                 }
 
                 if (connsUsed.size() < config.poolMaxSize()) {
-                    conn = spawnConnection();
-                    return conn;
+                    return spawnConnection();
                 }
+
                 else {
                     final String message = String.format(
                             "The pool is exhausted: %s out of %s connections are in use",
@@ -108,6 +107,7 @@ public final class Pool implements AutoCloseable {
                     throw new PGError(message);
                 }
             }
+
             if (conn.isClosed()) {
                 final String message = String.format(
                         "Connection %s has been already been closed, ignoring",
@@ -141,12 +141,14 @@ public final class Pool implements AutoCloseable {
                     return conn;
                 } catch (PGError e) {
                     final String message = String.format(
-                            "Connection %s has failed the query: %s, closing",
+                            "Connection %s has failed the query: %s, closing. Reason: %s",
                             conn.getId(),
-                            SQLCheck
+                            SQLCheck,
+                            e.getMessage()
                     );
                     logger.log(config.logLevel(), message);
                     utilizeConnection(conn);
+                    removeUsed(conn);
                 }
             }
         }
