@@ -1,11 +1,6 @@
 
 - readme
 
-pool
-- add pool tests
-- pool min size -> pool init size?
-- pool log level
-
 - enable binary by default?
 
 - honey: transaction test
@@ -20,6 +15,7 @@ pool
 
 - pool: test conn closed in the background
 - pool check leaked conns
+- pool check conn sql
 
 - pg common lazy row?
 - lazy row deref

@@ -104,7 +104,6 @@
         config
         (assoc *CONFIG*
                :pool-min-size 1
-               :pool-init-size 1
                :pool-max-size 1
                :pool-lifetime-ms 300)]
 
@@ -141,7 +140,6 @@
 (deftest test-pool-in-transaction-state
   (pool/with-pool [pool (assoc *CONFIG*
                                :pool-min-size 1
-                               :pool-init-size 1
                                :pool-max-size 1)]
 
     (let [id1
@@ -177,7 +175,6 @@
 (deftest test-pool-in-error-state
   (pool/with-pool [pool (assoc *CONFIG*
                                :pool-min-size 1
-                               :pool-init-size 1
                                :pool-max-size 1)]
 
     (let [id1
@@ -236,7 +233,6 @@
         config
         (assoc *CONFIG*
                :pool-min-size 0
-               :pool-init-size 1
                :pool-max-size 1)]
 
     (with-open [pool (pool/pool config)]
@@ -259,6 +255,19 @@
       (is (= @id1 @id2))
       (is (not= @id2 @id3))
       (is (= @id3 @id4)))))
+
+
+(deftest test-pool-wrong-sizes
+  (let [config
+        (assoc *CONFIG*
+               :pool-min-size 3
+               :pool-max-size 2)]
+    (try
+      (pool/pool config)
+      (is false)
+      (catch PGError e
+        (is (= "pool min size (3) must be <= pool max size (2)"
+               (ex-message e)))))))
 
 
 (deftest test-pool-termination

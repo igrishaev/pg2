@@ -303,7 +303,6 @@
 
                 ;; pool
                 pool-min-size
-                pool-init-size
                 pool-max-size
                 pool-lifetime-ms]}
         params
@@ -384,9 +383,6 @@
 
       pool-min-size
       (.poolMinSize pool-min-size)
-
-      pool-init-size
-      (.poolInitSize pool-init-size)
 
       pool-max-size
       (.poolMaxSize pool-max-size)

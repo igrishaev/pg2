@@ -9,7 +9,6 @@
 - refactor Connection constructor
 - refactor Pool constructor
 - pool lifetime opt renamed
-- pool init size
 
 ## 0.1.12
 
