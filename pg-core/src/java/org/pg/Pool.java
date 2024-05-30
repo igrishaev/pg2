@@ -68,12 +68,11 @@ public final class Pool implements AutoCloseable {
     @SuppressWarnings("unused")
     public Connection borrowConnection () {
         try (TryLock ignored = lock.get()) {
-            return _borrowConnection_unlocked();
+            return _borrow_connection_unlocked();
         }
     }
 
-    @SuppressWarnings("unused")
-    private Connection _borrowConnection_unlocked () {
+    private Connection _pre_borrow_connection () {
 
         int gap;
         Connection conn;
@@ -81,8 +80,6 @@ public final class Pool implements AutoCloseable {
         if (isClosed()) {
             throw new PGError("Cannot get a connection: the pool has been closed");
         }
-
-        final int maxSize = config.poolMaxSize();
 
         while (true) {
             conn = connsFree.poll();
@@ -94,21 +91,18 @@ public final class Pool implements AutoCloseable {
                     for (var i = 0; i < gap; i++) {
                         conn = spawnConnection();
                     }
-                    addUsed(conn);
                     return conn;
                 }
 
-                if (connsUsed.size() < maxSize) {
+                if (connsUsed.size() < config.poolMaxSize()) {
                     conn = spawnConnection();
-                    addUsed(conn);
                     return conn;
-             }
-
+                }
                 else {
                     final String message = String.format(
                             "The pool is exhausted: %s out of %s connections are in use",
                             connsUsed.size(),
-                            maxSize
+                            config.poolMaxSize()
                     );
                     logger.log(config.logLevel(), message);
                     throw new PGError(message);
@@ -116,7 +110,7 @@ public final class Pool implements AutoCloseable {
             }
             if (conn.isClosed()) {
                 final String message = String.format(
-                        "Connection %s has been already closed, ignoring",
+                        "Connection %s has been already been closed, ignoring",
                         conn.getId()
                 );
                 logger.log(config.logLevel(), message);
@@ -127,8 +121,33 @@ public final class Pool implements AutoCloseable {
                 continue;
             }
             else {
+                return conn;
+            }
+        }
+    }
+
+    private Connection _borrow_connection_unlocked () {
+        Connection conn;
+        final String SQLCheck = config.poolSQLCheck();
+        while (true) {
+            conn = _pre_borrow_connection();
+            if (SQLCheck.isEmpty()) {
                 addUsed(conn);
                 return conn;
+            } else {
+                try {
+                    conn.query(SQLCheck);
+                    addUsed(conn);
+                    return conn;
+                } catch (PGError e) {
+                    final String message = String.format(
+                            "Connection %s has failed the query: %s, closing",
+                            conn.getId(),
+                            SQLCheck
+                    );
+                    logger.log(config.logLevel(), message);
+                    utilizeConnection(conn);
+                }
             }
         }
     }

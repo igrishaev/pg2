@@ -304,7 +304,8 @@
                 ;; pool
                 pool-min-size
                 pool-max-size
-                pool-lifetime-ms]}
+                pool-lifetime-ms
+                pool-sql-check]}
         params
 
         DB
@@ -389,6 +390,9 @@
 
       pool-lifetime-ms
       (.poolLifetimeMs pool-lifetime-ms)
+
+      pool-sql-check
+      (.poolSQLCheck pool-sql-check)
 
       :finally
       (.build))))

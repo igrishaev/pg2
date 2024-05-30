@@ -9,6 +9,7 @@
 - refactor Connection constructor
 - refactor Pool constructor
 - pool lifetime opt renamed
+- pool sql check support
 
 ## 0.1.12
 

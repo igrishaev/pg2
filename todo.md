@@ -13,9 +13,7 @@
 
 - UnparsedTxt, UnparsedBin types?
 
-- pool: test conn closed in the background
 - pool check leaked conns
-- pool check conn sql
 
 - pg common lazy row?
 - lazy row deref

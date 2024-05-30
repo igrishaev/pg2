@@ -39,7 +39,8 @@ public record Config(
         boolean readOnly,
         int poolMinSize,
         int poolMaxSize,
-        int poolLifetimeMs
+        int poolLifetimeMs,
+        String poolSQLCheck
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -80,6 +81,7 @@ public record Config(
         private int poolMinSize = Const.POOL_SIZE_MIN;
         private int poolMaxSize = Const.POOL_SIZE_MAX;
         private int poolLifetimeMs = Const.POOL_MAX_LIFETIME;
+        private String poolSQLCheck = Const.POOL_SQL_CHECK;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -255,6 +257,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder poolSQLCheck(final String poolSQLCheck) {
+            this.poolSQLCheck = poolSQLCheck;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -293,7 +301,8 @@ public record Config(
                     this.readOnly,
                     this.poolMinSize,
                     this.poolMaxSize,
-                    this.poolLifetimeMs
+                    this.poolLifetimeMs,
+                    this.poolSQLCheck
             );
         }
     }

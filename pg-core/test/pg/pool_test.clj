@@ -270,6 +270,17 @@
                (ex-message e)))))))
 
 
+(deftest test-pool-sql-check
+  (let [config
+        (assoc *CONFIG*
+               :pool-sql-check "select -- health check")]
+    (pool/with-pool [pool config]
+      (pool/with-connection [conn1 pool]
+        (pool/with-connection [conn2 pool]
+          (is (some? (pg/query conn1 "select 123")))
+          (is (some? (pg/query conn2 "select 456"))))))))
+
+
 (deftest test-pool-termination
 
   (pool/with-pool [pool *CONFIG*]
