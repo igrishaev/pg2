@@ -27,9 +27,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private void logExpired(final Connection conn) {
-        logger.log(
-                config.logLevel(),
-                "Connection {0} has been expired, closing. Pool: {1}",
+        log("Connection %s has been expired, closing. Pool: %s",
                 conn.getId(),
                 this.id
         );
@@ -61,7 +59,7 @@ public final class Pool implements AutoCloseable {
     private class ReplenishTask extends TimerTask {
         @Override
         public void run() {
-            log("Start connection replenishment background task, pool: %s", id);
+            log("Start connection replenishment task, pool: %s", id);
             final int gap = config.poolMinSize() - connsUsed.size();
             try (TryLock ignored = lock.get()) {
                 if (gap > 0) {
@@ -76,7 +74,7 @@ public final class Pool implements AutoCloseable {
     private class ExpireTask extends TimerTask {
         @Override
         public void run() {
-            log("Start connection expiration background task, pool: %s", id);
+            log("Start connection expiration task, pool: %s", id);
             try (TryLock ignored = lock.get()) {
                 for (final Connection conn : connsFree) {
                     if (isExpired(conn)) {
@@ -90,12 +88,19 @@ public final class Pool implements AutoCloseable {
     }
 
     private boolean isLeaked(final Connection conn) {
-        return System.currentTimeMillis() - connsBorrowedAt.get(conn.getId()) > config.poolLeakThresholdMs();
+        final Long borrowedAt = connsBorrowedAt.get(conn.getId());
+        if (borrowedAt == null) {
+            return false;
+        }
+        else {
+            return System.currentTimeMillis() - borrowedAt > config.poolLeakThresholdMs();
+        }
     }
 
     private class LeakTask extends TimerTask {
         @Override
         public void run() {
+            log("Start leaked connection task, pool: %s", id);
             try (TryLock ignored = lock.get()) {
                 for (final Connection conn : connsUsed.values()) {
                     if (isLeaked(conn)) {
@@ -112,16 +117,19 @@ public final class Pool implements AutoCloseable {
     private class SQLCheckTask extends TimerTask {
         @Override
         public void run() {
+            log("Start SQL check task, pool: %s", id);
             final String sql = config.poolSQLCheck();
-            if (sql.isEmpty()) {
-                return;
-            }
             try (TryLock ignored = lock.get()) {
                 for (final Connection conn : connsFree) {
                     try {
                         conn.query(sql);
                     }
                     catch (PGError e) {
+                        log("Connection %s has failed SQL check, closing. Pool: %s, reason: %s",
+                                conn.getId(),
+                                id,
+                                e.getMessage()
+                        );
                         utilizeConnection(conn);
                         removeUsed(conn);
                     }
@@ -137,7 +145,7 @@ public final class Pool implements AutoCloseable {
         this.connsUsed = new HashMap<>(size);
         this.connsFree = new ArrayDeque<>(size);
         this.connsBorrowedAt = new HashMap<>(size);
-        this.timer = new Timer("PoolTimer", false);
+        this.timer = new Timer(String.format("PoolTimer %s", id), false);
     }
 
     @SuppressWarnings("unused")
@@ -174,24 +182,32 @@ public final class Pool implements AutoCloseable {
         final long periodReplenish = config.poolReplenishPeriodMs();
         if (periodReplenish > 0) {
             final long delayReplenish = (long)(Math.random() * periodReplenish + periodReplenish);
+            log("Schedule connection replenishment task, delay: %s, period: %s, pool: %s",
+                    delayReplenish, periodReplenish, id);
             timer.schedule(new ReplenishTask(), delayReplenish, periodReplenish);
         }
 
         final long periodSql = config.poolSQLCheckPeriodMs();
         if (periodSql > 0) {
             final long delaySql = (long)(Math.random() * periodSql + periodSql);
+            log("Schedule SQL check task, delay: %s, period: %s, pool: %s",
+                    delaySql, periodSql, id);
             timer.schedule(new SQLCheckTask(), delaySql, periodSql);
         }
 
-        final long periodExpire = config.poolExpirePeriodMs();
+        final long periodExpire = config.poolExpireThresholdMs();
         if (periodExpire > 0) {
             final long delayExpire = (long)(Math.random() * periodExpire + periodExpire);
+            log("Schedule connection expire task, delay: %s, period: %s, pool: %s",
+                    delayExpire, periodExpire, id);
             timer.schedule(new ExpireTask(), delayExpire, periodExpire);
         }
 
-        final long periodLeak = config.poolLeakPeriodMs();
+        final long periodLeak = config.poolLeakThresholdMs();
         if (periodLeak > 0) {
             final long delayLeak = (long)(Math.random() * periodLeak + periodLeak);
+            log("Schedule connection leak task, delay: %s, period: %s, pool: %s",
+                    delayLeak, periodLeak, id);
             timer.schedule(new LeakTask(), delayLeak, periodLeak);
         }
 
@@ -220,11 +236,11 @@ public final class Pool implements AutoCloseable {
     @SuppressWarnings("unused")
     public Connection borrowConnection () {
         try (TryLock ignored = lock.get()) {
-            return _borrow_connection_unlocked();
+            return borrowConnectionUnlocked();
         }
     }
 
-    private Connection _pre_borrow_connection () {
+    private Connection preBorrowConnection() {
 
         Connection conn;
 
@@ -245,17 +261,13 @@ public final class Pool implements AutoCloseable {
                             connsUsed.size(),
                             config.poolMaxSize()
                     );
-                    logger.log(config.logLevel(), message);
+                    log(message);
                     throw new PGError(message);
                 }
             }
 
             if (conn.isClosed()) {
-                final String message = String.format(
-                        "Connection %s has been already been closed, ignoring",
-                        conn.getId()
-                );
-                logger.log(config.logLevel(), message);
+                log("Connection %s has been already been closed, ignoring", conn.getId());
             }
             else {
                 return conn;
@@ -263,8 +275,8 @@ public final class Pool implements AutoCloseable {
         }
     }
 
-    private Connection _borrow_connection_unlocked () {
-        return addUsed(_pre_borrow_connection());
+    private Connection borrowConnectionUnlocked() {
+        return addUsed(preBorrowConnection());
     }
 
     private void utilizeConnection(final Connection conn) {
@@ -292,7 +304,7 @@ public final class Pool implements AutoCloseable {
 
     public void returnConnection (final Connection conn, final boolean forceClose) {
         try (TryLock ignored = lock.get()) {
-            _returnConnection_unlocked(conn, forceClose);
+            returnConnectionUnlocked(conn, forceClose);
         }
     }
 
@@ -302,14 +314,12 @@ public final class Pool implements AutoCloseable {
         }
     }
 
-    private void _returnConnection_unlocked (final Connection conn, final boolean forceClose) {
+    private void returnConnectionUnlocked(final Connection conn, final boolean forceClose) {
 
         if (!isUsed(conn)) {
-            logger.log(
-                    config.logLevel(),
-                    "connection {0} doesn't belong to the pool {1}, ignoring",
-                    conn.getId(), id
-            );
+            log("Connection %s doesn't belong to the pool %s, closing",
+                    conn.getId(), id);
+            conn.close();
             return;
         }
 
@@ -321,46 +331,35 @@ public final class Pool implements AutoCloseable {
         }
 
         if (conn.isClosed()) {
-            logger.log(
-                    config.logLevel(),
-                    "connection {0} has bin closed, ignoring",
-                    conn.getId()
-            );
+            log("connection %s has already been closed, ignoring. Pool %s",
+                    conn.getId(), id);
             return;
         }
 
         if (forceClose) {
+            log("Closing connection %s due to the force flag, pool: %s", conn.getId(), id);
             utilizeConnection(conn);
             return;
         }
 
         if (conn.isTxError()) {
-            logger.log(
-                    config.logLevel(),
-                    "connection {0} is in error state, rolling back",
-                    conn.getId()
-            );
+            log("connection %s is in error state, rolling back, pool: %s",
+                    conn.getId(), id);
             conn.rollback();
             utilizeConnection(conn);
             return;
         }
 
         if (conn.isTransaction()) {
-            logger.log(
-                    config.logLevel(),
-                    "connection {0} is in transaction, rolling back",
-                    conn.getId()
-            );
+            log("connection %s is in transaction, rolling back, pool: %s",
+                    conn.getId(), id);
             conn.rollback();
         }
 
         offerConnection(conn);
 
-        logger.log(
-                config.logLevel(),
-                "connection {0} has been returned to the pool",
-                conn.getId()
-        );
+        log("connection %s has been returned to the pool %s",
+                conn.getId(), id);
     }
 
     public void close () {
@@ -370,6 +369,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private void closeFree() {
+        log("Closing %s free connections, pool: %s", connsFree.size(), id);
         Connection conn;
         while (true) {
             conn = connsFree.poll();
@@ -384,6 +384,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private void closeUsed() {
+        log("Closing %s used connections, pool: %s", connsUsed.size(), id);
         Connection conn;
         for (final UUID id: connsUsed.keySet()) {
             conn = connsUsed.get(id);

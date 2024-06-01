@@ -10,6 +10,7 @@
 - refactor Pool constructor
 - pool lifetime opt renamed
 - pool sql check support
+- docker pg 16beta -> 16stable
 
 ## 0.1.12
 

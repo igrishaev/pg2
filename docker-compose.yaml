@@ -73,7 +73,7 @@ services:
       - POSTGRES_USER=test
 
   pg16:
-    image: postgres:16beta2
+    image: postgres:16
     command: >
       -E
     hostname: pg16

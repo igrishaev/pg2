@@ -43,8 +43,6 @@ public record Config(
         String poolSQLCheck,
         long poolSQLCheckPeriodMs,
         long poolReplenishPeriodMs,
-        long poolExpirePeriodMs,
-        long poolLeakPeriodMs,
         long poolLeakThresholdMs
 ) {
 
@@ -89,8 +87,6 @@ public record Config(
         private String poolSQLCheck = Const.POOL_SQL_CHECK;
         private long poolSQLCheckPeriodMs = Const.POOL_SQL_CHECK_PERIOD_MS;
         private long poolReplenishPeriodMs = Const.POOL_REPLENISH_PERIOD_MS;
-        private long poolExpirePeriodMs = Const.POOL_EXPIRE_PERIOD_MS;
-        private long poolLeakPeriodMs = Const.POOL_LEAK_PERIOD_MS;
         private long poolLeakThresholdMs = Const.POOL_LEAK_THRESHOLD_MS;
 
         public Builder(final String user, final String database) {
@@ -285,18 +281,6 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
-        public Builder poolExpirePeriodMs(final long poolExpirePeriodMs) {
-            this.poolExpirePeriodMs = poolExpirePeriodMs;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder poolLeakPeriodMs(final long poolLeakPeriodMs) {
-            this.poolLeakPeriodMs = poolLeakPeriodMs;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
         public Builder poolLeakThresholdMs(final long poolLeakThresholdMs) {
             this.poolLeakThresholdMs = poolLeakThresholdMs;
             return this;
@@ -345,8 +329,6 @@ public record Config(
                     this.poolSQLCheck,
                     this.poolSQLCheckPeriodMs,
                     this.poolReplenishPeriodMs,
-                    this.poolExpirePeriodMs,
-                    this.poolLeakPeriodMs,
                     this.poolLeakThresholdMs
             );
         }
