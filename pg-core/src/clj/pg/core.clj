@@ -304,8 +304,11 @@
                 ;; pool
                 pool-min-size
                 pool-max-size
-                pool-lifetime-ms
-                pool-sql-check]}
+                pool-expire-threshold-ms
+                pool-sql-check
+                pool-sql-check-period-ms
+                pool-replenish-period-ms
+                pool-leak-threshold-ms]}
         params
 
         DB
@@ -388,11 +391,20 @@
       pool-max-size
       (.poolMaxSize pool-max-size)
 
-      pool-lifetime-ms
-      (.poolLifetimeMs pool-lifetime-ms)
+      pool-expire-threshold-ms
+      (.poolExpireThresholdMs pool-expire-threshold-ms)
 
       pool-sql-check
       (.poolSQLCheck pool-sql-check)
+
+      pool-sql-check-period-ms
+      (.poolSQLCheckPeriodMs pool-sql-check-period-ms)
+
+      pool-replenish-period-ms
+      (.poolReplenishPeriodMs pool-replenish-period-ms)
+
+      pool-leak-threshold-ms
+      (.poolLeakThresholdMs pool-leak-threshold-ms)
 
       :finally
       (.build))))

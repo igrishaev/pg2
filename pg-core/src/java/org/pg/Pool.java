@@ -16,6 +16,16 @@ public final class Pool implements AutoCloseable {
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
     private final TryLock lock = new TryLock();
     private final Timer timer;
+    
+    @Override
+    public boolean equals (Object other) {
+        return other instanceof Pool && id.equals(((Pool) other).id);
+    }
+
+    @Override
+    public int hashCode () {
+        return this.id.hashCode();
+    }
 
     @SuppressWarnings("unused")
     private void log(final String message) {
@@ -80,7 +90,7 @@ public final class Pool implements AutoCloseable {
                     if (isExpired(conn)) {
                         logExpired(conn);
                         utilizeConnection(conn);
-                        removeUsed(conn);
+                        removeFree(conn);
                     }
                 }
             }
@@ -118,11 +128,13 @@ public final class Pool implements AutoCloseable {
         @Override
         public void run() {
             log("Start SQL check task, pool: %s", id);
-            final String sql = config.poolSQLCheck();
+            String debug;
+            final String sql = config.poolSQLCheck() + "00" ;
             try (TryLock ignored = lock.get()) {
                 for (final Connection conn : connsFree) {
+                    debug = String.format("--health check, conn: %s, pool: %s", conn.getId(), id);
                     try {
-                        conn.query(sql);
+                        conn.query(sql + debug);
                     }
                     catch (PGError e) {
                         log("Connection %s has failed SQL check, closing. Pool: %s, reason: %s",
@@ -131,7 +143,7 @@ public final class Pool implements AutoCloseable {
                                 e.getMessage()
                         );
                         utilizeConnection(conn);
-                        removeUsed(conn);
+                        removeFree(conn);
                     }
                 }
             }
@@ -227,6 +239,10 @@ public final class Pool implements AutoCloseable {
     private void removeUsed (final Connection conn) {
         connsUsed.remove(conn.getId());
         connsBorrowedAt.remove(conn.getId());
+    }
+
+    private void removeFree (final Connection conn) {
+        connsFree.remove(conn);
     }
 
     private boolean isUsed (final Connection conn) {
@@ -425,7 +441,7 @@ public final class Pool implements AutoCloseable {
     public String toString () {
         try (TryLock ignored = lock.get()) {
             return String.format(
-                    "<PG pool %s, min: %s, max: %s, lifetime: %s>",
+                    "<PG pool %s, min: %s, max: %s, expire in: %s>",
                     id,
                     config.poolMinSize(),
                     config.poolMaxSize(),

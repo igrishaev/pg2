@@ -20,8 +20,17 @@
   (:import
    java.io.Writer
    java.util.Map
+   java.util.UUID
    org.pg.Connection
    org.pg.Pool))
+
+
+(defn id
+  "
+  Get a unique ID of the pool.
+  "
+  ^UUID [^Pool pool]
+  (.getId pool))
 
 
 (defn pool?

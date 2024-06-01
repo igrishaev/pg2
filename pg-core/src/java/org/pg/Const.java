@@ -33,7 +33,7 @@ public final class Const {
     public static final int POOL_SIZE_MAX = 16;
     public static final int POOL_EXPIRE_THRESHOLD_MS = 1000 * 60 * 5;
     public static final int POOL_LEAK_THRESHOLD_MS = 1000 * 60 * 15;
-    public static final String POOL_SQL_CHECK = "SELECT--HEALTH CHECK";
+    public static final String POOL_SQL_CHECK = "SELECT";
     public static final long POOL_SQL_CHECK_PERIOD_MS = 1000 * 60 * 5;
     public static final long POOL_REPLENISH_PERIOD_MS = 1000 * 60 / 2;
 

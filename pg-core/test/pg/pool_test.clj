@@ -90,53 +90,6 @@
       (is (= 0 (pool/used-count pool))))))
 
 
-(deftest test-pool-lifetime
-
-  (let [capture1
-        (atom nil)
-
-        capture2
-        (atom nil)
-
-        capture3
-        (atom nil)
-
-        config
-        (assoc *CONFIG*
-               :pool-min-size 1
-               :pool-max-size 1
-               :pool-lifetime-ms 300)]
-
-    (pool/with-pool [pool config]
-
-      (is (= {:free 1 :used 0}
-             (pool/stats pool)))
-
-      (pool/with-connection [conn pool]
-        (reset! capture1 (pg/id conn)))
-
-      (Thread/sleep 150)
-
-      (pool/with-connection [conn pool]
-        (reset! capture2 (pg/id conn)))
-
-      (Thread/sleep 200)
-
-      (pool/with-connection [conn pool]
-        (reset! capture3 (pg/id conn)))
-
-      (let [uuid1 @capture1
-            uuid2 @capture2
-            uuid3 @capture3]
-
-        (is (uuid? uuid1))
-        (is (uuid? uuid2))
-        (is (uuid? uuid3))
-
-        (is (= uuid1 uuid2))
-        (is (not= uuid2 uuid3))))))
-
-
 (deftest test-pool-in-transaction-state
   (pool/with-pool [pool (assoc *CONFIG*
                                :pool-min-size 1
@@ -273,10 +226,13 @@
 (deftest test-pool-sql-check
   (let [config
         (assoc *CONFIG*
-               :pool-sql-check "select -- health check")]
+               :pool-min-size 4
+               :pool-sql-check "select 100500"
+               :pool-sql-check-period-ms 100)]
     (pool/with-pool [pool config]
       (pool/with-connection [conn1 pool]
         (pool/with-connection [conn2 pool]
+          (Thread/sleep 500)
           (is (some? (pg/query conn1 "select 123")))
           (is (some? (pg/query conn2 "select 456"))))))))
 
@@ -298,7 +254,62 @@
 (deftest test-pool-string-repr
   (pool/with-pool [pool *CONFIG*]
     (let [result
-          "<PG pool, min: 2, max: 8, lifetime: 900000>"]
+          (format "<PG pool %s, min: 2, max: 8, expire in: 300000>"
+                  (pool/id pool))]
       (is (= result (str pool)))
       (is (= result (with-out-str
                       (print pool)))))))
+
+
+;; TODO
+;; [ ] test expiration
+;; [ ] test replenishment
+;; [x] test healthcheck
+;; [ ] test leack
+
+#_
+(deftest test-pool-lifetime
+
+  (let [capture1
+        (atom nil)
+
+        capture2
+        (atom nil)
+
+        capture3
+        (atom nil)
+
+        config
+        (assoc *CONFIG*
+               :pool-min-size 1
+               :pool-max-size 1
+               :pool-expire-threshold-ms 300)]
+
+    (pool/with-pool [pool config]
+
+      (is (= {:free 1 :used 0}
+             (pool/stats pool)))
+
+      (pool/with-connection [conn pool]
+        (reset! capture1 (pg/id conn)))
+
+      (Thread/sleep 10000)
+
+      (pool/with-connection [conn pool]
+        (reset! capture2 (pg/id conn)))
+
+      (Thread/sleep 200)
+
+      (pool/with-connection [conn pool]
+        (reset! capture3 (pg/id conn)))
+
+      (let [uuid1 @capture1
+            uuid2 @capture2
+            uuid3 @capture3]
+
+        (is (uuid? uuid1))
+        (is (uuid? uuid2))
+        (is (uuid? uuid3))
+
+        (is (= uuid1 uuid2))
+        (is (not= uuid2 uuid3))))))

@@ -9,6 +9,9 @@
 - reorganize the docs
 - copy in/out tab format
 
+- refactor Connection logging
+- remap System.logger to j.u.l
+
 - MERGE result
 
 - UnparsedTxt, UnparsedBin types?

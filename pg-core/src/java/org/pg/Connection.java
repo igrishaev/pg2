@@ -54,6 +54,16 @@ public final class Connection implements AutoCloseable {
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
 
+    @Override
+    public boolean equals (Object other) {
+        return other instanceof Connection && id.equals(((Connection) other).id);
+    }
+
+    @Override
+    public int hashCode () {
+        return this.id.hashCode();
+    }
+
     private Connection(final Config config) {
         this.config = config;
         this.params = new HashMap<>();
