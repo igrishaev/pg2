@@ -261,13 +261,6 @@
                       (print pool)))))))
 
 
-;; TODO
-;; [ ] test expiration
-;; [ ] test replenishment
-;; [x] test healthcheck
-;; [ ] test leack
-
-#_
 (deftest test-pool-lifetime
 
   (let [capture1
@@ -283,7 +276,7 @@
         (assoc *CONFIG*
                :pool-min-size 1
                :pool-max-size 1
-               :pool-expire-threshold-ms 300)]
+               :pool-expire-threshold-ms 150)]
 
     (pool/with-pool [pool config]
 
@@ -293,12 +286,10 @@
       (pool/with-connection [conn pool]
         (reset! capture1 (pg/id conn)))
 
-      (Thread/sleep 10000)
-
       (pool/with-connection [conn pool]
         (reset! capture2 (pg/id conn)))
 
-      (Thread/sleep 200)
+      (Thread/sleep 400)
 
       (pool/with-connection [conn pool]
         (reset! capture3 (pg/id conn)))
@@ -313,3 +304,58 @@
 
         (is (= uuid1 uuid2))
         (is (not= uuid2 uuid3))))))
+
+
+(deftest test-pool-replenishment
+
+  (let [config
+        (assoc *CONFIG*
+               :pool-min-size 12
+               :pool-max-size 16
+               :pool-replenish-period-ms 500)]
+
+    (pool/with-pool [pool config]
+
+      (is (= {:free 12 :used 0}
+             (pool/stats pool)))
+
+      (pool/with-connection [conn pool]
+
+        (future
+          (pg/query conn "select 1")
+          (Thread/sleep 1000))
+
+        (Thread/sleep 100)
+
+        (is (= {:free 11 :used 1}
+               (pool/stats pool))))
+
+      (Thread/sleep 400)
+
+      (is (= {:free 12 :used 0}
+             (pool/stats pool)))
+
+      (pool/with-connection [conn pool]
+        (pg/close conn))
+      (pool/with-connection [conn pool]
+        (pg/close conn))
+      (pool/with-connection [conn pool]
+        (pg/close conn))
+      (pool/with-connection [conn pool]
+        (pg/close conn))
+      (pool/with-connection [conn pool]
+        (pg/close conn))
+      (pool/with-connection [conn pool]
+        (pg/close conn))
+
+      (is (= {:free 6 :used 0}
+             (pool/stats pool)))
+
+      (Thread/sleep 400)
+
+      (is (= {:free 12 :used 0}
+             (pool/stats pool))))))
+
+
+;; TODO
+;; [ ] test leack

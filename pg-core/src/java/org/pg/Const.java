@@ -30,7 +30,7 @@ public final class Const {
     public static final byte JSONB_VERSION = 1;
     public static final char NULL_CHAR = (char)0;
     public static final int POOL_SIZE_MIN = 2;
-    public static final int POOL_SIZE_MAX = 16;
+    public static final int POOL_SIZE_MAX = 8;
     public static final int POOL_EXPIRE_THRESHOLD_MS = 1000 * 60 * 5;
     public static final int POOL_LEAK_THRESHOLD_MS = 1000 * 60 * 15;
     public static final String POOL_SQL_CHECK = "SELECT";

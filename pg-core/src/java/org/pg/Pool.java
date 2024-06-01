@@ -70,7 +70,7 @@ public final class Pool implements AutoCloseable {
         @Override
         public void run() {
             log("Start connection replenishment task, pool: %s", id);
-            final int gap = config.poolMinSize() - connsUsed.size();
+            final int gap = config.poolMinSize() - connsUsed.size() - connsFree.size();
             try (TryLock ignored = lock.get()) {
                 if (gap > 0) {
                     for (var i = 0; i < gap; i++) {
@@ -129,7 +129,7 @@ public final class Pool implements AutoCloseable {
         public void run() {
             log("Start SQL check task, pool: %s", id);
             String debug;
-            final String sql = config.poolSQLCheck() + "00" ;
+            final String sql = config.poolSQLCheck() ;
             try (TryLock ignored = lock.get()) {
                 for (final Connection conn : connsFree) {
                     debug = String.format("--health check, conn: %s, pool: %s", conn.getId(), id);

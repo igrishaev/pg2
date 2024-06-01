@@ -5,6 +5,9 @@
 
 - honey: transaction test
 
+- pool: check leaked conns
+- pool: tasks body to methods
+
 - oid wrapper?
 - reorganize the docs
 - copy in/out tab format
@@ -15,8 +18,6 @@
 - MERGE result
 
 - UnparsedTxt, UnparsedBin types?
-
-- pool check leaked conns
 
 - pg common lazy row?
 - lazy row deref

@@ -304,9 +304,9 @@
                 ;; pool
                 pool-min-size
                 pool-max-size
-                pool-expire-threshold-ms
                 pool-sql-check
                 pool-sql-check-period-ms
+                pool-expire-threshold-ms
                 pool-replenish-period-ms
                 pool-leak-threshold-ms]}
         params
