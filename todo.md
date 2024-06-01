@@ -7,6 +7,7 @@
 
 - pool: check leaked conns
 - pool: tasks body to methods
+- pool: deque to map?
 
 - oid wrapper?
 - reorganize the docs
