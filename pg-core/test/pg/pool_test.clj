@@ -311,8 +311,7 @@
   (let [config
         (assoc *CONFIG*
                :pool-min-size 12
-               :pool-max-size 16
-               :pool-replenish-period-ms 500)]
+               :pool-max-size 16)]
 
     (pool/with-pool [pool config]
 
@@ -320,42 +319,49 @@
              (pool/stats pool)))
 
       (pool/with-connection [conn pool]
+        (is (= {:free 11 :used 1}
+               (pool/stats pool)))
 
-        (future
-          (pg/query conn "select 1")
-          (Thread/sleep 1000))
+        (pool/with-connection [conn pool]
+          (pg/close conn))
+        (pool/with-connection [conn pool]
+          (pg/close conn))
+        (pool/with-connection [conn pool]
+          (pg/close conn))
+        (pool/with-connection [conn pool]
+          (pg/close conn))
+        (pool/with-connection [conn pool]
+          (pg/close conn))
+        (pool/with-connection [conn pool]
+          (pg/close conn))
 
-        (Thread/sleep 100)
+        (is (= {:free 5 :used 1}
+               (pool/stats pool)))
+
+        (pool/replenish-connections pool)
 
         (is (= {:free 11 :used 1}
-               (pool/stats pool))))
+               (pool/stats pool)))))))
 
-      (Thread/sleep 400)
 
-      (is (= {:free 12 :used 0}
+(deftest test-pool-leak-connections
+
+  (pool/with-pool [pool (assoc *CONFIG*
+                               :pool-min-size 2
+                               :pool-max-size 4
+                               :pool-leak-threshold-ms 300)]
+
+    (let [fut
+          (future
+            (pool/with-connection [conn pool]
+              (Thread/sleep 5000)))]
+
+      (Thread/sleep 50)
+
+      (is (= {:free 1 :used 1}
              (pool/stats pool)))
 
-      (pool/with-connection [conn pool]
-        (pg/close conn))
-      (pool/with-connection [conn pool]
-        (pg/close conn))
-      (pool/with-connection [conn pool]
-        (pg/close conn))
-      (pool/with-connection [conn pool]
-        (pg/close conn))
-      (pool/with-connection [conn pool]
-        (pg/close conn))
-      (pool/with-connection [conn pool]
-        (pg/close conn))
+      (Thread/sleep 600)
 
-      (is (= {:free 6 :used 0}
-             (pool/stats pool)))
-
-      (Thread/sleep 400)
-
-      (is (= {:free 12 :used 0}
+      (is (= {:free 1 :used 0}
              (pool/stats pool))))))
-
-
-;; TODO
-;; [ ] test leack

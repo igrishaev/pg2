@@ -140,3 +140,32 @@
 (defmethod print-method Pool
   [^Pool pool ^Writer writer]
   (.write writer (.toString pool)))
+
+
+(defn replenish-connections
+  "
+  Forcibly run a task that determines how many new
+  free connections should be created, and creates them.
+  The number is calculated as follows:
+
+  gap = min-size - size(free-conns) - size(used-conns)
+
+  When gap is > 0, the corresponding number of free connections
+  is created.
+
+  Blocks the pool.
+  "
+  [^Pool pool]
+  (.replenishConnections pool))
+
+
+(defn close-expired-connections [^Pool pool]
+  (.closeExpiredConnections pool))
+
+
+(defn close-leaked-connections [^Pool pool]
+  (.closeLeakedConnections pool))
+
+
+(defn check-connections-health [^Pool pool]
+  (.checkConnectionsHealth pool))

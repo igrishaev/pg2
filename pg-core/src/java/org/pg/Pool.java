@@ -66,16 +66,33 @@ public final class Pool implements AutoCloseable {
         );
     }
 
+    public void replenishConnections() {
+        log("Start connection replenishment task, pool: %s", id);
+        final int gap = config.poolMinSize() - connsUsed.size() - connsFree.size();
+        try (TryLock ignored = lock.get()) {
+            if (gap > 0) {
+                for (var i = 0; i < gap; i++) {
+                    spawnConnection();
+                }
+            }
+        }
+    }
+
     private class ReplenishTask extends TimerTask {
         @Override
         public void run() {
-            log("Start connection replenishment task, pool: %s", id);
-            final int gap = config.poolMinSize() - connsUsed.size() - connsFree.size();
-            try (TryLock ignored = lock.get()) {
-                if (gap > 0) {
-                    for (var i = 0; i < gap; i++) {
-                        spawnConnection();
-                    }
+            replenishConnections();
+        }
+    }
+
+    public void closeExpiredConnections() {
+        log("Start connection expiration task, pool: %s", id);
+        try (TryLock ignored = lock.get()) {
+            for (final Connection conn : connsFree) {
+                if (isExpired(conn)) {
+                    logExpired(conn);
+                    utilizeConnection(conn);
+                    removeFree(conn);
                 }
             }
         }
@@ -84,16 +101,7 @@ public final class Pool implements AutoCloseable {
     private class ExpireTask extends TimerTask {
         @Override
         public void run() {
-            log("Start connection expiration task, pool: %s", id);
-            try (TryLock ignored = lock.get()) {
-                for (final Connection conn : connsFree) {
-                    if (isExpired(conn)) {
-                        logExpired(conn);
-                        utilizeConnection(conn);
-                        removeFree(conn);
-                    }
-                }
-            }
+            closeExpiredConnections();
         }
     }
 
@@ -107,18 +115,45 @@ public final class Pool implements AutoCloseable {
         }
     }
 
+    public void closeLeakedConnections () {
+        log("Start leaked connection task, pool: %s", id);
+        try (TryLock ignored = lock.get()) {
+            for (final Connection conn : connsUsed.values()) {
+                if (isLeaked(conn)) {
+                    logLeaked(conn);
+                    Connection.cancelRequest(conn);
+                    utilizeConnection(conn);
+                    removeUsed(conn);
+                }
+            }
+        }
+    }
+
     private class LeakTask extends TimerTask {
         @Override
         public void run() {
-            log("Start leaked connection task, pool: %s", id);
-            try (TryLock ignored = lock.get()) {
-                for (final Connection conn : connsUsed.values()) {
-                    if (isLeaked(conn)) {
-                        logLeaked(conn);
-                        Connection.cancelRequest(conn);
-                        utilizeConnection(conn);
-                        removeUsed(conn);
-                    }
+            closeLeakedConnections();
+        }
+    }
+
+    public void checkConnectionsHealth () {
+        log("Start SQL check task, pool: %s", id);
+        String debug;
+        final String sql = config.poolSQLCheck() ;
+        try (TryLock ignored = lock.get()) {
+            for (final Connection conn : connsFree) {
+                debug = String.format("--health check, conn: %s, pool: %s", conn.getId(), id);
+                try {
+                    conn.query(sql + debug);
+                }
+                catch (PGError e) {
+                    log("Connection %s has failed SQL check, closing. Pool: %s, reason: %s",
+                            conn.getId(),
+                            id,
+                            e.getMessage()
+                    );
+                    utilizeConnection(conn);
+                    removeFree(conn);
                 }
             }
         }
@@ -127,26 +162,7 @@ public final class Pool implements AutoCloseable {
     private class SQLCheckTask extends TimerTask {
         @Override
         public void run() {
-            log("Start SQL check task, pool: %s", id);
-            String debug;
-            final String sql = config.poolSQLCheck() ;
-            try (TryLock ignored = lock.get()) {
-                for (final Connection conn : connsFree) {
-                    debug = String.format("--health check, conn: %s, pool: %s", conn.getId(), id);
-                    try {
-                        conn.query(sql + debug);
-                    }
-                    catch (PGError e) {
-                        log("Connection %s has failed SQL check, closing. Pool: %s, reason: %s",
-                                conn.getId(),
-                                id,
-                                e.getMessage()
-                        );
-                        utilizeConnection(conn);
-                        removeFree(conn);
-                    }
-                }
-            }
+            checkConnectionsHealth();
         }
     }
 
