@@ -308,7 +308,9 @@
                 pool-sql-check-period-ms
                 pool-expire-threshold-ms
                 pool-replenish-period-ms
-                pool-leak-threshold-ms]}
+                pool-leak-threshold-ms
+                pool-pool-timeout-ms
+                pool-offer-timeout-ms]}
         params
 
         DB
@@ -405,6 +407,12 @@
 
       pool-leak-threshold-ms
       (.poolLeakThresholdMs pool-leak-threshold-ms)
+
+      pool-pool-timeout-ms
+      (.poolPollTimeoutMs pool-pool-timeout-ms)
+
+      pool-offer-timeout-ms
+      (.poolOfferTimeoutMs pool-offer-timeout-ms)
 
       :finally
       (.build))))

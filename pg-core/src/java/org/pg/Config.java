@@ -43,7 +43,9 @@ public record Config(
         String poolSQLCheck,
         long poolSQLCheckPeriodMs,
         long poolReplenishPeriodMs,
-        long poolLeakThresholdMs
+        long poolLeakThresholdMs,
+        long poolPollTimeoutMs,
+        long poolOfferTimeoutMs
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -88,6 +90,8 @@ public record Config(
         private long poolSQLCheckPeriodMs = Const.POOL_SQL_CHECK_PERIOD_MS;
         private long poolReplenishPeriodMs = Const.POOL_REPLENISH_PERIOD_MS;
         private long poolLeakThresholdMs = Const.POOL_LEAK_THRESHOLD_MS;
+        private long poolPollTimeoutMs = Const.POOL_POLL_TIMEOUT_MS;
+        private long poolOfferTimeoutMs = Const.POOL_OFFER_TIMEOUT_MS;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -287,6 +291,18 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder poolPollTimeoutMs(final long poolPollTimeoutMs) {
+            this.poolPollTimeoutMs = poolPollTimeoutMs;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder poolOfferTimeoutMs(final long poolOfferTimeoutMs) {
+            this.poolOfferTimeoutMs = poolOfferTimeoutMs;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -329,7 +345,9 @@ public record Config(
                     this.poolSQLCheck,
                     this.poolSQLCheckPeriodMs,
                     this.poolReplenishPeriodMs,
-                    this.poolLeakThresholdMs
+                    this.poolLeakThresholdMs,
+                    this.poolPollTimeoutMs,
+                    this.poolOfferTimeoutMs
             );
         }
     }

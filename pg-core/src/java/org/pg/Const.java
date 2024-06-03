@@ -36,5 +36,6 @@ public final class Const {
     public static final String POOL_SQL_CHECK = "SELECT";
     public static final long POOL_SQL_CHECK_PERIOD_MS = 1000 * 60 * 5;
     public static final long POOL_REPLENISH_PERIOD_MS = 1000 * 60 / 2;
-
+    public static final long POOL_POLL_TIMEOUT_MS = 1000 * 15;
+    public static final long POOL_OFFER_TIMEOUT_MS = 1000 * 15;
 }

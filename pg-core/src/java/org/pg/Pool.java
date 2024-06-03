@@ -2,8 +2,10 @@ package org.pg;
 
 import org.pg.error.PGError;
 import org.pg.util.TryLock;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public final class Pool implements AutoCloseable {
 
@@ -11,7 +13,7 @@ public final class Pool implements AutoCloseable {
     private final Config config;
     private final Map<UUID, Connection> connsUsed;
     private final Map<UUID, Long> connsBorrowedAt;
-    private final Deque<Connection> connsFree;
+    private final ArrayBlockingQueue<Connection> connsFree;
     private boolean isClosed = false;
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
     private final TryLock lock = new TryLock();
@@ -171,7 +173,7 @@ public final class Pool implements AutoCloseable {
         this.id = UUID.randomUUID();
         this.config = config;
         this.connsUsed = new HashMap<>(size);
-        this.connsFree = new ArrayDeque<>(size);
+        this.connsFree = new ArrayBlockingQueue<>(size);
         this.connsBorrowedAt = new HashMap<>(size);
         this.timer = new Timer(String.format("PoolTimer %s", id), false);
     }
@@ -281,7 +283,13 @@ public final class Pool implements AutoCloseable {
         }
 
         while (true) {
-            conn = connsFree.poll();
+            try {
+                conn = connsFree.poll(config.poolPollTimeoutMs(), TimeUnit.MILLISECONDS);
+            }
+            catch (InterruptedException e) {
+                throw new PGError(e, "Interrupted while polling for connection from the pool %s", id);
+            }
+
             if (conn == null) { // No free connections
 
                 if (connsUsed.size() < config.poolMaxSize()) {
@@ -341,8 +349,16 @@ public final class Pool implements AutoCloseable {
     }
 
     private void offerConnection (final Connection conn) {
-        if (!connsFree.offer(conn)) {
-            throw new PGError("could not return connection %s to the pool", conn.getId());
+        boolean result;
+        try {
+            result = connsFree.offer(conn, config.poolOfferTimeoutMs(), TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+            throw new PGError(e, "Interrupted while offering a connection %s to the pool %s",
+                    conn.getId(), id);
+        }
+        if (!result) {
+            throw new PGError("Could not return the connection %s to the pool %s", conn.getId(), id);
         }
     }
 
