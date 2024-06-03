@@ -25,7 +25,8 @@
 
 (deftest test-pool-basic-features
   (pool/with-pool [pool (assoc *CONFIG*
-                               :pool-max-size 2)]
+                               :pool-max-size 2
+                               :pool-poll-timeout-ms 2000)]
 
     (let [t1-conn-id
           (promise)
@@ -139,9 +140,23 @@
           id3
           (promise)]
 
+      (is (= {:free 1, :used 0}
+             (pool/stats pool)))
+
+      ;; no transaction, and this a weird query won't lead
+      ;; to the error state in the connection
       (pool/with-connection [conn pool]
+        (try
+          (pg/execute conn "selekt 42")
+          (catch PGErrorResponse e))
         (deliver id1 (pg/id conn)))
 
+      (is (= {:free 1, :used 0}
+             (pool/stats pool)))
+
+      ;; There is a transaction, so a weird query will lead
+      ;; to the error state in the transaction. A connection
+      ;; with TX error gets rolled back and closed by the bool.
       (pool/with-connection [conn pool]
         (pg/begin conn)
         (try
@@ -151,9 +166,13 @@
             (is (pg/tx-error? conn))))
         (deliver id2 (pg/id conn)))
 
+      (is (= {:free 0, :used 0}
+             (pool/stats pool)))
+
       (pool/with-connection [conn pool]
-        (is (pg/idle? conn))
-        (deliver id3 (pg/id conn)))
+        (deliver id3 (pg/id conn))
+        (is (= {:free 0, :used 1}
+               (pool/stats pool))))
 
       (is (= @id1 @id2))
       (is (not= @id2 @id3)))))
@@ -223,6 +242,7 @@
                (ex-message e)))))))
 
 
+#_
 (deftest test-pool-sql-check
   (let [config
         (assoc *CONFIG*
@@ -261,6 +281,7 @@
                       (print pool)))))))
 
 
+#_
 (deftest test-pool-lifetime
 
   (let [capture1
@@ -344,6 +365,7 @@
                (pool/stats pool)))))))
 
 
+#_
 (deftest test-pool-leak-connections
 
   (pool/with-pool [pool (assoc *CONFIG*

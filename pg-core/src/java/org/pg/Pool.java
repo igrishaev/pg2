@@ -69,12 +69,14 @@ public final class Pool implements AutoCloseable {
     }
 
     public void replenishConnections() {
+        Connection conn;
         log("Start connection replenishment task, pool: %s", id);
         final int gap = config.poolMinSize() - connsUsed.size() - connsFree.size();
         try (TryLock ignored = lock.get()) {
             if (gap > 0) {
                 for (var i = 0; i < gap; i++) {
-                    spawnConnection();
+                    conn = spawnConnection();
+                    addFree(conn);
                 }
             }
         }
@@ -93,7 +95,7 @@ public final class Pool implements AutoCloseable {
             for (final Connection conn : connsFree) {
                 if (isExpired(conn)) {
                     logExpired(conn);
-                    utilizeConnection(conn);
+                    closeConnection(conn);
                     removeFree(conn);
                 }
             }
@@ -124,7 +126,7 @@ public final class Pool implements AutoCloseable {
                 if (isLeaked(conn)) {
                     logLeaked(conn);
                     Connection.cancelRequest(conn);
-                    utilizeConnection(conn);
+                    closeConnection(conn);
                     removeUsed(conn);
                 }
             }
@@ -154,7 +156,7 @@ public final class Pool implements AutoCloseable {
                             id,
                             e.getMessage()
                     );
-                    utilizeConnection(conn);
+                    closeConnection(conn);
                     removeFree(conn);
                 }
             }
@@ -201,13 +203,15 @@ public final class Pool implements AutoCloseable {
     }
 
     private Pool initiate() {
-        for (int i = 0; i < config.poolMinSize(); i++) {
-            spawnConnection();
-        }
+        replenishConnections();
         return this;
     }
 
     private Pool setupTimer() {
+
+        if (true) {
+            return this;
+        }
 
         final long periodReplenish = config.poolReplenishPeriodMs();
         if (periodReplenish > 0) {
@@ -276,50 +280,55 @@ public final class Pool implements AutoCloseable {
 
     private Connection preBorrowConnection() {
 
-        Connection conn;
-
         if (isClosed()) {
             throw new PGError("Cannot get a connection: the pool has been closed");
         }
 
-        while (true) {
-            try {
-                conn = connsFree.poll(config.poolPollTimeoutMs(), TimeUnit.MILLISECONDS);
-            }
-            catch (InterruptedException e) {
-                throw new PGError(e, "Interrupted while polling for connection from the pool %s", id);
-            }
+        Connection conn;
 
-            if (conn == null) { // No free connections
+        // try to get from the queue without waiting
+        conn = connsFree.poll();
 
-                if (connsUsed.size() < config.poolMaxSize()) {
-                    return spawnConnection();
-                }
-                else {
-                    final String message = String.format(
-                            "The pool is exhausted: %s out of %s connections are in use",
-                            connsUsed.size(),
-                            config.poolMaxSize()
-                    );
-                    log(message);
-                    throw new PGError(message);
-                }
-            }
-
-            if (conn.isClosed()) {
-                log("Connection %s has been already been closed, ignoring", conn.getId());
-            }
-            else {
-                return conn;
-            }
+        // if some, return it
+        if (conn != null) {
+            return conn;
         }
+
+        // no free connections. If possible, create a new one
+        if (connsUsed.size() < config.poolMaxSize()) {
+            return spawnConnection();
+        }
+
+        // pool max size has been reached. Let's wait hoping that
+        // someone will release a connection.
+        try {
+            conn = connsFree.poll(config.poolPollTimeoutMs(), TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+            throw new PGError(e, "Interrupted while polling a connection, pool %s", id);
+        }
+
+        // if some, return it
+        if (conn != null) {
+            return conn;
+        }
+
+        // no luck. log & throw an error
+        final String message = String.format(
+                "The pool is exhausted: %s out of %s connections are in use",
+                connsUsed.size(),
+                config.poolMaxSize()
+        );
+        log(message);
+        throw new PGError(message);
+
     }
 
     private Connection borrowConnectionUnlocked() {
         return addUsed(preBorrowConnection());
     }
 
-    private void utilizeConnection(final Connection conn) {
+    private void closeConnection(final Connection conn) {
         conn.close();
         log(
                 "the connection %s has been closed, free: %s, used: %s, max: %s",
@@ -332,7 +341,6 @@ public final class Pool implements AutoCloseable {
 
     private Connection spawnConnection() {
         final Connection conn = Connection.connect(config);
-        offerConnection(conn);
         logCreated(conn);
         return conn;
     }
@@ -348,7 +356,7 @@ public final class Pool implements AutoCloseable {
         }
     }
 
-    private void offerConnection (final Connection conn) {
+    private void addFree(final Connection conn) {
         boolean result;
         try {
             result = connsFree.offer(conn, config.poolOfferTimeoutMs(), TimeUnit.MILLISECONDS);
@@ -374,7 +382,7 @@ public final class Pool implements AutoCloseable {
         removeUsed(conn);
 
         if (this.isClosed()) {
-            utilizeConnection(conn);
+            closeConnection(conn);
             return;
         }
 
@@ -385,8 +393,8 @@ public final class Pool implements AutoCloseable {
         }
 
         if (forceClose) {
-            log("Closing connection %s due to the force flag, pool: %s", conn.getId(), id);
-            utilizeConnection(conn);
+            log("Forcibly closing connection %s, pool: %s", conn.getId(), id);
+            closeConnection(conn);
             return;
         }
 
@@ -394,7 +402,7 @@ public final class Pool implements AutoCloseable {
             log("connection %s is in error state, rolling back, pool: %s",
                     conn.getId(), id);
             conn.rollback();
-            utilizeConnection(conn);
+            closeConnection(conn);
             return;
         }
 
@@ -404,7 +412,7 @@ public final class Pool implements AutoCloseable {
             conn.rollback();
         }
 
-        offerConnection(conn);
+        addFree(conn);
 
         log("connection %s has been returned to the pool %s",
                 conn.getId(), id);

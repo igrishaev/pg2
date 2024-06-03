@@ -309,7 +309,7 @@
                 pool-expire-threshold-ms
                 pool-replenish-period-ms
                 pool-leak-threshold-ms
-                pool-pool-timeout-ms
+                pool-poll-timeout-ms
                 pool-offer-timeout-ms]}
         params
 
@@ -408,8 +408,8 @@
       pool-leak-threshold-ms
       (.poolLeakThresholdMs pool-leak-threshold-ms)
 
-      pool-pool-timeout-ms
-      (.poolPollTimeoutMs pool-pool-timeout-ms)
+      pool-poll-timeout-ms
+      (.poolPollTimeoutMs pool-poll-timeout-ms)
 
       pool-offer-timeout-ms
       (.poolOfferTimeoutMs pool-offer-timeout-ms)
