@@ -10,6 +10,9 @@
   :deploy-repositories
   {"releases"
    {:url "https://repo.clojars.org"
+    :creds :gpg}
+   "snapshots"
+   {:url "https://repo.clojars.org"
     :creds :gpg}}
 
   :release-tasks
