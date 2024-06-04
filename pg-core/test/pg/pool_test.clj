@@ -387,3 +387,22 @@
 
       (is (= {:free 1 :used 0}
              (pool/stats pool))))))
+
+(deftest test-conn-returned-in-the-background
+
+  (let [conn1-started
+        (promise)]
+
+    (pool/with-pool [pool (assoc *CONFIG*
+                                 :pool-min-size 1
+                                 :pool-max-size 1)]
+
+      (future
+        (pool/with-connection [conn pool]
+          (deliver conn1-started true)
+          (Thread/sleep 5000)))
+
+      @conn1-started
+
+      (pool/with-connection [conn pool]
+        (is (some? conn))))))
