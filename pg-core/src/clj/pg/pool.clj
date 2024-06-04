@@ -157,15 +157,3 @@
   "
   [^Pool pool]
   (.replenishConnections pool))
-
-
-(defn close-expired-connections [^Pool pool]
-  (.closeExpiredConnections pool))
-
-
-(defn close-leaked-connections [^Pool pool]
-  (.closeLeakedConnections pool))
-
-
-(defn check-connections-health [^Pool pool]
-  (.checkConnectionsHealth pool))

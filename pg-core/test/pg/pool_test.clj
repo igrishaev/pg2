@@ -25,8 +25,7 @@
 
 (deftest test-pool-basic-features
   (pool/with-pool [pool (assoc *CONFIG*
-                               :pool-max-size 2
-                               :pool-poll-timeout-ms 2000)]
+                               :pool-max-size 2)]
 
     (let [t1-conn-id
           (promise)
@@ -66,13 +65,8 @@
       (is (= 0 (pool/free-count pool)))
       (is (= 2 (pool/used-count pool)))
 
-      (try
-        (pool/with-connection [conn pool]
-          (pg/execute conn "select 42"))
-        (is false)
-        (catch PGError e
-          (is (= "The pool is exhausted: 2 out of 2 connections are in use"
-                 (ex-message e)))))
+      (pool/with-connection [conn pool]
+        (pg/execute conn "select 42"))
 
       @t1-stop
 
@@ -242,21 +236,6 @@
                (ex-message e)))))))
 
 
-#_
-(deftest test-pool-sql-check
-  (let [config
-        (assoc *CONFIG*
-               :pool-min-size 4
-               :pool-sql-check "select 100500"
-               :pool-sql-check-period-ms 100)]
-    (pool/with-pool [pool config]
-      (pool/with-connection [conn1 pool]
-        (pool/with-connection [conn2 pool]
-          (Thread/sleep 500)
-          (is (some? (pg/query conn1 "select 123")))
-          (is (some? (pg/query conn2 "select 456"))))))))
-
-
 (deftest test-pool-termination
 
   (pool/with-pool [pool *CONFIG*]
@@ -281,8 +260,7 @@
                       (print pool)))))))
 
 
-#_
-(deftest test-pool-lifetime
+(deftest test-pool-connection-expiration
 
   (let [capture1
         (atom nil)
@@ -297,7 +275,7 @@
         (assoc *CONFIG*
                :pool-min-size 1
                :pool-max-size 1
-               :pool-expire-threshold-ms 150)]
+               :pool-expire-threshold-ms 500)]
 
     (pool/with-pool [pool config]
 
@@ -310,10 +288,16 @@
       (pool/with-connection [conn pool]
         (reset! capture2 (pg/id conn)))
 
-      (Thread/sleep 400)
+      (is (= {:free 1 :used 0}
+             (pool/stats pool)))
+
+      (Thread/sleep 600)
 
       (pool/with-connection [conn pool]
         (reset! capture3 (pg/id conn)))
+
+      (is (= {:free 1 :used 0}
+             (pool/stats pool)))
 
       (let [uuid1 @capture1
             uuid2 @capture2
@@ -365,29 +349,6 @@
                (pool/stats pool)))))))
 
 
-#_
-(deftest test-pool-leak-connections
-
-  (pool/with-pool [pool (assoc *CONFIG*
-                               :pool-min-size 2
-                               :pool-max-size 4
-                               :pool-leak-threshold-ms 300)]
-
-    (let [fut
-          (future
-            (pool/with-connection [conn pool]
-              (Thread/sleep 5000)))]
-
-      (Thread/sleep 50)
-
-      (is (= {:free 1 :used 1}
-             (pool/stats pool)))
-
-      (Thread/sleep 600)
-
-      (is (= {:free 1 :used 0}
-             (pool/stats pool))))))
-
 (deftest test-conn-returned-in-the-background
 
   (let [conn1-started
@@ -395,14 +356,55 @@
 
     (pool/with-pool [pool (assoc *CONFIG*
                                  :pool-min-size 1
-                                 :pool-max-size 1)]
+                                 :pool-max-size 1
+                                 :pool-borrow-conn-attemts 2
+                                 :pool-borrow-conn-timeout-ms 1000)]
 
       (future
         (pool/with-connection [conn pool]
           (deliver conn1-started true)
-          (Thread/sleep 5000)))
+          (Thread/sleep 1000)))
 
       @conn1-started
 
+      (is (= {:free 0 :used 1}
+             (pool/stats pool)))
+
       (pool/with-connection [conn pool]
-        (is (some? conn))))))
+        (is (some? conn)))
+
+      (is (= {:free 1 :used 0}
+             (pool/stats pool))))))
+
+
+(deftest test-could-not-return-in-the-background
+
+  (let [conn1-started
+        (promise)]
+
+    (pool/with-pool [pool (assoc *CONFIG*
+                                 :pool-min-size 1
+                                 :pool-max-size 1
+                                 :pool-borrow-conn-attemts 1
+                                 :pool-borrow-conn-timeout-ms 500)]
+
+      (future
+        (pool/with-connection [conn pool]
+          (deliver conn1-started true)
+          (Thread/sleep 1000)))
+
+      @conn1-started
+
+      (is (= {:free 0 :used 1}
+             (pool/stats pool)))
+
+      (try
+        (pool/with-connection [conn pool])
+        (is false)
+        (catch PGError e
+          (is (= (format "Pool %s is exhausted! min: 1, max: 1, free: 0, used: 1, attempt: 2, timeout: 500"
+                         (pool/id pool))
+                 (ex-message e)))))
+
+      (is (= {:free 0 :used 1}
+             (pool/stats pool))))))

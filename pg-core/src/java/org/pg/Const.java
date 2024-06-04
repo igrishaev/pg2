@@ -32,10 +32,6 @@ public final class Const {
     public static final int POOL_SIZE_MIN = 2;
     public static final int POOL_SIZE_MAX = 8;
     public static final int POOL_EXPIRE_THRESHOLD_MS = 1000 * 60 * 5;
-    public static final int POOL_LEAK_THRESHOLD_MS = 1000 * 60 * 15;
-    public static final String POOL_SQL_CHECK = "SELECT";
-    public static final long POOL_SQL_CHECK_PERIOD_MS = 1000 * 60 * 5;
-    public static final long POOL_REPLENISH_PERIOD_MS = 1000 * 60 / 2;
-    public static final long POOL_POLL_TIMEOUT_MS = 1000 * 15;
-    public static final long POOL_OFFER_TIMEOUT_MS = 1000 * 15;
+    public static final int POOL_BORROW_CONN_ATTEMPTS = 150;
+    public static final int POOL_BORROW_CONN_TIMEOUT_MS = 100;
 }

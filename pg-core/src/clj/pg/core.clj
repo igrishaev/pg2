@@ -304,13 +304,9 @@
                 ;; pool
                 pool-min-size
                 pool-max-size
-                pool-sql-check
-                pool-sql-check-period-ms
                 pool-expire-threshold-ms
-                pool-replenish-period-ms
-                pool-leak-threshold-ms
-                pool-poll-timeout-ms
-                pool-offer-timeout-ms]}
+                pool-borrow-conn-attemts
+                pool-borrow-conn-timeout-ms]}
         params
 
         DB
@@ -396,23 +392,11 @@
       pool-expire-threshold-ms
       (.poolExpireThresholdMs pool-expire-threshold-ms)
 
-      pool-sql-check
-      (.poolSQLCheck pool-sql-check)
+      pool-borrow-conn-attemts
+      (.poolBorrowConnAttempts pool-borrow-conn-attemts)
 
-      pool-sql-check-period-ms
-      (.poolSQLCheckPeriodMs pool-sql-check-period-ms)
-
-      pool-replenish-period-ms
-      (.poolReplenishPeriodMs pool-replenish-period-ms)
-
-      pool-leak-threshold-ms
-      (.poolLeakThresholdMs pool-leak-threshold-ms)
-
-      pool-poll-timeout-ms
-      (.poolPollTimeoutMs pool-poll-timeout-ms)
-
-      pool-offer-timeout-ms
-      (.poolOfferTimeoutMs pool-offer-timeout-ms)
+      pool-borrow-conn-timeout-ms
+      (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)
 
       :finally
       (.build))))

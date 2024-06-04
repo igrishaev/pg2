@@ -40,12 +40,8 @@ public record Config(
         int poolMinSize,
         int poolMaxSize,
         int poolExpireThresholdMs,
-        String poolSQLCheck,
-        long poolSQLCheckPeriodMs,
-        long poolReplenishPeriodMs,
-        long poolLeakThresholdMs,
-        long poolPollTimeoutMs,
-        long poolOfferTimeoutMs
+        int poolBorrowConnAttempts,
+        int poolBorrowConnTimeoutMs
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -86,12 +82,8 @@ public record Config(
         private int poolMinSize = Const.POOL_SIZE_MIN;
         private int poolMaxSize = Const.POOL_SIZE_MAX;
         private int poolExpireThresholdMs = Const.POOL_EXPIRE_THRESHOLD_MS;
-        private String poolSQLCheck = Const.POOL_SQL_CHECK;
-        private long poolSQLCheckPeriodMs = Const.POOL_SQL_CHECK_PERIOD_MS;
-        private long poolReplenishPeriodMs = Const.POOL_REPLENISH_PERIOD_MS;
-        private long poolLeakThresholdMs = Const.POOL_LEAK_THRESHOLD_MS;
-        private long poolPollTimeoutMs = Const.POOL_POLL_TIMEOUT_MS;
-        private long poolOfferTimeoutMs = Const.POOL_OFFER_TIMEOUT_MS;
+        private int poolBorrowConnAttempts = Const.POOL_BORROW_CONN_ATTEMPTS;
+        private int poolBorrowConnTimeoutMs = Const.POOL_BORROW_CONN_TIMEOUT_MS;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -267,38 +259,14 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
-        public Builder poolSQLCheck(final String poolSQLCheck) {
-            this.poolSQLCheck = poolSQLCheck;
+        public Builder poolBorrowConnAttempts(final int poolBorrowConnAttempts) {
+            this.poolBorrowConnAttempts = poolBorrowConnAttempts;
             return this;
         }
 
         @SuppressWarnings("unused")
-        public Builder poolSQLCheckPeriodMs(final long poolSQLCheckPeriodMs) {
-            this.poolSQLCheckPeriodMs = poolSQLCheckPeriodMs;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder poolReplenishPeriodMs(final long poolReplenishPeriodMs) {
-            this.poolReplenishPeriodMs = poolReplenishPeriodMs;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder poolLeakThresholdMs(final long poolLeakThresholdMs) {
-            this.poolLeakThresholdMs = poolLeakThresholdMs;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder poolPollTimeoutMs(final long poolPollTimeoutMs) {
-            this.poolPollTimeoutMs = poolPollTimeoutMs;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder poolOfferTimeoutMs(final long poolOfferTimeoutMs) {
-            this.poolOfferTimeoutMs = poolOfferTimeoutMs;
+        public Builder poolBorrowConnTimeoutMs(final int poolBorrowConnTimeoutMs) {
+            this.poolBorrowConnTimeoutMs = poolBorrowConnTimeoutMs;
             return this;
         }
 
@@ -342,12 +310,8 @@ public record Config(
                     this.poolMinSize,
                     this.poolMaxSize,
                     this.poolExpireThresholdMs,
-                    this.poolSQLCheck,
-                    this.poolSQLCheckPeriodMs,
-                    this.poolReplenishPeriodMs,
-                    this.poolLeakThresholdMs,
-                    this.poolPollTimeoutMs,
-                    this.poolOfferTimeoutMs
+                    this.poolBorrowConnAttempts,
+                    this.poolBorrowConnTimeoutMs
             );
         }
     }
