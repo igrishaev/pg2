@@ -14,7 +14,6 @@
    java.io.Reader
    java.io.Writer
    java.lang.AutoCloseable
-   java.lang.System$Logger$Level
    java.nio.ByteBuffer
    java.nio.charset.Charset
    java.time.ZoneId
@@ -217,36 +216,6 @@
       :finally
       (.build))))
 
-
-(defn ->LogLevel
-  "
-  Turn a keyword into an instance of System.Logger.Level enum.
-  "
-  ^System$Logger$Level [^Keyword log-level]
-  (case log-level
-
-    :all
-    System$Logger$Level/ALL
-
-    :trace
-    System$Logger$Level/TRACE
-
-    :debug
-    System$Logger$Level/DEBUG
-
-    :info
-    System$Logger$Level/INFO
-
-    (:warn :warning)
-    System$Logger$Level/WARNING
-
-    :error
-    System$Logger$Level/ERROR
-
-    (:off false nil)
-    System$Logger$Level/OFF))
-
-
 (defn ->config
   "
   Turn a Clojure map into an instance of Config.Builder.
@@ -370,9 +339,6 @@
 
       so-send-buf-size
       (.SOSendBufSize so-send-buf-size)
-
-      log-level
-      (.logLevel (->LogLevel log-level))
 
       object-mapper
       (.objectMapper object-mapper)

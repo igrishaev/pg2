@@ -9,8 +9,11 @@
 - refactor Connection constructor
 - refactor Pool constructor
 - pool lifetime opt renamed
-- pool sql check support
 - docker pg 16beta -> 16stable
+- log-level removed
+- connection debug
+- pool logging refactored
+- pool locking refactored
 
 ## 0.1.12
 

@@ -5,14 +5,9 @@
 
 - honey: transaction test
 
-- pool: check leaked conns
-- pool: blocking queue (sleep)
-
 - oid wrapper?
 - reorganize the docs
 - copy in/out tab format
-
-- refactor Connection logging
 
 - MERGE result
 

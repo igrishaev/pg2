@@ -1,6 +1,7 @@
 package org.pg;
 
 import org.pg.error.PGError;
+import org.pg.util.Sleep;
 import org.pg.util.TryLock;
 import java.util.*;
 
@@ -85,42 +86,41 @@ public final class Pool implements AutoCloseable {
         connsUsed.remove(conn.getId());
     }
 
-    private boolean isUsed (final Connection conn) {
-        return connsUsed.containsKey(conn.getId());
+    private boolean isUsedLocked(final Connection conn) {
+        try (TryLock ignored = lock.get()) {
+            return connsUsed.containsKey(conn.getId());
+        }
     }
 
     @SuppressWarnings("unused")
     public Connection borrowConnection () {
         Connection conn;
         int attempt = 0;
+
         while (true) {
+            attempt += 1;
+
             try (TryLock ignored = lock.get()) {
                 conn = borrowConnectionLocked();
             }
-            if (conn == null) {
-                attempt += 1;
-                if (attempt > config.poolBorrowConnAttempts()) {
-                    throw new PGError("Pool %s is exhausted! min: %s, max: %s, free: %s, used: %s, attempt: %s, timeout: %s",
-                            id,
-                            config.poolMinSize(),
-                            config.poolMaxSize(),
-                            freeCount(),
-                            usedCount(),
-                            attempt,
-                            config.poolBorrowConnTimeoutMs()
-                    );
-                }
-                else {
-                    try {
-                        Thread.sleep(config.poolBorrowConnTimeoutMs());
-                    } catch (InterruptedException e) {
-                        throw new PGError("Connection polling interrupted! Pool: %s", id);
-                    }
-                }
-            }
-            else {
+
+            if (conn != null) {
                 return conn;
             }
+
+            if (attempt > config.poolBorrowConnAttempts()) {
+                throw new PGError("Pool %s is exhausted! min: %s, max: %s, free: %s, used: %s, attempt: %s, timeout: %s",
+                        id,
+                        config.poolMinSize(),
+                        config.poolMaxSize(),
+                        freeCount(),
+                        usedCount(),
+                        attempt,
+                        config.poolBorrowConnTimeoutMs()
+                );
+            }
+
+            Sleep.sleep(config.poolBorrowConnTimeoutMs());
         }
     }
 
@@ -199,55 +199,74 @@ public final class Pool implements AutoCloseable {
     }
 
     public void returnConnection (final Connection conn, final boolean forceClose) {
-        try (TryLock ignored = lock.get()) {
-            returnConnectionLocked(conn, forceClose);
-        }
-    }
-    
-    private void returnConnectionLocked(final Connection conn, final boolean forceClose) {
 
-        if (!isUsed(conn)) {
+        // doesn't belong to the pool
+        if (!isUsedLocked(conn)) {
             logger.log(System.Logger.Level.DEBUG, "Connection {0} doesn't belong to the pool {1}, closing", conn.getId(), id);
             closeConnection(conn);
             return;
         }
 
-        removeUsed(conn);
-
-        if (this.isClosed()) {
-            closeConnection(conn);
-            return;
-        }
-
-        if (conn.isClosed()) {
-            logger.log(System.Logger.Level.DEBUG, "Connection {0} has already been closed, ignoring. Pool {1}", conn.getId(), id);
-            return;
-        }
-
+        // forcibly close
         if (forceClose) {
             logger.log(System.Logger.Level.DEBUG, "Forcibly closing connection {0}, pool: {1}", conn.getId(), id);
             closeConnection(conn);
+            try (TryLock ignored = lock.get()) {
+                removeUsed(conn);
+            }
             return;
         }
 
+        // transaction has failed
         if (conn.isTxError()) {
             logger.log(System.Logger.Level.DEBUG, "connection {0} is in error state, rolling back, pool: {1}", conn.getId(), id);
             conn.rollback();
             closeConnection(conn);
+            try (TryLock ignored = lock.get()) {
+                removeUsed(conn);
+            }
             return;
         }
 
+        // conn is in transaction
         if (conn.isTransaction()) {
             logger.log(System.Logger.Level.DEBUG, "connection {0} is in transaction, rolling back, pool: {1}", conn.getId(), id);
             conn.rollback();
+            try (TryLock ignored = lock.get()) {
+                removeUsed(conn);
+                addFree(conn);
+            }
+            return;
         }
 
-        addFree(conn);
+        // has been closed by someone else
+        if (conn.isClosed()) {
+            logger.log(System.Logger.Level.DEBUG, "Connection {0} has already been closed, ignoring. Pool {1}", conn.getId(), id);
+            try (TryLock ignored = lock.get()) {
+                removeUsed(conn);
+            }
+            return;
+        }
+
+        // pool is closed
+        if (this.isClosed()) {
+            closeConnection(conn);
+            try (TryLock ignored = lock.get()) {
+                removeUsed(conn);
+            }
+            return;
+        }
+
+        // else
+        try (TryLock ignored = lock.get()) {
+            removeUsed(conn);
+            addFree(conn);
+        }
     }
 
     public void close () {
         try (TryLock ignored = lock.get()) {
-            closeUnlocked();
+            closeLocked();
         }
     }
 
@@ -276,7 +295,7 @@ public final class Pool implements AutoCloseable {
         }
     }
 
-    private void closeUnlocked() {
+    private void closeLocked() {
         closeFree();
         closeUsed();
         isClosed = true;
