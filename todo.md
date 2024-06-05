@@ -6,15 +6,13 @@
 - honey: transaction test
 
 - pool: check leaked conns
-- pool: tasks body to methods
-- pool: deque to map?
+- pool: blocking queue (sleep)
 
 - oid wrapper?
 - reorganize the docs
 - copy in/out tab format
 
 - refactor Connection logging
-- remap System.logger to j.u.l
 
 - MERGE result
 
