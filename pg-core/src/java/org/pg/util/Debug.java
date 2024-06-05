@@ -6,6 +6,7 @@ public final class Debug {
 
     public static void debug(final String template, final Object... args) {
         System.out.printf((template) + "%n", args);
+        System.out.flush();
     }
 
 }

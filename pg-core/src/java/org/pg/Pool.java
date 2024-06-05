@@ -24,30 +24,9 @@ public final class Pool implements AutoCloseable {
         return this.id.hashCode();
     }
 
-    private void logExpired(final Connection conn) {
-
-    }
-
-    private void logClosed(final Connection conn) {
-        debug("Connection %s has been closed, pool: %s",
-                conn.getId(),
-                this.id
-        );
-    }
-
-    private void logCreated(final Connection conn) {
-        debug("connection %s has been created, free: %s, used: %s, max: %s, pool: %s",
-                conn.getId(),
-                connsFree.size(),
-                connsUsed.size(),
-                config.poolMaxSize(),
-                id
-        );
-    }
-
     public void replenishConnections() {
         Connection conn;
-        debug("Start connection replenishment task, pool: %s", id);
+        logger.log(System.Logger.Level.DEBUG, "Start connection replenishment task, pool: {0}", id);
         final int gap = config.poolMinSize() - connsUsed.size() - connsFree.size();
         try (TryLock ignored = lock.get()) {
             if (gap > 0) {
@@ -171,7 +150,6 @@ public final class Pool implements AutoCloseable {
             // if expired, close and return null
             if (isExpired(conn)) {
                 logger.log(System.Logger.Level.DEBUG, "Connection {0} has been expired, closing. Pool: {1}", conn.getId(),  this.id);
-                logExpired(conn);
                 closeConnection(conn);
                 return null;
             }
@@ -190,18 +168,25 @@ public final class Pool implements AutoCloseable {
 
     private void closeConnection(final Connection conn) {
         conn.close();
-        logClosed(conn);
+        logger.log(System.Logger.Level.DEBUG, "Connection {0} has been closed, pool: {1}", conn.getId(), this.id);
     }
 
     private Connection spawnConnection() {
         final Connection conn = Connection.connect(config);
-        logCreated(conn);
+        logger.log(System.Logger.Level.DEBUG,
+                "connection {0} has been created, free: {1}, used: {2}, max: {3}, pool: {4}",
+                conn.getId(),
+                connsFree.size(),
+                connsUsed.size(),
+                config.poolMaxSize(),
+                id
+        );
         return conn;
     }
 
     private void addFree(final Connection conn) {
         if (connsFree.offer(conn)) {
-            debug("Connection %s has been added to the free queue, pool: %s", conn.getId(), id);
+            logger.log(System.Logger.Level.DEBUG, "Connection {0} has been added to the free queue, pool: {1}", conn.getId(), id);
         }
         else {
             throw new PGError("Could not add connection %s into the free queue, pool: %s", conn.getId(), id);
@@ -222,9 +207,8 @@ public final class Pool implements AutoCloseable {
     private void returnConnectionLocked(final Connection conn, final boolean forceClose) {
 
         if (!isUsed(conn)) {
-            debug("Connection %s doesn't belong to the pool %s, closing",
-                    conn.getId(), id);
-            conn.close();
+            logger.log(System.Logger.Level.DEBUG, "Connection {0} doesn't belong to the pool {1}, closing", conn.getId(), id);
+            closeConnection(conn);
             return;
         }
 
@@ -236,28 +220,25 @@ public final class Pool implements AutoCloseable {
         }
 
         if (conn.isClosed()) {
-            debug("connection %s has already been closed, ignoring. Pool %s",
-                    conn.getId(), id);
+            logger.log(System.Logger.Level.DEBUG, "Connection {0} has already been closed, ignoring. Pool {1}", conn.getId(), id);
             return;
         }
 
         if (forceClose) {
-            debug("Forcibly closing connection %s, pool: %s", conn.getId(), id);
+            logger.log(System.Logger.Level.DEBUG, "Forcibly closing connection {0}, pool: {1}", conn.getId(), id);
             closeConnection(conn);
             return;
         }
 
         if (conn.isTxError()) {
-            debug("connection %s is in error state, rolling back, pool: %s",
-                    conn.getId(), id);
+            logger.log(System.Logger.Level.DEBUG, "connection {0} is in error state, rolling back, pool: {1}", conn.getId(), id);
             conn.rollback();
             closeConnection(conn);
             return;
         }
 
         if (conn.isTransaction()) {
-            debug("connection %s is in transaction, rolling back, pool: %s",
-                    conn.getId(), id);
+            logger.log(System.Logger.Level.DEBUG, "connection {0} is in transaction, rolling back, pool: {1}", conn.getId(), id);
             conn.rollback();
         }
 
@@ -271,7 +252,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private void closeFree() {
-        debug("Closing %s free connections, pool: %s", connsFree.size(), id);
+        logger.log(System.Logger.Level.DEBUG, "Closing {0} free connections, pool: {1}", connsFree.size(), id);
         Connection conn;
         while (true) {
             conn = connsFree.poll();
@@ -279,20 +260,18 @@ public final class Pool implements AutoCloseable {
                 break;
             }
             else {
-                conn.close();
-                logClosed(conn);
+                closeConnection(conn);
             }
         }
     }
 
     private void closeUsed() {
-        debug("Closing %s used connections, pool: %s", connsUsed.size(), id);
+        logger.log(System.Logger.Level.DEBUG, "Closing {0} used connections, pool: {1}", connsUsed.size(), id);
         Connection conn;
         for (final UUID id: connsUsed.keySet()) {
             conn = connsUsed.get(id);
             Connection.cancelRequest(conn);
-            conn.close();
-            logClosed(conn);
+            closeConnection(conn);
             connsUsed.remove(id);
         }
     }
