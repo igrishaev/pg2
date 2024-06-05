@@ -33,7 +33,6 @@ public record Config(
         IFn fnProtocolVersion,
         IFn fnNotice,
         SSLContext sslContext,
-        System.Logger.Level logLevel,
         long cancelTimeoutMs,
         ObjectMapper objectMapper,
         boolean readOnly,
@@ -75,7 +74,6 @@ public record Config(
         private IFn fnProtocolVersion;
         private IFn fnNotice;
         private SSLContext sslContext = null;
-        private System.Logger.Level logLevel = System.Logger.Level.INFO;
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
         private ObjectMapper objectMapper = JSON.defaultMapper;
         private boolean readOnly = false;
@@ -113,12 +111,6 @@ public record Config(
         @SuppressWarnings("unused")
         public Builder protocolVersion(final int protocolVersion) {
             this.protocolVersion = protocolVersion;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder logLevel(final System.Logger.Level level) {
-            this.logLevel = level;
             return this;
         }
 
@@ -303,7 +295,6 @@ public record Config(
                     this.fnProtocolVersion,
                     this.fnNotice,
                     this.sslContext,
-                    this.logLevel,
                     this.cancelTimeoutMs,
                     this.objectMapper,
                     this.readOnly,

@@ -31,11 +31,6 @@ import java.nio.ByteBuffer;
 
 public final class Connection implements AutoCloseable {
 
-    private static final boolean isDebug =
-            System.getenv()
-                    .getOrDefault("PG_DEBUG", "")
-                    .equals("1");
-
     private final Config config;
     private final UUID id;
     private final long createdAt;
@@ -50,7 +45,6 @@ public final class Connection implements AutoCloseable {
     private final Map<String, String> params;
     private CodecParams codecParams;
     private boolean isSSL = false;
-    private final System.Logger logger = System.getLogger(Connection.class.getCanonicalName());
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
 
@@ -347,8 +341,8 @@ public final class Connection implements AutoCloseable {
     // Send bytes into the output stream. Do not flush the buffer,
     // must be done manually.
     private void sendBytes (final byte[] buf) {
-        if (isDebug) {
-            logger.log(config.logLevel()," <- {0}", Arrays.toString(buf));
+        if (Debug.isON) {
+            Debug.debug(" < %s", Arrays.toString(buf));
         }
         IOTool.write(outStream, buf);
     }
@@ -367,8 +361,8 @@ public final class Connection implements AutoCloseable {
     }
 
     private void sendMessage (final IClientMessage msg) {
-        if (isDebug) {
-            logger.log(config.logLevel(), " <- {0}", msg);
+        if (Debug.isON) {
+            Debug.debug(" <- %s", msg);
         }
         final ByteBuffer buf = msg.encode(codecParams.clientCharset());
         IOTool.write(outStream, buf.array());
@@ -682,8 +676,8 @@ public final class Connection implements AutoCloseable {
         final Result res = new Result(executeParams);
         while (true) {
             final IServerMessage msg = readMessage(res.hasException());
-            if (isDebug) {
-                logger.log(config.logLevel(), " -> {0}", msg);
+            if (Debug.isON) {
+                Debug.debug(" -> %s", msg);
             }
             handleMessage(msg, res);
             if (isEnough(msg, isAuth)) {
@@ -948,10 +942,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handlerCall (final IFn f, final Object arg) {
-        if (f == null) {
-            logger.log(config.logLevel(), arg);
-        }
-        else {
+        if (f != null) {
             Agent.soloExecutor.submit(() -> {
                 f.invoke(arg);
             });

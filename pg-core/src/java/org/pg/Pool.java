@@ -24,37 +24,19 @@ public final class Pool implements AutoCloseable {
         return this.id.hashCode();
     }
 
-    @SuppressWarnings("unused")
-    private void log(final String message) {
-        logger.log(config.logLevel(), message);
-    }
-
-    private void log(final String template, final Object... args) {
-        logger.log(config.logLevel(), String.format(template, args));
-    }
-
-    private void logAndThrow(final String template, final Object... args) {
-        final String message = String.format(template, args);
-        log(message);
-        throw new PGError(message);
-    }
-
     private void logExpired(final Connection conn) {
-        log("Connection %s has been expired, closing. Pool: %s",
-                conn.getId(),
-                this.id
-        );
+
     }
 
     private void logClosed(final Connection conn) {
-        log("Connection %s has been closed, pool: %s",
+        debug("Connection %s has been closed, pool: %s",
                 conn.getId(),
                 this.id
         );
     }
 
     private void logCreated(final Connection conn) {
-        log("connection %s has been created, free: %s, used: %s, max: %s, pool: %s",
+        debug("connection %s has been created, free: %s, used: %s, max: %s, pool: %s",
                 conn.getId(),
                 connsFree.size(),
                 connsUsed.size(),
@@ -65,7 +47,7 @@ public final class Pool implements AutoCloseable {
 
     public void replenishConnections() {
         Connection conn;
-        log("Start connection replenishment task, pool: %s", id);
+        debug("Start connection replenishment task, pool: %s", id);
         final int gap = config.poolMinSize() - connsUsed.size() - connsFree.size();
         try (TryLock ignored = lock.get()) {
             if (gap > 0) {
@@ -139,7 +121,7 @@ public final class Pool implements AutoCloseable {
             if (conn == null) {
                 attempt += 1;
                 if (attempt > config.poolBorrowConnAttempts()) {
-                    logAndThrow("Pool %s is exhausted! min: %s, max: %s, free: %s, used: %s, attempt: %s, timeout: %s",
+                    throw new PGError("Pool %s is exhausted! min: %s, max: %s, free: %s, used: %s, attempt: %s, timeout: %s",
                             id,
                             config.poolMinSize(),
                             config.poolMaxSize(),
@@ -153,7 +135,7 @@ public final class Pool implements AutoCloseable {
                     try {
                         Thread.sleep(config.poolBorrowConnTimeoutMs());
                     } catch (InterruptedException e) {
-                        logAndThrow("Connection polling interrupted! Pool: %s", id);
+                        throw new PGError("Connection polling interrupted! Pool: %s", id);
                     }
                 }
             }
@@ -188,6 +170,7 @@ public final class Pool implements AutoCloseable {
 
             // if expired, close and return null
             if (isExpired(conn)) {
+                logger.log(System.Logger.Level.DEBUG, "Connection {0} has been expired, closing. Pool: {1}", conn.getId(),  this.id);
                 logExpired(conn);
                 closeConnection(conn);
                 return null;
@@ -218,7 +201,7 @@ public final class Pool implements AutoCloseable {
 
     private void addFree(final Connection conn) {
         if (connsFree.offer(conn)) {
-            log("Connection %s has been added to the free queue, pool: %s", conn.getId(), id);
+            debug("Connection %s has been added to the free queue, pool: %s", conn.getId(), id);
         }
         else {
             throw new PGError("Could not add connection %s into the free queue, pool: %s", conn.getId(), id);
@@ -239,7 +222,7 @@ public final class Pool implements AutoCloseable {
     private void returnConnectionLocked(final Connection conn, final boolean forceClose) {
 
         if (!isUsed(conn)) {
-            log("Connection %s doesn't belong to the pool %s, closing",
+            debug("Connection %s doesn't belong to the pool %s, closing",
                     conn.getId(), id);
             conn.close();
             return;
@@ -253,19 +236,19 @@ public final class Pool implements AutoCloseable {
         }
 
         if (conn.isClosed()) {
-            log("connection %s has already been closed, ignoring. Pool %s",
+            debug("connection %s has already been closed, ignoring. Pool %s",
                     conn.getId(), id);
             return;
         }
 
         if (forceClose) {
-            log("Forcibly closing connection %s, pool: %s", conn.getId(), id);
+            debug("Forcibly closing connection %s, pool: %s", conn.getId(), id);
             closeConnection(conn);
             return;
         }
 
         if (conn.isTxError()) {
-            log("connection %s is in error state, rolling back, pool: %s",
+            debug("connection %s is in error state, rolling back, pool: %s",
                     conn.getId(), id);
             conn.rollback();
             closeConnection(conn);
@@ -273,7 +256,7 @@ public final class Pool implements AutoCloseable {
         }
 
         if (conn.isTransaction()) {
-            log("connection %s is in transaction, rolling back, pool: %s",
+            debug("connection %s is in transaction, rolling back, pool: %s",
                     conn.getId(), id);
             conn.rollback();
         }
@@ -288,7 +271,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private void closeFree() {
-        log("Closing %s free connections, pool: %s", connsFree.size(), id);
+        debug("Closing %s free connections, pool: %s", connsFree.size(), id);
         Connection conn;
         while (true) {
             conn = connsFree.poll();
@@ -303,7 +286,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private void closeUsed() {
-        log("Closing %s used connections, pool: %s", connsUsed.size(), id);
+        debug("Closing %s used connections, pool: %s", connsUsed.size(), id);
         Connection conn;
         for (final UUID id: connsUsed.keySet()) {
             conn = connsUsed.get(id);
