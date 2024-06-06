@@ -45,8 +45,7 @@ public final class Payload {
 
     public Payload addUnsignedShort (final Integer i) {
         size += 2;
-        final ByteBuffer buf = ByteBuffer.allocate(4);
-        buf.putInt(i);
+        ByteBuffer buf = BBTool.ofInt(i);
         BBTool.skip(buf, -2);
         items.add(buf);
         return this;
@@ -54,8 +53,7 @@ public final class Payload {
 
     public Payload addUnsignedInteger (final Long l) {
         size += 4;
-        final ByteBuffer buf = ByteBuffer.allocate(8);
-        buf.putLong(l);
+        ByteBuffer buf = BBTool.ofLong(l);
         BBTool.skip(buf, -4);
         items.add(buf);
         return this;

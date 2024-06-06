@@ -18,8 +18,12 @@ import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.util.*;
 
+import java.net.InetSocketAddress;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
+import java.util.concurrent.CompletableFuture;
+
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +39,7 @@ public final class Connection implements AutoCloseable {
     private final UUID id;
     private final long createdAt;
     private int counter = 0;
+    private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
 
     private int pid;
     private int secretKey;
@@ -47,6 +52,7 @@ public final class Connection implements AutoCloseable {
     private boolean isSSL = false;
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
+    private AsynchronousSocketChannel socketChannel;
 
     @Override
     public boolean equals (Object other) {
@@ -69,8 +75,8 @@ public final class Connection implements AutoCloseable {
     public static Connection connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
         conn._connect();
-        conn._setSocketOptions();
-        conn._preSSLStage();
+        // conn._setSocketOptions();
+        // conn._preSSLStage();
         if (sendStartup) {
             conn._authenticate();
         }
@@ -100,7 +106,6 @@ public final class Connection implements AutoCloseable {
         try (TryLock ignored = lock.get()) {
             if (!isClosed) {
                 sendTerminate();
-                flush();
                 IOTool.close(socket);
                 isClosed = true;
             }
@@ -238,13 +243,15 @@ public final class Connection implements AutoCloseable {
         interact(true);
     }
 
-    private boolean readSSLResponse () {
-        final char c = (char) IOTool.read(inStream);
-        return switch (c) {
-            case 'N' -> false;
-            case 'S' -> true;
-            default -> throw new PGError("wrong SSL response: %s", c);
-        };
+    private CompletableFuture<Boolean> readSSLResponse () {
+        return readNBytes(1).thenCompose((ByteBuffer buf) -> {
+            final char c = (char) IOTool.read(inStream);
+            return switch (c) {
+                case 'N' -> CompletableFuture.completedFuture(false);
+                case 'S' -> CompletableFuture.completedFuture(true);
+                default -> CompletableFuture.failedFuture(new PGError("wrong SSL response: %s", c));
+            };
+        });
     }
 
     private static final String[] SSLProtocols = new String[] {
@@ -263,88 +270,100 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void upgradeToSSL () throws NoSuchAlgorithmException, IOException {
-        final SSLContext sslContext = getSSLContext();
-        final SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(
-                socket,
-                config.host(),
-                config.port(),
-                true
-        );
+//    private void upgradeToSSL () throws NoSuchAlgorithmException, IOException {
+//        final SSLContext sslContext = getSSLContext();
+//        final SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(
+//                socket,
+//                config.host(),
+//                config.port(),
+//                true
+//        );
+//
+//        final InputStream sslInStream = new BufferedInputStream(
+//                IOTool.getInputStream(sslSocket),
+//                config.inStreamBufSize()
+//        );
+//
+//        final OutputStream sslOutStream = new BufferedOutputStream(
+//                IOTool.getOutputStream(sslSocket),
+//                config.outStreamBufSize()
+//        );
+//
+//        sslSocket.setUseClientMode(true);
+//        sslSocket.setEnabledProtocols(SSLProtocols);
+//        sslSocket.startHandshake();
+//
+//        socket = sslSocket;
+//        inStream = sslInStream;
+//        outStream = sslOutStream;
+//        isSSL = true;
+//    }
 
-        final InputStream sslInStream = new BufferedInputStream(
-                IOTool.getInputStream(sslSocket),
-                config.inStreamBufSize()
-        );
+//    private void _preSSLStage () {
+//        if (config.useSSL()) {
+//            final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
+//            sendMessage(msg);
+//            final boolean ssl = readSSLResponse();
+//            if (ssl) {
+//                try {
+//                    upgradeToSSL();
+//                }
+//                catch (Throwable e) {
+//                    close();
+//                    throw new PGError(
+//                            e,
+//                            "could not upgrade to SSL due to an exception: %s",
+//                            e.getMessage()
+//                    );
+//                }
+//            }
+//            else {
+//                close();
+//                throw new PGError("the server is configured to not use SSL");
+//            }
+//        }
+//    }
 
-        final OutputStream sslOutStream = new BufferedOutputStream(
-                IOTool.getOutputStream(sslSocket),
-                config.outStreamBufSize()
-        );
+//    private void _connect () {
+//        try (TryLock ignored = lock.get()) {
+//            _connect_unlocked();
+//        }
+//    }
 
-        sslSocket.setUseClientMode(true);
-        sslSocket.setEnabledProtocols(SSLProtocols);
-        sslSocket.startHandshake();
-
-        socket = sslSocket;
-        inStream = sslInStream;
-        outStream = sslOutStream;
-        isSSL = true;
-    }
-
-    private void _preSSLStage () {
-        if (config.useSSL()) {
-            final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
-            sendMessage(msg);
-            flush();
-            final boolean ssl = readSSLResponse();
-            if (ssl) {
-                try {
-                    upgradeToSSL();
-                }
-                catch (Throwable e) {
-                    close();
-                    throw new PGError(
-                            e,
-                            "could not upgrade to SSL due to an exception: %s",
-                            e.getMessage()
-                    );
-                }
-            }
-            else {
-                close();
-                throw new PGError("the server is configured to not use SSL");
-            }
-        }
-    }
-
-    private void _connect () {
-        try (TryLock ignored = lock.get()) {
-            _connect_unlocked();
-        }
-    }
-
-    private void _connect_unlocked () {
+    private CompletableFuture<Boolean> _connect () {
         final int port = getPort();
         final String host = getHost();
-        socket = IOTool.socket(host, port);
-        inStream = new BufferedInputStream(
-                IOTool.getInputStream(socket),
-                config.inStreamBufSize()
-        );
-        outStream = new BufferedOutputStream(
-                IOTool.getOutputStream(socket),
-                config.outStreamBufSize()
-        );
+
+        try {
+            socketChannel = AsynchronousSocketChannel.open();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        final InetSocketAddress addr = new InetSocketAddress(host, port);
+        final CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        socketChannel.connect(addr, future, new CompletionHandler<>() {
+
+            @Override
+            public void completed(Void result, CompletableFuture<Boolean> attachment) {
+                attachment.complete(true);
+            }
+
+            @Override
+            public void failed(Throwable exc, CompletableFuture<Boolean> attachment) {
+                attachment.completeExceptionally(exc);
+            }
+        });
+
+        return future;
     }
 
-    // Send bytes into the output stream. Do not flush the buffer,
-    // must be done manually.
-    private void sendBytes (final byte[] buf) {
+    private CompletableFuture<Integer> sendBytes(final byte[] buf) {
         if (Debug.isON) {
             Debug.debug(" < %s", Arrays.toString(buf));
         }
-        IOTool.write(outStream, buf);
+        return sendByteBuffer(ByteBuffer.wrap(buf));
     }
 
     // Like sendBytes above but taking boundaries into account.
@@ -352,20 +371,40 @@ public final class Connection implements AutoCloseable {
         IOTool.write(outStream, buf, offset, len);
     }
 
-    private void sendBytesCopy(final byte[] bytes) {
-        final ByteBuffer bb = ByteBuffer.allocate(5);
-        bb.put((byte)'d');
-        bb.putInt(4 + bytes.length);
-        sendBytes(bb.array());
-        sendBytes(bytes);
+    private CompletableFuture<Integer> sendBytesCopy(final byte[] bytes) {
+        final ByteBuffer header = ByteBuffer.allocate(5);
+        header.put((byte)'d');
+        header.putInt(4 + bytes.length);
+        return sendByteBuffer(header).thenComposeAsync((Integer ignored) -> sendBytes(bytes));
+
     }
 
-    private void sendMessage (final IClientMessage msg) {
+    private CompletableFuture<Integer> sendByteBuffer(final ByteBuffer buf) {
+        buf.rewind();
+        final CompletableFuture<Integer> future = new CompletableFuture<>();
+        socketChannel.write(buf, 0, new CompletionHandler<>() {
+            @Override
+            public void completed(Integer read, Integer total) {
+                if (buf.hasRemaining()) {
+                    socketChannel.write(buf, total + read, this);
+                } else {
+                    future.complete(total + read);
+                }
+            }
+            @Override
+            public void failed(Throwable exc, Integer total) {
+                future.completeExceptionally(exc);
+            }
+        });
+        return future;
+    }
+
+    private CompletableFuture<Integer> sendMessage(final IClientMessage msg) {
         if (Debug.isON) {
             Debug.debug(" <- %s", msg);
         }
         final ByteBuffer buf = msg.encode(codecParams.clientCharset());
-        IOTool.write(outStream, buf.array());
+        return sendByteBuffer(buf);
     }
 
     private String generateStatement () {
@@ -376,7 +415,7 @@ public final class Connection implements AutoCloseable {
         return String.format("p%d", nextInt());
     }
 
-    private void sendStartupMessage () {
+    private CompletableFuture<Integer> sendStartupMessage () {
         final StartupMessage msg =
             new StartupMessage(
                     config.protocolVersion(),
@@ -384,121 +423,128 @@ public final class Connection implements AutoCloseable {
                     config.database(),
                     config.pgParams()
             );
-        sendMessage(msg);
+        return sendMessage(msg);
     }
 
-    private void sendCopyData (final byte[] buf) {
-        sendMessage(new CopyData(ByteBuffer.wrap(buf)));
+    private CompletableFuture<Integer> sendCopyData (final byte[] buf) {
+        return sendMessage(new CopyData(ByteBuffer.wrap(buf)));
     }
 
-    private void sendCopyDone () {
-        sendMessage(CopyDone.INSTANCE);
+    private CompletableFuture<Integer> sendCopyDone () {
+        return sendMessage(CopyDone.INSTANCE);
     }
 
-    private void sendCopyFail (final String errorMessage) {
-        sendMessage(new CopyFail(errorMessage));
+    private CompletableFuture<Integer> sendCopyFail (final String errorMessage) {
+        return sendMessage(new CopyFail(errorMessage));
     }
 
-    private void sendQuery (final String query) {
-        sendMessage(new Query(query));
+    private CompletableFuture<Integer> sendQuery (final String query) {
+        return sendMessage(new Query(query));
     }
 
-    private void sendPassword (final String password) {
-        sendMessage(new PasswordMessage(password));
+    private CompletableFuture<Integer> sendPasswordAsync (final String password) {
+        return sendMessage(new PasswordMessage(password));
     }
 
-    private void sendSync () {
-        sendMessage(Sync.INSTANCE);
+    private CompletableFuture<Integer> sendPassword (final String password) {
+        return sendMessage(new PasswordMessage(password));
     }
 
-    private void sendFlush () {
-        sendMessage(Flush.INSTANCE);
+    private CompletableFuture<Integer> sendSync () {
+        return sendMessage(Sync.INSTANCE);
     }
 
-    private void sendTerminate () {
-        sendMessage(Terminate.INSTANCE);
+    private CompletableFuture<Integer> sendFlush () {
+        return sendMessage(Flush.INSTANCE);
     }
+
+    private CompletableFuture<Integer> sendTerminate () {
+        return sendMessage(Terminate.INSTANCE);
+    }
+
 
     @SuppressWarnings("unused")
-    private void sendSSLRequest () {
-        sendMessage(new SSLRequest(Const.SSL_CODE));
+    private CompletableFuture<Integer> sendSSLRequest () {
+        return sendMessage(new SSLRequest(Const.SSL_CODE));
     }
 
-    private IServerMessage readMessage (final boolean skipMode) {
-
-        final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
-        final ByteBuffer bbHeader = ByteBuffer.wrap(bufHeader);
-
-        final char tag = (char) bbHeader.get();
-        final int bodySize = bbHeader.getInt() - 4;
-
-        // skipMode means there has been an exception before. There is no need
-        // to parse data-heavy messages as we're going to throw an exception
-        // at the end anyway. If there is a DataRow or a CopyData message,
-        // just skip it.
-        if (skipMode) {
-            if (tag == 'D' || tag == 'd') {
-                IOTool.skip(inStream, bodySize);
-                return SkippedMessage.INSTANCE;
+    private CompletableFuture<ByteBuffer> readNBytes(final int size) {
+        final ByteBuffer buf = ByteBuffer.allocate(size);
+        final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+        socketChannel.read(buf, buf, new CompletionHandler<>() {
+            @Override
+            public void completed(Integer ignored, ByteBuffer buf) {
+                if (buf.hasRemaining()) {
+                    socketChannel.read(buf, buf, this);
+                }
+                else {
+                    future.complete(buf.rewind());
+                }
             }
-        }
+            @Override
+            public void failed(Throwable exc, ByteBuffer buf) {
+                future.completeExceptionally(exc);
+            }
+        });
+        return future;
+    }
 
-        byte[] bufBody = IOTool.readNBytes(inStream, bodySize);
-        ByteBuffer bbBody = ByteBuffer.wrap(bufBody);
-
-        return switch (tag) {
-            case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'S' -> ParameterStatus.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'Z' -> ReadyForQuery.fromByteBuffer(bbBody);
-            case 'C' -> CommandComplete.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'T' -> RowDescription.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'D' -> DataRow.fromByteBuffer(bbBody);
-            case 'E' -> ErrorResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'K' -> BackendKeyData.fromByteBuffer(bbBody);
-            case '1' -> ParseComplete.INSTANCE;
-            case '2' -> BindComplete.INSTANCE;
-            case '3' -> CloseComplete.INSTANCE;
-            case 't' -> ParameterDescription.fromByteBuffer(bbBody);
-            case 'H' -> CopyOutResponse.fromByteBuffer(bbBody);
-            case 'd' -> CopyData.fromByteBuffer(bbBody);
-            case 'c' -> CopyDone.INSTANCE;
-            case 'I' -> EmptyQueryResponse.INSTANCE;
-            case 'n' -> NoData.INSTANCE;
-            case 'v' -> NegotiateProtocolVersion.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'A' -> NotificationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'N' -> NoticeResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 's' -> PortalSuspended.INSTANCE;
-            case 'G' -> CopyInResponse.fromByteBuffer(bbBody);
-            default -> throw new PGError("Unknown message: %s", tag);
-        };
+    private CompletableFuture<IServerMessage> readMessage () {
+        return readNBytes(5).thenCompose((ByteBuffer bbHeader) -> {
+            final char tag = (char) bbHeader.get();
+            final int bodySize = bbHeader.getInt() - 4;
+            return readNBytes(bodySize).thenApply((ByteBuffer bbBody) -> switch (tag) {
+                case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
+                case 'S' -> ParameterStatus.fromByteBuffer(bbBody, codecParams.serverCharset());
+                case 'Z' -> ReadyForQuery.fromByteBuffer(bbBody);
+                case 'C' -> CommandComplete.fromByteBuffer(bbBody, codecParams.serverCharset());
+                case 'T' -> RowDescription.fromByteBuffer(bbBody, codecParams.serverCharset());
+                case 'D' -> DataRow.fromByteBuffer(bbBody);
+                case 'E' -> ErrorResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
+                case 'K' -> BackendKeyData.fromByteBuffer(bbBody);
+                case '1' -> ParseComplete.INSTANCE;
+                case '2' -> BindComplete.INSTANCE;
+                case '3' -> CloseComplete.INSTANCE;
+                case 't' -> ParameterDescription.fromByteBuffer(bbBody);
+                case 'H' -> CopyOutResponse.fromByteBuffer(bbBody);
+                case 'd' -> CopyData.fromByteBuffer(bbBody);
+                case 'c' -> CopyDone.INSTANCE;
+                case 'I' -> EmptyQueryResponse.INSTANCE;
+                case 'n' -> NoData.INSTANCE;
+                case 'v' -> NegotiateProtocolVersion.fromByteBuffer(bbBody, codecParams.serverCharset());
+                case 'A' -> NotificationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
+                case 'N' -> NoticeResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
+                case 's' -> PortalSuspended.INSTANCE;
+                case 'G' -> CopyInResponse.fromByteBuffer(bbBody);
+                default -> throw new PGError("Unknown message: %s", tag);
+            });
+        });
 
     }
 
-    private void sendDescribeStatement (final String statement) {
+    private CompletableFuture<Integer> sendDescribeStatement (final String statement) {
         final Describe msg = new Describe(SourceType.STATEMENT, statement);
-        sendMessage(msg);
+        return sendMessage(msg);
     }
 
-    private void sendDescribePortal (final String portal) {
+    private CompletableFuture<Integer> sendDescribePortal (final String portal) {
         final Describe msg = new Describe(SourceType.PORTAL, portal);
-        sendMessage(msg);
+        return sendMessage(msg);
     }
 
-    private void sendExecute (final String portal, final long maxRows) {
+    private CompletableFuture<Integer> sendExecute (final String portal, final long maxRows) {
         final Execute msg = new Execute(portal, maxRows);
-        sendMessage(msg);
+        return sendMessage(msg);
     }
 
-    public Object query(final String sql) {
+    public CompletableFuture<Object> query(final String sql) {
         return query(sql, ExecuteParams.INSTANCE);
     }
 
-    public Object query(final String sql, final ExecuteParams executeParams) {
-        try (TryLock ignored = lock.get()) {
-            sendQuery(sql);
-            return interact(executeParams).getResult();
-        }
-    }
+    public CompletableFuture<Object> query(final String sql, final ExecuteParams executeParams) {
+        return sendQuery(sql)
+                .thenCompose((Integer ignored) -> interact(executeParams))
+                .thenCompose((Result res) -> CompletableFuture.completedFuture(res.getResult()));}
 
     @SuppressWarnings("unused")
     public PreparedStatement prepare (final String sql) {
@@ -506,9 +552,9 @@ public final class Connection implements AutoCloseable {
     }
 
     public PreparedStatement prepare (final String sql, final ExecuteParams executeParams) {
-        try (TryLock ignored = lock.get()) {
-            return _prepare_unlocked(sql, executeParams);
-        }
+//        try (TryLock ignored = lock.get()) {
+//            return _prepare_unlocked(sql, executeParams);
+//        }
     }
 
     private PreparedStatement _prepare_unlocked (
@@ -536,19 +582,20 @@ public final class Connection implements AutoCloseable {
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
-    private void sendBind (final String portal,
-                           final PreparedStatement stmt,
-                           final ExecuteParams executeParams
+    private CompletableFuture<Integer> sendBind (
+            final String portal,
+            final PreparedStatement stmt,
+            final ExecuteParams executeParams
     ) {
         final List<Object> params = executeParams.params();
         final OID[] OIDs = stmt.parameterDescription().OIDs();
         final int size = params.size();
 
         if (size != OIDs.length) {
-            throw new PGError(
+            return CompletableFuture.failedFuture(new PGError(
                     "Wrong parameters count: %s (must be %s)",
                     size, OIDs.length
-            );
+            ));
         }
 
         final Format paramsFormat = (executeParams.binaryEncode() || config.binaryEncode()) ? Format.BIN : Format.TXT;
@@ -573,8 +620,6 @@ public final class Connection implements AutoCloseable {
                     String value = EncoderTxt.encode(param, oid, codecParams);
                     bytes[i] = value.getBytes(codecParams.clientCharset());
                 }
-                default ->
-                    throw new PGError("unknown format: %s", paramsFormat);
             }
         }
         final Bind msg = new Bind(
@@ -585,13 +630,11 @@ public final class Connection implements AutoCloseable {
                 columnFormat
         );
 
-        for (byte[] buf: msg.toByteArrays()) {
-            sendBytes(buf);
-        }
-    }
+        return sendMessage(msg);
 
-    private void flush () {
-        IOTool.flush(outStream);
+//        for (byte[] buf: msg.toByteArrays()) {
+//            sendBytes(buf);
+//        }
     }
 
     @SuppressWarnings("unused")
@@ -599,59 +642,59 @@ public final class Connection implements AutoCloseable {
         return executeStatement(stmt, ExecuteParams.INSTANCE);
     }
 
-    public Object executeStatement (
+    public CompletableFuture<Object> executeStatement (
             final PreparedStatement stmt,
             final ExecuteParams executeParams
     ) {
-        try (TryLock ignored = lock.get()) {
-            final String portal = generatePortal();
-            sendBind(portal, stmt, executeParams);
-            sendDescribePortal(portal);
-            sendExecute(portal, executeParams.maxRows());
-            sendClosePortal(portal);
-            sendSync();
-            sendFlush();
-            return interact(executeParams).getResult();
-        }
+        final String portal = generatePortal();
+        return sendBind(portal, stmt, executeParams)
+                .thenCompose((Integer ignored) -> sendDescribePortal(portal))
+                .thenCompose((Integer ignored) -> sendExecute(portal, executeParams.maxRows()))
+                .thenCompose((Integer ignored) -> sendClosePortal(portal))
+                .thenCompose((Integer ignored) -> sendSync())
+                .thenCompose((Integer ignored) -> sendFlush())
+                .thenCompose((Integer ignored) -> interact(executeParams))
+                .thenCompose((Result res) -> CompletableFuture.completedFuture(res.getResult()));
     }
 
     @SuppressWarnings("unused")
-    public Object execute (final String sql) {
+    public CompletableFuture<Object> execute (final String sql) {
         return execute(sql, ExecuteParams.INSTANCE);
     }
 
-    public Object execute (final String sql, final List<Object> params) {
+    public CompletableFuture<Object> execute (final String sql, final List<Object> params) {
         return execute(sql, ExecuteParams.builder().params(params).build());
     }
 
-    public Object execute (final String sql, final ExecuteParams executeParams) {
-        try (final TryLock ignored = lock.get()) {
-            final PreparedStatement stmt = prepare(sql, executeParams);
-            final String portal = generatePortal();
-            sendBind(portal, stmt, executeParams);
-            sendDescribePortal(portal);
-            sendExecute(portal, executeParams.maxRows());
-            sendClosePortal(portal);
-            sendCloseStatement(stmt);
-            sendSync();
-            sendFlush();
-            return interact(executeParams).getResult();
-        }
+    public CompletableFuture<Object> execute (final String sql, final ExecuteParams executeParams) {
+
+//        try (final TryLock ignored = lock.get()) {
+//            final PreparedStatement stmt = prepare(sql, executeParams);
+//            final String portal = generatePortal();
+//            sendBind(portal, stmt, executeParams);
+//            sendDescribePortal(portal);
+//            sendExecute(portal, executeParams.maxRows());
+//            sendClosePortal(portal);
+//            sendCloseStatement(stmt);
+//            sendSync();
+//            sendFlush();
+//            return interact(executeParams).getResult();
+//        }
     }
 
-    private void sendCloseStatement (final PreparedStatement stmt) {
+    private CompletableFuture<Integer> sendCloseStatement (final PreparedStatement stmt) {
         final Close msg = new Close(SourceType.STATEMENT, stmt.parse().statement());
-        sendMessage(msg);
+        return sendMessage(msg);
     }
 
-    private void sendCloseStatement (final String statement) {
+    private CompletableFuture<Integer> sendCloseStatement (final String statement) {
         final Close msg = new Close(SourceType.STATEMENT, statement);
-        sendMessage(msg);
+        return sendMessage(msg);
     }
 
-    private void sendClosePortal (final String portal) {
+    private CompletableFuture<Integer> sendClosePortal (final String portal) {
         final Close msg = new Close(SourceType.PORTAL, portal);
-        sendMessage(msg);
+        return sendMessage(msg);
     }
 
     public void closeStatement (final PreparedStatement statement) {
@@ -667,12 +710,21 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private Result interact (final ExecuteParams executeParams) {
+    private CompletableFuture<Result> interact (final ExecuteParams executeParams) {
         return interact(executeParams, false);
     }
 
-    private Result interact (final ExecuteParams executeParams, final boolean isAuth) {
-        flush();
+    private CompletableFuture<Result> interact (final ExecuteParams executeParams, final boolean isAuth) {
+        final CompletableFuture<Result> future = new CompletableFuture<>();
+        readMessage().thenCompose((IServerMessage msg) -> {
+
+        });
+        return future;
+    }
+
+    private CompletableFuture<Result> interact (final ExecuteParams executeParams, final boolean isAuth) {
+        CompletableFuture<Object> f = new CompletableFuture<>();
+        f.is
         final Result res = new Result(executeParams);
         while (true) {
             final IServerMessage msg = readMessage(res.hasException());
@@ -696,73 +748,84 @@ public final class Connection implements AutoCloseable {
         return interact(ExecuteParams.INSTANCE, false);
     }
 
-    private static void noop () {}
+    // private static void noop () {}
 
-    private void handleMessage (final IServerMessage msg, final Result res) {
+//    private CompletableFuture<Result> handleMessageAsync(final IServerMessage msg, final Result res) {
+//        // final CompletableFuture<Result> future = new CompletableFuture<>();
+//
+//        if (msg instanceof ParameterStatus x) {
+//            handleParameterStatus(x);
+//            return CompletableFuture.completedFuture(res);
+//        } else if (msg instanceof AuthenticationMD5Password x) {
+//            return handleAuthenticationMD5PasswordAsync(x)
+//                    .thenComposeAsync((Integer ignored) -> CompletableFuture.completedFuture(res));
+//
+//    }
+
+    private CompletableFuture<Result> handleMessage (final IServerMessage msg, final Result res) {
 
         if (msg instanceof DataRow x) {
-            handleDataRow(x, res);
+            return handleDataRow(x, res);
         } else if (msg instanceof NotificationResponse x) {
-            handleNotificationResponse(x);
+            return handleNotificationResponse(x, res);
         } else if (msg instanceof AuthenticationCleartextPassword) {
-            handleAuthenticationCleartextPassword();
+            return handleAuthenticationCleartextPassword().thenComposeAsync((Integer ignored) -> CompletableFuture.completedFuture(res));
         } else if (msg instanceof AuthenticationSASL x) {
-            handleAuthenticationSASL(x, res);
+            return handleAuthenticationSASL(x, res);
         } else if (msg instanceof AuthenticationSASLContinue x) {
-            handleAuthenticationSASLContinue(x, res);
+            return handleAuthenticationSASLContinue(x, res);
         } else if (msg instanceof AuthenticationSASLFinal x) {
-            handleAuthenticationSASLFinal(x, res);
+            return handleAuthenticationSASLFinal(x, res);
         } else if (msg instanceof NoticeResponse x) {
-            handleNoticeResponse(x);
+            return handleNoticeResponse(x);
         } else if (msg instanceof ParameterStatus x) {
-            handleParameterStatus(x);
+            return handleParameterStatus(x);
         } else if (msg instanceof RowDescription x) {
-            handleRowDescription(x, res);
+            return handleRowDescription(x, res);
         } else if (msg instanceof ReadyForQuery x) {
-            handleReadyForQuery(x);
+            return handleReadyForQuery(x);
         } else if (msg instanceof PortalSuspended x) {
-            handlePortalSuspended(x, res);
+            return handlePortalSuspended(x, res);
         } else if (msg instanceof AuthenticationMD5Password x) {
-            handleAuthenticationMD5Password(x);
+            return handleAuthenticationMD5Password(x).thenCompose((Integer ignored) -> CompletableFuture.completedFuture(res));
         } else if (msg instanceof NegotiateProtocolVersion x) {
-            handleNegotiateProtocolVersion(x);
+            return handleNegotiateProtocolVersion(x);
         } else if (msg instanceof CommandComplete x) {
-            handleCommandComplete(x, res);
+            return handleCommandComplete(x, res);
         } else if (msg instanceof ErrorResponse x) {
-            handleErrorResponse(x, res);
+            return handleErrorResponse(x, res);
         } else if (msg instanceof BackendKeyData x) {
-            handleBackendKeyData(x);
+            return handleBackendKeyData(x);
         } else if (msg instanceof ParameterDescription x) {
-            handleParameterDescription(x, res);
+            return handleParameterDescription(x, res);
         } else if (msg instanceof ParseComplete x) {
-            handleParseComplete(x, res);
+            return handleParseComplete(x, res);
         } else if (msg instanceof CopyOutResponse x) {
-            handleCopyOutResponse(x, res);
+            return handleCopyOutResponse(x, res);
         } else if (msg instanceof CopyData x) {
-            handleCopyData(x, res);
+            return handleCopyData(x, res);
         } else if (msg instanceof CopyInResponse) {
-            handleCopyInResponse(res);
+            return handleCopyInResponse(res);
         } else if (msg instanceof NoData) {
-            noop();
+            return CompletableFuture.completedFuture(res);
         } else if (msg instanceof EmptyQueryResponse) {
-            noop();
+            return CompletableFuture.completedFuture(res);
         } else if (msg instanceof CloseComplete) {
-            noop();
+            return CompletableFuture.completedFuture(res);
         } else if (msg instanceof BindComplete) {
-            noop();
+            return CompletableFuture.completedFuture(res);
         } else if (msg instanceof AuthenticationOk) {
-            noop();
+            return CompletableFuture.completedFuture(res);
         } else if (msg instanceof CopyDone) {
-            noop();
+            return CompletableFuture.completedFuture(res);
         } else if (msg instanceof SkippedMessage) {
-            noop();
+            return CompletableFuture.completedFuture(res);
         } else {
-            throw new PGError("Cannot handle this message: %s", msg);
+            return CompletableFuture.failedFuture(new PGError("Cannot handle this message: %s", msg));
         }
-
     }
 
-    private void handleAuthenticationSASL (final AuthenticationSASL msg, final Result res) {
+    private CompletableFuture<Result> handleAuthenticationSASL (final AuthenticationSASL msg, final Result res) {
 
         res.scramPipeline = ScramSha256.pipeline();
 
@@ -775,16 +838,17 @@ public final class Connection implements AutoCloseable {
                     step1.clientFirstMessage()
             );
             res.scramPipeline.step1 = step1;
-            sendMessage(msgSASL);
-            flush();
+            return sendMessage(msgSASL).thenComposeAsync((Integer ignored) -> CompletableFuture.completedFuture(res));
         }
 
         if (msg.isScramSha256Plus()) {
-            throw new PGError("SASL SCRAM SHA 256 PLUS method is not implemented yet");
+            return CompletableFuture.failedFuture(new PGError("SASL SCRAM SHA 256 PLUS method is not implemented yet"));
         }
+
+        return CompletableFuture.failedFuture(new PGError("Unknown algo"));
     }
 
-    private void handleAuthenticationSASLContinue (final AuthenticationSASLContinue msg, final Result res) {
+    private CompletableFuture<Result> handleAuthenticationSASLContinue (final AuthenticationSASLContinue msg, final Result res) {
         final ScramSha256.Step1 step1 = res.scramPipeline.step1;
         final String serverFirstMessage = msg.serverFirstMessage();
         final ScramSha256.Step2 step2 = ScramSha256.step2_serverFirstMessage(serverFirstMessage);
@@ -792,16 +856,20 @@ public final class Connection implements AutoCloseable {
         res.scramPipeline.step2 = step2;
         res.scramPipeline.step3 = step3;
         final SASLResponse msgSASL = new SASLResponse(step3.clientFinalMessage());
-        sendMessage(msgSASL);
-        flush();
+        return sendMessage(msgSASL).thenComposeAsync((Integer ignored) -> CompletableFuture.completedFuture(res));
     }
 
-    private void handleAuthenticationSASLFinal (final AuthenticationSASLFinal msg, final Result res) {
+    private CompletableFuture<Result> handleAuthenticationSASLFinal (final AuthenticationSASLFinal msg, final Result res) {
         final String serverFinalMessage = msg.serverFinalMessage();
         final ScramSha256.Step4 step4 = ScramSha256.step4_serverFinalMessage(serverFinalMessage);
         res.scramPipeline.step4 = step4;
         final ScramSha256.Step3 step3 = res.scramPipeline.step3;
-        ScramSha256.step5_verifyServerSignature(step3, step4);
+        try {
+            ScramSha256.step5_verifyServerSignature(step3, step4);
+            return CompletableFuture.completedFuture(res);
+        } catch (Throwable e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     private void handleCopyInResponseStream (Result res) {
@@ -942,15 +1010,16 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handlerCall (final IFn f, final Object arg) {
-        if (f != null) {
-            Agent.soloExecutor.submit(() -> {
-                f.invoke(arg);
-            });
+        if (f == null) {
+            logger.log(System.Logger.Level.INFO, "background handler call, arg: {0}", arg);
+        } else {
+            Agent.soloExecutor.submit(() -> f.invoke(arg));
         }
     }
 
-    private void handleNotificationResponse (final NotificationResponse msg) {
+    private CompletableFuture<Result> handleNotificationResponse (final NotificationResponse msg, final Result res) {
         handlerCall(config.fnNotification(), msg.toClojure());
+        return CompletableFuture.completedFuture(res);
     }
 
     private void handleNoticeResponse (final NoticeResponse msg) {
@@ -961,14 +1030,14 @@ public final class Connection implements AutoCloseable {
         handlerCall(config.fnProtocolVersion(), msg.toClojure());
     }
 
-    private void handleAuthenticationMD5Password (final AuthenticationMD5Password msg) {
+
+    private CompletableFuture<Integer> handleAuthenticationMD5Password (final AuthenticationMD5Password msg) {
         final String hashed = MD5.hashPassword(
                 config.user(),
                 config.password(),
                 msg.salt()
         );
-        sendPassword(hashed);
-        flush();
+        return sendPassword(hashed);
     }
 
     private void handleCopyOutResponse (final CopyOutResponse msg, final Result res) {}
@@ -1015,20 +1084,20 @@ public final class Connection implements AutoCloseable {
         res.handleParameterDescription(msg);
     }
 
-    private void handleAuthenticationCleartextPassword () {
-        sendPassword(config.password());
-        flush();
+    private CompletableFuture<Integer> handleAuthenticationCleartextPassword () {
+        return sendPassword(config.password());
     }
 
     private void handleParameterStatus (final ParameterStatus msg) {
         setParam(msg.param(), msg.value());
     }
 
-    private static void handleRowDescription (final RowDescription msg, final Result res) {
+    private static CompletableFuture<Result> handleRowDescription (final RowDescription msg, final Result res) {
         res.handleRowDescription(msg);
+        return CompletableFuture.completedFuture(res);
     }
 
-    private void handleDataRowUnsafe (final DataRow msg, final Result res) {
+    private CompletableFuture<Result> handleDataRow (final DataRow msg, final Result res) {
         final RowDescription rowDescription = res.getRowDescription();
         final Map<Object, Short> keysIndex = res.getCurrentKeysIndex();
         final LazyMap lazyMap = new LazyMap(
@@ -1039,16 +1108,17 @@ public final class Connection implements AutoCloseable {
                 codecParams
         );
         res.addClojureRow(lazyMap);
+        return CompletableFuture.completedFuture(res);
     }
 
-    private void handleDataRow (final DataRow msg, final Result res) {
-        try {
-            handleDataRowUnsafe(msg, res);
-        }
-        catch (Throwable e) {
-            res.setException(e);
-        }
-    }
+//    private void handleDataRow (final DataRow msg, final Result res) {
+//        try {
+//            handleDataRowUnsafe(msg, res);
+//        }
+//        catch (Throwable e) {
+//            res.setException(e);
+//        }
+//    }
 
     private void handleReadyForQuery (final ReadyForQuery msg) {
         txStatus = msg.txStatus();
