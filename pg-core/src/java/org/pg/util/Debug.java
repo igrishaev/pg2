@@ -10,23 +10,7 @@ public final class Debug {
 
     public static void debug(final String template, final Object... args) {
         System.out.printf((template) + "%n", args);
-        System.out.flush();
-    }
+        System.out.flush();}
 
-    public static void main(final String[] args) {
-
-        CompletableFuture<Integer> fut = new CompletableFuture<>();
-        CompletableFuture<Integer> fut2 = fut.thenApply((Integer val) -> val + 1).complete;
-
-        try {
-            System.out.println(fut2.get());
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-
-
-    }
 
 }

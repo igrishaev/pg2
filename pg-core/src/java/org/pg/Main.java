@@ -1,5 +1,11 @@
 package org.pg;
 
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 public final class Main {
 
     public static void main (final String[] args) {
@@ -26,11 +32,23 @@ public final class Main {
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
 
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());
 
-        conn.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10000000)");
-
+        CompletableFuture<Object> res = conn.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10)");
+        try {
+            System.out.println(res.get(5, TimeUnit.SECONDS));
+        } catch (InterruptedException | TimeoutException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
         // System.out.println(conn.execute("select '{\"foo\": 555}'::jsonb as obj"));
 
         // System.out.println(conn.execute("select '1 year 1 second'::interval as interval"));
