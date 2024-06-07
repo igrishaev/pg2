@@ -21,6 +21,7 @@ import org.pg.util.*;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 import javax.net.ssl.SSLContext;
@@ -32,6 +33,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 public final class Connection implements AutoCloseable {
@@ -54,6 +56,7 @@ public final class Connection implements AutoCloseable {
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
     private AsynchronousSocketChannel socketChannel;
+    private CompletableFuture<Object> asyncLock;
 
     @Override
     public boolean equals (Object other) {
@@ -540,8 +543,31 @@ public final class Connection implements AutoCloseable {
         return sendMessage(msg);
     }
 
+    private synchronized CompletableFuture<Object> getAsyncLock(Function<? super Object,? extends CompletionStage<Object>> func) {
+        // return CompletableFuture.completedFuture(true).thenCompose(func);
+        if (asyncLock == null) {
+            asyncLock = CompletableFuture.completedFuture(true).thenCompose(func);
+        }
+        else {
+            asyncLock = asyncLock.thenCompose(func);
+        }
+        return asyncLock;
+
+//        final CompletableFuture<Void> prev = (asyncLock == null) ? CompletableFuture.completedFuture(null) : asyncLock;
+//        final CompletableFuture<Void> next = new CompletableFuture<>();
+//
+//        prev.whenComplete((result, ex) -> {
+//            next.complete(null);
+//        });
+//
+//        asyncLock = next;
+//
+//        return next.thenCompose((Void ignored) -> action);
+
+    }
+
     public CompletableFuture<Object> query(final String sql) {
-        return query(sql, ExecuteParams.INSTANCE);
+        return getAsyncLock((Object ignored) -> query(sql, ExecuteParams.INSTANCE));
     }
 
     public CompletableFuture<Object> query(final String sql, final ExecuteParams executeParams) {

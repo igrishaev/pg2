@@ -41,9 +41,11 @@ public final class Main {
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());
 
-        CompletableFuture<Object> res = conn.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10)");
+        CompletableFuture<Object> res1 = conn.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10)");
+        CompletableFuture<Object> res2 = conn.query("select '{\"foo\": 333}'::jsonb as obj from generate_series(1, 10)");
         try {
-            System.out.println(res.get(5, TimeUnit.SECONDS));
+            System.out.println(res1.get(5, TimeUnit.SECONDS));
+            System.out.println(res2.get(5, TimeUnit.SECONDS));
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
