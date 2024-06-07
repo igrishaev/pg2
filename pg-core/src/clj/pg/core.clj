@@ -6,6 +6,7 @@
    [clojure.string :as str]
    [less.awful.ssl :as ssl])
   (:import
+   java.util.concurrent.CompletableFuture
    clojure.lang.IPersistentMap
    clojure.lang.Keyword
    com.fasterxml.jackson.databind.ObjectMapper
@@ -377,10 +378,10 @@
   the Connection class.
   "
 
-  (^Connection [config]
+  (^CompletableFuture [config]
    (Connection/connect (->config config)))
 
-  (^Connection [^String host ^Integer port ^String user ^String password ^String database]
+  (^CompletableFuture [^String host ^Integer port ^String user ^String password ^String database]
    (Connection/connect host port user password database)))
 
 

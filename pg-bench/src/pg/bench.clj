@@ -15,7 +15,7 @@
    java.time.LocalDateTime
    java.util.concurrent.ExecutorService
    java.util.concurrent.Executors
-   org.pg.ConnConfig$Builder
+   ;; org.pg.ConnConfig$Builder
    org.pg.Connection
    org.postgresql.copy.CopyManager
    org.postgresql.util.PGobject)

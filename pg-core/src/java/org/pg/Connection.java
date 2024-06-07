@@ -13,6 +13,7 @@ import org.pg.codec.EncoderTxt;
 import org.pg.copy.Copy;
 import org.pg.enums.*;
 import org.pg.error.PGError;
+import org.pg.error.PGErrorResponse;
 import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
@@ -21,8 +22,7 @@ import org.pg.util.*;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 import javax.net.ssl.SSLContext;
 import java.io.*;
@@ -33,7 +33,6 @@ import java.time.ZoneId;
 import java.util.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 public final class Connection implements AutoCloseable {
@@ -57,6 +56,7 @@ public final class Connection implements AutoCloseable {
     private boolean isClosed = false;
     private AsynchronousSocketChannel socketChannel;
     private CompletableFuture<Object> asyncLock;
+    private Executor executor;
 
     @Override
     public boolean equals (Object other) {
@@ -74,21 +74,29 @@ public final class Connection implements AutoCloseable {
         this.codecParams = CodecParams.builder().objectMapper(config.objectMapper()).build();
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
+        this.executor = Executors.newFixedThreadPool(16);
     }
 
-    public static Connection connect(final Config config, final boolean sendStartup) {
+    public static Connection connectSync (final Config config) {
+        return null;
+    }
+
+    public static CompletableFuture<Connection> connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
-        conn._connect();
-        // conn._setSocketOptions();
-        // conn._preSSLStage();
-        if (sendStartup) {
-            conn._authenticate();
-        }
-        return conn;
+        return conn
+                ._connect()
+                .thenComposeAsync((Boolean ignored) -> {
+                    if (sendStartup) {
+                        return conn._authenticate();
+                    }
+                    else {
+                        return CompletableFuture.completedFuture(conn);
+                    }
+                });
     }
 
     @SuppressWarnings("unused")
-    public static Connection connect(final Config config) {
+    public static CompletableFuture<Connection> connect(final Config config) {
         return connect(config, true);
     }
 
@@ -116,7 +124,18 @@ public final class Connection implements AutoCloseable {
                 isClosed = true;
             }
         }
+    }
 
+    public CompletableFuture<Void> closeAsync() {
+        return sendTerminate()
+                .thenComposeAsync((Integer ignored) -> {
+                    try {
+                        socketChannel.close();
+                        return CompletableFuture.completedFuture(null);
+                    } catch (IOException e) {
+                        return CompletableFuture.failedFuture(e);
+                    }
+                });
     }
 
     private void _setSocketOptions () {
@@ -244,13 +263,14 @@ public final class Connection implements AutoCloseable {
                              getDatabase());
     }
 
-    private void _authenticate () {
-        sendStartupMessage();
-        interact(true);
+    private CompletableFuture<Connection> _authenticate () {
+        return sendStartupMessage()
+                .thenComposeAsync((Integer ignored) -> interact(true))
+                .thenComposeAsync((Result ignored) -> CompletableFuture.completedFuture(this));
     }
 
     private CompletableFuture<Boolean> readSSLResponse () {
-        return readNBytes(1).thenCompose((ByteBuffer buf) -> {
+        return readNBytes(1).thenComposeAsync((ByteBuffer buf) -> {
             final char c = (char) IOTool.read(inStream);
             return switch (c) {
                 case 'N' -> CompletableFuture.completedFuture(false);
@@ -343,19 +363,17 @@ public final class Connection implements AutoCloseable {
         try {
             socketChannel = AsynchronousSocketChannel.open();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            return CompletableFuture.failedFuture(e);
         }
 
-        final InetSocketAddress addr = new InetSocketAddress(host, port);
+        final InetSocketAddress address = new InetSocketAddress(host, port);
         final CompletableFuture<Boolean> future = new CompletableFuture<>();
 
-        socketChannel.connect(addr, future, new CompletionHandler<>() {
-
+        socketChannel.connect(address, future, new CompletionHandler<>() {
             @Override
             public void completed(Void result, CompletableFuture<Boolean> attachment) {
                 attachment.complete(true);
             }
-
             @Override
             public void failed(Throwable exc, CompletableFuture<Boolean> attachment) {
                 attachment.completeExceptionally(exc);
@@ -496,10 +514,10 @@ public final class Connection implements AutoCloseable {
     }
 
     private CompletableFuture<IServerMessage> readMessage () {
-        return readNBytes(5).thenCompose((ByteBuffer bbHeader) -> {
+        return readNBytes(5).thenComposeAsync((ByteBuffer bbHeader) -> {
             final char tag = (char) bbHeader.get();
             final int bodySize = bbHeader.getInt() - 4;
-            return readNBytes(bodySize).thenApply((ByteBuffer bbBody) -> switch (tag) {
+            return readNBytes(bodySize).thenApplyAsync((ByteBuffer bbBody) -> switch (tag) {
                 case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
                 case 'S' -> ParameterStatus.fromByteBuffer(bbBody, codecParams.serverCharset());
                 case 'Z' -> ReadyForQuery.fromByteBuffer(bbBody);
@@ -544,36 +562,25 @@ public final class Connection implements AutoCloseable {
     }
 
     private synchronized CompletableFuture<Object> getAsyncLock(Function<? super Object,? extends CompletionStage<Object>> func) {
-        // return CompletableFuture.completedFuture(true).thenCompose(func);
         if (asyncLock == null) {
-            asyncLock = CompletableFuture.completedFuture(true).thenCompose(func);
+            asyncLock = CompletableFuture.completedFuture(true).thenComposeAsync(func);
         }
         else {
-            asyncLock = asyncLock.thenCompose(func);
+            asyncLock = asyncLock.thenComposeAsync(func);
         }
         return asyncLock;
-
-//        final CompletableFuture<Void> prev = (asyncLock == null) ? CompletableFuture.completedFuture(null) : asyncLock;
-//        final CompletableFuture<Void> next = new CompletableFuture<>();
-//
-//        prev.whenComplete((result, ex) -> {
-//            next.complete(null);
-//        });
-//
-//        asyncLock = next;
-//
-//        return next.thenCompose((Void ignored) -> action);
-
     }
 
     public CompletableFuture<Object> query(final String sql) {
+        // return query(sql, ExecuteParams.INSTANCE);
         return getAsyncLock((Object ignored) -> query(sql, ExecuteParams.INSTANCE));
     }
 
     public CompletableFuture<Object> query(final String sql, final ExecuteParams executeParams) {
         return sendQuery(sql)
-                .thenCompose((Integer ignored) -> interact(executeParams))
-                .thenCompose((Result res) -> CompletableFuture.completedFuture(res.getResult()));}
+                .thenComposeAsync((Integer ignored) -> interact(executeParams))
+                .thenComposeAsync((Result res) -> CompletableFuture.completedFuture(res.getResult()));
+    };
 
     @SuppressWarnings("unused")
     public CompletableFuture<PreparedStatement> prepare (final String sql) {
@@ -602,11 +609,11 @@ public final class Connection implements AutoCloseable {
 
         final Parse parse = new Parse(statement, sql, OIDs);
         return sendMessage(parse)
-                .thenCompose((Integer ignored) -> sendDescribeStatement(statement))
-                .thenCompose((Integer ignored) -> sendSync())
-                .thenCompose((Integer ignored) -> sendFlush())
-                .thenCompose((Integer ignored) -> interact())
-                .thenCompose((Result res) -> {
+                .thenComposeAsync((Integer ignored) -> sendDescribeStatement(statement))
+                .thenComposeAsync((Integer ignored) -> sendSync())
+                .thenComposeAsync((Integer ignored) -> sendFlush())
+                .thenComposeAsync((Integer ignored) -> interact())
+                .thenComposeAsync((Result res) -> {
                     final ParameterDescription paramDesc = res.getParameterDescription();
                     final RowDescription rowDescription = res.getRowDescription();
                     final PreparedStatement stmt = new PreparedStatement(parse, paramDesc, rowDescription);
@@ -677,13 +684,13 @@ public final class Connection implements AutoCloseable {
     ) {
         final String portal = generatePortal();
         return sendBind(portal, stmt, executeParams)
-                .thenCompose((Integer ignored) -> sendDescribePortal(portal))
-                .thenCompose((Integer ignored) -> sendExecute(portal, executeParams.maxRows()))
-                .thenCompose((Integer ignored) -> sendClosePortal(portal))
-                .thenCompose((Integer ignored) -> sendSync())
-                .thenCompose((Integer ignored) -> sendFlush())
-                .thenCompose((Integer ignored) -> interact(executeParams))
-                .thenCompose((Result res) -> CompletableFuture.completedFuture(res.getResult()));
+                .thenComposeAsync((Integer ignored) -> sendDescribePortal(portal))
+                .thenComposeAsync((Integer ignored) -> sendExecute(portal, executeParams.maxRows()))
+                .thenComposeAsync((Integer ignored) -> sendClosePortal(portal))
+                .thenComposeAsync((Integer ignored) -> sendSync())
+                .thenComposeAsync((Integer ignored) -> sendFlush())
+                .thenComposeAsync((Integer ignored) -> interact(executeParams))
+                .thenComposeAsync((Result res) -> CompletableFuture.completedFuture(res.getResult()));
     }
 
     @SuppressWarnings("unused")
@@ -699,16 +706,16 @@ public final class Connection implements AutoCloseable {
         final String portal = generatePortal();
 
         return prepare(sql, executeParams)
-                .thenCompose((PreparedStatement stmt) ->
+                .thenComposeAsync((PreparedStatement stmt) ->
                         sendBind(portal, stmt, executeParams)
-                                .thenCompose((Integer ignored) -> sendDescribePortal(portal))
-                                .thenCompose((Integer ignored) -> sendExecute(portal, executeParams.maxRows()))
-                                .thenCompose((Integer ignored) -> sendClosePortal(portal))
-                                .thenCompose((Integer ignored) -> sendCloseStatement(stmt)))
-                .thenCompose((Integer ignored) -> sendSync())
-                .thenCompose((Integer ignored) -> sendFlush())
-                .thenCompose((Integer ignored) -> interact(executeParams))
-                .thenCompose((Result res) -> CompletableFuture.completedFuture(res.getResult()));
+                                .thenComposeAsync((Integer ignored) -> sendDescribePortal(portal))
+                                .thenComposeAsync((Integer ignored) -> sendExecute(portal, executeParams.maxRows()))
+                                .thenComposeAsync((Integer ignored) -> sendClosePortal(portal))
+                                .thenComposeAsync((Integer ignored) -> sendCloseStatement(stmt)))
+                .thenComposeAsync((Integer ignored) -> sendSync())
+                .thenComposeAsync((Integer ignored) -> sendFlush())
+                .thenComposeAsync((Integer ignored) -> interact(executeParams))
+                .thenComposeAsync((Result res) -> CompletableFuture.completedFuture(res.getResult()));
     }
 
     private CompletableFuture<Integer> sendCloseStatement (final PreparedStatement stmt) {
@@ -732,10 +739,10 @@ public final class Connection implements AutoCloseable {
 
     public CompletableFuture<Boolean> closeStatement (final String statement) {
         return sendCloseStatement(statement)
-                .thenCompose((Integer ignored) -> sendSync())
-                .thenCompose((Integer ignored) -> sendFlush())
-                .thenCompose((Integer ignored) -> interact())
-                .thenCompose((Result res) -> CompletableFuture.completedFuture(true));
+                .thenComposeAsync((Integer ignored) -> sendSync())
+                .thenComposeAsync((Integer ignored) -> sendFlush())
+                .thenComposeAsync((Integer ignored) -> interact())
+                .thenComposeAsync((Result res) -> CompletableFuture.completedFuture(true));
 
     }
 
@@ -745,14 +752,21 @@ public final class Connection implements AutoCloseable {
 
     private CompletableFuture<Result> interact(final Result resOld, final boolean isAuth) {
         return readMessage()
-                .thenApply((IServerMessage msg) -> {
-                    System.out.println(msg);
+                .thenApplyAsync((IServerMessage msg) -> {
+                    if (Debug.isON) {
+                        Debug.debug(" -> %s", msg);
+                    }
                     return msg;
                 })
-                .thenCompose((IServerMessage msg) -> handleMessage(msg, resOld)
-                        .thenCompose((Result resNew) -> {
+                .thenComposeAsync((IServerMessage msg) -> handleMessage(msg, resOld)
+                        .thenComposeAsync((Result resNew) -> {
                             if (isEnough(msg, isAuth)) {
-                                return CompletableFuture.completedFuture(resNew);
+                                if (resNew.getErrorResponse() == null) {
+                                    return CompletableFuture.completedFuture(resNew);
+                                }
+                                else {
+                                    return CompletableFuture.failedFuture(new PGErrorResponse(resNew.getErrorResponse()));
+                                }
                             }
                             else {
                                 return interact(resNew, isAuth);
@@ -882,7 +896,7 @@ public final class Connection implements AutoCloseable {
         res.scramPipeline.step2 = step2;
         res.scramPipeline.step3 = step3;
         final SASLResponse msgSASL = new SASLResponse(step3.clientFinalMessage());
-        return sendMessage(msgSASL).thenCompose((Integer ignored) -> CompletableFuture.completedFuture(res));
+        return sendMessage(msgSASL).thenComposeAsync((Integer ignored) -> CompletableFuture.completedFuture(res));
     }
 
     private CompletableFuture<Result> handleAuthenticationSASLFinal (final AuthenticationSASLFinal msg, final Result res) {
@@ -1075,7 +1089,7 @@ public final class Connection implements AutoCloseable {
                 msg.salt()
         );
         return sendPassword(hashed)
-                .thenCompose((Integer ignored) -> CompletableFuture.completedFuture(res));
+                .thenComposeAsync((Integer ignored) -> CompletableFuture.completedFuture(res));
     }
 
     private CompletableFuture<Result> handleCopyData (final CopyData msg, final Result res) {
@@ -1101,8 +1115,8 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public CompletableFuture<Object> copy (final String sql, final ExecuteParams executeParams) {
         return sendQuery(sql)
-                .thenCompose((Integer ignored) -> interact(executeParams))
-                .thenCompose((Result res) -> CompletableFuture.completedFuture(res.getResult()));
+                .thenComposeAsync((Integer ignored) -> interact(executeParams))
+                .thenComposeAsync((Result res) -> CompletableFuture.completedFuture(res.getResult()));
     }
 
     private static List<Object> mapToRow (final Map<?,?> map, final List<Object> keys) {
@@ -1185,16 +1199,17 @@ public final class Connection implements AutoCloseable {
     }
 
     @SuppressWarnings("unused")
-    public static Connection clone (final Connection conn) {
+    public static CompletableFuture<Connection> clone (final Connection conn) {
         return Connection.connect(conn.config);
     }
 
     @SuppressWarnings("unused")
-    public static void cancelRequest(final Connection conn) {
+    public static CompletableFuture<Void> cancelRequest(final Connection conn) {
         final CancelRequest msg = new CancelRequest(Const.CANCEL_CODE, conn.pid, conn.secretKey);
-        final Connection temp = Connection.connect(conn.config, false);
-        temp.sendMessage(msg);
-        temp.close();
+        return Connection.connect(conn.config, false)
+                .thenComposeAsync((Connection conn2) ->
+                        conn2.sendMessage(msg)
+                                .thenComposeAsync((Integer ignored) ->conn2.closeAsync()));
     }
 
     @SuppressWarnings("unused")

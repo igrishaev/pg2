@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 
 public final class Debug {
 
-    public static final boolean isON = System.getenv("PG_DEBUG") != null;
+    public static final boolean isON = System.getenv("PG_DEBUG") == "1";
 
     public static void debug(final String template, final Object... args) {
         System.out.printf((template) + "%n", args);

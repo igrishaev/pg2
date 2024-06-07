@@ -172,7 +172,7 @@ public final class Pool implements AutoCloseable {
     }
 
     private Connection spawnConnection() {
-        final Connection conn = Connection.connect(config);
+        final Connection conn = Connection.connectSync(config);
         logger.log(System.Logger.Level.DEBUG,
                 "connection {0} has been created, free: {1}, used: {2}, max: {3}, pool: {4}",
                 conn.getId(),

@@ -1,6 +1,5 @@
 package org.pg;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -30,19 +29,24 @@ public final class Main {
                 .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
-        Connection conn = Connection.connect(config);
+        CompletableFuture<Connection> conn = Connection.connect(config);
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
 
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());
 
-        CompletableFuture<Object> res1 = conn.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10)");
-        CompletableFuture<Object> res2 = conn.query("select '{\"foo\": 333}'::jsonb as obj from generate_series(1, 10)");
+
+        CompletableFuture<Object> res1 = conn.thenComposeAsync(
+                (Connection c) -> c.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10)"));
+
+        CompletableFuture<Object> res2 = conn.thenComposeAsync(
+                (Connection c) -> c.query("select '{\"foo\": 333}'::jsonb as obj from generate_series(1, 10)"));
+
         try {
             System.out.println(res1.get(5, TimeUnit.SECONDS));
             System.out.println(res2.get(5, TimeUnit.SECONDS));

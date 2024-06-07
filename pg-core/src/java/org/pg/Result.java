@@ -78,6 +78,10 @@ public final class Result {
     private Throwable exception;
     public ScramSha256.Pipeline scramPipeline;
 
+    public ErrorResponse getErrorResponse() {
+        return errorResponse;
+    }
+
     public static String[] unifyKeys (final String[] oldKeys) {
         final Map<String, Integer> map = new HashMap<>();
         final String[] newKeys = new String[oldKeys.length];
