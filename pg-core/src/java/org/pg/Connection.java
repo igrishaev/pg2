@@ -654,6 +654,7 @@ public final class Connection implements AutoCloseable {
         sendMessage(msg);
     }
 
+    @SuppressWarnings("unused")
     public void closeStatement (final PreparedStatement statement) {
         closeStatement(statement.parse().statement());
     }
@@ -734,10 +735,10 @@ public final class Connection implements AutoCloseable {
             handleBackendKeyData(x);
         } else if (msg instanceof ParameterDescription x) {
             handleParameterDescription(x, res);
-        } else if (msg instanceof ParseComplete x) {
-            handleParseComplete(x, res);
-        } else if (msg instanceof CopyOutResponse x) {
-            handleCopyOutResponse(x, res);
+        } else if (msg instanceof ParseComplete) {
+            noop();
+        } else if (msg instanceof CopyOutResponse) {
+            noop();
         } else if (msg instanceof CopyData x) {
             handleCopyData(x, res);
         } else if (msg instanceof CopyInResponse) {
@@ -971,8 +972,6 @@ public final class Connection implements AutoCloseable {
         flush();
     }
 
-    private void handleCopyOutResponse (final CopyOutResponse msg, final Result res) {}
-
     private void handleCopyData (final CopyData msg, final Result res) {
         try {
             handleCopyDataUnsafe(msg, res);
@@ -1008,8 +1007,6 @@ public final class Connection implements AutoCloseable {
         }
         return row;
     }
-
-    private void handleParseComplete (final ParseComplete msg, final Result res) {}
 
     private void handleParameterDescription (final ParameterDescription msg, final Result res) {
         res.handleParameterDescription(msg);
