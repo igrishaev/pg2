@@ -47,6 +47,7 @@ public final class Connection implements AutoCloseable {
     private boolean isSSL = false;
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
+    private PGIO pgio;
 
     @Override
     public boolean equals (Object other) {
@@ -336,6 +337,7 @@ public final class Connection implements AutoCloseable {
                 IOTool.getOutputStream(socket),
                 config.outStreamBufSize()
         );
+        pgio = new PGIO(inStream, outStream);
     }
 
     // Send bytes into the output stream. Do not flush the buffer,
@@ -426,11 +428,8 @@ public final class Connection implements AutoCloseable {
 
     private IServerMessage readMessage (final boolean skipMode) {
 
-        final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
-        final ByteBuffer bbHeader = ByteBuffer.wrap(bufHeader);
-
-        final char tag = (char) bbHeader.get();
-        final int bodySize = bbHeader.getInt() - 4;
+        final char tag = pgio.readChar();
+        final int bodySize = pgio.readInt() - 4;
 
         // skipMode means there has been an exception before. There is no need
         // to parse data-heavy messages as we're going to throw an exception
@@ -438,13 +437,18 @@ public final class Connection implements AutoCloseable {
         // just skip it.
         if (skipMode) {
             if (tag == 'D' || tag == 'd') {
-                IOTool.skip(inStream, bodySize);
+                pgio.skip(bodySize);
+                // IOTool.skip(inStream, bodySize);
                 return SkippedMessage.INSTANCE;
             }
         }
 
-        byte[] bufBody = IOTool.readNBytes(inStream, bodySize);
-        ByteBuffer bbBody = ByteBuffer.wrap(bufBody);
+        final byte[] body = new byte[bodySize];
+        pgio.readFully(body);
+        final ByteBuffer bbBody = ByteBuffer.wrap(body);
+
+//        byte[] bufBody = IOTool.readNBytes(inStream, bodySize);
+//        ByteBuffer bbBody = ByteBuffer.wrap(bufBody);
 
         return switch (tag) {
             case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());

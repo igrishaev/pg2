@@ -1,11 +1,16 @@
 package org.pg.msg.server;
 
 import org.pg.error.PGError;
+import org.pg.util.PGIO;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public record AuthenticationResponse (int status) implements IServerMessage {
+
+//    public static IServerMessage fromPGIO(final PGIO pgio, final Charset charset) {
+//        final int status =
+//    }
 
     public static IServerMessage fromByteBuffer(final ByteBuffer buf, Charset charset) {
         final int status = buf.getInt();

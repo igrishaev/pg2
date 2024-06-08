@@ -11,6 +11,7 @@ public record AuthenticationSASL (HashSet<SASL> SASLTypes) implements IServerMes
 
     public static final int status = 10;
 
+
     public static AuthenticationSASL fromByteBuffer(final ByteBuffer buf) {
         final HashSet<SASL> types = new HashSet<>();
         while (true) {
