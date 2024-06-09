@@ -357,8 +357,7 @@
     (pool/with-pool [pool (assoc *CONFIG*
                                  :pool-min-size 1
                                  :pool-max-size 1
-                                 :pool-borrow-conn-attemts 2
-                                 :pool-borrow-conn-timeout-ms 1000)]
+                                 :pool-borrow-conn-timeout-ms 2000)]
 
       (future
         (pool/with-connection [conn pool]
@@ -385,7 +384,6 @@
     (pool/with-pool [pool (assoc *CONFIG*
                                  :pool-min-size 1
                                  :pool-max-size 1
-                                 :pool-borrow-conn-attemts 1
                                  :pool-borrow-conn-timeout-ms 500)]
 
       (future
@@ -402,7 +400,7 @@
         (pool/with-connection [conn pool])
         (is false)
         (catch PGError e
-          (is (= (format "Pool %s is exhausted! min: 1, max: 1, free: 0, used: 1, attempt: 2, timeout: 500"
+          (is (= (format "Pool %s is exhausted! min: 1, max: 1, free: 0, used: 1, timeout: 500"
                          (pool/id pool))
                  (ex-message e)))))
 

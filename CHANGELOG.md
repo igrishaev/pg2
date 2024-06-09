@@ -1,7 +1,7 @@
 
 ## 0.1.15-SNAPSHOT
 
-- ?
+- better pool locking
 
 ## 0.1.14
 

@@ -39,7 +39,6 @@ public record Config(
         int poolMinSize,
         int poolMaxSize,
         int poolExpireThresholdMs,
-        int poolBorrowConnAttempts,
         int poolBorrowConnTimeoutMs
 ) {
 
@@ -80,7 +79,6 @@ public record Config(
         private int poolMinSize = Const.POOL_SIZE_MIN;
         private int poolMaxSize = Const.POOL_SIZE_MAX;
         private int poolExpireThresholdMs = Const.POOL_EXPIRE_THRESHOLD_MS;
-        private int poolBorrowConnAttempts = Const.POOL_BORROW_CONN_ATTEMPTS;
         private int poolBorrowConnTimeoutMs = Const.POOL_BORROW_CONN_TIMEOUT_MS;
 
         public Builder(final String user, final String database) {
@@ -251,12 +249,6 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
-        public Builder poolBorrowConnAttempts(final int poolBorrowConnAttempts) {
-            this.poolBorrowConnAttempts = poolBorrowConnAttempts;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
         public Builder poolBorrowConnTimeoutMs(final int poolBorrowConnTimeoutMs) {
             this.poolBorrowConnTimeoutMs = poolBorrowConnTimeoutMs;
             return this;
@@ -301,7 +293,6 @@ public record Config(
                     this.poolMinSize,
                     this.poolMaxSize,
                     this.poolExpireThresholdMs,
-                    this.poolBorrowConnAttempts,
                     this.poolBorrowConnTimeoutMs
             );
         }

@@ -32,6 +32,5 @@ public final class Const {
     public static final int POOL_SIZE_MIN = 2;
     public static final int POOL_SIZE_MAX = 8;
     public static final int POOL_EXPIRE_THRESHOLD_MS = 1000 * 60 * 5;
-    public static final int POOL_BORROW_CONN_ATTEMPTS = 150;
-    public static final int POOL_BORROW_CONN_TIMEOUT_MS = 100;
+    public static final int POOL_BORROW_CONN_TIMEOUT_MS = 1000 * 15;
 }

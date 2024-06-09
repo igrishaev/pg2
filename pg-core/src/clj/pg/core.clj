@@ -274,7 +274,6 @@
                 pool-min-size
                 pool-max-size
                 pool-expire-threshold-ms
-                pool-borrow-conn-attemts
                 pool-borrow-conn-timeout-ms]}
         params
 
@@ -357,9 +356,6 @@
 
       pool-expire-threshold-ms
       (.poolExpireThresholdMs pool-expire-threshold-ms)
-
-      pool-borrow-conn-attemts
-      (.poolBorrowConnAttempts pool-borrow-conn-attemts)
 
       pool-borrow-conn-timeout-ms
       (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)

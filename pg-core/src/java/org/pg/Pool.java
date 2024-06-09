@@ -1,16 +1,17 @@
 package org.pg;
 
 import org.pg.error.PGError;
-import org.pg.util.Sleep;
 import org.pg.util.TryLock;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public final class Pool implements AutoCloseable {
 
     private final UUID id;
     private final Config config;
     private final Map<UUID, Connection> connsUsed;
-    private final ArrayDeque<Connection> connsFree;
+    private final ArrayBlockingQueue<Connection> connsFree;
     private boolean isClosed = false;
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
     private final TryLock lock = new TryLock();
@@ -44,7 +45,7 @@ public final class Pool implements AutoCloseable {
         this.id = UUID.randomUUID();
         this.config = config;
         this.connsUsed = new HashMap<>(size);
-        this.connsFree = new ArrayDeque<>(size);
+        this.connsFree = new ArrayBlockingQueue<>(size);
     }
 
     @SuppressWarnings("unused")
@@ -94,76 +95,64 @@ public final class Pool implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public Connection borrowConnection () {
-        Connection conn;
-        int attempt = 0;
-
-        while (true) {
-            attempt += 1;
-
-            try (TryLock ignored = lock.get()) {
-                conn = borrowConnectionLocked();
-            }
-
-            if (conn != null) {
-                return conn;
-            }
-
-            if (attempt > config.poolBorrowConnAttempts()) {
-                throw new PGError("Pool %s is exhausted! min: %s, max: %s, free: %s, used: %s, attempt: %s, timeout: %s",
-                        id,
-                        config.poolMinSize(),
-                        config.poolMaxSize(),
-                        freeCount(),
-                        usedCount(),
-                        attempt,
-                        config.poolBorrowConnTimeoutMs()
-                );
-            }
-
-            Sleep.sleep(config.poolBorrowConnTimeoutMs());
-        }
-    }
-
-    private Connection borrowConnectionLocked() {
-        final Connection conn = getOrSpawnConnection();
-        if (conn == null) {
-            return null;
-        }
-        else {
-            addUsed(conn);
-        }
-        return conn;
-    }
-
-    private Connection getOrSpawnConnection() {
 
         if (isClosed()) {
             throw new PGError("Cannot get a connection: the pool has been closed");
         }
 
+        Connection conn;
+
         // try to get from the queue without waiting
-        final Connection conn = connsFree.poll();
-
-        // if found...
-        if (conn != null) {
-
-            // if expired, close and return null
-            if (isExpired(conn)) {
-                logger.log(System.Logger.Level.DEBUG, "Connection {0} has been expired, closing. Pool: {1}", conn.getId(),  this.id);
-                closeConnection(conn);
-                return null;
+        while (true) {
+            try (TryLock ignored = lock.get()) {
+                conn = connsFree.poll();
+                if (conn == null) {
+                    break;
+                } else  {
+                    // if expired, close and return null
+                    if (isExpired(conn)) {
+                        logger.log(System.Logger.Level.DEBUG, "Connection {0} has been expired, closing. Pool: {1}", conn.getId(),  this.id);
+                        closeConnection(conn);
+                    } else {
+                        addUsed(conn);
+                        return conn;
+                    }
+                }
             }
-
-            // not found
-            return conn;
         }
 
         // no free connections. If possible, create a new one
-        if (connsUsed.size() < config.poolMaxSize()) {
-            return spawnConnection();
+        try (TryLock ignored = lock.get()) {
+            if (connsUsed.size() < config.poolMaxSize()) {
+                conn = spawnConnection();
+                addUsed(conn);
+                return conn;
+            }
+
         }
 
-        return null;
+        try {
+            conn = connsFree.poll(config.poolBorrowConnTimeoutMs(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            throw new PGError(e, "Polling was interrupted, pool: %s", id);
+        }
+
+        if (conn == null) {
+            throw new PGError("Pool %s is exhausted! min: %s, max: %s, free: %s, used: %s, timeout: %s",
+                    id,
+                    config.poolMinSize(),
+                    config.poolMaxSize(),
+                    freeCount(),
+                    usedCount(),
+                    config.poolBorrowConnTimeoutMs()
+            );
+        }
+        else {
+            try (TryLock ignored = lock.get()) {
+                addUsed(conn);
+                return conn;
+            }
+        }
     }
 
     private void closeConnection(final Connection conn) {
@@ -189,7 +178,11 @@ public final class Pool implements AutoCloseable {
             logger.log(System.Logger.Level.DEBUG, "Connection {0} has been added to the free queue, pool: {1}", conn.getId(), id);
         }
         else {
-            throw new PGError("Could not add connection %s into the free queue, pool: %s", conn.getId(), id);
+            conn.close();
+            logger.log(System.Logger.Level.DEBUG,
+                    "Closing conn {0} because there is no room in free connections queue, pool: {1}",
+                    conn.getId(), id
+            );
         }
     }
 
