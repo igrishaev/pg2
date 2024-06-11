@@ -97,7 +97,7 @@ rest have predefined values.
 | `:so-recv-buf-size`    | integer      | 0xFFFF             | Socket receive buffer size                                                      |
 | `:so-send-buf-size`    | integer      | 0xFFFF             | Socket send buffer size                                                         |
 | `:cancel-timeout-ms`   | integer      | 5.000              | Default value for the `with-timeout` macro, in ms                               |
-| `:protocol-version`    | integ        | 196608             | Postgres protocol version                                                       |
+| `:protocol-version`    | integer      | 196608             | Postgres protocol version                                                       |
 | `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section) |
 
 ### Parameter notes
