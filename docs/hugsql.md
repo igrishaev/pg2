@@ -10,7 +10,7 @@ compatible with PG2.
 
 Since the package already depends on core HugSQL functionality, there is no need
 to add the latter to dependencies: having `pg2-hugsql` by itself will be enough
-(see [Installation](docs/installation.md)).
+(see [Installation](/docs/installation.md)).
 
 ### Basic Usage
 

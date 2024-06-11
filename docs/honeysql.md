@@ -2,8 +2,8 @@
 
 [honeysql]: https://github.com/seancorfield/honeysql
 
-The `pg-honey` package (see [Installation](#installation)) allows you to call
-`query` and `execute` functions using maps rather than string SQL
+The `pg-honey` package (see [Installation](/docs/installation.md)) allows you to
+call `query` and `execute` functions using maps rather than string SQL
 expressions. Internally, maps are transformed into SQL using the great [HoneySQL
 library][honeysql]. With HoneySQL, you don't need to format strings to build a
 SQL, which is clumsy and dangerous in terms of injections.
