@@ -6,8 +6,10 @@
 - honey: transaction test
 
 - oid wrapper?
-- reorganize the docs
 - copy in/out tab format
+
+- conn init sql
+- conn init prep-stmt
 
 - MERGE result
 
