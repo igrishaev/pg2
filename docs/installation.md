@@ -15,8 +15,8 @@ com.github.igrishaev/pg2-core {:mvn/version "0.1.13"}
 
 ## HoneySQL integration
 
-special version of `query` and `execute` that accept not a string of SQL but a
-map that gets formatted to SQL under the hood. Also includes various helpers
+Special version of `query` and `execute` that accept not a SQL string but a map
+that gets formatted to SQL under the hood. Also includes various helpers
 (`get-by-id`, `find`, `insert`, `udpate`, `delete`, etc).
 
 ~~~clojure
