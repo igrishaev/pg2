@@ -363,9 +363,9 @@ And a short demo:
 
 Each `*-sqlvec` function has three bodies:
 
-- `([])` when there are no HugSQL parameters;
-- `([params])` to pass HugSQL parameters;
-- `([params options])` to pass HugSQL parameters and options (which are not used
+- `[]` for cases when there are no HugSQL parameters;
+- `[params]` when a SQL expression accepts HugSQL parameters;
+- `[params options]` to pass HugSQL parameters and options (which are not used
   at the moment).
 
 When defining -sqlvec functions, override the suffix using the `:fn-suffix`
