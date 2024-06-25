@@ -1,6 +1,6 @@
 (def MIN_JAVA_VERSION "16")
 
-(defproject com.github.igrishaev/pg2-core "0.1.14"
+(defproject com.github.igrishaev/pg2-core "0.1.15-SNAPSHOT"
 
   :description
   "Postgres client in pure Java (no JDBC)"
