@@ -1,7 +1,11 @@
 
-## 0.1.14-SNAPSHOT
+## 0.1.15-SNAPSHOT
 
 - ?
+
+## 0.1.14
+
+- hugsql: def-sqlvec-fns
 
 ## 0.1.13
 

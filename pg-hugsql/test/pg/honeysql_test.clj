@@ -19,6 +19,10 @@
 
 (hugsql/def-db-fns (io/file "test/pg/test.sql"))
 
+(hugsql/def-sqlvec-fns (io/file "test/pg/test.sql"))
+
+(hugsql/def-sqlvec-fns (io/file "test/pg/test.sql") {:fn-suffix "-hello"})
+
 
 (deftest test-query-select-default
   (pg/with-connection [conn CONFIG]
@@ -273,3 +277,61 @@
               {:title "BBB", :id 2}]
              result-inner))
       (is (= [] result-outter)))))
+
+
+(deftest test-sqlvec-ok
+
+  (let [result
+        (try-select-jsonb-sqlvec)]
+    (is (= ["select '{\"foo\": 42}'::jsonb as json"]
+           result)))
+
+  (is (= {:name 'try-select-jsonb-sqlvec}
+         (-> try-select-jsonb-sqlvec
+             var
+             meta
+             (dissoc :ns)))))
+
+
+(deftest test-sqlvec-with-params
+
+  (let [result
+        (insert-into-table-sqlvec {:table "table"
+                                   :title "hello"})]
+    (is (= ["insert into table (title) values ($1);" "hello"]
+           result)))
+
+  (let [result
+        (select-value-list-sqlvec {:table "table"
+                                   :ids [1 2 3]})]
+    (is (= ["select * from table where id in ($1,$2,$3) order by id;" 1 2 3]
+           result))))
+
+
+(deftest test-sqlvec-missing-params
+  (try
+    (insert-into-table-sqlvec {:table "table"})
+    (is false)
+    (catch Exception e
+      (is (= "Parameter Mismatch: :title parameter data not found."
+             (ex-message e))))))
+
+
+(deftest test-two-arguments
+  (let [result
+        (insert-into-table-sqlvec {:table "table"
+                                   :title "hello"}
+                                  {:some :options})]
+    (is (= ["insert into table (title) values ($1);" "hello"]
+           result))))
+
+
+(deftest test-custom-suffix
+  (let [result
+        (insert-into-table-hello {:table "table"
+                                  :title "hello"}
+                                 {:some :options})]
+    (is (= ["insert into table (title) values ($1);" "hello"]
+           result))))
+
+;; docs

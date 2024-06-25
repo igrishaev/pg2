@@ -152,6 +152,18 @@
                 wrap-signature))))
 
 
+(defn intern-sqlvec-function
+  "
+  Inject a sqlvec function produced by HugSQL
+  into the current namespace.
+  "
+  [fn-name
+   fn-meta
+   fn-obj]
+  (let [sym (-> fn-name name symbol)]
+    (intern *ns* sym ($wrap fn-obj))))
+
+
 (defn def-db-fns
   "
   Read and inject functions from a .sql file.
@@ -213,3 +225,19 @@
                        fn-obj :fn}]
              defs]
        (intern-function fn-name fn-meta fn-obj)))))
+
+
+(defn def-sqlvec-fns
+
+  ([file]
+   (def-sqlvec-fns file nil))
+
+  ([file options]
+
+   (let [defs
+         (hugsql/map-of-sqlvec-fns file options)]
+
+     (doseq [[fn-name {fn-meta :meta
+                       fn-obj :fn}]
+             defs]
+       (intern-sqlvec-function fn-name fn-meta fn-obj)))))

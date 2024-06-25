@@ -1,4 +1,4 @@
-## HugSQL Support
+# HugSQL Support
 
 [hugsql]: https://www.hugsql.org/
 
@@ -12,7 +12,7 @@ Since the package already depends on core HugSQL functionality, there is no need
 to add the latter to dependencies: having `pg2-hugsql` by itself will be enough
 (see [Installation](/docs/installation.md)).
 
-### Basic Usage
+## Basic Usage
 
 Let's go through a short demo. Imagine we have a `demo.sql` file with the
 following queries:
@@ -216,7 +216,7 @@ Finally, clean up the table:
 (delete-from-table conn {:table TABLE})
 ~~~
 
-### Passing the Source of a Connection
+## Passing the Source of a Connection
 
 Above, we've been passing a `Connection` object called `conn` to all
 functions. But it can be something else as well: a config map or a pool
@@ -283,7 +283,7 @@ insert into demo123 (title) values ($1);
 COMMIT
 ~~~
 
-### Passing Options
+## Passing Options
 
 PG2 supports a lot of options when processing a query. To use them, pass a map
 into the third parameter of any function. Above, we override a function that
@@ -317,4 +317,75 @@ default:
 {"TITLE" "AAA", "ID" 1}
 ~~~
 
-For more details, refer to the official [HugSQL][hugsql] documentation.
+## Defining SQLVec functions
+
+HugSQL allows you to define functions that do not reach the database directly
+but only produce a SQL vector. This is a plain Clojure vector where the first
+item is a SQL expressions and all the rest items are parameters. For example:
+
+~~~clojure
+["select * from users where id = ?" 42]
+~~~
+
+Having this vector, you can pass it directly to the JDBC driver. Pay attention
+that PG2 mimics Next.JDBC as well and might be used with such vectors. See the
+["Next.JDBC API layer"](/docs/next-jdbc-layer.md) section for details.
+
+The `pg-honey` package has a function `def-sqlvec-fns` which acts the same: in
+the current namespace, it defines functions that produce SQL vectors when being
+called. The only difference is, they use numbered dollars for parameters. Here
+is our .sql file:
+
+~~~sql
+-- :name insert-into-table :! :n
+insert into :i:table (title) values (:title);
+
+-- :name select-value-list :? :*
+select * from :i:table where id in (:v*:ids) order by id;
+~~~
+
+And a short demo:
+
+~~~clojure
+(require '[pg.hugsql :as hugsql])
+
+(hugsql/def-sqlvec-fns (io/file "test/pg/test.sql"))
+
+(insert-into-table-sqlvec {:table "table"
+                           :title "hello"})
+;; ["insert into table (title) values ($1);" "hello"]
+
+
+(select-value-list-sqlvec {:table "table"
+                           :ids [1 2 3]})
+;; ["select * from table where id in ($1,$2,$3) order by id;" 1 2 3]
+~~~
+
+Each `*-sqlvec` function has three bodies:
+
+- `([])` when there are no HugSQL parameters;
+- `([params])` to pass HugSQL parameters;
+- `([params options])` to pass HugSQL parameters and options (which are not used
+  at the moment).
+
+When defining -sqlvec functions, override the suffix using the `:fn-suffix`
+parameter as follows:
+
+~~~clojure
+(hugsql/def-sqlvec-fns (io/file "test/pg/test.sql")
+                       {:fn-suffix "-hello"})
+~~~
+
+Now all the functions end with `-hello`:
+
+~~~clojure
+(insert-into-table-hello {:table "table"
+                          :title "hello"}
+                         {:some :options})
+
+;; ["insert into table (title) values ($1);" "hello"]
+~~~
+
+* * *
+
+For more details, please refer to the official [HugSQL][hugsql] documentation.
