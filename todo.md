@@ -11,8 +11,6 @@
 - conn init sql
 - conn init prep-stmt
 
-- transducer reducer
-
 - MERGE result
 
 - UnparsedTxt, UnparsedBin types?

@@ -142,6 +142,12 @@ public record ExecuteParams (
         }
 
         @SuppressWarnings("unused")
+        public Builder transduce (final IFn tx) {
+            this.reducer = new Transduce(tx);
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         public Builder asJava () {
             this.reducer = Java.INSTANCE;
             return this;

@@ -94,6 +94,7 @@
                 kv
                 first?
                 column
+                transduce
 
                 ;; format
                 binary-encode?
@@ -164,6 +165,9 @@
 
       first?
       (.first)
+
+      transduce
+      (.transduce transduce)
 
       column
       (.column column)

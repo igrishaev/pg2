@@ -1610,6 +1610,25 @@ drop table %1$s;
              res)))))
 
 
+(deftest test-acc-as-transduce
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (let [tx
+          (comp (map :a)
+                (filter #{1 5})
+                (map str))
+
+          query
+          "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
+
+          res
+          (pg/execute conn query {:transduce tx})]
+
+      (is (= ["1" "5"]
+             res)))))
+
+
 (deftest test-acc-as-kv
 
   (pg/with-connection [conn *CONFIG-TXT*]
