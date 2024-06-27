@@ -1,6 +1,7 @@
 (ns pg.client-test
   (:import
    java.io.ByteArrayOutputStream
+   java.io.File
    java.io.InputStream
    java.io.OutputStream
    java.time.Instant
@@ -27,11 +28,15 @@
    [less.awful.ssl :as ssl]
    [pg.component :as pgc]
    [pg.core :as pg]
+   ;; TODO
+   [pg.fold :as fold]
+   [pg.fold :as as]
    [pg.honey :as pgh]
    [pg.integration :refer [*CONFIG-TXT*
                            *CONFIG-BIN*
                            *PORT*
                            fix-multi-port]]
+   [pg.json :as json]
    [pg.oid :as oid]
    [pg.pool :as pool]))
 
@@ -1585,7 +1590,7 @@ drop table %1$s;
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
           res
-          (pg/execute conn query {:index-by :a})]
+          (pg/execute conn query {:as (fold/index-by :a)})]
 
       (is (= {1 {:a 1 :b 2}
               3 {:a 3 :b 4}
@@ -1602,7 +1607,7 @@ drop table %1$s;
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
           res
-          (pg/execute conn query {:group-by :a})]
+          (pg/execute conn query {:as (fold/group-by :a)})]
 
       (is (= {1 [{:a 1 :b 2}]
               3 [{:a 3 :b 4}]
@@ -1627,6 +1632,54 @@ drop table %1$s;
 
       (is (= ["1" "5"]
              res)))))
+
+
+(deftest test-acc-as-edn
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (let [query
+          "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
+
+          file
+          (File/createTempFile "test" ".edn")
+
+          res
+          (with-open [out (io/writer file)]
+            (pg/execute conn query {:as (fold/to-edn out)}))
+
+          data
+          (-> file slurp read-string)]
+
+      (is (= 3
+             res))
+
+      (is (= [{:b 2, :a 1} {:b 4, :a 3} {:b 6, :a 5}]
+             data)))))
+
+
+(deftest test-acc-as-json
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (let [query
+          "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
+
+          file
+          (File/createTempFile "test" ".json")
+
+          res
+          (with-open [out (io/writer file)]
+            (pg/execute conn query {:as (fold/to-json out)}))
+
+          data
+          (-> file io/reader json/read-reader)]
+
+      (is (= 3
+             res))
+
+      (is (= [{:b 2, :a 1} {:b 4, :a 3} {:b 6, :a 5}]
+             data)))))
 
 
 (deftest test-acc-as-kv

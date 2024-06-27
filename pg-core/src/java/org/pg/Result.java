@@ -33,7 +33,7 @@ public final class Result {
          public Object toResult(final ExecuteParams executeParams) {
 
              if (rowDescription != null) {
-                 return executeParams.reducer().finalize(acc);
+                 return executeParams.reducer().invoke(acc);
              }
 
              final String command = commandComplete.command();
@@ -148,7 +148,7 @@ public final class Result {
             keysIndex.put(newKey, i);
         }
         current.keysIndex = keysIndex;
-        current.acc = executeParams.reducer().initiate(keys);
+        current.acc = executeParams.reducer().invoke();
     }
 
     public void handleCommandComplete (final CommandComplete msg) {
@@ -171,8 +171,8 @@ public final class Result {
     }
 
     public void addClojureRow (final LazyMap lazyMap) {
-        final IReducer reducer = executeParams.reducer();
-        current.acc = reducer.append(current.acc, lazyMap);
+        final IFn reducer = executeParams.reducer();
+        current.acc = reducer.invoke(current.acc, lazyMap);
     }
 
     private void addNode() {

@@ -81,20 +81,22 @@
                 output-stream
                 input-stream
 
+                as
+
                 ;; reducers
-                reducer
-                group-by
-                index-by
-                index-by-id?
-                matrix?
-                java?
-                fold
-                init
-                run
-                kv
-                first?
-                column
-                transduce
+                ;; reducer
+                ;; group-by
+                ;; index-by
+                ;; index-by-id?
+                ;; matrix?
+                ;; java?
+                ;; fold
+                ;; init
+                ;; run
+                ;; kv
+                ;; first?
+                ;; column
+                ;; transduce
 
                 ;; format
                 binary-encode?
@@ -124,9 +126,6 @@
       oids
       (.OIDs oids)
 
-      reducer
-      (.reducer reducer)
-
       max-rows
       (.maxRows max-rows)
 
@@ -139,41 +138,47 @@
       input-stream
       (.inputStream input-stream)
 
-      group-by
-      (.groupBy group-by)
+      as
+      (.reducer as)
 
-      index-by
-      (.indexBy index-by)
+      ;; reducer
+      ;; (.reducer reducer)
 
-      index-by-id?
-      (.indexBy :id)
+      ;; group-by
+      ;; (.groupBy group-by)
 
-      run
-      (.run run)
+      ;; index-by
+      ;; (.indexBy index-by)
 
-      matrix?
-      (.asMatrix)
+      ;; index-by-id?
+      ;; (.indexBy :id)
 
-      java?
-      (.asJava)
+      ;; run
+      ;; (.run run)
 
-      kebab-keys?
-      (.fnKeyTransform ->kebab)
+      ;; matrix?
+      ;; (.asMatrix)
 
-      kv
-      (.KV (first kv) (second kv))
+      ;; java?
+      ;; (.asJava)
 
-      first?
-      (.first)
+      ;; kebab-keys?
+      ;; (.fnKeyTransform ->kebab)
 
-      transduce
-      (.transduce transduce)
+      ;; kv
+      ;; (.KV (first kv) (second kv))
 
-      column
-      (.column column)
+      ;; first?
+      ;; (.first)
 
-      (and fold init)
-      (.fold fold init)
+      ;; transduce
+      ;; (.transduce transduce)
+
+      ;; column
+      ;; (.column column)
+
+      ;; (and fold init)
+      ;; (.fold fold init)
 
       (some? binary-encode?)
       (.binaryEncode binary-encode?)

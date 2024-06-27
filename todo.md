@@ -15,6 +15,8 @@
 
 - UnparsedTxt, UnparsedBin types?
 
+- test reduced?
+
 - pg common lazy row?
 - lazy row deref
 

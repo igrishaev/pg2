@@ -16,7 +16,7 @@ import clojure.core$keyword;
 public record ExecuteParams (
         List<Object> params,
         List<OID> OIDs,
-        IReducer reducer,
+        IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
         OutputStream outputStream,
@@ -50,7 +50,7 @@ public record ExecuteParams (
 
         private List<Object> params = Collections.emptyList();
         private List<OID> OIDs = Collections.emptyList();
-        private IReducer reducer = Default.INSTANCE;
+        private IFn reducer = Foo.INSTANCE;
         private long maxRows = 0;
         private IFn fnKeyTransform = new core$keyword();
         private OutputStream outputStream = OutputStream.nullOutputStream();
@@ -124,70 +124,70 @@ public record ExecuteParams (
             return this;
         }
 
-        public Builder reducer (final IReducer reducer) {
+        public Builder reducer (final IFn reducer) {
             this.reducer = Objects.requireNonNull(reducer);
             return this;
         }
 
-        @SuppressWarnings("unused")
-        public Builder indexBy (final IFn fnIndexBy) {
-            this.reducer = new IndexBy(fnIndexBy);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder groupBy (final IFn fnGroupBy) {
-            this.reducer = new GroupBy(fnGroupBy);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder transduce (final IFn tx) {
-            this.reducer = new Transduce(tx);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder asJava () {
-            this.reducer = Java.INSTANCE;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder run (final IFn fnRun) {
-            this.reducer = new Run(fnRun);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder first () {
-            this.reducer = First.INSTANCE;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder KV (final IFn fnK, final IFn fnV) {
-            this.reducer = new KV(fnK, fnV);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder asMatrix () {
-            this.reducer = Matrix.INSTANCE;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder fold (final IFn fnFold, final Object init) {
-            this.reducer = new Fold(fnFold, init);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder column (final Object column) {
-            this.reducer = new Column(column);
-            return this;
-        }
+//        @SuppressWarnings("unused")
+//        public Builder indexBy (final IFn fnIndexBy) {
+//            this.reducer = new IndexBy(fnIndexBy);
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder groupBy (final IFn fnGroupBy) {
+//            this.reducer = new GroupBy(fnGroupBy);
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder transduce (final IFn tx) {
+//            this.reducer = new Transduce(tx);
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder asJava () {
+//            this.reducer = Java.INSTANCE;
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder run (final IFn fnRun) {
+//            this.reducer = new Run(fnRun);
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder first () {
+//            this.reducer = First.INSTANCE;
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder KV (final IFn fnK, final IFn fnV) {
+//            this.reducer = new KV(fnK, fnV);
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder asMatrix () {
+//            this.reducer = Matrix.INSTANCE;
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder fold (final IFn fnFold, final Object init) {
+//            this.reducer = new Fold(fnFold, init);
+//            return this;
+//        }
+//
+//        @SuppressWarnings("unused")
+//        public Builder column (final Object column) {
+//            this.reducer = new Column(column);
+//            return this;
+//        }
 
         public Builder maxRows (final long maxRows) {
             this.maxRows = maxRows;
