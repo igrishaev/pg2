@@ -1776,14 +1776,30 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res
-          (pg/execute conn query {:matrix? true})]
+          res1
+          (pg/execute conn query {:as (fold/matrix)})
+
+          res2
+          (pg/execute conn query {:as (fold/matrix true)})
+
+          res3
+          (pg/execute conn query {:as (fold/matrix false)})]
+
+      (is (= [[1 2]
+              [3 4]
+              [5 6]]
+             res1))
 
       (is (= [[:a :b]
               [1 2]
               [3 4]
               [5 6]]
-             res)))))
+             res2))
+
+      (is (= [[1 2]
+              [3 4]
+              [5 6]]
+             res3)))))
 
 
 (deftest test-acc-as-first

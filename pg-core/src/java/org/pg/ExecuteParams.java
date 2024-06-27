@@ -3,7 +3,6 @@ package org.pg;
 import clojure.lang.IFn;
 import org.pg.enums.CopyFormat;
 import org.pg.enums.OID;
-import org.pg.reducer.IReducer;
 import org.pg.reducer.*;
 
 import java.io.InputStream;
@@ -50,7 +49,7 @@ public record ExecuteParams (
 
         private List<Object> params = Collections.emptyList();
         private List<OID> OIDs = Collections.emptyList();
-        private IFn reducer = Foo.INSTANCE;
+        private IFn reducer = Default.INSTANCE;
         private long maxRows = 0;
         private IFn fnKeyTransform = new core$keyword();
         private OutputStream outputStream = OutputStream.nullOutputStream();

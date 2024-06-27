@@ -50,6 +50,7 @@ public final class LazyMap extends APersistentMap {
         return parsedValues;
     }
 
+    @SuppressWarnings("unused")
     public LazyVector toLazyVector () {
         return new LazyVector(this);
     }
@@ -62,6 +63,18 @@ public final class LazyMap extends APersistentMap {
         return result.persistent();
     }
 
+    @SuppressWarnings("unused")
+    public IPersistentVector keys () {
+        return PersistentVector.create(keysIndex
+                .entrySet()
+                .stream()
+                .sorted(Entry.comparingByValue())
+                .map(Entry::getKey)
+                .toArray()
+        );
+    }
+
+    @SuppressWarnings("unused")
     public Map<Object, Object> toJavaMap() {
         final Map<Object, Object> result = new HashMap<>(keysIndex.size());
         for (final Map.Entry<Object, Short> mapEntry: keysIndex.entrySet()) {

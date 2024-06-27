@@ -8,7 +8,6 @@ import org.pg.clojure.LazyMap;
 import org.pg.error.PGError;
 import org.pg.error.PGErrorResponse;
 import org.pg.msg.server.*;
-import org.pg.reducer.IReducer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,11 +139,10 @@ public final class Result {
         current.rowDescription = msg;
         final IFn fnKeyTransform = executeParams.fnKeyTransform();
         final String[] names = unifyKeys(msg.getColumnNames());
-        final Object[] keys = new Object[names.length];
-        final Map<Object, Short> keysIndex = new HashMap<>(keys.length);
-        for (short i = 0; i < keys.length; i ++) {
+        final int len = names.length;
+        final Map<Object, Short> keysIndex = new HashMap<>(len);
+        for (short i = 0; i < len; i ++) {
             final Object newKey = fnKeyTransform.invoke(names[i]);
-            keys[i] = newKey;
             keysIndex.put(newKey, i);
         }
         current.keysIndex = keysIndex;

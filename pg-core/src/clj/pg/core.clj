@@ -81,22 +81,8 @@
                 output-stream
                 input-stream
 
+                ;; fold/reduce
                 as
-
-                ;; reducers
-                ;; reducer
-                ;; group-by
-                ;; index-by
-                ;; index-by-id?
-                ;; matrix?
-                ;; java?
-                ;; fold
-                ;; init
-                ;; run
-                ;; kv
-                ;; first?
-                ;; column
-                ;; transduce
 
                 ;; format
                 binary-encode?
@@ -138,47 +124,11 @@
       input-stream
       (.inputStream input-stream)
 
+      kebab-keys?
+      (.fnKeyTransform ->kebab)
+
       as
       (.reducer as)
-
-      ;; reducer
-      ;; (.reducer reducer)
-
-      ;; group-by
-      ;; (.groupBy group-by)
-
-      ;; index-by
-      ;; (.indexBy index-by)
-
-      ;; index-by-id?
-      ;; (.indexBy :id)
-
-      ;; run
-      ;; (.run run)
-
-      ;; matrix?
-      ;; (.asMatrix)
-
-      ;; java?
-      ;; (.asJava)
-
-      ;; kebab-keys?
-      ;; (.fnKeyTransform ->kebab)
-
-      ;; kv
-      ;; (.KV (first kv) (second kv))
-
-      ;; first?
-      ;; (.first)
-
-      ;; transduce
-      ;; (.transduce transduce)
-
-      ;; column
-      ;; (.column column)
-
-      ;; (and fold init)
-      ;; (.fold fold init)
 
       (some? binary-encode?)
       (.binaryEncode binary-encode?)

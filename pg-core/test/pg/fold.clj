@@ -170,12 +170,31 @@
        (inc acc)))))
 
 
-;; TODO: header flag?
-(def matrix
-  (fn folder-matrix
-    ([]
-     (transient []))
-    ([acc!]
-     (persistent! acc!))
-    ([acc! ^LazyMap row]
-     (conj! acc! (.toLazyVector row)))))
+(defn matrix
+  ([]
+   (matrix false))
+
+  ([header?]
+   (if header?
+     (let [-set? (volatile! false)]
+       (fn folder-matrix
+         ([]
+          (transient []))
+         ([acc!]
+          (persistent! acc!))
+         ([acc! ^LazyMap row]
+          (if @-set?
+            (conj! acc! (.toLazyVector row))
+            (do
+              (vreset! -set? true)
+              (-> acc!
+                  (conj! (.keys row))
+                  (conj! (.toLazyVector row))))))))
+
+     (fn folder-matrix
+       ([]
+        (transient []))
+       ([acc!]
+        (persistent! acc!))
+       ([acc! ^LazyMap row]
+        (conj! acc! (.toLazyVector row)))))))
