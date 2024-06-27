@@ -170,6 +170,7 @@
        (inc acc)))))
 
 
+;; TODO: header flag?
 (def matrix
   (fn folder-matrix
     ([]
