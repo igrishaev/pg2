@@ -4,7 +4,8 @@
   "
   (:require
    [clojure.string :as str]
-   [less.awful.ssl :as ssl])
+   [less.awful.ssl :as ssl]
+   [pg.fold :as fold])
   (:import
    clojure.lang.IPersistentMap
    clojure.lang.Keyword
@@ -27,6 +28,7 @@
    org.pg.Connection
    org.pg.ExecuteParams
    org.pg.ExecuteParams$Builder
+   org.pg.Pool
    org.pg.PreparedStatement
    org.pg.codec.CodecParams
    org.pg.codec.CodecParams$Builder
@@ -42,8 +44,6 @@
    org.pg.error.PGErrorResponse
    org.pg.json.JSON
    org.pg.json.JSON$Wrapper
-   org.pg.Pool
-   org.pg.reducer.IReducer
    org.pg.type.PGEnum))
 
 
@@ -83,6 +83,14 @@
 
                 ;; fold/reduce
                 as
+                first?
+                map
+                index-by
+                group-by
+                kv
+                run
+                column
+                matrix
 
                 ;; format
                 binary-encode?
@@ -127,8 +135,37 @@
       kebab-keys?
       (.fnKeyTransform ->kebab)
 
+      ;;
+      ;; reducers
+      ;;
       as
       (.reducer as)
+
+      (true? first?)
+      (.reducer fold/first)
+
+      map
+      (.reducer (fold/map map))
+
+      index-by
+      (.reducer (fold/index-by index-by))
+
+      group-by
+      (.reducer (fold/group-by group-by))
+
+      kv
+      (.reducer (fold/kv (first kv) (second kv)))
+
+      run
+      (.reducer (fold/run run))
+
+      column
+      (.reducer (fold/column column))
+
+      (boolean? matrix)
+      (.reducer (fold/matrix matrix))
+
+      ;;
 
       (some? binary-encode?)
       (.binaryEncode binary-encode?)

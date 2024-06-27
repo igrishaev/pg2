@@ -104,10 +104,11 @@
                         ["select $1 as num, $2 as bool" 42 true]
                         {:oids [oid/int4 oid/bool]})
 
+          ;; TODO: or matrix?
           res
           (jdbc/execute! conn
                          [stmt 123 false]
-                         {:matrix? true})]
+                         {:matrix true})]
 
       (is (pg/prepared-statement? stmt))
       (is (= [[:num :bool] [123 false]] res)))))

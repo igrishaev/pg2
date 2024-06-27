@@ -28,9 +28,7 @@
    [less.awful.ssl :as ssl]
    [pg.component :as pgc]
    [pg.core :as pg]
-   ;; TODO
    [pg.fold :as fold]
-   [pg.fold :as as]
    [pg.honey :as pgh]
    [pg.integration :refer [*CONFIG-TXT*
                            *CONFIG-BIN*
@@ -1568,7 +1566,7 @@ drop table %1$s;
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
           res
-          (pg/execute conn query {:java? true
+          (pg/execute conn query {:as fold/java
                                   :fn-key identity})]
 
       (is (= [{"b" 2 "a" 1}
@@ -1627,11 +1625,17 @@ drop table %1$s;
           query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res
-          (pg/execute conn query {:transduce tx})]
+          res1
+          (pg/execute conn query {:as (fold/into tx)})
+
+          res2
+          (pg/execute conn query {:as (fold/into tx #{:a :b :c})})]
 
       (is (= ["1" "5"]
-             res)))))
+             res1))
+
+      (is (= #{:a :b :c "1" "5"}
+             res2)))))
 
 
 (deftest test-acc-as-edn
@@ -1690,7 +1694,7 @@ drop table %1$s;
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
           res
-          (pg/execute conn query {:kv [:b :a]})]
+          (pg/execute conn query {:as (fold/kv :b :a)})]
 
       (is (= {2 1
               4 3
@@ -1713,7 +1717,7 @@ drop table %1$s;
             (swap! capture! conj row))
 
           res
-          (pg/execute conn query {:run func})]
+          (pg/execute conn query {:as (fold/run func)})]
 
       (is (= 3 res))
 
@@ -1739,11 +1743,9 @@ drop table %1$s;
               (swap! capture! conj row)))]
 
       (try
-        (pg/execute conn query {:run func})
+        (pg/execute conn query {:as (fold/run func)})
         (is false)
         (catch PGError e
-          #_(is (= [{:b 2, :a 1} {:b 4, :a 3}]
-                 @capture!))
           (is (= "Unhandled exception: Divide by zero" (-> e ex-message)))
           (is (= "Divide by zero" (-> e ex-cause ex-message)))))
 
@@ -1752,19 +1754,19 @@ drop table %1$s;
         (is (= [{:one 1}] (pg/query conn "select 1 as one")))))))
 
 
-(deftest test-acc-as-fold
+(deftest test-acc-as-reduce
 
   (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          fold
+          func
           (fn [acc {:keys [a b]}]
             (conj acc [a b]))
 
           res
-          (pg/execute conn query {:fold fold :init #{}})]
+          (pg/execute conn query {:as (fold/reduce func #{})})]
 
       (is (= #{[3 4] [5 6] [1 2]} res)))))
 
@@ -1809,10 +1811,17 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res
-          (pg/execute conn query {:first? true})]
+          res1
+          (pg/execute conn query {:first? true})
 
-      (is (= {:a 1 :b 2} res)))))
+          res2
+          (pg/execute conn query {:as fold/first})]
+
+      (is (= {:a 1 :b 2} res1))
+      (is (= {:a 1 :b 2} res2)))))
+
+
+;; TODO: test map
 
 
 (deftest test-reducer-column
@@ -1822,15 +1831,17 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
+          ;; TODO: keep shortcut?
+
           res-keyword
-          (pg/execute conn query {:column :a})
+          (pg/execute conn query {:as (fold/column :a)})
 
           res-miss
-          (pg/execute conn query {:column "lol"})
+          (pg/execute conn query {:as (fold/column :lol)})
 
           res-string
           (pg/execute conn query {:fn-key identity
-                                  :column "a"})]
+                                  :as (fold/column "a")})]
 
       (is (= [1 3 5] res-keyword))
       (is (= [nil nil nil] res-miss))

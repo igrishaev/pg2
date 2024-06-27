@@ -91,15 +91,15 @@
 (defn java
   ([] (new ArrayList))
   ([acc] acc)
-  ([^List acc row]
+  ([^List acc ^LazyMap row]
    (doto acc
-     (.add row))))
+     (.add (.toJavaMap row)))))
 
 
 (defn kv [fk fv]
   (fn folder-kv
     ([]
-     (transient []))
+     (transient {}))
     ([acc!]
      (persistent! acc!))
     ([acc! row]
@@ -114,7 +114,7 @@
      (f row)
      (inc acc))))
 
-
+;; TODO: shortcut?
 (defn into
   ([xform]
    (into xform []))
@@ -128,7 +128,7 @@
        ([acc! row]
         (f acc! row))))))
 
-
+;; TODO: shortcut?
 (defn to-edn [^Writer writer]
   (fn folder-to-edn
     ([]
@@ -145,7 +145,7 @@
      (.write writer "\n")
      (inc acc))))
 
-
+;; TODO: shortcut?
 (defn to-json [^Writer writer]
   (let [-sent? (volatile! false)]
     (fn folder-to-json
@@ -169,7 +169,7 @@
            (vreset! -sent? true)))
        (inc acc)))))
 
-
+;; TODO: shortcut?
 (defn matrix
   ([]
    (matrix false))

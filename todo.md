@@ -17,6 +17,9 @@
 
 - test reduced?
 
+- rename LazyMap
+- drop lazy vector?
+
 - pg common lazy row?
 - lazy row deref
 
