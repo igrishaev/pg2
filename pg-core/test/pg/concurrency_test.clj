@@ -156,14 +156,14 @@
             (pg/with-tx [conn]
               (pg/execute conn
                           "select pg_sleep(1) as A"
-                          {:first? true})))
+                          {:first true})))
 
           f2
           (future
             (pg/with-tx [conn]
               (pg/execute conn
                           "select pg_sleep(2) as B"
-                          {:first? true})))
+                          {:first true})))
 
           res1 @f1
           res2 @f2

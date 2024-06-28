@@ -11,7 +11,7 @@ import org.pg.util.TryLock;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-public final class RowMap extends APersistentMap implements IDeref {
+public final class RowMap extends APersistentMap {
 
     private int[] ToC = null;
     private final TryLock lock;
@@ -190,10 +190,5 @@ public final class RowMap extends APersistentMap implements IDeref {
     @SuppressWarnings("rawtypes")
     public Iterator iterator() {
         return toClojureMap().iterator();
-    }
-
-    @Override
-    public Object deref() {
-        return toClojureMap();
     }
 }

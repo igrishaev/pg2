@@ -7,6 +7,7 @@
    [less.awful.ssl :as ssl]
    [pg.fold :as fold])
   (:import
+   clojure.lang.IDeref
    clojure.lang.IPersistentMap
    clojure.lang.Keyword
    com.fasterxml.jackson.databind.ObjectMapper
@@ -30,6 +31,7 @@
    org.pg.ExecuteParams$Builder
    org.pg.Pool
    org.pg.PreparedStatement
+   org.pg.clojure.RowMap
    org.pg.codec.CodecParams
    org.pg.codec.CodecParams$Builder
    org.pg.codec.DecoderBin
@@ -83,15 +85,20 @@
 
                 ;; fold/reduce
                 as
-                first?
+                first
                 map
                 index-by
                 group-by
                 kv
+                java
                 run
                 column
                 columns
                 table
+                to-edn
+                to-json
+                reduce
+                into
 
                 ;; format
                 binary-encode?
@@ -142,7 +149,7 @@
       as
       (.reducer as)
 
-      (true? first?)
+      first
       (.reducer fold/first)
 
       map
@@ -155,7 +162,7 @@
       (.reducer (fold/group-by group-by))
 
       kv
-      (.reducer (fold/kv (first kv) (second kv)))
+      (.reducer (fold/kv (clojure.core/first kv) (second kv)))
 
       run
       (.reducer (fold/run run))
@@ -167,7 +174,24 @@
       (.reducer (fold/columns columns))
 
       table
-      (.reducer (fold/table table))
+      (.reducer (fold/table))
+
+      java
+      (.reducer fold/java)
+
+      to-edn
+      (.reducer (fold/to-edn to-edn))
+
+      to-json
+      (.reducer (fold/to-json to-json))
+
+      reduce
+      (.reducer (fold/reduce (clojure.core/first reduce)
+                             (second reduce)))
+
+      into
+      (.reducer (fold/into (clojure.core/first into)
+                           (second into)))
 
       ;;
 

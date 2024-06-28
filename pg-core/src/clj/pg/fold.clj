@@ -112,7 +112,7 @@
 (defn kv [fk fv]
   (fn folder-kv
     ([]
-     (transient []))
+     (transient {}))
     ([acc!]
      (persistent! acc!))
     ([acc! row]
@@ -171,7 +171,6 @@
        acc)
 
       ([acc row]
-       (println @-sent?)
        (if @-sent?
          (do
            (.write writer ",\n  ")
@@ -192,7 +191,7 @@
        (persistent! acc!))
       ([acc! ^RowMap row]
        (if @-header-set?
-         (conj! acc! (.keys row))
+         (conj! acc! (.vals row))
          (do
            (vreset! -header-set? true)
            (-> acc!

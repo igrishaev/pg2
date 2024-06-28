@@ -96,7 +96,7 @@
                    (-> opt-defaults
                        (merge opt)
                        (assoc :params params
-                              :first? true)))))))
+                              :first true)))))))
 
 
 (defn prepare

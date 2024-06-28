@@ -64,7 +64,7 @@
     (let [res
           (jdbc/execute! conn
                          ["select $1::int4 as num, $2::bool" 42 true]
-                         {:matrix? true})]
+                         {:table true})]
       (is (= [[:num :bool] [42 true]] res))
       (pg/close conn))))
 
@@ -74,7 +74,7 @@
     (let [res
           (jdbc/execute! pool
                          ["select $1::int4 as num, $2::bool" 42 true]
-                         {:matrix? true})]
+                         {:table true})]
       (is (= [[:num :bool] [42 true]] res)))))
 
 
@@ -89,7 +89,7 @@
           res
           (jdbc/execute! conn
                          [stmt 123 false]
-                         {:matrix? true})]
+                         {:table true})]
 
       (is (pg/prepared-statement? stmt))
       (is (= [[:num :bool] [123 false]] res)))))
@@ -104,11 +104,10 @@
                         ["select $1 as num, $2 as bool" 42 true]
                         {:oids [oid/int4 oid/bool]})
 
-          ;; TODO: or matrix?
           res
           (jdbc/execute! conn
                          [stmt 123 false]
-                         {:matrix true})]
+                         {:table true})]
 
       (is (pg/prepared-statement? stmt))
       (is (= [[:num :bool] [123 false]] res)))))

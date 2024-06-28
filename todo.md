@@ -17,12 +17,6 @@
 
 - test reduced?
 
-- rename LazyMap
-- drop lazy vector?
-
-- pg common lazy row?
-- lazy row deref
-
 - PGErrorResponse: extend ExceptionInfo?
 
 - pg.ring package (move json middleware)
@@ -30,7 +24,6 @@
 
 - lazy map
   - optional flag
-  - deref realized
 
 - pg-integration package?
 

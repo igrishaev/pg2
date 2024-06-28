@@ -161,7 +161,7 @@
 
      (execute src
               sql-map
-              (assoc opt :first? true)))))
+              (assoc opt :first true)))))
 
 
 (defn get-by-ids
@@ -279,7 +279,7 @@
 
      (execute src
               sql-map
-              (assoc opt :first? true)))))
+              (assoc opt :first true)))))
 
 
 (defn update
@@ -425,4 +425,4 @@
 
      (execute src
               sql-map
-              (assoc opt :first? true)))))
+              (assoc opt :first true)))))

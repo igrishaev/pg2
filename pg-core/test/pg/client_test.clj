@@ -15,7 +15,6 @@
    java.util.HashMap
    java.util.concurrent.ExecutionException
    org.pg.clojure.RowMap
-   org.pg.clojure.LazyVector
    org.pg.error.PGError
    org.pg.error.PGErrorResponse)
   (:require
@@ -249,9 +248,6 @@ from
       (is (= [{:bar "hello"}] res2)))))
 
 
-;; TODO: row-map deref
-
-
 (deftest test-client-lazy-map
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [[row1]
@@ -280,17 +276,17 @@ from
       (is (= 2 (count row1))))))
 
 
-(deftest test-client-lazy-vector
+(deftest test-client-vector
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [[_ row1]
           (pg/query conn
                     "select 42 as foo, 'test' as bar, 43 as foo"
-                    {:matrix? true})]
+                    {:table true})]
 
       (is (= [42 "test" 43] row1))
       (is (= row1 [42 "test" 43]))
 
-      (is (instance? LazyVector row1))
+      (is (vector? row1))
       (is (= 3 (count row1)))
 
       (is (nil? (get row1 -1)))
@@ -946,7 +942,7 @@ from
           (format "select * from %s where id = 1" table)
 
           res
-          (pg/execute conn query3 {:first? true})]
+          (pg/execute conn query3 {:first true})]
 
       (is (= {:id 1 :title "test1"} res)))))
 
@@ -968,7 +964,7 @@ from
           (pg/execute-statement conn
                                 stmt
                                 {:params [999]
-                                 :first? true})]
+                                 :first true})]
       (is (= {:foo 999} res)))))
 
 
@@ -1018,7 +1014,7 @@ from
 
             res2
             (pg/execute-statement conn stmt {:params [2]
-                                             :first? true})]
+                                             :first true})]
 
         (is (= [{"FOO" 1}] res1))
         (is (= {:foo 2} res2))))))
@@ -1193,7 +1189,7 @@ drop table %1$s;
           (pg/execute conn
                       "select $1::json as obj"
                       {:params [(pg/json-wrap 42)]
-                       :first? true})]
+                       :first true})]
       (is (= {:obj 42} res)))))
 
 
@@ -1203,7 +1199,7 @@ drop table %1$s;
           (pg/execute conn
                       "select $1::json as obj"
                       {:params [(pg/json-wrap nil)]
-                       :first? true})]
+                       :first true})]
       (is (= {:obj nil} res)))))
 
 
@@ -1213,7 +1209,7 @@ drop table %1$s;
           (pg/execute conn
                       "select $1::json as obj"
                       {:params [{:foo 123}]
-                       :first? true})]
+                       :first true})]
       (is (= {:obj {:foo 123}} res)))))
 
 
@@ -1251,7 +1247,7 @@ drop table %1$s;
           (pg/execute conn
                       "select $1::json as obj"
                       {:params [{:foo 123}]
-                       :first? true})]
+                       :first true})]
       (is (= {:obj {:foo 123}} res)))))
 
 
@@ -1262,7 +1258,7 @@ drop table %1$s;
                       "select $1 as obj"
                       {:params [{:foo 123}]
                        :oids [oid/jsonb]
-                       :first? true})]
+                       :first true})]
       (is (= {:obj {:foo 123}} res)))))
 
 
@@ -1275,7 +1271,7 @@ drop table %1$s;
           (pg/execute conn
                       "select $1::jsonb as obj"
                       {:params [json]
-                       :first? first})]
+                       :first first})]
       (is (= '{:obj (1 2 [true {:foo 1}])} res)))))
 
 
@@ -1568,19 +1564,28 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res
+          res1
           (pg/execute conn query {:as fold/java
+                                  :fn-key identity})
+
+          res2
+          (pg/execute conn query {:java true
                                   :fn-key identity})]
 
       (is (= [{"b" 2 "a" 1}
               {"b" 4 "a" 3}
               {"b" 6 "a" 5}]
-             res))
+             res1))
 
-      (is (instance? ArrayList res))
+      (is (= [{"b" 2 "a" 1}
+              {"b" 4 "a" 3}
+              {"b" 6 "a" 5}]
+             res2))
+
+      (is (instance? ArrayList res1))
       (is (every? (fn [x]
                     (instance? HashMap x))
-                  res)))))
+                  res2)))))
 
 
 (deftest test-acc-as-index-by
@@ -1590,14 +1595,21 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res
-          (pg/execute conn query {:as (fold/index-by :a)})]
+          res1
+          (pg/execute conn query {:as (fold/index-by :a)})
+
+          res2
+          (pg/execute conn query {:index-by :a})]
 
       (is (= {1 {:a 1 :b 2}
               3 {:a 3 :b 4}
               5 {:a 5 :b 6}}
+             res1))
 
-             res)))))
+      (is (= {1 {:a 1 :b 2}
+              3 {:a 3 :b 4}
+              5 {:a 5 :b 6}}
+             res2)))))
 
 
 (deftest test-acc-as-group-by
@@ -1607,16 +1619,24 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res
-          (pg/execute conn query {:as (fold/group-by :a)})]
+          res1
+          (pg/execute conn query {:as (fold/group-by :a)})
+
+          res2
+          (pg/execute conn query {:group-by :a})]
 
       (is (= {1 [{:a 1 :b 2}]
               3 [{:a 3 :b 4}]
               5 [{:a 5 :b 6}]}
-             res)))))
+             res1))
+
+      (is (= {1 [{:a 1 :b 2}]
+              3 [{:a 3 :b 4}]
+              5 [{:a 5 :b 6}]}
+             res2)))))
 
 
-(deftest test-acc-as-transduce
+(deftest test-acc-as-transduce-into
 
   (pg/with-connection [conn *CONFIG-TXT*]
 
@@ -1632,13 +1652,14 @@ drop table %1$s;
           (pg/execute conn query {:as (fold/into tx)})
 
           res2
-          (pg/execute conn query {:as (fold/into tx #{:a :b :c})})]
+          (pg/execute conn query {:as (fold/into tx #{:a :b :c})})
 
-      (is (= ["1" "5"]
-             res1))
+          res3
+          (pg/execute conn query {:into [tx []]})]
 
-      (is (= #{:a :b :c "1" "5"}
-             res2)))))
+      (is (= ["1" "5"] res1))
+      (is (= #{:a :b :c "1" "5"} res2))
+      (is (= ["1" "5"] res3)))))
 
 
 (deftest test-acc-as-edn
@@ -1648,21 +1669,34 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          file
+          file1
           (File/createTempFile "test" ".edn")
 
-          res
-          (with-open [out (io/writer file)]
+          file2
+          (File/createTempFile "test" ".edn")
+
+          res1
+          (with-open [out (io/writer file1)]
             (pg/execute conn query {:as (fold/to-edn out)}))
 
-          data
-          (-> file slurp read-string)]
+          res2
+          (with-open [out (io/writer file2)]
+            (pg/execute conn query {:as (fold/to-edn out)}))
 
-      (is (= 3
-             res))
+          data1
+          (-> file1 slurp read-string)
+
+          data2
+          (-> file2 slurp read-string)]
+
+      (is (= 3 res1))
+      (is (= 3 res2))
 
       (is (= [{:b 2, :a 1} {:b 4, :a 3} {:b 6, :a 5}]
-             data)))))
+             data1))
+
+      (is (= [{:b 2, :a 1} {:b 4, :a 3} {:b 6, :a 5}]
+             data2)))))
 
 
 (deftest test-acc-as-json
@@ -1672,21 +1706,34 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          file
+          file1
           (File/createTempFile "test" ".json")
 
-          res
-          (with-open [out (io/writer file)]
+          file2
+          (File/createTempFile "test" ".json")
+
+          res1
+          (with-open [out (io/writer file1)]
             (pg/execute conn query {:as (fold/to-json out)}))
 
-          data
-          (-> file io/reader json/read-reader)]
+          res2
+          (with-open [out (io/writer file2)]
+            (pg/execute conn query {:to-json out}))
 
-      (is (= 3
-             res))
+          data1
+          (-> file1 io/reader json/read-reader)
+
+          data2
+          (-> file2 io/reader json/read-reader)]
+
+      (is (= 3 res1))
+      (is (= 3 res2))
 
       (is (= [{:b 2, :a 1} {:b 4, :a 3} {:b 6, :a 5}]
-             data)))))
+             data1))
+
+      (is (= [{:b 2, :a 1} {:b 4, :a 3} {:b 6, :a 5}]
+             data2)))))
 
 
 (deftest test-acc-as-kv
@@ -1696,13 +1743,21 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res
-          (pg/execute conn query {:as (fold/kv :b :a)})]
+          res1
+          (pg/execute conn query {:as (fold/kv :b :a)})
+
+          res2
+          (pg/execute conn query {:kv [:b :a]})]
 
       (is (= {2 1
               4 3
               6 5}
-             res)))))
+             res1))
+
+      (is (= {2 1
+              4 3
+              6 5}
+             res2)))))
 
 
 (deftest test-acc-as-run
@@ -1719,12 +1774,21 @@ drop table %1$s;
           (fn [row]
             (swap! capture! conj row))
 
-          res
-          (pg/execute conn query {:as (fold/run func)})]
+          res1
+          (pg/execute conn query {:as (fold/run func)})
 
-      (is (= 3 res))
+          res2
+          (pg/execute conn query {:run func})]
 
-      (is (= [{:a 1 :b 2} {:a 3 :b 4} {:a 5 :b 6}]
+      (is (= 3 res1))
+      (is (= 3 res2))
+
+      (is (= [{:b 2, :a 1}
+              {:b 4, :a 3}
+              {:b 6, :a 5}
+              {:b 2, :a 1}
+              {:b 4, :a 3}
+              {:b 6, :a 5}]
              @capture!)))))
 
 
@@ -1768,29 +1832,40 @@ drop table %1$s;
           (fn [acc {:keys [a b]}]
             (conj acc [a b]))
 
-          res
-          (pg/execute conn query {:as (fold/reduce func #{})})]
+          res1
+          (pg/execute conn query {:as (fold/reduce func #{})})
 
-      (is (= #{[3 4] [5 6] [1 2]} res)))))
+          res2
+          (pg/execute conn query {:reduce [func #{}]})]
+
+      (is (= #{[3 4] [5 6] [1 2]} res1))
+      (is (= #{[3 4] [5 6] [1 2]} res2)))))
 
 
-;; TODO: acc columns
-
-(deftest test-acc-as-matrix
+(deftest test-acc-as-table
 
   (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res
-          (pg/execute conn query {:as (fold/table)})]
+          res1
+          (pg/execute conn query {:as (fold/table)})
+
+          res2
+          (pg/execute conn query {:table true})]
 
       (is (= [[:a :b]
               [1 2]
               [3 4]
               [5 6]]
-             res)))))
+             res1))
+
+      (is (= [[:a :b]
+              [1 2]
+              [3 4]
+              [5 6]]
+             res2)))))
 
 
 (deftest test-acc-as-first
@@ -1801,7 +1876,7 @@ drop table %1$s;
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
           res1
-          (pg/execute conn query {:first? true})
+          (pg/execute conn query {:first true})
 
           res2
           (pg/execute conn query {:as fold/first})]
@@ -1810,7 +1885,25 @@ drop table %1$s;
       (is (= {:a 1 :b 2} res2)))))
 
 
-;; TODO: test map
+(deftest test-acc-as-map
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (let [query
+          "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
+
+          func
+          (fn [{:keys [a b]}]
+            (+ a b))
+
+          res1
+          (pg/execute conn query {:map func})
+
+          res2
+          (pg/execute conn query {:as (fold/map func)})]
+
+      (is (= [3 7 11] res1))
+      (is (= [3 7 11] res2)))))
 
 
 (deftest test-reducer-column
@@ -1820,8 +1913,6 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          ;; TODO: keep shortcut?
-
           res-keyword
           (pg/execute conn query {:as (fold/column :a)})
 
@@ -1830,11 +1921,35 @@ drop table %1$s;
 
           res-string
           (pg/execute conn query {:fn-key identity
-                                  :as (fold/column "a")})]
+                                  :as (fold/column "a")})
+
+          res-shortcut
+          (pg/execute conn query {:fn-key identity
+                                  :column "a"})]
 
       (is (= [1 3 5] res-keyword))
       (is (= [nil nil nil] res-miss))
-      (is (= [1 3 5] res-string)))))
+      (is (= [1 3 5] res-string))
+      (is (= [1 3 5] res-shortcut)))))
+
+
+(deftest test-reducer-columns
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (let [query
+          "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
+
+          res1
+          (pg/execute conn query {:columns ["a" "b" "c"]
+                                  :fn-key identity})
+
+          res2
+          (pg/execute conn query {:as (fold/columns ["a" "b" "c"])
+                                  :fn-key identity})]
+
+      (is (= [[1 2 nil] [3 4 nil] [5 6 nil]] res1))
+      (is (= [[1 2 nil] [3 4 nil] [5 6 nil]] res2)))))
 
 
 (deftest test-conn-params
@@ -2794,7 +2909,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
   (pg/with-connection [conn *CONFIG-BIN*]
     (let [res (pg/execute conn
                           "select '{1,2,3}'::int[] as arr"
-                          {:first? true})]
+                          {:first true})]
       (is (= {:arr [1, 2, 3]}
              (update res :arr vec))))))
 
@@ -2803,7 +2918,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
   (pg/with-connection [conn *CONFIG-BIN*]
     (let [res (pg/execute conn
                           "select '{{1,2,3},{4,5,6}}'::int[][] as arr"
-                          {:first? true})]
+                          {:first true})]
       (is (= {:arr [[1, 2, 3], [4, 5, 6]]}
              (-> res
                  (update :arr vec)
@@ -2943,7 +3058,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (let [res
           (pgh/query conn
                      {:select [[[:inline "string"] :foo]]}
-                     {:first? true
+                     {:first true
                       :honey {:pretty true}})]
       (is (= {:foo "string"} res)))))
 
@@ -2994,7 +3109,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (component/start c-init)
 
         res
-        (pg/query c-started "select 1 as one" {:first? true})
+        (pg/query c-started "select 1 as one" {:first true})
 
         c-stopped
         (component/stop c-started)]
@@ -3015,7 +3130,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
         res
         (pool/with-connection [conn c-started]
-          (pg/query conn "select 1 as one" {:first? true}))
+          (pg/query conn "select 1 as one" {:first true}))
 
         c-stopped
         (component/stop c-started)]
