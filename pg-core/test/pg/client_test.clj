@@ -14,7 +14,7 @@
    java.util.Date
    java.util.HashMap
    java.util.concurrent.ExecutionException
-   org.pg.clojure.LazyMap
+   org.pg.clojure.RowMap
    org.pg.clojure.LazyVector
    org.pg.error.PGError
    org.pg.error.PGErrorResponse)
@@ -255,7 +255,7 @@ from
           (pg/query conn "select 42 as foo, 'test' as bar")]
 
       (is (map? row1))
-      (is (instance? LazyMap row1))
+      (is (instance? RowMap row1))
 
       (is (= [:bar :foo] (sort (keys row1))))
       (is (= #{42 "test"} (set (vals row1))))
@@ -1771,6 +1771,8 @@ drop table %1$s;
       (is (= #{[3 4] [5 6] [1 2]} res)))))
 
 
+;; TODO: acc columns
+
 (deftest test-acc-as-matrix
 
   (pg/with-connection [conn *CONFIG-TXT*]
@@ -1778,30 +1780,14 @@ drop table %1$s;
     (let [query
           "with foo (a, b) as (values (1, 2), (3, 4), (5, 6)) select * from foo"
 
-          res1
-          (pg/execute conn query {:as (fold/matrix)})
-
-          res2
-          (pg/execute conn query {:as (fold/matrix true)})
-
-          res3
-          (pg/execute conn query {:as (fold/matrix false)})]
-
-      (is (= [[1 2]
-              [3 4]
-              [5 6]]
-             res1))
+          res
+          (pg/execute conn query {:as (fold/table)})]
 
       (is (= [[:a :b]
               [1 2]
               [3 4]
               [5 6]]
-             res2))
-
-      (is (= [[1 2]
-              [3 4]
-              [5 6]]
-             res3)))))
+             res)))))
 
 
 (deftest test-acc-as-first

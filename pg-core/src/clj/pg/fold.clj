@@ -3,7 +3,7 @@
    java.io.Writer
    java.util.ArrayList
    java.util.List
-   org.pg.clojure.LazyMap)
+   org.pg.clojure.RowMap)
   (:require
    [pg.json :as json])
   (:refer-clojure :exclude [first
@@ -11,6 +11,14 @@
                             group-by
                             into
                             reduce]))
+
+
+(defn java
+  ([] (new ArrayList))
+  ([acc] acc)
+  ([^List acc ^RowMap row]
+   (doto acc
+     (.add (.toJavaMap row)))))
 
 
 (defn column [col]
@@ -21,6 +29,23 @@
      (persistent! acc!))
     ([acc! row]
      (conj! acc! (get row col)))))
+
+
+(defn columns [cols]
+  (fn folder-columns
+    ([]
+     (transient []))
+    ([acc!]
+     (persistent! acc!))
+    ([acc! row]
+     (let [values
+           (persistent!
+            (clojure.core/reduce
+             (fn [acc! col]
+               (conj! acc! (get row col)))
+             (transient [])
+             cols))]
+       (conj! acc! values)))))
 
 
 (defn map [f]
@@ -84,22 +109,10 @@
        (update acc (f row) -conj row)))))
 
 
-(def index-by-id
-  (index-by :id))
-
-
-(defn java
-  ([] (new ArrayList))
-  ([acc] acc)
-  ([^List acc ^LazyMap row]
-   (doto acc
-     (.add (.toJavaMap row)))))
-
-
 (defn kv [fk fv]
   (fn folder-kv
     ([]
-     (transient {}))
+     (transient []))
     ([acc!]
      (persistent! acc!))
     ([acc! row]
@@ -114,7 +127,7 @@
      (f row)
      (inc acc))))
 
-;; TODO: shortcut?
+
 (defn into
   ([xform]
    (into xform []))
@@ -128,7 +141,7 @@
        ([acc! row]
         (f acc! row))))))
 
-;; TODO: shortcut?
+
 (defn to-edn [^Writer writer]
   (fn folder-to-edn
     ([]
@@ -145,7 +158,7 @@
      (.write writer "\n")
      (inc acc))))
 
-;; TODO: shortcut?
+
 (defn to-json [^Writer writer]
   (let [-sent? (volatile! false)]
     (fn folder-to-json
@@ -169,32 +182,19 @@
            (vreset! -sent? true)))
        (inc acc)))))
 
-;; TODO: shortcut?
-(defn matrix
-  ([]
-   (matrix false))
 
-  ([header?]
-   (if header?
-     (let [-set? (volatile! false)]
-       (fn folder-matrix
-         ([]
-          (transient []))
-         ([acc!]
-          (persistent! acc!))
-         ([acc! ^LazyMap row]
-          (if @-set?
-            (conj! acc! (.toLazyVector row))
-            (do
-              (vreset! -set? true)
-              (-> acc!
-                  (conj! (.keys row))
-                  (conj! (.toLazyVector row))))))))
-
-     (fn folder-matrix
-       ([]
-        (transient []))
-       ([acc!]
-        (persistent! acc!))
-       ([acc! ^LazyMap row]
-        (conj! acc! (.toLazyVector row)))))))
+(defn table []
+  (let [-header-set? (volatile! false)]
+    (fn
+      ([]
+       (transient []))
+      ([acc!]
+       (persistent! acc!))
+      ([acc! ^RowMap row]
+       (if @-header-set?
+         (conj! acc! (.keys row))
+         (do
+           (vreset! -header-set? true)
+           (-> acc!
+               (conj! (.keys row))
+               (conj! (.vals row)))))))))

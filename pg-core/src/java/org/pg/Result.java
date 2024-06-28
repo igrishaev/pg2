@@ -4,7 +4,7 @@ import clojure.lang.IFn;
 import clojure.lang.PersistentHashMap;
 import org.pg.auth.ScramSha256;
 import org.pg.clojure.KW;
-import org.pg.clojure.LazyMap;
+import org.pg.clojure.RowMap;
 import org.pg.error.PGError;
 import org.pg.error.PGErrorResponse;
 import org.pg.msg.server.*;
@@ -23,6 +23,7 @@ public final class Result {
          private CommandComplete commandComplete;
          private ParameterDescription parameterDescription;
          private Map<Object, Short> keysIndex;
+         private Object[] keys;
          private Object acc;
 
          private boolean isComplete() {
@@ -135,17 +136,24 @@ public final class Result {
         return current.keysIndex;
     }
 
+    public Object[] getCurrentKeys () {
+        return current.keys;
+    }
+
     public void handleRowDescription(final RowDescription msg) {
         current.rowDescription = msg;
         final IFn fnKeyTransform = executeParams.fnKeyTransform();
         final String[] names = unifyKeys(msg.getColumnNames());
         final int len = names.length;
+        final Object[] keys = new Object[len];
         final Map<Object, Short> keysIndex = new HashMap<>(len);
         for (short i = 0; i < len; i ++) {
             final Object newKey = fnKeyTransform.invoke(names[i]);
+            keys[i] = newKey;
             keysIndex.put(newKey, i);
         }
         current.keysIndex = keysIndex;
+        current.keys = keys;
         current.acc = executeParams.reducer().invoke();
     }
 
@@ -168,9 +176,9 @@ public final class Result {
         };
     }
 
-    public void addClojureRow (final LazyMap lazyMap) {
+    public void addClojureRow (final RowMap rowMap) {
         final IFn reducer = executeParams.reducer();
-        current.acc = reducer.invoke(current.acc, lazyMap);
+        current.acc = reducer.invoke(current.acc, rowMap);
     }
 
     private void addNode() {

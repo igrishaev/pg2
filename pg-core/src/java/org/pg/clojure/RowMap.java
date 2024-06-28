@@ -11,48 +11,34 @@ import org.pg.util.TryLock;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-public final class LazyMap extends APersistentMap {
+public final class RowMap extends APersistentMap implements IDeref {
 
     private int[] ToC = null;
     private final TryLock lock;
     private final DataRow dataRow;
     private final RowDescription rowDescription;
+    private final Object[] keys;
     private final Map<Object, Short> keysIndex;
     private final CodecParams codecParams;
     private final Object[] parsedValues;
     private final boolean[] parsedKeys;
 
-    public LazyMap(final TryLock lock,
-                   final DataRow dataRow,
-                   final RowDescription rowDescription,
-                   final Map<Object, Short> keysIndex,
-                   final CodecParams codecParams
+    public RowMap(final TryLock lock,
+                  final DataRow dataRow,
+                  final RowDescription rowDescription,
+                  final Object[] keys,
+                  final Map<Object, Short> keysIndex,
+                  final CodecParams codecParams
     ) {
         final int count = dataRow.count();
         this.lock = lock;
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
+        this.keys = keys;
         this.keysIndex = keysIndex;
         this.codecParams = codecParams;
         this.parsedValues = new Object[count];
         this.parsedKeys = new boolean[count];
-    }
-
-    public void parseAll () {
-        for (int i = 0; i < parsedKeys.length; i++) {
-            if (!parsedKeys[i]) {
-                getValueByIndex(i);
-            }
-        }
-    }
-
-    public Object[] getParsedValues () {
-        return parsedValues;
-    }
-
-    @SuppressWarnings("unused")
-    public LazyVector toLazyVector () {
-        return new LazyVector(this);
     }
 
     private IPersistentMap toClojureMap() {
@@ -61,17 +47,6 @@ public final class LazyMap extends APersistentMap {
             result = result.assoc(mapEntry.getKey(), getValueByIndex(mapEntry.getValue()));
         }
         return result.persistent();
-    }
-
-    @SuppressWarnings("unused")
-    public IPersistentVector keys () {
-        return PersistentVector.create(keysIndex
-                .entrySet()
-                .stream()
-                .sorted(Entry.comparingByValue())
-                .map(Entry::getKey)
-                .toArray()
-        );
     }
 
     @SuppressWarnings("unused")
@@ -94,11 +69,11 @@ public final class LazyMap extends APersistentMap {
         }
 
         try (TryLock ignored = lock.get()) {
-            return getValueByIndex_unsafe(i);
+            return getValueByIndex_unlocked(i);
         }
     }
 
-    private Object getValueByIndex_unsafe (final int i) {
+    private Object getValueByIndex_unlocked (final int i) {
 
         if (ToC == null) {
             ToC = dataRow.ToC();
@@ -133,6 +108,19 @@ public final class LazyMap extends APersistentMap {
         return value;
     }
 
+    @SuppressWarnings("unused")
+    public IPersistentVector keys () {
+        return PersistentVector.create(keys);
+    }
+
+    @SuppressWarnings("unused")
+    public IPersistentCollection vals () {
+        ITransientCollection result = PersistentVector.EMPTY.asTransient();
+        for (final Object key: keys) {
+            result = result.conj(getValueByKey(key));
+        }
+        return result.persistent();
+    }
 
     private Object getValueByKey (final Object key) {
         if (!keysIndex.containsKey(key)) {
@@ -204,4 +192,8 @@ public final class LazyMap extends APersistentMap {
         return toClojureMap().iterator();
     }
 
+    @Override
+    public Object deref() {
+        return toClojureMap();
+    }
 }

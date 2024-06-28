@@ -90,7 +90,8 @@
                 kv
                 run
                 column
-                matrix
+                columns
+                table
 
                 ;; format
                 binary-encode?
@@ -162,8 +163,11 @@
       column
       (.reducer (fold/column column))
 
-      (boolean? matrix)
-      (.reducer (fold/matrix matrix))
+      columns
+      (.reducer (fold/columns columns))
+
+      table
+      (.reducer (fold/table table))
 
       ;;
 
