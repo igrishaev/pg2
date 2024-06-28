@@ -249,6 +249,9 @@ from
       (is (= [{:bar "hello"}] res2)))))
 
 
+;; TODO: row-map deref
+
+
 (deftest test-client-lazy-map
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [[row1]
