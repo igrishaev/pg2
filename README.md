@@ -55,7 +55,7 @@ classes are supported for reading and writing.
 - Cloning a Connection
 - Cancelling a Query
 - Thread Safety
-- Result reducers
+- [Folders (Reducers)](/docs/folders.md)
 - COPY IN/OUT
 - SSL Support
 - Type Mapping
@@ -65,7 +65,7 @@ classes are supported for reading and writing.
 - Notices
 - Logging
 - Errors and Exceptions
-- Connection Pool
+- [Connection Pool](/docs/pool.md)
 - [Migrations](/docs/migrations.md)
 - Component integration
 - Ring middleware

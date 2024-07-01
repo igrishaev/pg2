@@ -1,4 +1,8 @@
 (ns pg.fold
+  "
+  Folders: objects that reduce rows one by one
+  as they come from the network.
+  "
   (:import
    java.io.Writer
    java.util.ArrayList
@@ -14,6 +18,10 @@
 
 
 (defn java
+  "
+  Produce an ArrayList of HashMaps. Does not
+  require initialization.
+  "
   ([] (new ArrayList))
   ([acc] acc)
   ([^List acc ^RowMap row]
@@ -21,7 +29,11 @@
      (.add (.toJavaMap row)))))
 
 
-(defn column [col]
+(defn column
+  "
+  Return a single column of the result.
+  "
+  [col]
   (fn folder-column
     ([]
      (transient []))
@@ -31,7 +43,11 @@
      (conj! acc! (get row col)))))
 
 
-(defn columns [cols]
+(defn columns
+  "
+  Return certain columns of the result only.
+  "
+  [cols]
   (fn folder-columns
     ([]
      (transient []))
@@ -48,7 +64,12 @@
        (conj! acc! values)))))
 
 
-(defn map [f]
+(defn map
+  "
+  Apply a function to reach row; collect
+  the results into a persistent vector.
+  "
+  [f]
   (fn folder-map
     ([]
      (transient []))
@@ -59,6 +80,10 @@
 
 
 (defn default
+  "
+  Collect lazy unparsed rows into a persistent
+  vector.
+  "
   ([]
    (transient []))
   ([acc!]
@@ -68,12 +93,18 @@
 
 
 (defn dummy
+  "
+  Skip all the rows and return nil.
+  "
   ([] nil)
   ([acc] nil)
   ([acc row] nil))
 
 
 (defn first
+  "
+  Return the first row only.
+  "
   ([] nil)
   ([acc] acc)
   ([acc row]
@@ -82,7 +113,13 @@
      acc)))
 
 
-(defn reduce [f init]
+(defn reduce
+  "
+  Reduce the rows using a reducing function of two
+  arguments (an accumulator and the current row)
+  and an initial accumulator value.
+  "
+  [f init]
   (fn folder-reduce
     ([] init)
     ([acc] acc)
@@ -90,7 +127,12 @@
      (f acc row))))
 
 
-(defn index-by [f]
+(defn index-by
+  "
+  For one-argument function, build a map like
+  {(f row), row}.
+  "
+  [f]
   (fn folder-index-by
     ([]
      (transient {}))
@@ -100,7 +142,12 @@
      (assoc! acc! (f row) row))))
 
 
-(defn group-by [f]
+(defn group-by
+  "
+  For one-argument function, build a map like
+  {(f row), [row row ...]}.
+  "
+  [f]
   (let [-conj (fnil conj [])]
     (fn folder-group-by
       ([] {})
@@ -109,7 +156,12 @@
        (update acc (f row) -conj row)))))
 
 
-(defn kv [fk fv]
+(defn kv
+  "
+  For a pair of one-argument functions, key and value,
+  build a map like {(key row), (value row)}.
+  "
+  [fk fv]
   (fn folder-kv
     ([]
      (transient {}))
@@ -119,7 +171,13 @@
      (assoc! acc! (fk row) (fv row)))))
 
 
-(defn run [f]
+(defn run
+  "
+  Call a function for each row in series skipping
+  the result, presumably with side effects (printing,
+  writing). Return the number of total invocations.
+  "
+  [f]
   (fn folder-run
     ([] 0)
     ([acc] acc)
@@ -129,6 +187,13 @@
 
 
 (defn into
+  "
+  Pass rows throughout an xform like map, filter, or
+  their combination. The `to` argument is a persistent
+  collection which is used being transient internally.
+  The items are collected using `conj!`. When `to` is
+  not set, an empty vector is used.
+  "
   ([xform]
    (into xform []))
   ([xform to]
@@ -142,7 +207,13 @@
         (f acc! row))))))
 
 
-(defn to-edn [^Writer writer]
+(defn to-edn
+  "
+  Dump rows into an EDN writer. Expects an open `java.io.Writer`
+  instance. Doesn't close it afterwards. Should be used within
+  the `with-open` macro. Returns a number of rows written.
+  "
+  [^Writer writer]
   (fn folder-to-edn
     ([]
      (.write writer "[\n")
@@ -159,7 +230,13 @@
      (inc acc))))
 
 
-(defn to-json [^Writer writer]
+(defn to-json
+  "
+  Dump rows into a JSON writer. Expects an open `java.io.Writer`
+  instance. Doesn't close it afterwards. Should be used within
+  the `with-open` macro. Returns a number of rows written.
+  "
+  [^Writer writer]
   (let [-sent? (volatile! false)]
     (fn folder-to-json
       ([]
@@ -182,7 +259,12 @@
        (inc acc)))))
 
 
-(defn table []
+(defn table
+  "
+  Dump rows into a plain matrix with an extra header
+  row which tracks names of columns.
+  "
+  []
   (let [-header-set? (volatile! false)]
     (fn
       ([]

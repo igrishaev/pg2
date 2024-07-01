@@ -33,7 +33,7 @@
   - reducers
   - enums
 
-- pool close conn test
+
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
 - parse JDBC url
