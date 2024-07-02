@@ -147,19 +147,79 @@ nil
 
 Perhaps the most needed folder, `first` tracks the first row only and skips the
 rest. Pay attention that this folder doesn't have a state and thus doesn't need
-to be initiated:
+to be initiated. Useful when you query a single row by its primary key:
 
 ~~~clojure
-(pg/execute conn query {:as fold/first})
+(pg/execute conn
+            "select * from users where id = $1"
+            {:params [42]
+             :as fold/first})
 
-;; OR
-
-(pg/execute conn query {:first true})
+{:id 42 :email "test@test.com"}
 ~~~
 
+Or pass the `:first` option set to true:
 
-index-by
-index-by f
+~~~clojure
+(pg/execute conn
+            "select * from users where id = $1"
+            {:params [42]
+             :first true})
+
+{:id 42 :email "test@test.com"}
+~~~
+
+### Index by
+
+Often, you select database rows into as a vector and build a map like `{id =>
+row}`, for example:
+
+~~~clojure
+(let [rows (jdbc/execute! conn ["select ..."])]
+  (reduce (fn [acc row]
+            (assoc acc (:id row) row))
+          {}
+          rows))
+
+{1 {:id 1 :name "test1" ...}
+ 2 {:id 2 :name "test2" ...}
+ 3 {:id 3 :name "test3" ...}
+ ...
+ }
+~~~
+
+This process is known as indexing because later on, the map is used for quick
+lookups in other functions.
+
+This approach, although is quite common, has flaws. First, you traverse the rows
+twice: when receiving them from the database, and then again inside
+`reduce`. Second, it takes extra lines of code.
+
+The `index-by` folder does exactly the same: it accepts a function which is
+applied to a row and uses the result as an index key. Most often you pass a
+keyword:
+
+~~~clojure
+(let [query
+      "with foo (a, b) as (values (1, 2), (3, 4), (5, 6))
+      select * from foo"
+
+      res
+      (pg/execute conn query {:as (fold/index-by :a)})]
+
+{1 {:a 1 :b 2}
+ 3 {:a 3 :b 4}
+ 5 {:a 5 :b 6}})
+~~~
+
+The shortcut `:index-by` accepts a function as well:
+
+~~~clojure
+(pg/execute conn query {:index-by :a})
+~~~
+
+### Group by
+
 
 group-by
 group-by f
