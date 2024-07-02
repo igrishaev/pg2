@@ -119,12 +119,18 @@
   arguments (an accumulator and the current row)
   and an initial accumulator value.
   "
+
+  ;; TODO: test reduced?
+
   [f init]
   (fn folder-reduce
     ([] init)
-    ([acc] acc)
+    ([acc] acc
+     (unreduced acc))
     ([acc row]
-     (f acc row))))
+     (if (reduced? acc)
+       acc
+       (f acc row)))))
 
 
 (defn index-by

@@ -293,7 +293,7 @@ applies to each row ignoring the result. The folder counts total number of rows
 being processed.
 
 ~~~clojure
-(defn [row]
+(defn func [row]
   (println "processing row" row)
   (send-to-api row))
 
@@ -337,12 +337,43 @@ The alias accepts any non-false value:
 
 ### Java
 
-java
-java
+This folder produces `java.util.ArrayList` where each row is an instance of
+`java.util.HashMap`. Doesn't require initialization:
+
+~~~clojure
+(pg/execute conn query {:as fold/java})
+~~~
+
+Alias:
+
+~~~clojure
+(pg/execute conn query {:java true})
+~~~
 
 ### Reduce
 
-reduce
+The `reduce` folder acts like the same-name function from `clojure.core`. It
+accepts a function and an initial value (accumulator). The function accepts the
+accumulator and the current row, and returns an updated version of the
+accumulator.
+
+Here is how you collect unique pairs (size, color) out from the database result:
+
+~~~clojure
+(defn ->pair [acc {:keys [sku color]}]
+  (conj acc [a b]))
+
+(pg/execute conn query {:as (fold/reduce ->pair #{})})
+
+#{[:xxl :green]
+  [:xxl :red]
+  [:x :red]
+  [:x :blue]}
+~~~
+
+
+
+
 [f init]
 
 
