@@ -220,13 +220,75 @@ The shortcut `:index-by` accepts a function as well:
 
 ### Group by
 
+The `group-by` folder is simlar to `index-by` but collects multiple rows per a
+grouping function. It produces a map like `{(f row) => [row1, row2, ...]}` where
+`row1`, `row2` and the rest return the same value for `f`.
 
-group-by
-group-by f
+Imagine each user in the database has a role:
+
+~~~
+{:id 1 :name "Test1" :role "user"}
+{:id 2 :name "Test2" :role "user"}
+{:id 3 :name "Test3" :role "admin"}
+{:id 4 :name "Test4" :role "owner"}
+{:id 5 :name "Test5" :role "admin"}
+~~~
+
+This is what `group-by` returns when grouping by the `:role` field:
+
+~~~clojure
+(pg/execute conn query {:as (fold/group-by :role)})
+
+{"user"
+ [{:id 1, :name "Test1", :role "user"}
+  {:id 2, :name "Test2", :role "user"}]
+
+ "admin"
+ [{:id 3, :name "Test3", :role "admin"}
+  {:id 5, :name "Test5", :role "admin"}]
+
+ "owner"
+ [{:id 4, :name "Test4", :role "owner"}]}
+~~~
+
+The folder has its own alias which accepts a function:
+
+~~~clojure
+(pg/execute conn query {:group-by :role})
+~~~
+
+### KV (Key and Value)
+
+The `kv` folder accepts two functions: the first one is for key (`fk`), and the
+second is for value (`fv`). Then it produces a map like `{(fk row) => (fv
+row)}`.
+
+A typical example might be more narrow index maps. Imagine you select just a
+couple of fields, `id` and `email`. Now you need a map of `{id => email}` for
+quick email lookup by id. This is where `kv` does the job for you.
+
+~~~clojure
+(pg/execute conn
+            "select id, email from users"
+            {:as (fold/kv :id :email)})
+
+{1 "ivan@test.com"
+ 2 "hello@gmail.com"
+ 3 "skotobaza@mail.ru"}
+~~~
+
+The `:kv` alias accepts a vector of two functions:
+
+~~~clojure
+(pg/execute conn
+            "select id, email from users"
+            {:kv [:id :email]})
+~~~
 
 
-kv
-[kv kv]
+
+
+
 
 run
 run
