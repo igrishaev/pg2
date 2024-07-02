@@ -285,33 +285,80 @@ The `:kv` alias accepts a vector of two functions:
             {:kv [:id :email]})
 ~~~
 
+### Run
 
+The `run` folder is useful for processing rows with side effects, e.g. printing
+them, writing to files, passing via API. A one-argument function passed to `run`
+applies to each row ignoring the result. The folder counts total number of rows
+being processed.
 
+~~~clojure
+(defn [row]
+  (println "processing row" row)
+  (send-to-api row))
 
+(pg/execute conn query {:as (fold/run func)})
 
+100 ;; the number of rows processed
+~~~
 
-run
-run
+An example with an alias:
+
+~~~clojure
+(pg/execute conn query {:run func})
+~~~
+
+### Table
+
+The `table` folder returns a plain matrix (a vector of vectors) of database
+values. The first row keeps names of the columns. Thus, the resulting table
+always has at least one row (it's never empty because of the header). The table
+view of data is useful when saving the data to CSV.
+
+The folder has inner state and thus needs to be initialized with no parameters:
+
+~~~clojure
+(pg/execute conn query {:as (fold/table)})
+
+[[:id :email]
+ [1 "ivan@test.com"]
+ [2 "skotobaza@mail.ru"]]
+~~~
+
+The alias accepts any non-false value:
+
+~~~clojure
+(pg/execute conn query {:table true})
+
+[[:id :email]
+ [1 "ivan@test.com"]
+ [2 "skotobaza@mail.ru"]]
+~~~
+
+### Java
+
+java
+java
+
+### Reduce
 
 reduce
 [f init]
 
 
+### Into (Transduce)
+
 into
 [xf []]
+
+### To EDN
 
 to-edn
 writer
 
+### To JSON
+
 to-json
 writer
-
-table
-table true
-
-
-java
-java
-
 
 ## Custom Folders
