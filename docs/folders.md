@@ -371,18 +371,68 @@ Here is how you collect unique pairs (size, color) out from the database result:
   [:x :blue]}
 ~~~
 
+At the moment, the folder ignores `reduced` logic: it performs iteration until
+rows are over. It doesn't check if the accumulator is wrapped with `reduced`.
 
+The `:reduce` alias accepts a vector of a function and an initial value:
 
-
-[f init]
-
+~~~clojure
+(pg/execute conn query {:reduce [->pair #{}]})
+~~~
 
 ### Into (Transduce)
 
-into
-[xf []]
+This folder mimics the `into` logic when it deals with an xform, also known as a
+transducer. Sometimes, you need to pass the result throughout a bunch of
+map/filter/keep functions. Each of them produces an intermediate collection
+which is not as fast as it could be with a transducer. Transducers are designed
+such that they compose a stack of actions, which, when being run, do not produce
+extra collections.
+
+The `into` folder accepts an xform produced by map/filter/comp, whatever. It
+also accepts a persistent collect which acts as an accumulator. The accumulator
+gets transformed into its transient counterpart internally for better
+performance. The folder uses `conj!` to push values into the accumulator, so
+maps are not acceptable, only vectors, lists, or sets. When the accumulator is
+not passed, it's an empty vector.
+
+Here is a quick example of `into` in action:
+
+~~~clojure
+(let [tx
+      (comp (map :a)
+            (filter #{1 5})
+            (map str))
+
+      query
+      "with foo (a, b) as (values (1, 2), (3, 4), (5, 6))
+       select * from foo"]
+
+  (pg/execute conn query {:as (fold/into tx)}))
+
+;; ["1" "5"]
+~~~
+
+Another case where we pass a non-empty set to collect the values:
+
+~~~clojure
+(pg/execute conn query {:as (fold/into tx #{:a :b :c})})
+
+;; #{:a :b :c "1" "5"}
+~~~
+
+The `:into` alias is a vector where the first item is an xform and second is an
+accumulator:
+
+~~~clojure
+(pg/execute conn query {:into [tx []]})
+~~~
 
 ### To EDN
+
+This folder writes down rows into an EDN file. It accepts an instance of
+`java.io.Writer` which must be opened in advance. The folder doesn't open nor
+close the writer as these actions are beyond its scope.
 
 to-edn
 writer
