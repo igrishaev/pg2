@@ -639,6 +639,15 @@
          (close ~bind)))))
 
 
+(defmacro with-conn
+  "
+  Just a shorter version of `with-connection`.
+  "
+  [[bind config] & body]
+  `(with-connection [~bind ~config]
+     ~@body))
+
+
 (defn closed?
   "
   True if the connection has been closed.

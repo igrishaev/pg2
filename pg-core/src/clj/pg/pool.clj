@@ -120,6 +120,15 @@
            (.returnConnection ~POOL ~bind))))))
 
 
+(defmacro with-conn
+  "
+  Just a shorter version of `with-connection`.
+  "
+  [[bind pool] & body]
+  `(with-connection [~bind ~pool]
+     ~@body))
+
+
 (defn stats
   "
   Return both free and used connection amount as a map.

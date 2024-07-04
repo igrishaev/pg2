@@ -2,7 +2,12 @@
 ## 0.1.15-SNAPSHOT
 
 - better pool locking
-- transduce reducer
+- pool blocking queue
+- tests updated
+- folders/reducers refactored
+- Clojure/Lazy Vectors removed
+- pool/with-conn
+- core/with-conn
 
 TODO:
 - update fold

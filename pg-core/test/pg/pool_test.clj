@@ -23,6 +23,13 @@
         (is (= [{:one 1}] res))))))
 
 
+(deftest test-pool-short-name
+  (pool/with-pool [pool *CONFIG*]
+    (pool/with-conn [conn pool]
+      (let [res (pg/execute conn "select 1 as one")]
+        (is (= [{:one 1}] res))))))
+
+
 (deftest test-pool-basic-features
   (pool/with-pool [pool (assoc *CONFIG*
                                :pool-max-size 2)]

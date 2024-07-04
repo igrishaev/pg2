@@ -112,7 +112,7 @@ from
 
 
 (deftest test-client-complex-txt
-  (pg/with-connection [conn *CONFIG-TXT*]
+  (pg/with-conn [conn *CONFIG-TXT*]
     (let [res
           (pg/query conn QUERY_SELECT_RANDOM_COMPLEX)]
       (is true))))
