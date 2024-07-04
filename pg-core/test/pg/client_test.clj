@@ -1681,7 +1681,7 @@ drop table %1$s;
 
           res2
           (with-open [out (io/writer file2)]
-            (pg/execute conn query {:as (fold/to-edn out)}))
+            (pg/execute conn query {:to-edn out}))
 
           data1
           (-> file1 slurp read-string)

@@ -432,14 +432,70 @@ accumulator:
 
 This folder writes down rows into an EDN file. It accepts an instance of
 `java.io.Writer` which must be opened in advance. The folder doesn't open nor
-close the writer as these actions are beyond its scope.
+close the writer as these actions are beyond its scope. A common pattern is to
+wrap `pg/execute` or `pg/query` invocations with the macro `with-open` that
+handles closing procedure even in case of exception.
 
-to-edn
-writer
+The folder writes down rows into the writer using `pr-str`. Each row takes one
+line, and the lines are split with `\n`. The leading line is `[`, and the
+trailing is `]`.
+
+The result is a number of rows processed. Here is an example of dumping rows
+into a file called "test.edn":
+
+~~~clojure
+(with-open [out (-> "test.edn" io/file io/writer)]
+  (pg/execute conn query {:as (fold/to-edn out)}))
+
+;; 199
+~~~
+
+Let's check the content of the file:
+
+~~~clojure
+[
+  {:id 1 :email "test@test.com"}
+  {:id 2 :email "hello@test.com"}
+  ...
+  {:id 199 :email "ivan@test.com"}
+]
+~~~
+
+The alias `:to-edn` accepts a writer object:
+
+~~~clojure
+(with-open [out (-> "test.edn" io/file io/writer)]
+  (pg/execute conn query {:to-edn out}))
+~~~
 
 ### To JSON
 
-to-json
-writer
+Like `to-edn` but dumps rows into JSON. Accepts an instance of
+`java.io.Writer`. Writes rows line by line with no pretty printing. Lines are
+joined with a comma. The leading and trailing lines are square brackets. The
+result is the number of rows put into the writer.
 
-## Custom Folders
+~~~clojure
+(with-open [out (-> "test.json" io/file io/writer)]
+  (pg/execute conn query {:as (fold/to-json out)}))
+
+;; 123
+~~~
+
+The content of the file:
+
+~~~json
+[
+  {"b":2,"a":1},
+  {"b":4,"a":3},
+  ...
+  {"b":6,"a":5}
+]
+~~~
+
+The `:to-json` alias accepts a writer object:
+
+~~~clojure
+(with-open [out (-> "test.json" io/file io/writer)]
+  (pg/execute conn query {:to-json out}))
+~~~
