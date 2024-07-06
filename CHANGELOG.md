@@ -1,5 +1,9 @@
 
-## 0.1.15-SNAPSHOT
+## 0.1.16-SNAPSHOT
+
+- ?
+
+## 0.1.15
 
 - better pool locking
 - pool blocking queue
@@ -8,11 +12,6 @@
 - Clojure/Lazy Vectors removed
 - pool/with-conn
 - core/with-conn
-
-TODO:
-- update fold
-- refactor transduce
-
 
 ## 0.1.14
 
