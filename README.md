@@ -43,30 +43,30 @@ classes are supported for reading and writing.
 - [Authentication](/docs/authentication.md)
 - [Connecting to the server](/docs/connecting.md)
 - [Query and Execute](/docs/query-execute.md)
-- Common Execute parameters
-- Type hints
 - [Prepared Statements](/docs/prepared-statement.md)
 - [Transactions](/docs/transaction.md)
 - [Connection state](/docs/connection-state.md)
+- [Connection Pool](/docs/pool.md)
 - [HoneySQL Integration](/docs/honeysql.md)
 - [HugSQL Support](/docs/hugsql.md)
 - [Next.JDBC API layer](/docs/next-jdbc-layer.md)
+- [Folders (Reducers)](/docs/folders.md)
+- [JSON support](/docs/json.md)
+- [Arrays support](/docs/arrays.md)
+- [Migrations](/docs/migrations.md)
+- Common Execute parameters
+- Type hints
 - Working with Enums
 - Cloning a Connection
 - Cancelling a Query
 - Thread Safety
-- [Folders (Reducers)](/docs/folders.md)
 - COPY IN/OUT
 - SSL Support
 - Type Mapping
-- [JSON support](/docs/json.md)
-- [Arrays support](/docs/arrays.md)
 - Notify/Listen
 - Notices
 - Logging
 - Errors and Exceptions
-- [Connection Pool](/docs/pool.md)
-- [Migrations](/docs/migrations.md)
 - Component integration
 - Ring middleware
 - Debugging

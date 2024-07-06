@@ -86,6 +86,7 @@
                 ;; fold/reduce
                 as
                 first
+                first? ;; for backward compatibility
                 map
                 index-by
                 group-by
@@ -149,7 +150,7 @@
       as
       (.reducer as)
 
-      first
+      (or first first?)
       (.reducer fold/first)
 
       map
