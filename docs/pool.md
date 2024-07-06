@@ -168,7 +168,7 @@ The `closed?` predicate ensures the pool has already been closed:
 ;; true
 ~~~
 
-## Borrow Login in Detail
+## Borrow Logic in Detail
 
 When getting a connection from a pool, the following conditions are taken into
 account:
