@@ -42,6 +42,13 @@ executed:
   (pg/query conn "select 1 as one"))
 ~~~
 
+There is a shorter version of this macro called `with-conn`:
+
+~~~clojure
+(pg/with-conn [conn config]
+  (pg/query conn "select 1 as one"))
+~~~
+
 The standard `with-open` macro calls the `(.close connection)` method on exit:
 
 ~~~clojure

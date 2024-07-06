@@ -413,3 +413,20 @@
 
       (is (= {:free 0 :used 1}
              (pool/stats pool))))))
+
+
+(deftest test-pool-exception-in-macro
+
+  (pool/with-pool [pool *CONFIG*]
+
+    (is (= {:free 2, :used 0}
+           (pool/stats pool)))
+
+    (future
+      (pool/with-conn [conn pool]
+        (/ 0 0)))
+
+    (Thread/sleep 300)
+
+    (is (= {:free 2, :used 0}
+           (pool/stats pool)))))

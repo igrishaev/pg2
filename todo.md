@@ -11,6 +11,8 @@
 - conn init sql
 - conn init prep-stmt
 
+- close wait for 0 used conns?
+
 - MERGE result
 
 - UnparsedTxt, UnparsedBin types?

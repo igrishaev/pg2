@@ -43,6 +43,16 @@ Here is how you use the pool:
 The `pool/with-pool` macro creates a pool object from the `config` and binds it
 to the `pool` symbol. Once you exit the macro, the pool gets closed.
 
+The `with-pool` macro can be easily replaced with the `with-open` macro and the
+`pool` function that creates a pool instance. By exit, the macro calls the
+`.close` method of an opened object, which closes the pool.
+
+~~~clojure
+(with-open [pool (pool/pool config)]
+  (pool/with-conn [conn pool]
+    (pg/execute conn "select 1 as one")))
+~~~
+
 Having a pool object, use it with the `pool/with-connection` macro (there is a
 shorter version called `pool/with-conn` as well). This macro borrows a
 connection from the pool and binds it to the `conn` symbol. Now you pass the
@@ -91,15 +101,101 @@ occurs. Should there still haven't been any free connections during the
 
 ## Pool Methods
 
-stats
-replenish-connections?
+The `stats` function returns info about free and used connections:
+
+~~~clojure
+(pool/with-pool [pool config]
+
+  (pool/stats pool)
+  ;; {:free 1 :used 0}
+
+  (pool/with-connection [conn pool]
+    (pool/stats pool)
+    ;; {:free 0 :used 1}
+  ))
+~~~
+
+It might be used to send metrics to Grafana, CloudWatch, etc.
 
 ## Manual Pool Management
 
+[component]: https://github.com/stuartsierra/component
+[integrant]: https://github.com/weavejester/integrant
 
-pool examples
+The following functions help you manage a connection pool manually, for example
+when it's wrapped into a component (see [Component][component] and
+[Integrant][integrant] libraries).
 
-cases
+The `pool` function creates a pool:
 
-global pool
-manual creation
+~~~clojure
+(def POOL (pool/pool config))
+~~~
+
+The `used-count` and `free-count` functions return total numbers of busy and
+free connections, respectively:
+
+~~~clojure
+(pool/free-count POOL)
+;; 2
+
+(pool/used-count POOL)
+;; 0
+~~~
+
+The `pool?` predicate ensures it's a `Pool` instance indeed:
+
+~~~clojure
+(pool/pool? POOL)
+;; true
+~~~
+
+## Closing
+
+The `close` method shuts down a pool instance. On shutdown, first, all the free
+connections get closed. Then the pool closes busy connections that were
+borrowed. This might lead to failures in other threads, so it's worth waiting
+until the pool has zero busy connections.
+
+~~~clojure
+(pool/close POOL)
+;; nil
+~~~
+
+The `closed?` predicate ensures the pool has already been closed:
+
+~~~clojure
+(pool/closed? POOL)
+;; true
+~~~
+
+## Borrow Login in Detail
+
+When getting a connection from a pool, the following conditions are met:
+
+- if the pool is closed, an exception is thrown;
+- if there are free connections available, the pool takes one of them;
+- if a connection is expired (was created long ago), it's closed and the pool
+  performs another attempt;
+- if there aren't free connections, but the max number of used connection has not
+  been reached yet, the pool spawns a new connection;
+- if the number of used connections is reached, the pool waits for
+  `:pool-borrow-conn-timeout-ms` time hoping that someone would release a
+  connection in the background;
+- by timeout (when nobody did), the pool throws an exception.
+
+
+## Returning Logic in Detail
+
+When you return a connection to a pool, the following cases might come into
+play:
+
+- if the connection is an error state, then transaction is rolled back, and the
+  connection is closed;
+- if the connection is in transaction mode, it is rolled back, and the
+  connection is marked as free again;
+- if it was already closed, the pool just removes it from used connections. It
+  won't be added into the free queue;
+- if the pool is closed, the connection is removed from used connections;
+- when none of above conditions is met, the connection is removed from used and
+  is available again for other consumers.
