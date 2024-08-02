@@ -146,3 +146,5 @@ The default transation level depends on the settings of your database.
 
 This document doesn't describe the difference between isolation levels. Please
 refer to the [official documentation][transaction-iso] for more information.
+
+TODO: nested transactions

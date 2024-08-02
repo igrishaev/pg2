@@ -891,6 +891,22 @@
   - read-only?: to set the transaction read only;
   - rollback?: to ROLLBACK a transaction even if it was successful.
 
+  Nested transactions are consumed by the most outer transaction.
+  For example, you have two nested `with-tx` blocks:
+
+  (with-tx [...]          #1
+    (do-this ...)
+    (with-tx [...]        #2
+      (do-that ...)))
+
+  In this case, only the first block will produce BEGIN/COMMIT commands.
+  The second block will expand into the body only:
+
+  (pg/begin ...)
+  (do-this ...)
+  (do-that ...)
+  (pg/commit ...)
+
   "
   {:arglists '([[conn] & body]
                [[conn {:keys [isolation-level
@@ -905,38 +921,42 @@
         OPTS
         (gensym "OPTS")]
 
-    `(let [~CONN ~conn
-           ~OPTS ~opts
+    `(if (in-transaction? ~conn)
 
-           iso-level#
-           ~(if opts
-              `(or (some-> ~OPTS :isolation-level ->tx-level)
-                   TxLevel/NONE)
-              `TxLevel/NONE)
+       (do ~@body)
 
-           read-only?#
-           ~(if opts
-              `(boolean (:read-only? ~OPTS))
-              `false)
+       (let [~CONN ~conn
+             ~OPTS ~opts
 
-           rollback?#
-           ~(if opts
-              `(boolean (:rollback? ~OPTS))
-              `false)]
+             iso-level#
+             ~(if opts
+                `(or (some-> ~OPTS :isolation-level ->tx-level)
+                     TxLevel/NONE)
+                `TxLevel/NONE)
 
-       (with-lock [~CONN]
+             read-only?#
+             ~(if opts
+                `(boolean (:read-only? ~OPTS))
+                `false)
 
-         (.begin ~CONN iso-level# read-only?#)
+             rollback?#
+             ~(if opts
+                `(boolean (:rollback? ~OPTS))
+                `false)]
 
-         (try
-           (let [result# (do ~@body)]
-             (if rollback?#
+         (with-lock [~CONN]
+
+           (.begin ~CONN iso-level# read-only?#)
+
+           (try
+             (let [result# (do ~@body)]
+               (if rollback?#
+                 (.rollback ~CONN)
+                 (.commit ~CONN))
+               result#)
+             (catch Throwable e#
                (.rollback ~CONN)
-               (.commit ~CONN))
-             result#)
-           (catch Throwable e#
-             (.rollback ~CONN)
-             (throw e#)))))))
+               (throw e#))))))))
 
 
 (defn connection?

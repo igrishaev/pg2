@@ -1,7 +1,7 @@
 
 ## 0.1.17-SNAPSHOT
 
--?
+- nested transactions
 
 ## 0.1.16
 
