@@ -1,7 +1,11 @@
 
-## 0.1.16-SNAPSHOT
+## 0.1.17-SNAPSHOT
 
-- fix migrations name parsing
+-?
+
+## 0.1.16
+
+- fix migrations name parsing #14
 
 ## 0.1.15
 
