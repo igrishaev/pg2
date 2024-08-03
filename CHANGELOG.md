@@ -1,7 +1,7 @@
 
 ## 0.1.16-SNAPSHOT
 
-- ?
+- fix migrations name parsing
 
 ## 0.1.15
 

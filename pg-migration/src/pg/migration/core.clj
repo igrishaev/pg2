@@ -19,6 +19,7 @@
    [pg.migration.fs :as fs]
    [pg.migration.log :as log]))
 
+(set! *warn-on-reflection* true)
 
 (def DEFAULTS
   {:migrations-table :migrations
@@ -26,7 +27,7 @@
 
 
 (def RE_FILE
-  #"(?i).*?(\d+)\.(.*?)\.?(prev|next|up|down)\.sql$")
+  #"(?i)(\d+)\.(.*?)\.?(prev|next|up|down)\.sql$")
 
 
 (defn parse-name [^String file-name]
@@ -166,7 +167,9 @@
   (when-let [[_ id-raw slug-raw direction-raw]
              (re-matches RE_FILE (-> url
                                      .getFile
-                                     URLDecoder/decode))]
+                                     URLDecoder/decode
+                                     io/file
+                                     .getName))]
 
     (let [id
           (Long/parseLong id-raw)

@@ -27,9 +27,9 @@
          (rest (mig/parse-name "123.hello-foo.up.sql"))))
   (is (= ["123" "" "up"]
          (rest (mig/parse-name "123.up.sql"))))
-  (is (= ["123" "" "up"]
+  (is (= []
          (rest (mig/parse-name "some/prefix/999/123.up.sql"))))
-  (is (= ["123" "" "Up"]
+  (is (= []
          (rest (mig/parse-name "Some/Prefix/999/123.Up.Sql"))))
   (is (= nil
          (mig/parse-name "555aaa..sql"))))
@@ -123,7 +123,31 @@
             mig/parse-url)]
 
     (is (= nil
-           (dissoc res :url)))))
+           (dissoc res :url))))
+
+  (testing "no leading path"
+    (let [res
+          (-> "003.hello.prev.sql"
+              io/file
+              io/as-url
+              mig/parse-url)]
+
+      (is (= {:id 3
+              :slug "hello"
+              :direction :prev}
+             (dissoc res :url)))))
+
+  (testing "versioned uberjar"
+    (let [res
+          (-> "jar:file:/home/foo/projects/bar/target/uberjar/test-0.1.0-SNAPSHOT-standalone.jar!/migrations/015.foo-test-bar-kek.next.sql"
+              io/file
+              io/as-url
+              mig/parse-url)]
+
+      (is (= {:id 15
+              :slug "foo test bar kek"
+              :direction :next}
+             (dissoc res :url))))))
 
 
 (deftest test-validate-duplicates
