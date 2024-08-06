@@ -40,10 +40,12 @@ will be available during transaction but won't be stored at the end.
 (pg/rollback conn)
 ~~~
 
-Of course, there is a macro what handles `BEGIN`, `COMMIT`, and `ROLLBACK` logic
-for you. The `with-tx` one wraps a block of code. It opens a transaction,
-executes the body and, if there was not an exception, commits it. If there was
-an exception, the macro rolls back the transaction and re-throws it.
+## The macro
+
+There is a macro what handles `BEGIN`, `COMMIT`, and `ROLLBACK` logic for
+you. The `with-tx` one wraps a block of code. It opens a transaction, executes
+the body and, if there was no an exception, commits it. If there was an
+exception, the macro rolls back the transaction and re-throws it.
 
 The first argument of the macro is a connection object:
 
@@ -78,6 +80,8 @@ The macro accepts several optional parameters that affect a transaction, namely:
 | `:rollback?`       | Boolean           | When true, he transaction gets rolled back even if there was no an exception |
 | `:isolation-level` | Keyword or String | Set isolation level for the current transaction                              |
 
+## Read Only
+
 The `:read-only?` parameter set to true restricts all the queries in this
 transaction to be read only. Thus, only `SELECT` queries will work. Running
 `INSERT`, `UPDATE`, or `DELETE` will cause an exception:
@@ -91,6 +95,8 @@ transaction to be read only. Thus, only `SELECT` queries will work. Running
 ;; Execution error (PGErrorResponse) at org.pg.Accum/maybeThrowError (Accum.java:205).
 ;; Server error response: {severity=ERROR, code=25006, ... message=cannot execute DELETE in a read-only transaction, verbosity=ERROR}
 ~~~
+
+## Rolling Back
 
 The `:rollback?` parameter, when set to true, rolls back a transaction even if
 it was successful. This is useful for tests:
@@ -109,6 +115,8 @@ it was successful. This is useful for tests:
 
 Above, inside the `with-tx` macro, you'll have all the rows deleted but once you
 get back, they will be there again.
+
+## Isolation Level
 
 Finally, the `:isolation-level` parameter sets isolation level for the current
 transaction. The table below shows its possible values:
@@ -146,3 +154,73 @@ The default transation level depends on the settings of your database.
 
 This document doesn't describe the difference between isolation levels. Please
 refer to the [official documentation][transaction-iso] for more information.
+
+## Nested Transactions
+
+Nested transactions happen when you put one `with-tx` inside another, for
+example:
+
+~~~clojure
+(with-tx [...]          ;; 1
+  (do-this ...)
+  (with-tx [...]        ;; 2
+    (do-that ...)))
+~~~
+
+It's not necessary to have them both explicitly; you can easily have two nested
+functions `(do-a)` and `(do-b)` each of them driven with the `with-tx` macro:
+
+~~~clojure
+(defn do-b [...]
+  (with-tx [...]
+    (do-something ...)))
+
+(defn do-a [...]
+  (with-tx [...]
+    (do-b ...)))
+~~~
+
+Before version 0.1.17, the library didn't handle nested transactions leaving
+them to be controlled by the database. The code above led to the following
+sequence of SQL commands:
+
+~~~sql
+BEGIN  -- from A
+...    -- from A
+BEGIN  -- from B
+...    -- from B
+COMMIT -- from B
+...    -- from A
+COMMIT -- from A
+~~~
+
+Since Postgres doesn't handle nested transactions, here is what going under the
+hood. The first `BEGIN` from `do-a` opens a transaction. The second `BEGIN` from
+`do-b` gets ignored producing a notice "there is already a transaction".
+
+When it comes to the first `COMMIT`, it commits the current transaction. But
+this command comes from `do-b`, not `do-a`! On other words, the order of
+`COMMIT` commands is reversed, but the database doesn't know about this. The
+first `COMMIT` closes the transaction leaving a part of `do-a` logic being
+uncovered. Calling the second `COMMIT` won't do anything since there is no an
+active transaction any longer. It will only produce a notice.
+
+Since 0.1.17, PG2 handles this case property. The `with-tx` macro checks if the
+connection is in transaction mode by calling the `(pg/in-transaction? ...)`
+function. If it's not, the macro works as before: it wraps a block of code with
+the `BEGIN/COMMIT/ROLLBACK` commands.
+
+But if the connection is already in transaction, the macro skips `BEGIN/COMMIT`
+commands leaving just the body. Thus, having two or more nested `with-tx` macros
+will produce the following sequence of SQL expressions:
+
+~~~sql
+BEGIN  -- from A
+...    -- from A
+...    -- from B
+...    -- from A
+COMMIT -- from A
+~~~
+
+With this improvement, you don't need to check manually if underlying code has
+its own `with-tx` macro calls.

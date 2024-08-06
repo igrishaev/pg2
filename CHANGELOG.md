@@ -1,7 +1,11 @@
 
-## 0.1.17-SNAPSHOT
+## 0.1.18-SNAPSHOT
 
--?
+- ?
+
+## 0.1.17
+
+- nested transactions
 
 ## 0.1.16
 

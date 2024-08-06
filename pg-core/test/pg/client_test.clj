@@ -361,6 +361,37 @@ from
       (is (= [{:bar 2}] res2)))))
 
 
+(deftest test-client-nested-transaction
+
+  (let [capture!
+        (atom [])
+
+        notice-fn
+        (fn [msg]
+          (swap! capture! conj msg))]
+
+    (pg/with-connection [conn
+                         (assoc *CONFIG-TXT*
+                                :fn-notice notice-fn)]
+
+      (pg/with-tx [conn {:isolation-level :read-committed}]
+
+        (pg/execute conn "create temp table foo (id integer)")
+
+        (pg/execute conn "insert into foo values (1)")
+
+        (pg/with-tx [conn]
+          (pg/execute conn "insert into foo values (2)"))
+
+        (let [result
+              (pg/query conn "select * from foo")]
+
+          (is (= [{:id 1} {:id 2}] result)))))
+
+    (testing "without nested transactions, there will be notices"
+      (is (= [] @capture!)))))
+
+
 (deftest test-client-with-transaction-read-only
 
   (pg/with-connection [conn *CONFIG-TXT*]

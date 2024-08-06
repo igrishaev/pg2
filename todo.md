@@ -27,6 +27,8 @@
 - lazy map
   - optional flag
 
+- add postgres 17 beta
+
 - pg-integration package?
 
 - docs:
