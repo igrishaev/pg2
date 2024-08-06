@@ -894,17 +894,17 @@
   Nested transactions are consumed by the most outer transaction.
   For example, you have two nested `with-tx` blocks:
 
-  (with-tx [...]          #1
+  (with-tx [...]          ;; 1
     (do-this ...)
-    (with-tx [...]        #2
+    (with-tx [...]        ;; 2
       (do-that ...)))
 
-  In this case, only the first block will produce BEGIN/COMMIT commands.
-  The second block will expand into the body only:
+  In this case, only the first block will produce `BEGIN` and `COMMIT`
+  commands. The second block will expand into the body only:
 
   (pg/begin ...)
-  (do-this ...)
-  (do-that ...)
+    (do-this ...)
+    (do-that ...)
   (pg/commit ...)
 
   "

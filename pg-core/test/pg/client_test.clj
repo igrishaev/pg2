@@ -388,7 +388,7 @@ from
 
           (is (= [{:id 1} {:id 2}] result)))))
 
-    (testing "without nested transactions support, there will be notices"
+    (testing "without nested transactions, there will be notices"
       (is (= [] @capture!)))))
 
 
