@@ -208,9 +208,9 @@ active transaction any longer. It will only produce a notice.
 Since 0.1.17, PG2 handles this case property. The `with-tx` macro checks if the
 connection is in transaction mode by calling the `(pg/in-transaction? ...)`
 function. If it's not, the macro works as before: it wraps a block of code with
-the BEGIN/COMMIT/ROLLBACK commands.
+the `BEGIN/COMMIT/ROLLBACK` commands.
 
-But if the connection is already in transaction, the macro omits BEGIN/COMMIT
+But if the connection is already in transaction, the macro skips `BEGIN/COMMIT`
 commands leaving just the body. Thus, having two or more nested `with-tx` macros
 will produce the following sequence of SQL expressions:
 
