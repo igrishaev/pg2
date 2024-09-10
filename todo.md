@@ -21,6 +21,9 @@
 
 - PGErrorResponse: extend ExceptionInfo?
 
+- refactor Clojure API
+- refactor Datetime enc/dec
+
 - pg.ring package (move json middleware)
 - ring jdbc session middleware
 
@@ -36,7 +39,6 @@
   - execute parameters
   - reducers
   - enums
-
 
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
