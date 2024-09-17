@@ -18,6 +18,7 @@
    org.pg.error.PGError
    org.pg.error.PGErrorResponse)
   (:require
+   honey.sql.pg-ops
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
    [clojure.string :as str]
@@ -29,6 +30,7 @@
    [pg.core :as pg]
    [pg.fold :as fold]
    [pg.honey :as pgh]
+   [pg.jdbc :as jdbc]
    [pg.integration :refer [*CONFIG-TXT*
                            *CONFIG-BIN*
                            *PORT*
@@ -3170,3 +3172,67 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (is (pool/pool? c-started))
     (is (= {:one 1} res))
     (is (nil? c-stopped))))
+
+
+(deftest test-client-json-function-params
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (pg/execute conn "create temp table foo123 (val jsonb)")
+    (pg/execute conn "insert into foo123 values ($1)" {:params [{:foo {:bar {:kek 123}}}]})
+
+    (let [res (pg/execute conn "select val #>> array['foo', 'bar', 'kek'] as val from foo123")]
+      (is (= [{:val "123"}] res)))
+
+    (let [res (pg/execute conn
+                          "select val #>> array[$1, $2, $3] as val from foo123"
+                          {:params ["foo" "bar" "kek"]})]
+      (is (= [{:val "123"}] res)))
+
+    (let [res (pg/execute conn
+                          "select val #>> $1 as val from foo123"
+                          {:params [["foo" "bar" "kek"]]})]
+      (is (= [{:val "123"}] res)))))
+
+
+;;
+;; https://github.com/igrishaev/pg2/issues/17
+;;
+(deftest test-client-json-function-params-case-2
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (pg/execute conn "create temp table test (data jsonb)")
+    (pg/execute conn "insert into test values ($1)"
+                {:params [[{:score "10" :quality "high"}
+                           {:score "8" :quality "medium"}]]})
+
+    (let [sql-map
+          '{:select [[[:->> :issue "score"] :score]]
+            :from   [[[:jsonb_array_elements ?data] :issue]]
+            :where  [:= [:->> :issue "score"] ?score]}
+
+          sql-vec
+          (pgh/format sql-map
+                      {:params {:data [{:score "10" :quality "high"}
+                                       {:score "8" :quality "medium"}]
+                                :score "10"}})
+
+          res
+          (jdbc/execute! conn sql-vec)]
+
+      (is (= [{:score "10"}] res)))
+
+    (let [sql-map
+          '{:select [:issue]
+            :from   [[{:select [[[:jsonb_array_elements :data] :issue]]
+                       :from [:test]}
+                      :sub]]
+            :where  [:= [:->> :issue "score"] "10"]}
+
+          sql-vec
+          (pgh/format sql-map)
+
+          res
+          (jdbc/execute! conn sql-vec)]
+
+      (is (= [{:issue {:score "10", :quality "high"}}] res)))))
