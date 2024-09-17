@@ -6,11 +6,20 @@ import org.pg.enums.OID;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 public record RowDescription (
         short columnCount,
         Column[] columns
 ) implements IServerMessage {
+
+    @Override
+    public String toString() {
+        return String.format("RowDescription[columnCount=%s, columns=%s]",
+                columnCount,
+                Arrays.toString(columns)
+        );
+    }
 
     public record Column (
             int index,

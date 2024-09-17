@@ -3,6 +3,7 @@ package org.pg.msg.client;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import org.pg.enums.Format;
 import org.pg.Payload;
@@ -17,6 +18,17 @@ public record Bind (
         Format columnFormat
 
 ) implements IClientMessage {
+
+    @Override
+    public String toString() {
+        return String.format("Bind[portal=%s, statement=%s, values=%s, paramsFormat=%s, columnFormat=%s]",
+                portal,
+                statement,
+                Arrays.deepToString(values),
+                paramsFormat,
+                columnFormat
+        );
+    }
 
     public byte[][] toByteArrays () {
 

@@ -6,11 +6,21 @@ import org.pg.Payload;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 public record Parse (String statement,
                      String query,
                      OID[] OIDs)
         implements IClientMessage {
+
+    @Override
+    public String toString() {
+        return String.format("Parse[statement=%s, query=%s, OIDs=%s]",
+                statement,
+                query,
+                Arrays.toString(OIDs)
+        );
+    }
 
     public ByteBuffer encode(final Charset charset) {
 

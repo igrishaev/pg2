@@ -342,7 +342,7 @@ public final class Connection implements AutoCloseable {
     // must be done manually.
     private void sendBytes (final byte[] buf) {
         if (Debug.isON) {
-            Debug.debug(" < %s", Arrays.toString(buf));
+            Debug.debug(" <- sendBytes: %s", Arrays.toString(buf));
         }
         IOTool.write(outStream, buf);
     }

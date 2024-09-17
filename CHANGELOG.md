@@ -1,7 +1,8 @@
 
 ## 0.1.18-SNAPSHOT
 
-- ?
+- more tests for jsonb functions
+- better message render for debug
 
 ## 0.1.17
 

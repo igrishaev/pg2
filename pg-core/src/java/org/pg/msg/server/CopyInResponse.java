@@ -3,12 +3,23 @@ package org.pg.msg.server;
 import org.pg.enums.Format;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public record CopyInResponse(
         Format format,
         short columnCount,
         Format[] columnFormats
 ) implements IServerMessage {
+
+    @Override
+    public String toString() {
+        return String.format(
+                "CopyInResponse[format=%s, columnCount=%s, columnFormats=%s]",
+                format,
+                columnCount,
+                Arrays.toString(columnFormats)
+        );
+    }
 
     public static CopyInResponse fromByteBuffer (final ByteBuffer buf) {
         final Format format = Format.ofShort(buf.get());

@@ -16,6 +16,15 @@ public record NegotiateProtocolVersion(
         String[] params
 ) implements IClojure, IServerMessage {
 
+    @Override
+    public String toString() {
+        return String.format("NegotiateProtocolVersion[version=%s, paramCount=%s, params=%s]",
+                version,
+                paramCount,
+                Arrays.toString(params)
+        );
+    }
+
     public IPersistentMap toClojure () {
         return PersistentHashMap.create(
                 KW.msg, KW.NegotiateProtocolVersion,
