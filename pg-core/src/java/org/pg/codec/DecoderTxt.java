@@ -15,48 +15,48 @@ public final class DecoderTxt {
 
     public static Object decode(
             final String string,
-            final OID oid
+            final int oid
     ) {
         return decode(string, oid, CodecParams.standard());
     }
 
     public static Object decode(
             final String string,
-            final OID oid,
+            final int oid,
             final CodecParams codecParams
     ) {
 
         return switch (oid) {
 
-            case INT2 -> Short.parseShort(string);
-            case INT4, OID -> Integer.parseInt(string);
-            case INT8 -> Long.parseLong(string);
-            case BYTEA -> HexTool.parseHex(string, 2, string.length());
-            case CHAR -> {
+            case OID.INT2 -> Short.parseShort(string);
+            case OID.INT4, OID.OID -> Integer.parseInt(string);
+            case OID.INT8 -> Long.parseLong(string);
+            case OID.BYTEA -> HexTool.parseHex(string, 2, string.length());
+            case OID.CHAR -> {
                 if (string.isEmpty()) {
                     yield Const.NULL_CHAR;
                 } else {
                     yield string.charAt(0);
                 }
             }
-            case UUID -> UUID.fromString(string);
-            case FLOAT4 -> Float.parseFloat(string);
-            case FLOAT8 -> Double.parseDouble(string);
-            case NUMERIC -> new BigDecimal(string);
-            case BOOL -> switch (string) {
+            case OID.UUID -> UUID.fromString(string);
+            case OID.FLOAT4 -> Float.parseFloat(string);
+            case OID.FLOAT8 -> Double.parseDouble(string);
+            case OID.NUMERIC -> new BigDecimal(string);
+            case OID.BOOL -> switch (string) {
                     case "t" -> true;
                     case "f" -> false;
                     default -> throw new PGError("wrong boolean value: %s", string);
             };
-            case JSON, JSONB -> JSON.readValue(codecParams.objectMapper(), string);
-            case TIMESTAMPTZ -> DateTimeTxt.decodeTIMESTAMPTZ(string);
-            case TIMESTAMP -> DateTimeTxt.decodeTIMESTAMP(string);
-            case DATE -> DateTimeTxt.decodeDATE(string);
-            case TIMETZ -> DateTimeTxt.decodeTIMETZ(string);
-            case TIME -> DateTimeTxt.decodeTIME(string);
-            case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
-                    _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
-                    _TIMESTAMPTZ, _NUMERIC -> ArrayTxt.decode(string, oid, codecParams);
+            case OID.JSON, OID.JSONB -> JSON.readValue(codecParams.objectMapper(), string);
+            case OID.TIMESTAMPTZ -> DateTimeTxt.decodeTIMESTAMPTZ(string);
+            case OID.TIMESTAMP -> DateTimeTxt.decodeTIMESTAMP(string);
+            case OID.DATE -> DateTimeTxt.decodeDATE(string);
+            case OID.TIMETZ -> DateTimeTxt.decodeTIMETZ(string);
+            case OID.TIME -> DateTimeTxt.decodeTIME(string);
+            case OID._TEXT, OID._VARCHAR, OID._NAME, OID._INT2, OID._INT4, OID._INT8, OID._OID, OID._CHAR, OID._BPCHAR, OID._UUID,
+                    OID._FLOAT4, OID._FLOAT8, OID._BOOL, OID._JSON, OID._JSONB, OID._TIME, OID._TIMETZ, OID._DATE, OID._TIMESTAMP,
+                    OID._TIMESTAMPTZ, OID._NUMERIC -> ArrayTxt.decode(string, oid, codecParams);
             default -> string;
         };
     }

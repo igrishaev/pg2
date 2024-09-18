@@ -19,19 +19,19 @@ import org.pg.json.JSON;
 
 public final class EncoderBin {
 
-    public static ByteBuffer encode (Object x) {
+    public static ByteBuffer encode (final Object x) {
         return encode(x, OID.DEFAULT, CodecParams.standard());
     }
 
-    public static ByteBuffer encode (Object x, CodecParams codecParams) {
+    public static ByteBuffer encode (final Object x, final CodecParams codecParams) {
         return encode(x, OID.DEFAULT, codecParams);
     }
 
-    public static ByteBuffer encode (Object x, OID oid) {
+    public static ByteBuffer encode (final Object x, final int oid) {
         return encode(x, oid, CodecParams.standard());
     }
 
-    private static ByteBuffer binEncodingError(Object x, OID oid) {
+    private static ByteBuffer binEncodingError(final Object x, final int oid) {
         throw new PGError(
                 "cannot binary-encode a value: %s, OID: %s, type: %s",
                 x, oid, x.getClass().getCanonicalName()
@@ -72,7 +72,7 @@ public final class EncoderBin {
         return ByteBuffer.wrap(bytes);
     }
 
-    public static ByteBuffer encode (Object x, OID oid, CodecParams codecParams) {
+    public static ByteBuffer encode (final Object x, final int oid, final CodecParams codecParams) {
 
         if (x == null) {
             throw new PGError("cannot binary-encode a null value");
@@ -80,7 +80,7 @@ public final class EncoderBin {
 
         return switch (oid) {
 
-            case DEFAULT -> {
+            case OID.DEFAULT -> {
                 if (x instanceof String s) {
                     yield stringToBytes(s, codecParams);
                 } else if (x instanceof Short s) {
@@ -134,7 +134,7 @@ public final class EncoderBin {
                 }
             }
             
-            case INT2 -> {
+            case OID.INT2 -> {
                 if (x instanceof Short s) {
                     yield BBTool.ofShort(s);
                 } else if (x instanceof Integer i) {
@@ -152,7 +152,7 @@ public final class EncoderBin {
                 }
             }
             
-            case INT4, OID -> {
+            case OID.INT4, OID.OID -> {
                 if (x instanceof Short s) {
                     yield BBTool.ofInt(s.intValue());
                 } else if (x instanceof Integer i) {
@@ -173,7 +173,7 @@ public final class EncoderBin {
 
             }
 
-            case INT8 -> {
+            case OID.INT8 -> {
                 if (x instanceof Short s) {
                     yield BBTool.ofLong(s.longValue());
                 } else if (x instanceof Integer i) {
@@ -193,7 +193,7 @@ public final class EncoderBin {
                 }
             }
             
-            case BYTEA -> {
+            case OID.BYTEA -> {
                 if (x instanceof ByteBuffer bb) {
                     yield bb;
                 } else if (x instanceof byte[] ba) {
@@ -203,7 +203,7 @@ public final class EncoderBin {
                 }
             }
 
-            case TEXT, VARCHAR, CHAR, BPCHAR, NAME -> {
+            case OID.TEXT, OID.VARCHAR, OID.CHAR, OID.BPCHAR, OID.NAME -> {
                 if (x instanceof String s) {
                     yield stringToBytes(s, codecParams);
                 } else if (x instanceof Character c) {
@@ -217,7 +217,7 @@ public final class EncoderBin {
                 }
             }
 
-            case JSON -> {
+            case OID.JSON -> {
                 if (x instanceof String s) {
                     yield stringToBytes(s, codecParams);
                 } else if (x instanceof JSON.Wrapper w) {
@@ -227,7 +227,7 @@ public final class EncoderBin {
                 }
             }
 
-            case JSONB -> {
+            case OID.JSONB -> {
                 if (x instanceof String s) {
                     yield stringToJSONB(s, codecParams);
                 } else if (x instanceof JSON.Wrapper w) {
@@ -238,7 +238,7 @@ public final class EncoderBin {
                 }
             }
 
-            case FLOAT4 -> {
+            case OID.FLOAT4 -> {
                 if (x instanceof Float f) {
                     yield BBTool.ofFloat(f);
                 } else if (x instanceof Double d) {
@@ -256,7 +256,7 @@ public final class EncoderBin {
                 }
             }
 
-            case FLOAT8 -> {
+            case OID.FLOAT8 -> {
                 if (x instanceof Float f) {
                     yield BBTool.ofDouble(f.doubleValue());
                 } else if (x instanceof Double d) {
@@ -274,7 +274,7 @@ public final class EncoderBin {
                 }
             }
 
-            case UUID -> {
+            case OID.UUID -> {
                 if (x instanceof UUID u) {
                     yield BBTool.ofUUID(u);
                 } else if (x instanceof String s) {
@@ -284,7 +284,7 @@ public final class EncoderBin {
                 }
             }
 
-            case BOOL -> {
+            case OID.BOOL -> {
                 if (x instanceof Boolean b) {
                     yield BBTool.ofBool(b);
                 } else {
@@ -292,7 +292,7 @@ public final class EncoderBin {
                 }
             }
 
-            case NUMERIC -> {
+            case OID.NUMERIC -> {
                 if (x instanceof BigDecimal bd) {
                     yield NumericBin.encode(bd);
                 } else if (x instanceof BigInteger bi) {
@@ -314,7 +314,7 @@ public final class EncoderBin {
                 }
             }
 
-            case TIME -> {
+            case OID.TIME -> {
                 if (x instanceof LocalTime lt) {
                     yield DateTimeBin.encodeTIME(lt);
                 } else if (x instanceof OffsetTime ot) {
@@ -324,7 +324,7 @@ public final class EncoderBin {
                 }
             }
 
-            case TIMETZ -> {
+            case OID.TIMETZ -> {
                 if (x instanceof OffsetTime ot) {
                     yield DateTimeBin.encodeTIMETZ(ot);
                 } else if (x instanceof LocalTime lt) {
@@ -334,7 +334,7 @@ public final class EncoderBin {
                 }
             }
 
-            case DATE -> {
+            case OID.DATE -> {
                 if (x instanceof LocalDate ld) {
                     yield DateTimeBin.encodeDATE(ld);
                 } else if (x instanceof LocalDateTime ldt) {
@@ -352,7 +352,7 @@ public final class EncoderBin {
                 }
             }
 
-            case TIMESTAMP -> {
+            case OID.TIMESTAMP -> {
                 if (x instanceof LocalDateTime ldt) {
                     yield DateTimeBin.encodeTIMESTAMP(DT.toInstant(ldt));
                 } else if (x instanceof Instant i) {
@@ -370,7 +370,7 @@ public final class EncoderBin {
                 }
             }
 
-            case TIMESTAMPTZ -> {
+            case OID.TIMESTAMPTZ -> {
                 if (x instanceof OffsetDateTime odt) {
                     yield DateTimeBin.encodeTIMESTAMPTZ(odt);
                 } else if (x instanceof Instant i) {
@@ -388,9 +388,9 @@ public final class EncoderBin {
                 }
             }
 
-            case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
-                    _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
-                    _TIMESTAMPTZ, _NUMERIC -> {
+            case OID._TEXT, OID._VARCHAR, OID._NAME, OID._INT2, OID._INT4, OID._INT8, OID._OID, OID._CHAR, OID._BPCHAR, OID._UUID,
+                    OID._FLOAT4, OID._FLOAT8, OID._BOOL, OID._JSON, OID._JSONB, OID._TIME, OID._TIMETZ, OID._DATE, OID._TIMESTAMP,
+                    OID._TIMESTAMPTZ, OID._NUMERIC -> {
                 if (x instanceof Indexed) {
                     yield ArrayBin.encode(x, oid, codecParams);
                 } else {

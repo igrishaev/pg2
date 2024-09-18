@@ -37,8 +37,8 @@ public final class ArrayTxt {
         return sb.toString();
     }
 
-    public static String encode (final Object x, final OID oidArray, final CodecParams codecParams) {
-        final OID oidEl = oidArray.toElementOID();
+    public static String encode (final Object x, final int oidArray, final CodecParams codecParams) {
+        final int oidEl = OID.toElementOID(oidArray);
         Object val;
         if (x instanceof Indexed) {
             final Iterator<?> iterator = RT.iter(x);
@@ -149,8 +149,8 @@ public final class ArrayTxt {
         }
     }
 
-    public static Object decode(final String array, final OID arrayOid, final CodecParams codecParams) {
-        final OID oidEl = arrayOid.toElementOID();
+    public static Object decode(final String array, final int arrayOid, final CodecParams codecParams) {
+        final int oidEl = OID.toElementOID(arrayOid);
         final PushbackReader reader = new PushbackReader(new StringReader(array));
         final int limit = 16;
         final int[] pathMax = new int[limit];

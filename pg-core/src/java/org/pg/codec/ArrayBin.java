@@ -24,20 +24,20 @@ public final class ArrayBin {
 
     public static ByteBuffer encode(
             final Object matrix,
-            final OID oidArray,
+            final int oidArray,
             final CodecParams codecParams
     ) {
         final int[] dims = Matrix.getDims(matrix);
         final int dimCount = dims.length;
         final int hasNulls = 1;
 
-        final OID oidEl = oidArray.toElementOID();
+        final int oidEl = OID.toElementOID(oidArray);
 
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         writeInt32(out, dimCount);
         writeInt32(out, hasNulls);
-        writeInt32(out, oidEl.toInt());
+        writeInt32(out, oidEl);
 
         for (int dim: dims) {
             writeInt32(out, dim);
@@ -63,12 +63,12 @@ public final class ArrayBin {
 
     public static Object decode(
             final ByteBuffer buf,
-            final OID ignored,
+            final int ignored,
             final CodecParams codecParams
     ) {
         final int dimCount = buf.getInt();
         buf.getInt(); // has nulls (1 or 0)
-        final OID elOid = OID.ofInt(buf.getInt());
+        final int elOid = buf.getInt();
         final int[] dims = new int[dimCount];
         for (int i = 0; i < dimCount; i++) {
             dims[i] = buf.getInt();

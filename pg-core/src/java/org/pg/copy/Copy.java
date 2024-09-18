@@ -54,11 +54,12 @@ public class Copy {
     ) {
         final StringBuilder sb = new StringBuilder();
         final Iterator<Object> iterator = row.iterator();
-        final List<OID> OIDs = executeParams.OIDs();
+        final List<Integer> OIDs = executeParams.OIDs();
         final int OIDLen = OIDs.size();
         short i = 0;
+        int oid;
         while (iterator.hasNext()) {
-            final OID oid = i < OIDLen ? OIDs.get(i) : OID.DEFAULT;
+            oid = i < OIDLen ? OIDs.get(i) : OID.DEFAULT;
             i++;
             final Object item = iterator.next();
             if (item == null) {
@@ -85,8 +86,9 @@ public class Copy {
     ) {
         final short count = (short) row.size();
         final ByteBuffer[] bufs = new ByteBuffer[count];
-        final List<OID> OIDs = executeParams.OIDs();
+        final List<Integer> OIDs = executeParams.OIDs();
         final int OIDLen = OIDs.size();
+        int oid;
 
         int totalSize = 2;
 
@@ -98,7 +100,7 @@ public class Copy {
                 bufs[i] = null;
             }
             else {
-                final OID oid = i < OIDLen ? OIDs.get(i) : OID.DEFAULT;
+                oid = i < OIDLen ? OIDs.get(i) : OID.DEFAULT;
                 final ByteBuffer buf = EncoderBin.encode(item, oid, codecParams);
                 totalSize += 4 + buf.array().length;
                 bufs[i] = buf;
@@ -133,7 +135,7 @@ public class Copy {
         row.add(true);
         row.add(null);
 
-        final List<OID> OIDs = List.of(OID.INT2, OID.DEFAULT, OID.BOOL);
+        final List<Integer> OIDs = List.of(OID.INT2, OID.DEFAULT, OID.BOOL);
 
         System.out.println(
                 Arrays.toString(

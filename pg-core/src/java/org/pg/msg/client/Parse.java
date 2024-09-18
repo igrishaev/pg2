@@ -1,6 +1,5 @@
 package org.pg.msg.client;
 
-import org.pg.enums.OID;
 import org.pg.error.PGError;
 import org.pg.Payload;
 
@@ -10,7 +9,7 @@ import java.util.Arrays;
 
 public record Parse (String statement,
                      String query,
-                     OID[] OIDs)
+                     int[] OIDs)
         implements IClientMessage {
 
     @Override
@@ -40,8 +39,8 @@ public record Parse (String statement,
             .addCString(query, charset)
             .addUnsignedShort(OIDCount);
 
-        for (OID oid: OIDs) {
-            payload.addInteger(oid.toInt());
+        for (int oid: OIDs) {
+            payload.addInteger(oid);
         }
 
         return payload.toByteBuffer('P');

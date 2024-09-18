@@ -2,7 +2,6 @@ package org.pg;
 
 import clojure.lang.IFn;
 import org.pg.enums.CopyFormat;
-import org.pg.enums.OID;
 import org.pg.reducer.*;
 
 import java.io.InputStream;
@@ -13,8 +12,9 @@ import clojure.core$identity;
 import clojure.core$keyword;
 
 public record ExecuteParams (
+        // TODO: use arrays?
         List<Object> params,
-        List<OID> OIDs,
+        List<Integer> OIDs,
         IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
@@ -48,7 +48,7 @@ public record ExecuteParams (
     public final static class Builder {
 
         private List<Object> params = Collections.emptyList();
-        private List<OID> OIDs = Collections.emptyList();
+        private List<Integer> OIDs = Collections.emptyList();
         private IFn reducer = Default.INSTANCE;
         private long maxRows = 0;
         private IFn fnKeyTransform = new core$keyword();
@@ -117,76 +117,17 @@ public record ExecuteParams (
             return this;
         }
 
-        public Builder OIDs (final List<OID> OIDs) {
+        public Builder OIDs (final List<Integer> OIDs) {
             Objects.requireNonNull(OIDs, "OIDs cannot be null");
-            this.OIDs = OIDs.stream().map(oid -> oid == null ? OID.DEFAULT : oid).toList();
+            this.OIDs = OIDs;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder reducer (final IFn reducer) {
             this.reducer = Objects.requireNonNull(reducer);
             return this;
         }
-
-//        @SuppressWarnings("unused")
-//        public Builder indexBy (final IFn fnIndexBy) {
-//            this.reducer = new IndexBy(fnIndexBy);
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder groupBy (final IFn fnGroupBy) {
-//            this.reducer = new GroupBy(fnGroupBy);
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder transduce (final IFn tx) {
-//            this.reducer = new Transduce(tx);
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder asJava () {
-//            this.reducer = Java.INSTANCE;
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder run (final IFn fnRun) {
-//            this.reducer = new Run(fnRun);
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder first () {
-//            this.reducer = First.INSTANCE;
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder KV (final IFn fnK, final IFn fnV) {
-//            this.reducer = new KV(fnK, fnV);
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder asMatrix () {
-//            this.reducer = Matrix.INSTANCE;
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder fold (final IFn fnFold, final Object init) {
-//            this.reducer = new Fold(fnFold, init);
-//            return this;
-//        }
-//
-//        @SuppressWarnings("unused")
-//        public Builder column (final Object column) {
-//            this.reducer = new Column(column);
-//            return this;
-//        }
 
         public Builder maxRows (final long maxRows) {
             this.maxRows = maxRows;

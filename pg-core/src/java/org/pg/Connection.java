@@ -517,9 +517,9 @@ public final class Connection implements AutoCloseable {
     ) {
         final String statement = generateStatement();
 
-        final List<OID> OIDsProvided = executeParams.OIDs();
+        final List<Integer> OIDsProvided = executeParams.OIDs();
         final int OIDsCount = OIDsProvided.size();
-        final OID[] OIDs = new OID[OIDsCount];
+        final int[] OIDs = new int[OIDsCount];
 
         for (int i = 0; i < OIDsCount; i++) {
             OIDs[i] = OIDsProvided.get(i);
@@ -541,7 +541,7 @@ public final class Connection implements AutoCloseable {
                            final ExecuteParams executeParams
     ) {
         final List<Object> params = executeParams.params();
-        final OID[] OIDs = stmt.parameterDescription().OIDs();
+        final int[] OIDs = stmt.parameterDescription().OIDs();
         final int size = params.size();
 
         if (size != OIDs.length) {
@@ -563,7 +563,7 @@ public final class Connection implements AutoCloseable {
                 bytes[i] = null;
                 continue;
             }
-            OID oid = OIDs[i];
+            int oid = OIDs[i];
             switch (paramsFormat) {
                 case BIN -> {
                     ByteBuffer buf = EncoderBin.encode(param, oid, codecParams);

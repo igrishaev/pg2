@@ -21,7 +21,7 @@ public final class EncoderTxt {
         return encode(x, OID.DEFAULT, CodecParams.standard());
     }
 
-    public static String encode(final Object x, final OID oid) {
+    public static String encode(final Object x, final int oid) {
         return encode(x, oid, CodecParams.standard());
     }
 
@@ -29,7 +29,7 @@ public final class EncoderTxt {
         return encode(x, OID.DEFAULT, codecParams);
     }
 
-    private static String txtEncodingError(final Object x, final OID oid) {
+    private static String txtEncodingError(final Object x, final int oid) {
         throw new PGError(
                 "cannot text-encode a value: %s, OID: %s, type: %s",
                 x, oid, x.getClass().getCanonicalName());
@@ -43,7 +43,7 @@ public final class EncoderTxt {
         return value ? "t" : "f";
     }
 
-    public static String encode(final Object x, final OID oid, final CodecParams codecParams) {
+    public static String encode(final Object x, final int oid, final CodecParams codecParams) {
 
         if (x == null) {
             throw new PGError("cannot text-encode a null value");
@@ -51,7 +51,7 @@ public final class EncoderTxt {
 
         return switch (oid) {
 
-            case DEFAULT -> {
+            case OID.DEFAULT -> {
                 if (x instanceof Boolean b) {
                     yield encodeBool(b);
                 } else if (x instanceof String s) {
@@ -91,7 +91,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case BYTEA -> {
+            case OID.BYTEA -> {
                 if (x instanceof byte[] ba) {
                     yield encodeByteArray(ba);
                 } else {
@@ -99,7 +99,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case NUMERIC -> {
+            case OID.NUMERIC -> {
                 if (x instanceof Number n) {
                     yield n.toString();
                 } else {
@@ -107,7 +107,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case UUID -> {
+            case OID.UUID -> {
                 if (x instanceof UUID u) {
                     yield u.toString();
                 } else if (x instanceof String s) {
@@ -117,7 +117,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case BOOL -> {
+            case OID.BOOL -> {
                 if (x instanceof Boolean b) {
                     yield encodeBool(b);
                 } else {
@@ -125,7 +125,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case JSON, JSONB -> {
+            case OID.JSON, OID.JSONB -> {
                 if (x instanceof String s) {
                     yield s;
                 } else if (x instanceof JSON.Wrapper w) {
@@ -135,7 +135,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case TEXT, CHAR, VARCHAR, BPCHAR, NAME -> {
+            case OID.TEXT, OID.CHAR, OID.VARCHAR, OID.BPCHAR, OID.NAME -> {
                 if (x instanceof String s) {
                     yield s;
                 } else if (x instanceof Character c) {
@@ -151,7 +151,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case INT2, INT4, INT8, FLOAT4, FLOAT8, OID -> {
+            case OID.INT2, OID.INT4, OID.INT8, OID.FLOAT4, OID.FLOAT8, OID.OID -> {
                 if (x instanceof Number n) {
                     yield n.toString();
                 } else {
@@ -159,7 +159,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case TIME -> {
+            case OID.TIME -> {
                 if (x instanceof LocalTime lt) {
                     yield DateTimeTxt.encodeTIME(lt);
                 } else if (x instanceof OffsetTime ot) {
@@ -169,7 +169,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case TIMETZ -> {
+            case OID.TIMETZ -> {
                 if (x instanceof LocalTime lt) {
                     yield DateTimeTxt.encodeTIMETZ(DT.toOffsetTime(lt));
                 } else if (x instanceof OffsetTime ot) {
@@ -179,7 +179,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case TIMESTAMPTZ -> {
+            case OID.TIMESTAMPTZ -> {
                 if (x instanceof OffsetDateTime odt) {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(odt);
                 } else if (x instanceof LocalDateTime ldt) {
@@ -197,7 +197,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case TIMESTAMP -> {
+            case OID.TIMESTAMP -> {
                 if (x instanceof OffsetDateTime odt) {
                     yield DateTimeTxt.encodeTIMESTAMP(odt.toInstant());
                 } else if (x instanceof LocalDateTime ldt) {
@@ -215,7 +215,7 @@ public final class EncoderTxt {
                 }
             }
 
-            case DATE -> {
+            case OID.DATE -> {
                 if (x instanceof OffsetDateTime odt) {
                     yield DateTimeTxt.encodeDATE(DT.toLocalDate(odt));
                 } else if (x instanceof LocalDateTime ldt) {
@@ -234,9 +234,9 @@ public final class EncoderTxt {
 
             }
 
-            case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
-                    _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
-                    _TIMESTAMPTZ, _NUMERIC -> {
+            case OID._TEXT, OID._VARCHAR, OID._NAME, OID._INT2, OID._INT4, OID._INT8, OID._OID, OID._CHAR, OID._BPCHAR, OID._UUID,
+                    OID._FLOAT4, OID._FLOAT8, OID._BOOL, OID._JSON, OID._JSONB, OID._TIME, OID._TIMETZ, OID._DATE, OID._TIMESTAMP,
+                    OID._TIMESTAMPTZ, OID._NUMERIC -> {
                 if (x instanceof Indexed) {
                     yield ArrayTxt.encode(x, oid, codecParams);
                 } else {

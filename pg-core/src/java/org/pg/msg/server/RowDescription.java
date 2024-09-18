@@ -26,7 +26,7 @@ public record RowDescription (
             String name,
             int tableOid,
             int columnOid,
-            OID typeOid,
+            int typeOid,
             short typeLen,
             int typeMod,
             Format format) {
@@ -48,7 +48,7 @@ public record RowDescription (
                     BBTool.getCString(buf, charset),
                     buf.getInt(),
                     buf.getShort(),
-                    OID.ofInt(buf.getInt(), OID.TEXT),
+                    buf.getInt(),
                     buf.getShort(),
                     buf.getInt(),
                     Format.ofShort(buf.getShort()));

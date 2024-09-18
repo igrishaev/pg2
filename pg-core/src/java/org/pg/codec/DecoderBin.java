@@ -10,24 +10,23 @@ import org.pg.enums.OID;
 import org.pg.util.BBTool;
 import org.pg.json.JSON;
 
-
 public final class DecoderBin {
 
-    public static Object decode(final ByteBuffer buf, final OID oid) {
+    public static Object decode(final ByteBuffer buf, final int oid) {
         return decode(buf, oid, CodecParams.standard());
     }
 
     public static Object decode(
             final ByteBuffer buf,
-            final OID oid,
+            final int oid,
             final CodecParams codecParams
     ) {
         return switch (oid) {
-            case TEXT, VARCHAR, NAME, BPCHAR -> BBTool.getRestString(buf, codecParams.serverCharset());
-            case INT2 -> buf.getShort();
-            case INT4, OID -> buf.getInt();
-            case INT8 -> buf.getLong();
-            case CHAR -> {
+            case OID.TEXT, OID.VARCHAR, OID.NAME, OID.BPCHAR -> BBTool.getRestString(buf, codecParams.serverCharset());
+            case OID.INT2 -> buf.getShort();
+            case OID.INT4, OID.OID -> buf.getInt();
+            case OID.INT8 -> buf.getLong();
+            case OID.CHAR -> {
                 final String string = BBTool.getRestString(buf, codecParams.serverCharset());
                 if (string.isEmpty()) {
                     yield Const.NULL_CHAR;
@@ -35,34 +34,34 @@ public final class DecoderBin {
                     yield string.charAt(0);
                 }
             }
-            case UUID -> {
+            case OID.UUID -> {
                 final long hiBits = buf.getLong();
                 final long loBits = buf.getLong();
                 yield new UUID(hiBits, loBits);
             }
-            case FLOAT4 -> buf.getFloat();
-            case FLOAT8 -> buf.getDouble();
-            case BOOL -> {
+            case OID.FLOAT4 -> buf.getFloat();
+            case OID.FLOAT8 -> buf.getDouble();
+            case OID.BOOL -> {
                 switch (buf.get()) {
                     case 0: yield false;
                     case 1: yield true;
                     default: throw new PGError("incorrect binary boolean value");
                 }
             }
-            case JSON -> JSON.readValue(codecParams.objectMapper(), buf);
-            case JSONB -> {
+            case OID.JSON -> JSON.readValue(codecParams.objectMapper(), buf);
+            case OID.JSONB -> {
                 buf.get(); // skip version
                 yield JSON.readValue(codecParams.objectMapper(), buf);
             }
-            case TIME -> DateTimeBin.decodeTIME(buf);
-            case TIMETZ -> DateTimeBin.decodeTIMETZ(buf);
-            case DATE -> DateTimeBin.decodeDATE(buf);
-            case TIMESTAMP -> DateTimeBin.decodeTIMESTAMP(buf);
-            case TIMESTAMPTZ -> DateTimeBin.decodeTIMESTAMPTZ(buf);
-            case NUMERIC -> NumericBin.decode(buf);
-            case _TEXT, _VARCHAR, _NAME, _INT2, _INT4, _INT8, _OID, _CHAR, _BPCHAR, _UUID,
-                    _FLOAT4, _FLOAT8, _BOOL, _JSON, _JSONB, _TIME, _TIMETZ, _DATE, _TIMESTAMP,
-                    _TIMESTAMPTZ, _NUMERIC -> ArrayBin.decode(buf, oid, codecParams);
+            case OID.TIME -> DateTimeBin.decodeTIME(buf);
+            case OID.TIMETZ -> DateTimeBin.decodeTIMETZ(buf);
+            case OID.DATE -> DateTimeBin.decodeDATE(buf);
+            case OID.TIMESTAMP -> DateTimeBin.decodeTIMESTAMP(buf);
+            case OID.TIMESTAMPTZ -> DateTimeBin.decodeTIMESTAMPTZ(buf);
+            case OID.NUMERIC -> NumericBin.decode(buf);
+            case OID._TEXT, OID._VARCHAR, OID._NAME, OID._INT2, OID._INT4, OID._INT8, OID._OID, OID._CHAR, OID._BPCHAR, OID._UUID,
+                    OID._FLOAT4, OID._FLOAT8, OID._BOOL, OID._JSON, OID._JSONB, OID._TIME, OID._TIMETZ, OID._DATE, OID._TIMESTAMP,
+                    OID._TIMESTAMPTZ, OID._NUMERIC -> ArrayBin.decode(buf, oid, codecParams);
             default -> BBTool.getRestBytes(buf);
         };
     }
