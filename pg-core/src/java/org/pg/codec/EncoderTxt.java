@@ -29,7 +29,7 @@ public final class EncoderTxt {
         return encode(x, OID.DEFAULT, codecParams);
     }
 
-    private static String txtEncodingError(final Object x, final int oid) {
+    private static String fallback(final Object x, final int oid) {
         throw new PGError(
                 "cannot text-encode a value: %s, OID: %s, type: %s",
                 x, oid, x.getClass().getCanonicalName());
@@ -87,7 +87,7 @@ public final class EncoderTxt {
                 } else if (x instanceof Date d) {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(DT.toInstant(d));
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -95,7 +95,7 @@ public final class EncoderTxt {
                 if (x instanceof byte[] ba) {
                     yield encodeByteArray(ba);
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -103,7 +103,7 @@ public final class EncoderTxt {
                 if (x instanceof Number n) {
                     yield n.toString();
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -113,7 +113,7 @@ public final class EncoderTxt {
                 } else if (x instanceof String s) {
                     yield s;
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -121,7 +121,7 @@ public final class EncoderTxt {
                 if (x instanceof Boolean b) {
                     yield encodeBool(b);
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -147,7 +147,7 @@ public final class EncoderTxt {
                 } else if (x instanceof UUID u) {
                     yield u.toString();
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -155,7 +155,7 @@ public final class EncoderTxt {
                 if (x instanceof Number n) {
                     yield n.toString();
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -165,7 +165,7 @@ public final class EncoderTxt {
                 } else if (x instanceof OffsetTime ot) {
                     yield DateTimeTxt.encodeTIME(DT.toLocalTime(ot));
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -175,7 +175,7 @@ public final class EncoderTxt {
                 } else if (x instanceof OffsetTime ot) {
                     yield DateTimeTxt.encodeTIMETZ(ot);
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -193,7 +193,7 @@ public final class EncoderTxt {
                 } else if (x instanceof Date d) {
                     yield DateTimeTxt.encodeTIMESTAMPTZ(d.toInstant());
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -211,7 +211,7 @@ public final class EncoderTxt {
                 } else if (x instanceof Date d) {
                     yield DateTimeTxt.encodeTIMESTAMP(DT.toInstant(d));
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
@@ -229,7 +229,7 @@ public final class EncoderTxt {
                 } else if (x instanceof Date d) {
                     yield DateTimeTxt.encodeDATE(DT.toLocalDate(d));
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
 
             }
@@ -240,11 +240,11 @@ public final class EncoderTxt {
                 if (x instanceof Indexed) {
                     yield ArrayTxt.encode(x, oid, codecParams);
                 } else {
-                    yield txtEncodingError(x, oid);
+                    yield fallback(x, oid);
                 }
             }
 
-            default -> txtEncodingError(x, oid);
+            default -> fallback(x, oid);
         };
     }
 

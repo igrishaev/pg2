@@ -1,53 +1,39 @@
 
 - readme
 
+- extendable enc/dec
+
+- decode records
 - enable binary by default?
-
 - honey: transaction test
-
 - oid wrapper?
 - copy in/out tab format
-
 - conn init sql
 - conn init prep-stmt
-
 - close wait for 0 used conns?
-
 - MERGE result
-
 - UnparsedTxt, UnparsedBin types?
-
 - test reduced?
-
 - PGErrorResponse: extend ExceptionInfo?
-
 - refactor Clojure API
 - refactor Datetime enc/dec
-
 - pg.ring package (move json middleware)
 - ring jdbc session middleware
-
 - lazy map
   - optional flag
-
 - add postgres 17 beta
-
 - pg-integration package?
-
 - docs:
   - pool
   - execute parameters
   - reducers
   - enums
-
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
 - parse JDBC url
 - bulk statement execute
 - pg.jdbc batch
-
 - refactor locks? on Clojure level
-
 - async support?
 
 migrations

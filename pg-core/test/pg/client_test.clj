@@ -484,7 +484,6 @@ from
         (is (= [{:number 42}] res))))))
 
 
-#_
 (deftest test-client-enum-type
   (let [table
         (gen-table)
@@ -517,6 +516,54 @@ from
                 {:foo "kek" :id 3}
                 {:foo "lol" :id 4}]
                res1))))))
+
+
+#_
+(deftest test-client-record-type
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [res1
+          (pg/execute conn "select (1, 'hello', true, null) as tuple")]
+      (is (= [{:tuple "(1,hello,t,)"}]
+             res1))))
+
+  (pg/with-connection [conn *CONFIG-BIN*]
+    (let [res1
+          (pg/execute conn "select (1, 'foobar') as tuple")]
+      (is (= 1
+             res1)))))
+
+
+(deftest test-client-custom-type
+
+  (let [typename (gensym "triple")]
+
+    #_
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/execute conn (format "create type %s as (a integer, b text, c boolean)" typename))
+      (let [res1
+            (pg/execute conn (format "select '(1,hello,true)'::%s as tuple" typename))]
+        (is (= 1
+               res1))))
+
+    #_
+    (pg/with-connection [conn *CONFIG-BIN*]
+      (pg/execute conn (format "create type %s as (a integer, b text, c boolean)" typename))
+      (let [res1
+            (pg/execute conn (format "select '(1,hello,true)'::%s as tuple" typename))]
+        (is (= 1
+               res1))))
+
+    )
+
+  #_
+  (pg/with-connection [conn *CONFIG-BIN*]
+    (let [res1
+          (pg/execute conn "select (1, 'foobar') as tuple")]
+      (is (= 1
+             res1)))))
+
+
 
 
 (deftest test-client-with-transaction-rollback
