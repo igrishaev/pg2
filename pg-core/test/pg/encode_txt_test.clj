@@ -291,7 +291,7 @@
       (catch PGError e
         (is (-> e
                 ex-message
-                (str/starts-with? "cannot text-encode a value: [1 2 3], OID: DEFAULT"))))))
+                (str/starts-with? "cannot text-encode a value: [1 2 3], OID: 0"))))))
 
   (testing "json string"
     (let [string (pg/encode-txt "[1,2,3]" oid/json)]

@@ -2,6 +2,7 @@ package org.pg;
 
 import clojure.lang.IFn;
 import org.pg.enums.CopyFormat;
+import org.pg.enums.OID;
 import org.pg.reducer.*;
 
 import java.io.InputStream;
@@ -12,9 +13,8 @@ import clojure.core$identity;
 import clojure.core$keyword;
 
 public record ExecuteParams (
-        // TODO: use arrays?
         List<Object> params,
-        List<Integer> OIDs,
+        int[] OIDs,
         IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
@@ -48,7 +48,7 @@ public record ExecuteParams (
     public final static class Builder {
 
         private List<Object> params = Collections.emptyList();
-        private List<Integer> OIDs = Collections.emptyList();
+        private int[] OIDs = new int[0];
         private IFn reducer = Default.INSTANCE;
         private long maxRows = 0;
         private IFn fnKeyTransform = new core$keyword();
@@ -118,8 +118,15 @@ public record ExecuteParams (
         }
 
         public Builder OIDs (final List<Integer> OIDs) {
-            Objects.requireNonNull(OIDs, "OIDs cannot be null");
-            this.OIDs = OIDs;
+            if (OIDs != null) {
+                final int[] oidArr = new int[OIDs.size()];
+                int i = 0;
+                for (Integer oid: OIDs) {
+                    oidArr[i] = oid == null ? OID.DEFAULT : oid;
+                    i++;
+                }
+                this.OIDs = oidArr;
+            }
             return this;
         }
 

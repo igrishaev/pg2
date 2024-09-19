@@ -47,7 +47,7 @@
             res
             (pg/execute-statement conn stmt {:params [3]
                                              :first true})]
-        (is (= "<Prepared statement, name: s1, param(s): 1, OIDs: [INT8], SQL: SELECT * FROM test003 WHERE id = $1>"
+        (is (= "<Prepared statement, name: s1, param(s): 1, OIDs: [20], SQL: SELECT * FROM test003 WHERE id = $1>"
                (str stmt)))
         (is (= {:name "Juan", :active true, :id 3}
                res)))))
@@ -61,7 +61,7 @@
             res
             (pg/execute-statement conn stmt {:params [3]
                                              :first true})]
-        (is (= "<Prepared statement, name: s1, param(s): 1, OIDs: [INT4], SQL: SELECT * FROM test003 WHERE id = $1>"
+        (is (= "<Prepared statement, name: s1, param(s): 1, OIDs: [23], SQL: SELECT * FROM test003 WHERE id = $1>"
                (str stmt)))
         (is (= {:name "Juan", :active true, :id 3}
                res))))))

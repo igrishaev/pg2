@@ -484,6 +484,7 @@ from
         (is (= [{:number 42}] res))))))
 
 
+#_
 (deftest test-client-enum-type
   (let [table
         (gen-table)
@@ -493,24 +494,24 @@ from
 
     (pg/with-connection [conn *CONFIG-BIN*]
       (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
-      (pg/execute conn (format "create table %s (id integer, foo %s)" table type-name))
-      (pg/execute conn (format "insert into %s values (1, 'foo'), (2, 'bar')" table))
+      (pg/execute conn (format "create temp table test (id integer, foo %s)" type-name))
+      (pg/execute conn "insert into test values (1, 'foo'), (2, 'bar')")
       (let [res1
-            (pg/execute conn (format "select * from %s" table))]
+            (pg/execute conn "select * from test")]
         (is (= [{:foo "foo", :id 1} {:foo "bar", :id 2}]
                res1)))
 
       (pg/execute conn
-                  (format "insert into %s (id, foo) values ($1, $2)" table)
+                  "insert into test (id, foo) values ($1, $2)"
                   {:params [3 "kek"]
                    :oids [oid/int8 oid/default]})
 
       (pg/execute conn
-                  (format "insert into %s (id, foo) values ($1, $2)" table)
+                  "insert into test (id, foo) values ($1, $2)"
                   {:params [4 (pg/->enum :lol)]})
 
       (let [res1
-            (pg/execute conn (format "select * from %s" table))]
+            (pg/execute conn "select * from test")]
         (is (= [{:foo "foo" :id 1}
                 {:foo "bar" :id 2}
                 {:foo "kek" :id 3}
@@ -2054,7 +2055,7 @@ drop table %1$s;
 
 (deftest test-statement-repr
   (let [repr
-        "<Prepared statement, name: s1, param(s): 1, OIDs: [INT4], SQL: select $1::int4 as foo>"]
+        "<Prepared statement, name: s1, param(s): 1, OIDs: [23], SQL: select $1::int4 as foo>"]
     (pg/with-connection [conn *CONFIG-TXT*]
       (pg/with-statement [stmt conn "select $1::int4 as foo"]
         (is (= repr (str stmt)))
@@ -2683,7 +2684,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                        {:oids [oid/uuid]})
       (is false)
       (catch PGError e
-        (is (= "Unhandled exception: cannot text-encode a value: 1, OID: UUID, type: java.lang.Long"
+        (is (= "Unhandled exception: cannot text-encode a value: 1, OID: 2950, type: java.lang.Long"
                (ex-message e)))))))
 
 

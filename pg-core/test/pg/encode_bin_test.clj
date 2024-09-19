@@ -190,7 +190,7 @@
       (catch PGError e
         (is (-> e
                 ex-message
-                (str/starts-with? "cannot binary-encode a value: [1 2 3], OID: DEFAULT"))))))
+                (str/starts-with? "cannot binary-encode a value: [1 2 3], OID: 0"))))))
 
   (testing "json string"
     (let [bb (pg/encode-bin "[1,2,3]" oid/json)]

@@ -516,15 +516,7 @@ public final class Connection implements AutoCloseable {
             final ExecuteParams executeParams
     ) {
         final String statement = generateStatement();
-
-        final List<Integer> OIDsProvided = executeParams.OIDs();
-        final int OIDsCount = OIDsProvided.size();
-        final int[] OIDs = new int[OIDsCount];
-
-        for (int i = 0; i < OIDsCount; i++) {
-            OIDs[i] = OIDsProvided.get(i);
-        }
-
+        final int[] OIDs = executeParams.OIDs();
         final Parse parse = new Parse(statement, sql, OIDs);
         sendMessage(parse);
         sendDescribeStatement(statement);
