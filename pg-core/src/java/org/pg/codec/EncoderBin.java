@@ -31,11 +31,16 @@ public final class EncoderBin {
         return encode(x, oid, CodecParams.standard());
     }
 
-    private static ByteBuffer binEncodingError(final Object x, final int oid) {
-        throw new PGError(
+    private static ByteBuffer binEncodingError(final Object x, final int oid, final String hint) {
+        final String message = String.format(
                 "cannot binary-encode a value: %s, OID: %s, type: %s",
                 x, oid, x.getClass().getCanonicalName()
         );
+        throw new PGError(hint == null ? message : message + ", hint: " + hint);
+    }
+
+    private static ByteBuffer binEncodingError(final Object x, final int oid) {
+        return binEncodingError(x, oid, null);
     }
 
     private static byte[] getBytes (final String string, final CodecParams codecParams) {
@@ -398,7 +403,21 @@ public final class EncoderBin {
                 }
             }
 
-            default -> binEncodingError(x, oid);
+            // unsupported type, pass value as a byte array or BB
+            default -> {
+                if (x instanceof String s) {
+                    yield stringToBytes(s, codecParams);
+                } else if (x instanceof PGEnum e) {
+                    yield stringToBytes(e.x(), codecParams);
+                } else if (x instanceof byte[] bytes) {
+                    yield ByteBuffer.wrap(bytes);
+                } else if (x instanceof ByteBuffer bb) {
+                    yield bb;
+                }
+                else {
+                    yield binEncodingError(x, oid, "try to pass this value as a byte array or ByteBuffer");
+                }
+            }
         };
 
     }

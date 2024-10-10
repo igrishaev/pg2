@@ -484,17 +484,118 @@ from
         (is (= [{:number 42}] res))))))
 
 
-(deftest test-client-enum-type
+(deftest test-client-enum-type-bin
+  (let [table
+        (gen-table)
+
+        type-name
+        (gen-type)
+
+        fix-foo
+        (fn [row]
+          (update row :foo vec))]
+
+    (pg/with-connection [conn *CONFIG-BIN*]
+      (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
+      (pg/execute conn (format "create temp table test (id integer, foo %s)" type-name))
+      (pg/execute conn "insert into test values (1, 'foo'), (2, 'bar')")
+
+      (let [res
+            (pg/execute conn "select * from test order by id")]
+        (is (= [{:foo [102 111 111] :id 1}
+                {:foo [98 97 114]   :id 2}]
+               (mapv fix-foo res))))
+
+      (pg/execute conn
+                  "insert into test (id, foo) values ($1, $2)"
+                  {:params [3 "kek"]
+                   :oids [oid/int8 oid/default]})
+
+      (pg/execute conn
+                  "insert into test (id, foo) values ($1, $2)"
+                  {:params [4 (pg/->enum :lol)]
+                   :oids [nil oid/default]})
+
+      (let [res
+            (pg/execute conn "select * from test order by id")]
+        (is (= [{:foo [102 111 111] :id 1}
+                {:foo [98 97 114]   :id 2}
+                {:foo [107 101 107] :id 3}
+                {:foo [108 111 108] :id 4}]
+               (map fix-foo res)))))))
+
+(deftest test-client-unsupported-type-txt
+  (let [type-name (gen-type)]
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/execute conn (format "create type %s as (a integer, b text, c boolean)" type-name))
+      (pg/execute conn (format "create temp table test (id integer, triple %s)" type-name))
+
+      (pg/execute conn
+                  "insert into test (id, triple) values ($1, $2)"
+                  {:params [1 "(1,hello,true)"]})
+
+      (try
+        (pg/execute conn
+                    "insert into test (id, triple) values ($1, $2)"
+                    {:params [1 {:foo 42}]})
+        (is false)
+        (catch Throwable e
+          (let [message (ex-message e)]
+            (is (str/includes? message "cannot text-encode a value: {:foo 42}, OID"))
+            (is (str/includes? message "hint: try to pass this value as a string similar to what you see in psql")))))
+
+      (let [res (pg/execute conn "select * from test")]
+        (is (= [{:id 1, :triple "(1,hello,t)"}]
+               res))))))
+
+
+(deftest test-client-unsupported-type-bin
+  (let [type-name (gen-type)
+
+        triple-bin
+        (byte-array [0, 0, 0, 3, 0, 0, 0, 23, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 25, 0, 0,
+                     0, 5, 104, 101, 108, 108, 111, 0, 0, 0, 16, 0, 0, 0, 1, 1])]
+
+    (pg/with-connection [conn *CONFIG-BIN*]
+      (pg/execute conn (format "create type %s as (a integer, b text, c boolean)" type-name))
+      (pg/execute conn (format "create temp table test (id integer, triple %s)" type-name))
+
+      (pg/execute conn
+                  "insert into test (id, triple) values ($1, $2)"
+                  {:params [1 triple-bin]})
+
+      #_ ;; for debug
+      (pg/query conn "insert into test (id, triple) values (1, '(1,hello,true)')")
+
+      (try
+        (pg/execute conn
+                    "insert into test (id, triple) values ($1, $2)"
+                    {:params [1 {:foo 42}]})
+        (is false)
+        (catch Throwable e
+          (let [message (ex-message e)]
+            (is (str/includes? message "cannot binary-encode a value: {:foo 42}, OID"))
+            (is (str/includes? message "hint: try to pass this value as a byte array or ByteBuffer")))))
+
+      (let [res (pg/execute conn "select * from test")]
+        (is (= [{:id 1, :triple (vec triple-bin)}]
+               (for [row res]
+                 (update row :triple vec))))))))
+
+
+(deftest test-client-enum-type-txt
   (let [table
         (gen-table)
 
         type-name
         (gen-type)]
 
-    (pg/with-connection [conn *CONFIG-BIN*]
+    (pg/with-connection [conn *CONFIG-TXT*]
       (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
       (pg/execute conn (format "create temp table test (id integer, foo %s)" type-name))
       (pg/execute conn "insert into test values (1, 'foo'), (2, 'bar')")
+
       (let [res1
             (pg/execute conn "select * from test")]
         (is (= [{:foo "foo", :id 1} {:foo "bar", :id 2}]
@@ -516,7 +617,6 @@ from
                 {:foo "kek" :id 3}
                 {:foo "lol" :id 4}]
                res1))))))
-
 
 #_
 (deftest test-client-record-type
@@ -562,8 +662,6 @@ from
           (pg/execute conn "select (1, 'foobar') as tuple")]
       (is (= 1
              res1)))))
-
-
 
 
 (deftest test-client-with-transaction-rollback

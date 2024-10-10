@@ -2,6 +2,7 @@ package org.pg.enums;
 
 import org.pg.error.PGError;
 
+@SuppressWarnings("unused")
 public class OID {
     public static final int DEFAULT                       =    0;
     public static final int BOOL                          =   16;

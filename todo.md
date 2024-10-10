@@ -1,6 +1,10 @@
 
 - readme
 
+- OID enum -> int
+- bin: bb -> byte[]
+- add pg17
+
 - extendable enc/dec
 
 - decode records
@@ -21,7 +25,6 @@
 - ring jdbc session middleware
 - lazy map
   - optional flag
-- add postgres 17 beta
 - pg-integration package?
 - docs:
   - pool
