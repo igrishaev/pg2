@@ -2,11 +2,14 @@ package org.pg.codec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.json.JSON;
+import org.pg.type.processor.IProcessor;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.Map;
 
 public record CodecParams (
         Charset clientCharset,
@@ -14,8 +17,17 @@ public record CodecParams (
         ZoneId timeZone,
         String dateStyle,
         boolean integerDatetime,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        Map<Integer, IProcessor> oidMap
 ) {
+
+    public void setProcessor(final int oid, final IProcessor processor) {
+        oidMap.put(oid, processor);
+    }
+
+    public IProcessor getProcessor(final int oid) {
+        return oidMap.get(oid);
+    }
 
     public static Builder builder () {
         return new Builder();
@@ -57,6 +69,7 @@ public record CodecParams (
         private String dateStyle = "ISO, DMY";
         private boolean integerDatetime = true;
         private ObjectMapper objectMapper = JSON.defaultMapper;
+        private final Map<Integer, IProcessor> oidMapper = new HashMap<>();
 
         public Builder() {}
 
@@ -76,7 +89,8 @@ public record CodecParams (
                     this.timeZone,
                     this.dateStyle,
                     this.integerDatetime,
-                    this.objectMapper
+                    this.objectMapper,
+                    this.oidMapper
             );
         }
 

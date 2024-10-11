@@ -247,7 +247,7 @@
   "
   ^Config$Builder [params]
 
-  (let [{:keys [ ;; general
+  (let [{:keys [;; general
                 user
                 database
                 host
@@ -299,7 +299,10 @@
                 pool-min-size
                 pool-max-size
                 pool-expire-threshold-ms
-                pool-borrow-conn-timeout-ms]}
+                pool-borrow-conn-timeout-ms
+
+                ;; types
+                type-map]}
         params
 
         DB
@@ -384,6 +387,9 @@
 
       pool-borrow-conn-timeout-ms
       (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)
+
+      type-map
+      (.typeMap type-map)
 
       :finally
       (.build))))

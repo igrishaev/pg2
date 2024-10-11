@@ -94,7 +94,7 @@ public record ExecuteParams (
         }
 
         @SuppressWarnings("unused")
-        public Builder params (final Object... params) {
+        public Builder params (final Object[] params) {
             this.params = Arrays.asList(params);
             return this;
         }

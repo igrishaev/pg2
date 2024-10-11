@@ -4,6 +4,7 @@ import clojure.lang.IFn;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
+import org.pg.type.processor.IProcessor;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;
@@ -39,7 +40,8 @@ public record Config(
         int poolMinSize,
         int poolMaxSize,
         int poolExpireThresholdMs,
-        int poolBorrowConnTimeoutMs
+        int poolBorrowConnTimeoutMs,
+        Map<String, IProcessor> typeMap
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -80,12 +82,19 @@ public record Config(
         private int poolMaxSize = Const.POOL_SIZE_MAX;
         private int poolExpireThresholdMs = Const.POOL_EXPIRE_THRESHOLD_MS;
         private int poolBorrowConnTimeoutMs = Const.POOL_BORROW_CONN_TIMEOUT_MS;
+        private Map<String, IProcessor> typeMap = new HashMap<>();
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
             this.database = Objects.requireNonNull(database, "Database cannot be null");
             this.pgParams.put("client_encoding", Const.CLIENT_ENCODING);
             this.pgParams.put("application_name", Const.APP_NAME);
+        }
+
+        @SuppressWarnings("unused")
+        public Builder typeMap(final Map<String, IProcessor> typeMap) {
+            this.typeMap = typeMap;
+            return this;
         }
 
         @SuppressWarnings("unused")
@@ -293,7 +302,8 @@ public record Config(
                     this.poolMinSize,
                     this.poolMaxSize,
                     this.poolExpireThresholdMs,
-                    this.poolBorrowConnTimeoutMs
+                    this.poolBorrowConnTimeoutMs,
+                    this.typeMap
             );
         }
     }

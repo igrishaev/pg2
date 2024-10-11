@@ -18,6 +18,11 @@ public final class BBTool {
         return buf;
     }
 
+    public static ByteBuffer ofString (final String value, final Charset charset) {
+        final byte[] bytes = value.getBytes(charset);
+        return ByteBuffer.wrap(bytes);
+    }
+
     public static ByteBuffer ofLong (final long value) {
         final ByteBuffer buf = ByteBuffer.allocate(8);
         buf.putLong(value);

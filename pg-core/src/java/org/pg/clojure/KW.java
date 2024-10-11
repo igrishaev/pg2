@@ -19,7 +19,8 @@ public final class KW {
     public final static Keyword paramCount = Keyword.intern("param-count");
     public final static Keyword params = Keyword.intern("params");
     public final static Keyword NegotiateProtocolVersion = Keyword.intern("NegotiateProtocolVersion");
-
+    public final static Keyword oid = Keyword.intern("oid");
+    public final static Keyword type = Keyword.intern("type");
 
     public static void main(String... args) {
         System.out.println(inserted);

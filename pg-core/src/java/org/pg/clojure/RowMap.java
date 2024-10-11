@@ -2,10 +2,10 @@ package org.pg.clojure;
 
 import clojure.lang.*;
 import org.pg.codec.CodecParams;
-import org.pg.codec.DecoderBin;
-import org.pg.codec.DecoderTxt;
 import org.pg.msg.server.DataRow;
 import org.pg.msg.server.RowDescription;
+import org.pg.type.processor.IProcessor;
+import org.pg.type.processor.Processors;
 import org.pg.util.TryLock;
 
 import java.nio.ByteBuffer;
@@ -73,6 +73,20 @@ public final class RowMap extends APersistentMap {
         }
     }
 
+    private IProcessor getProcessor(final int oid) {
+        IProcessor typeProcessor = Processors.getProcessor(oid);
+
+        if (typeProcessor == null) {
+            typeProcessor = codecParams.getProcessor(oid);
+        }
+
+        if (typeProcessor == null) {
+            typeProcessor = Processors.defaultProcessor;
+        }
+
+        return typeProcessor;
+    }
+
     private Object getValueByIndex_unlocked (final int i) {
 
         if (ToC == null) {
@@ -90,15 +104,18 @@ public final class RowMap extends APersistentMap {
 
         final byte[] payload = dataRow.buf().array();
         final RowDescription.Column col = rowDescription.columns()[i];
+        final int oid = col.typeOid();
+
+        final IProcessor typeProcessor = getProcessor(oid);
 
         final Object value = switch (col.format()) {
             case TXT -> {
                 final String string = new String(payload, offset, length, codecParams.serverCharset());
-                yield DecoderTxt.decode(string, col.typeOid(), codecParams);
+                yield typeProcessor.decodeTxt(string, codecParams);
             }
             case BIN -> {
                 final ByteBuffer buf = ByteBuffer.wrap(payload, offset, length);
-                yield DecoderBin.decode(buf, col.typeOid(), codecParams);
+                yield typeProcessor.decodeBin(buf, codecParams);
             }
         };
 

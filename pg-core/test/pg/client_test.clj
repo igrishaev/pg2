@@ -550,6 +550,33 @@ from
                res))))))
 
 
+(deftest test-client-pass-enum-bin
+  (let [type-name (gen-type)
+        table-name (gen-table)
+
+        full-type
+        (format "public.%s" type-name)]
+
+    (pg/with-connection [conn *CONFIG-BIN*]
+      (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
+      (pg/execute conn (format "create table %s (id integer, foo %s)" table-name type-name)))
+
+    (pg/with-connection [conn (assoc *CONFIG-BIN*
+                                     :type-map
+                                     {full-type
+                                      org.pg.type.processor.Processors/defaultEnum})]
+
+      (pg/query conn
+                (format "insert into %s (id, foo) values (1, 'foo'), (1, 'bar'), (1, 'kek')"
+                        table-name))
+
+      (let [res (pg/execute conn (format "select * from %s order by id" table-name))]
+        (is (= [{:foo "foo", :id 1}
+                {:foo "bar", :id 1}
+                {:foo "kek", :id 1}]
+               res))))))
+
+
 (deftest test-client-unsupported-type-bin
   (let [type-name (gen-type)
 

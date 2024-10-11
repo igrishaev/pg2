@@ -1,21 +1,19 @@
 package org.pg;
 
-import clojure.lang.Agent;
-import clojure.lang.IFn;
-import clojure.lang.IPersistentMap;
-import clojure.lang.PersistentHashMap;
+import clojure.lang.*;
 import org.pg.auth.MD5;
 import org.pg.auth.ScramSha256;
+import org.pg.clojure.KW;
 import org.pg.clojure.RowMap;
-import org.pg.codec.EncoderBin;
 import org.pg.codec.CodecParams;
-import org.pg.codec.EncoderTxt;
 import org.pg.copy.Copy;
 import org.pg.enums.*;
 import org.pg.error.PGError;
 import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
+import org.pg.type.processor.IProcessor;
+import org.pg.type.processor.Processors;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
@@ -73,6 +71,7 @@ public final class Connection implements AutoCloseable {
         conn._preSSLStage();
         if (sendStartup) {
             conn._authenticate();
+            conn._initTypeMapping();
         }
         return conn;
     }
@@ -103,6 +102,52 @@ public final class Connection implements AutoCloseable {
                 flush();
                 IOTool.close(socket);
                 isClosed = true;
+            }
+        }
+
+    }
+
+    private void _initTypeMapping() {
+        final Map<String, IProcessor> sourceMap = config.typeMap();
+        final int len = sourceMap.size();
+        if (len == 0) {
+            return;
+        }
+        int i = 0;
+        String[] qMarks = new String[len];
+        String[] sqlParams = new String[len];
+        for (final Map.Entry<String, IProcessor> entry: sourceMap.entrySet()) {
+            String usertype = entry.getKey();
+            sqlParams[i] = usertype;
+            qMarks[i] = "$" + (i + 1);
+            i++;
+        }
+
+        final ExecuteParams executeParams = ExecuteParams.builder()
+                .params(sqlParams)
+                .build();
+
+        APersistentVector result = (APersistentVector) execute(
+                "select pg_type.oid, pg_namespace.nspname || '.' || pg_type.typname as type " +
+                        "from pg_type, pg_namespace " +
+                        "where " +
+                        "pg_type.typnamespace = pg_namespace.oid " +
+                        "and pg_namespace.nspname || '.' || pg_type.typname in (" +
+                        String.join(", ", qMarks) +
+                        ");",
+                executeParams
+        );
+
+        int oid;
+        String type;
+
+        for (final Object x: result) {
+            RowMap rm = (RowMap) x;
+            oid = (int) rm.get(KW.oid);
+            type = (String) rm.get(KW.type);
+            IProcessor iProcessor = sourceMap.get(type);
+            if (iProcessor != null) {
+                codecParams.setProcessor(oid, iProcessor);
             }
         }
 
@@ -528,6 +573,20 @@ public final class Connection implements AutoCloseable {
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
+    private IProcessor getProcessor(final int oid) {
+        IProcessor typeProcessor = Processors.getProcessor(oid);
+
+        if (typeProcessor == null) {
+            typeProcessor = codecParams.getProcessor(oid);
+        }
+
+        if (typeProcessor == null) {
+            typeProcessor = Processors.defaultProcessor;
+        }
+
+        return typeProcessor;
+    }
+
     private void sendBind (final String portal,
                            final PreparedStatement stmt,
                            final ExecuteParams executeParams
@@ -548,6 +607,9 @@ public final class Connection implements AutoCloseable {
 
         final byte[][] bytes = new byte[size][];
         String statement = stmt.parse().statement();
+
+        IProcessor typeProcessor;
+
         int i = -1;
         for (final Object param: params) {
             i++;
@@ -556,13 +618,15 @@ public final class Connection implements AutoCloseable {
                 continue;
             }
             int oid = OIDs[i];
+            typeProcessor = getProcessor(oid);
+
             switch (paramsFormat) {
                 case BIN -> {
-                    ByteBuffer buf = EncoderBin.encode(param, oid, codecParams);
+                    ByteBuffer buf = typeProcessor.encodeBin(param, codecParams);
                     bytes[i] = buf.array();
                 }
                 case TXT -> {
-                    String value = EncoderTxt.encode(param, oid, codecParams);
+                    String value = typeProcessor.encodeTxt(param, codecParams);
                     bytes[i] = value.getBytes(codecParams.clientCharset());
                 }
                 default ->
