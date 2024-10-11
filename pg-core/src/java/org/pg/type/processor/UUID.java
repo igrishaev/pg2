@@ -1,11 +1,14 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
+import org.pg.enums.OID;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
 
 public class UUID extends AProcessor {
+
+    private static final int oid = OID.UUID;
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
@@ -14,7 +17,7 @@ public class UUID extends AProcessor {
         } else if (x instanceof String s) {
             return BBTool.ofUUID(java.util.UUID.fromString(s));
         } else {
-            return binEncodingError(x);
+            return binEncodingError(x, oid);
         }
     }
 
@@ -25,7 +28,7 @@ public class UUID extends AProcessor {
         } else if (x instanceof String s) {
             return s;
         } else {
-            return txtEncodingError(x);
+            return txtEncodingError(x, oid);
         }
     }
 

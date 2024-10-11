@@ -1,18 +1,21 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
+import org.pg.enums.OID;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
 
 public class Int2 extends AProcessor {
 
+    public static final int oid = OID.INT2;
+
     @Override
     public ByteBuffer encodeBin(final Object value, final CodecParams codecParams) {
         if (value instanceof Short s) {
             return BBTool.ofShort(s);
         } else {
-            return binEncodingError(value);
+            return binEncodingError(value, oid);
         }
     }
 

@@ -9,15 +9,29 @@ public abstract class AProcessor implements IProcessor {
 
     public static String txtEncodingError(final Object x) {
         throw new PGError(
-                "cannot text encode a value: %s, type: %s",
+                "cannot text-encode, value: %s, type: %s",
                 x, x.getClass().getName()
+        );
+    }
+
+    public static String txtEncodingError(final Object x, final int oid) {
+        throw new PGError(
+                "cannot text-encode, oid: %s, value: %s, type: %s",
+                oid, x, x.getClass().getName()
         );
     }
 
     public static ByteBuffer binEncodingError(final Object x) {
         throw new PGError(
-                "cannot binary-encode a value: %s, type: %s",
+                "cannot binary-encode, value: %s, type: %s",
                 x, x.getClass().getCanonicalName()
+        );
+    }
+
+    public static ByteBuffer binEncodingError(final Object x, final int oid) {
+        throw new PGError(
+                "cannot binary-encode, oid: %s, value: %s, type: %s",
+                oid, x, x.getClass().getCanonicalName()
         );
     }
 

@@ -1,11 +1,14 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
+import org.pg.enums.OID;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
 
 public class Int4 extends AProcessor {
+
+    public static final int oid = OID.INT4;
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
@@ -16,7 +19,7 @@ public class Int4 extends AProcessor {
         } else if (x instanceof Long l) {
             return BBTool.ofInt(l.intValue());
         } else {
-            return binEncodingError(x);
+            return binEncodingError(x, oid);
         }
     }
 

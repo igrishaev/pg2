@@ -5,6 +5,13 @@
 - bin: bb -> byte[]
 - add pg17
 
+- json wrapper not needed
+- pgenum not needed
+- :enums param
+- :type-map keywords
+- EncoderBin EncoderTxt DecoderBin DecoderTxt not needed
+- pg_type: read the whole table?
+
 - extendable enc/dec
 
 - decode records

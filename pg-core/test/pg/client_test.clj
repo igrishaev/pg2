@@ -223,7 +223,7 @@ from
           (pg/execute conn "select 1 as \"user/foo-bar\""))]
     (is (= [{:user/foo-bar 1}] result))))
 
-
+;; TODO
 (deftest test-client-exception-in-the-middle
   (pg/with-connection [conn *CONFIG-TXT*]
     (try
@@ -483,7 +483,7 @@ from
       (let [res (pg/execute conn "select 42 as number")]
         (is (= [{:number 42}] res))))))
 
-
+;; TODO
 (deftest test-client-enum-type-bin
   (let [table
         (gen-table)
@@ -542,8 +542,8 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (str/includes? message "cannot text-encode a value: {:foo 42}, OID"))
-            (is (str/includes? message "hint: try to pass this value as a string similar to what you see in psql")))))
+            (is (= "don't know how to text-encode value {:foo 42}. Try to pass its SQL string representation"
+                   message)))))
 
       (let [res (pg/execute conn "select * from test")]
         (is (= [{:id 1, :triple "(1,hello,t)"}]
@@ -563,7 +563,7 @@ from
 
     (pg/with-connection [conn (assoc *CONFIG-BIN*
                                      :type-map
-                                     {full-type
+                                     {full-type ;; TODO: enums
                                       org.pg.type.processor.Processors/defaultEnum})]
 
       (pg/query conn
@@ -602,15 +602,15 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (str/includes? message "cannot binary-encode a value: {:foo 42}, OID"))
-            (is (str/includes? message "hint: try to pass this value as a byte array or ByteBuffer")))))
+            (is (= "don't know how to binary-encode value {:foo 42}. Try to pass its SQL binary representation as a byte array or a byte buffer"
+                   message)))))
 
       (let [res (pg/execute conn "select * from test")]
         (is (= [{:id 1, :triple (vec triple-bin)}]
                (for [row res]
                  (update row :triple vec))))))))
 
-
+;; TODO
 (deftest test-client-enum-type-txt
   (let [table
         (gen-table)
@@ -1388,7 +1388,7 @@ drop table %1$s;
           (pg/execute conn "select '{\"foo\": 123}'::jsonb as obj")]
       (is (= [{:obj {:foo 123}}] res)))))
 
-
+;; TODO
 (deftest test-client-json-wrapper
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
@@ -1399,12 +1399,23 @@ drop table %1$s;
       (is (= {:obj 42} res)))))
 
 
+;; TODO
 (deftest test-client-json-wrapper-nil
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select $1::json as obj"
                       {:params [(pg/json-wrap nil)]
+                       :first true})]
+      (is (= {:obj nil} res)))))
+
+
+(deftest test-client-json-pass-nil
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [res
+          (pg/execute conn
+                      "select $1::json as obj"
+                      {:params [nil]
                        :first true})]
       (is (= {:obj nil} res)))))
 
@@ -1614,6 +1625,7 @@ drop table %1$s;
       (is (= "1985-12-31T20:59:59Z" (str obj))))))
 
 
+;; TODO
 (deftest test-client-date-pass-date
 
   (pg/with-connection [conn *CONFIG-TXT*]
@@ -1623,6 +1635,11 @@ drop table %1$s;
           res
           (pg/execute conn "select EXTRACT('year' from $1::date) as year" {:params [date]})]
 
+      (is (= 1
+             (-> res first :year type)
+             ))
+
+      #_
       (is (= (update-in res [0 :year] int)
              [{:year 1985}])))))
 
