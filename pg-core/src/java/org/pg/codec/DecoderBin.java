@@ -59,9 +59,9 @@ public final class DecoderBin {
             case OID.TIMESTAMP -> DateTimeBin.decodeTIMESTAMP(buf);
             case OID.TIMESTAMPTZ -> DateTimeBin.decodeTIMESTAMPTZ(buf);
             case OID.NUMERIC -> NumericBin.decode(buf);
-            case OID._TEXT, OID._VARCHAR, OID._NAME, OID._INT2, OID._INT4, OID._INT8, OID._OID, OID._CHAR, OID._BPCHAR, OID._UUID,
-                    OID._FLOAT4, OID._FLOAT8, OID._BOOL, OID._JSON, OID._JSONB, OID._TIME, OID._TIMETZ, OID._DATE, OID._TIMESTAMP,
-                    OID._TIMESTAMPTZ, OID._NUMERIC -> ArrayBin.decode(buf, oid, codecParams);
+//            case OID._TEXT, OID._VARCHAR, OID._NAME, OID._INT2, OID._INT4, OID._INT8, OID._OID, OID._CHAR, OID._BPCHAR, OID._UUID,
+//                    OID._FLOAT4, OID._FLOAT8, OID._BOOL, OID._JSON, OID._JSONB, OID._TIME, OID._TIMETZ, OID._DATE, OID._TIMESTAMP,
+//                    OID._TIMESTAMPTZ, OID._NUMERIC -> ArrayBin.decode(buf, oid, codecParams);
             default -> BBTool.getRestBytes(buf);
         };
     }

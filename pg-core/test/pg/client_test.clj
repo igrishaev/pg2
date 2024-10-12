@@ -1625,7 +1625,6 @@ drop table %1$s;
       (is (= "1985-12-31T20:59:59Z" (str obj))))))
 
 
-;; TODO
 (deftest test-client-date-pass-date
 
   (pg/with-connection [conn *CONFIG-TXT*]
@@ -1635,11 +1634,6 @@ drop table %1$s;
           res
           (pg/execute conn "select EXTRACT('year' from $1::date) as year" {:params [date]})]
 
-      (is (= 1
-             (-> res first :year type)
-             ))
-
-      #_
       (is (= (update-in res [0 :year] int)
              [{:year 1985}])))))
 
@@ -2234,8 +2228,10 @@ drop table %1$s;
       (try
         (pg/execute-statement conn stmt {:params [(new Object)]})
         (is false)
-        (catch PGError e
-          (is (-> e ex-message (str/starts-with? "cannot text-encode a value")))))
+        (catch PGErrorResponse e
+          (is (-> e
+                  ex-message
+                  (str/includes? "invalid input syntax for ")))))
 
       (let [res
             (pg/execute-statement conn stmt {:params [1]})]
@@ -3128,6 +3124,9 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= [] res-query)))))
 
 
+;; ------------------------
+
+
 (deftest test-client-array-read-bin-simple
   (pg/with-connection [conn *CONFIG-BIN*]
     (let [res (pg/execute conn
@@ -3149,6 +3148,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                  (update-in [:arr 1] vec)))))))
 
 
+;; TODO
 (deftest test-array-read-bin
   (pg/with-connection [conn (assoc *CONFIG-TXT* :binary-decode? true)]
 
@@ -3247,7 +3247,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                           {:params [arr]})]
       (is (= [{:arr arr}] res)))))
 
-
+;; TODO
 (deftest test-array-multi-dim-bin-txt
   (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? true

@@ -3,7 +3,6 @@ import clojure.lang.Indexed;
 import clojure.lang.PersistentVector;
 
 import clojure.lang.RT;
-import org.pg.enums.OID;
 import org.pg.error.PGError;
 
 import java.io.IOException;
@@ -37,8 +36,7 @@ public final class ArrayTxt {
         return sb.toString();
     }
 
-    public static String encode (final Object x, final int oidArray, final CodecParams codecParams) {
-        final int oidEl = OID.toElementOID(oidArray);
+    public static String encode (final Object x, final int oidArray, final int oidEl, final CodecParams codecParams) {
         Object val;
         if (x instanceof Indexed) {
             final Iterator<?> iterator = RT.iter(x);
@@ -46,7 +44,7 @@ public final class ArrayTxt {
             sb.append('{');
             while (iterator.hasNext()) {
                 val = iterator.next();
-                sb.append(encode(val, oidArray, codecParams));
+                sb.append(encode(val, oidArray, oidEl, codecParams));
                 if (iterator.hasNext()) {
                     sb.append(',');
                 }
@@ -149,8 +147,7 @@ public final class ArrayTxt {
         }
     }
 
-    public static Object decode(final String array, final int arrayOid, final CodecParams codecParams) {
-        final int oidEl = OID.toElementOID(arrayOid);
+    public static Object decode(final String array, final int arrayOid, final int oidEl, final CodecParams codecParams) {
         final PushbackReader reader = new PushbackReader(new StringReader(array));
         final int limit = 16;
         final int[] pathMax = new int[limit];
@@ -225,9 +222,9 @@ public final class ArrayTxt {
     }
 
     public static void main(String... args) {
-        System.out.println(decode("{1,2,3}", OID._INT2, CodecParams.standard()));
-        System.out.println(decode("{{1,2,3},{1,2,3}}", OID._INT2, CodecParams.standard()));
-        System.out.println(decode("{{{1,2,3},{4,5,6}},{{1,2,3},{4,5,6}}}", OID._INT2, CodecParams.standard()));
+//        System.out.println(decode("{1,2,3}", OID._INT2, CodecParams.standard()));
+//        System.out.println(decode("{{1,2,3},{1,2,3}}", OID._INT2, CodecParams.standard()));
+//        System.out.println(decode("{{{1,2,3},{4,5,6}},{{1,2,3},{4,5,6}}}", OID._INT2, CodecParams.standard()));
         // System.out.println(quoteElement("{\"foo\": 123}"));
 //        System.out.println(encode(
 //                PersistentVector.create("a'a\\aa", "b\"bb", null, "hi \\\\test"),

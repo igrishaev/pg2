@@ -199,6 +199,7 @@ public class OID {
     public static final int PG_BRIN_BLOOM_SUMMARY         = 4600;
     public static final int PG_BRIN_MINMAX_MULTI_SUMMARY  = 4601;
 
+    // TODO: delete
     public static int toElementOID (final int oid) {
         return switch (oid) {
             case _TEXT -> TEXT;

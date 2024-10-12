@@ -242,15 +242,15 @@ public final class EncoderTxt {
 
             }
 
-            case OID._TEXT, OID._VARCHAR, OID._NAME, OID._INT2, OID._INT4, OID._INT8, OID._OID, OID._CHAR, OID._BPCHAR, OID._UUID,
-                    OID._FLOAT4, OID._FLOAT8, OID._BOOL, OID._JSON, OID._JSONB, OID._TIME, OID._TIMETZ, OID._DATE, OID._TIMESTAMP,
-                    OID._TIMESTAMPTZ, OID._NUMERIC -> {
-                if (x instanceof Indexed) {
-                    yield ArrayTxt.encode(x, oid, codecParams);
-                } else {
-                    yield txtEncodingError(x, oid);
-                }
-            }
+//            case OID._TEXT, OID._VARCHAR, OID._NAME, OID._INT2, OID._INT4, OID._INT8, OID._OID, OID._CHAR, OID._BPCHAR, OID._UUID,
+//                    OID._FLOAT4, OID._FLOAT8, OID._BOOL, OID._JSON, OID._JSONB, OID._TIME, OID._TIMETZ, OID._DATE, OID._TIMESTAMP,
+//                    OID._TIMESTAMPTZ, OID._NUMERIC -> {
+//                if (x instanceof Indexed) {
+//                    yield ArrayTxt.encode(x, oid, codecParams);
+//                } else {
+//                    yield txtEncodingError(x, oid);
+//                }
+//            }
 
             // unsupported type, pass value as a string
             default -> {
