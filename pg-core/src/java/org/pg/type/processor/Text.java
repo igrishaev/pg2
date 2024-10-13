@@ -1,6 +1,7 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
+import org.pg.codec.PrimitiveBin;
 import org.pg.error.PGError;
 import org.pg.util.BBTool;
 
@@ -11,8 +12,7 @@ public class Text extends AProcessor {
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof String s) {
-            final byte[] buf = s.getBytes(codecParams.clientCharset());
-            return ByteBuffer.wrap(buf);
+            return PrimitiveBin.encodeString(s, codecParams);
         } else {
             throw new PGError("value %s must be a string", x);
         }

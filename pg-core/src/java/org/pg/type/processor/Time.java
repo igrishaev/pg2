@@ -1,7 +1,7 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
-import org.pg.codec.DT;
+import org.pg.util.DateTool;
 import org.pg.codec.DateTimeBin;
 import org.pg.codec.DateTimeTxt;
 import org.pg.enums.OID;
@@ -18,7 +18,7 @@ public class Time extends AProcessor {
         if (x instanceof LocalTime lt) {
             return DateTimeBin.encodeTIME(lt);
         } else if (x instanceof OffsetTime ot) {
-            return DateTimeBin.encodeTIME(DT.toLocalTime(ot));
+            return DateTimeBin.encodeTIME(DateTool.toLocalTime(ot));
         } else {
             return binEncodingError(x, oid);
         }
@@ -29,7 +29,7 @@ public class Time extends AProcessor {
         if (x instanceof LocalTime lt) {
             return DateTimeTxt.encodeTIME(lt);
         } else if (x instanceof OffsetTime ot) {
-            return DateTimeTxt.encodeTIME(DT.toLocalTime(ot));
+            return DateTimeTxt.encodeTIME(DateTool.toLocalTime(ot));
         } else if (x instanceof String s) {
             return s;
         } else {

@@ -13,7 +13,6 @@ import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.type.processor.IProcessor;
-import org.pg.type.processor.Processors;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
@@ -573,20 +572,6 @@ public final class Connection implements AutoCloseable {
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
-    private IProcessor getProcessor(final int oid) {
-        IProcessor typeProcessor = Processors.getProcessor(oid);
-
-        if (typeProcessor == null) {
-            typeProcessor = codecParams.getProcessor(oid);
-        }
-
-        if (typeProcessor == null) {
-            typeProcessor = Processors.defaultProcessor;
-        }
-
-        return typeProcessor;
-    }
-
     private void sendBind (final String portal,
                            final PreparedStatement stmt,
                            final ExecuteParams executeParams
@@ -618,7 +603,7 @@ public final class Connection implements AutoCloseable {
                 continue;
             }
             int oid = OIDs[i];
-            typeProcessor = getProcessor(oid);
+            typeProcessor = codecParams.getProcessor(oid);
 
             switch (paramsFormat) {
                 case BIN -> {

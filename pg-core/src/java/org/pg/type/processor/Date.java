@@ -1,7 +1,7 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
-import org.pg.codec.DT;
+import org.pg.util.DateTool;
 import org.pg.codec.DateTimeBin;
 import org.pg.codec.DateTimeTxt;
 import org.pg.enums.OID;
@@ -20,13 +20,13 @@ public class Date extends AProcessor {
         } else if (x instanceof LocalDateTime ldt) {
             return DateTimeBin.encodeDATE(ldt.toLocalDate());
         } else if (x instanceof java.util.Date d) {
-            return DateTimeBin.encodeDATE(DT.toLocalDate(d));
+            return DateTimeBin.encodeDATE(DateTool.toLocalDate(d));
         } else if (x instanceof OffsetDateTime odt) {
-            return DateTimeBin.encodeDATE(DT.toLocalDate(odt));
+            return DateTimeBin.encodeDATE(DateTool.toLocalDate(odt));
         } else if (x instanceof ZonedDateTime zdt) {
-            return DateTimeBin.encodeDATE(DT.toLocalDate(zdt));
+            return DateTimeBin.encodeDATE(DateTool.toLocalDate(zdt));
         } else if (x instanceof Instant i) {
-            return DateTimeBin.encodeDATE(DT.toLocalDate(i));
+            return DateTimeBin.encodeDATE(DateTool.toLocalDate(i));
         } else {
             return binEncodingError(x, oid);
         }
@@ -35,17 +35,17 @@ public class Date extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof OffsetDateTime odt) {
-            return DateTimeTxt.encodeDATE(DT.toLocalDate(odt));
+            return DateTimeTxt.encodeDATE(DateTool.toLocalDate(odt));
         } else if (x instanceof LocalDateTime ldt) {
-            return DateTimeTxt.encodeDATE(DT.toLocalDate(ldt));
+            return DateTimeTxt.encodeDATE(DateTool.toLocalDate(ldt));
         } else if (x instanceof ZonedDateTime zdt) {
-            return DateTimeTxt.encodeDATE(DT.toLocalDate(zdt));
+            return DateTimeTxt.encodeDATE(DateTool.toLocalDate(zdt));
         } else if (x instanceof LocalDate ld) {
             return DateTimeTxt.encodeDATE(ld);
         } else if (x instanceof Instant i) {
-            return DateTimeTxt.encodeDATE(DT.toLocalDate(i));
+            return DateTimeTxt.encodeDATE(DateTool.toLocalDate(i));
         } else if (x instanceof java.util.Date d) {
-            return DateTimeTxt.encodeDATE(DT.toLocalDate(d));
+            return DateTimeTxt.encodeDATE(DateTool.toLocalDate(d));
         } else if (x instanceof String s) {
             return s;
         } else {

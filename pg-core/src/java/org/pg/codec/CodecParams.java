@@ -3,6 +3,7 @@ package org.pg.codec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.json.JSON;
 import org.pg.type.processor.IProcessor;
+import org.pg.type.processor.Processors;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -21,12 +22,25 @@ public record CodecParams (
         Map<Integer, IProcessor> oidMap
 ) {
 
+    @SuppressWarnings("unused")
+    public static CodecParams STANDARD = new CodecParams.Builder().build();
+
     public void setProcessor(final int oid, final IProcessor processor) {
         oidMap.put(oid, processor);
     }
 
     public IProcessor getProcessor(final int oid) {
-        return oidMap.get(oid);
+        IProcessor typeProcessor = Processors.getProcessor(oid);
+
+        if (typeProcessor == null) {
+            typeProcessor = oidMap.get(oid);
+        }
+
+        if (typeProcessor == null) {
+            typeProcessor = Processors.defaultProcessor;
+        }
+
+        return typeProcessor;
     }
 
     public static Builder builder () {

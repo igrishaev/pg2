@@ -1,38 +1,29 @@
 package org.pg.type.processor;
 
-import org.pg.Const;
 import org.pg.codec.CodecParams;
-import org.pg.json.JSON;
-
-import java.io.ByteArrayOutputStream;
+import org.pg.codec.JsonBin;
+import org.pg.codec.JsonTxt;
 import java.nio.ByteBuffer;
 
 public class Json extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(Const.JSON_ENC_BUF_SIZE);
-        JSON.writeValue(codecParams.objectMapper(), out, x);
-        final byte[] bytes = out.toByteArray();
-        return ByteBuffer.wrap(bytes);
+        return JsonBin.encodeJSON(x, codecParams);
     }
 
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
-        if (x instanceof String s) {
-            return s;
-        } else {
-            return JSON.writeValueToString(codecParams.objectMapper(), x);
-        }
+        return JsonTxt.encodeJson(x, codecParams);
     }
 
     @Override
     public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        return JSON.readValue(codecParams.objectMapper(), bb);
+        return JsonBin.decodeJSON(bb, codecParams);
     }
 
     @Override
-    public Object decodeTxt(final String text, final CodecParams codecParams) {
-        return JSON.readValue(codecParams.objectMapper(), text);
+    public Object decodeTxt(final String string, final CodecParams codecParams) {
+        return JsonTxt.decodeJson(string, codecParams);
     }
 }

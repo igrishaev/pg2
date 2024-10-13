@@ -34,12 +34,13 @@
    org.pg.clojure.RowMap
    org.pg.codec.CodecParams
    org.pg.codec.CodecParams$Builder
-   org.pg.codec.DecoderBin
-   org.pg.codec.DecoderTxt
-   org.pg.codec.EncoderBin
-   org.pg.codec.EncoderTxt
+   org.pg.type.processor.IProcessor
+   org.pg.type.processor.Processors
+   ;; org.pg.codec.DecoderBin
+   ;; org.pg.codec.DecoderTxt
+   ;; org.pg.codec.EncoderBin
+   ;; org.pg.codec.EncoderTxt
    org.pg.enums.CopyFormat
-   org.pg.enums.OID
    org.pg.enums.TXStatus
    org.pg.enums.TxLevel
    org.pg.error.PGError
@@ -1029,57 +1030,69 @@
                 ^ObjectMapper object-mapper]}
         opt]
 
-    (cond-> (CodecParams/builder)
+    (if-not (seq opt)
 
-      client-charset
-      (as-> builder
-          (let [charset (Charset/forName client-charset)]
-            (.clientCharset builder charset)))
+      CodecParams/STANDARD
 
-      server-charset
-      (as-> builder
-          (let [charset (Charset/forName server-charset)]
-            (.serverCharset builder charset)))
+      (cond-> (CodecParams/builder)
 
-      date-style
-      (.dateStyle date-style)
+        client-charset
+        (as-> builder
+            (let [charset (Charset/forName client-charset)]
+              (.clientCharset builder charset)))
 
-      time-zone-id
-      (as-> builder
-          (let [zone-id (ZoneId/of time-zone-id)]
-            (.timeZone builder zone-id)))
+        server-charset
+        (as-> builder
+            (let [charset (Charset/forName server-charset)]
+              (.serverCharset builder charset)))
 
-      (some? integer-datetime?)
-      (.integerDatetime integer-datetime?)
+        date-style
+        (.dateStyle date-style)
 
-      object-mapper
-      (.objectMapper object-mapper)
+        time-zone-id
+        (as-> builder
+            (let [zone-id (ZoneId/of time-zone-id)]
+              (.timeZone builder zone-id)))
 
-      :finally
-      (.build))))
+        (some? integer-datetime?)
+        (.integerDatetime integer-datetime?)
+
+        object-mapper
+        (.objectMapper object-mapper)
+
+        :finally
+        (.build)))))
+
+
+(defn- -get-processor ^IProcessor [oid]
+  (or (Processors/getProcessor oid)
+      Processors/defaultProcessor))
 
 
 (defn decode-bin
   "
   Decode a binary-encoded value from a ByteBuffer.
   "
-  ([^ByteBuffer buf ^OID oid]
-   (.rewind buf)
-   (DecoderBin/decode buf oid))
+  ([^ByteBuffer buf]
+   (decode-bin buf nil))
 
-  ([^ByteBuffer buf ^OID oid opt]
+  #_
+  ([^ByteBuffer buf opt]
    (.rewind buf)
-   (DecoderBin/decode buf oid (->codec-params opt))))
+   (let [processor (-get-processor oid)]
+     (.decodeBin buf oid (->codec-params opt)))))
 
 
 (defn decode-txt
   "
   Decode a text-encoded value from a ByteBuffer.
   "
-  ([^String obj ^OID oid]
+  ([^String obj oid]
+   #_
    (DecoderTxt/decode obj oid))
 
-  ([^String obj ^OID oid opt]
+  ([^String obj oid opt]
+   #_
    (DecoderTxt/decode obj oid (->codec-params opt))))
 
 
@@ -1088,27 +1101,35 @@
   Binary-encode a value into a ByteBuffer.
   "
   (^ByteBuffer [obj]
-   (EncoderBin/encode obj))
+   #_
+   (encode-bin obj oid/default nil))
 
-  (^ByteBuffer [obj ^OID oid]
-   (EncoderBin/encode obj oid))
+  (^ByteBuffer [obj oid]
+   #_
+   (encode-bin obj oid nil))
 
-  (^ByteBuffer [obj ^OID oid opt]
-   (EncoderBin/encode obj oid (->codec-params opt))))
+  (^ByteBuffer [obj oid opt]
+   #_
+   (let [processor (-get-processor oid)]
+     (.encodeBin oid (->codec-params opt)))))
 
 
 (defn encode-txt
   "
-  Text-encode a value into a ByteBuffer.
+  Text-encode a value into a string.
   "
   (^String [obj]
-   (EncoderTxt/encode obj))
+   #_
+   (encode-txt obj oid/default nil))
 
-  (^String [obj ^OID oid]
-   (EncoderTxt/encode obj oid))
+  (^String [obj oid]
+   #_
+   (encode-txt obj oid nil))
 
-  (^String [obj ^OID oid opt]
-   (EncoderTxt/encode obj oid (->codec-params opt))))
+  (^String [obj oid opt]
+   #_
+   (let [processor (-get-processor oid)]
+     (.encodeTxt oid (->codec-params opt)))))
 
 
 ;;

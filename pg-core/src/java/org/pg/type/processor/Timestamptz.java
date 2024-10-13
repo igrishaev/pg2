@@ -1,7 +1,7 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
-import org.pg.codec.DT;
+import org.pg.util.DateTool;
 import org.pg.codec.DateTimeBin;
 import org.pg.codec.DateTimeTxt;
 import org.pg.enums.OID;
@@ -21,11 +21,11 @@ public class Timestamptz extends AProcessor {
         } else if (x instanceof Instant i) {
             return DateTimeBin.encodeTIMESTAMPTZ(i);
         } else if (x instanceof LocalDate ld) {
-            return DateTimeBin.encodeTIMESTAMPTZ(DT.toInstant(ld));
+            return DateTimeBin.encodeTIMESTAMPTZ(DateTool.toInstant(ld));
         } else if (x instanceof LocalDateTime ldt) {
-            return DateTimeBin.encodeTIMESTAMPTZ(DT.toInstant(ldt));
+            return DateTimeBin.encodeTIMESTAMPTZ(DateTool.toInstant(ldt));
         } else if (x instanceof Date d) {
-            return DateTimeBin.encodeTIMESTAMPTZ(DT.toInstant(d));
+            return DateTimeBin.encodeTIMESTAMPTZ(DateTool.toInstant(d));
         } else if (x instanceof ZonedDateTime zdt) {
             return DateTimeBin.encodeTIMESTAMPTZ(zdt);
         } else {
@@ -38,11 +38,11 @@ public class Timestamptz extends AProcessor {
         if (x instanceof OffsetDateTime odt) {
             return DateTimeTxt.encodeTIMESTAMPTZ(odt);
         } else if (x instanceof LocalDateTime ldt) {
-            return DateTimeTxt.encodeTIMESTAMPTZ(DT.toInstant(ldt));
+            return DateTimeTxt.encodeTIMESTAMPTZ(DateTool.toInstant(ldt));
         } else if (x instanceof ZonedDateTime zdt) {
             return DateTimeTxt.encodeTIMESTAMPTZ(zdt);
         } else if (x instanceof LocalDate ld) {
-            return DateTimeTxt.encodeTIMESTAMPTZ(DT.toInstant(ld));
+            return DateTimeTxt.encodeTIMESTAMPTZ(DateTool.toInstant(ld));
         } else if (x instanceof Instant i) {
             return DateTimeTxt.encodeTIMESTAMPTZ(i);
         } else if (x instanceof Date d) {

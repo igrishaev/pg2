@@ -1,9 +1,9 @@
-package org.pg.codec;
+package org.pg.util;
 
 import java.time.*;
 import java.util.Date;
 
-public class DT {
+public class DateTool {
 
     public static LocalDateTime toLocalDateTime (final ZonedDateTime zonedDateTime) {
         return LocalDateTime.ofInstant(zonedDateTime.toInstant(), ZoneOffset.UTC);

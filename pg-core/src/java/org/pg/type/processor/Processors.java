@@ -57,29 +57,18 @@ public class Processors {
         oidMap.put(OID._FLOAT8, new Array(OID._FLOAT8, OID.FLOAT8));
         oidMap.put(OID._VARCHAR, new Array(OID._VARCHAR, OID.VARCHAR));
         oidMap.put(OID._TEXT, new Array(OID._TEXT, OID.TEXT));
-        // oidMap.put(OID._, new Array(OID._, OID.));
-
-
-        // text
-
-//        oidMap.put(OID.NAME, text);
-//        oidMap.put(OID.BPCHAR, text);
-//        oidMap.put(OID.CHAR, new Char());
-//
-//        // misc
-//        oidMap.put(OID.UUID, new UUID());
-//        oidMap.put(OID.JSON, new Json());
-//        oidMap.put(OID.JSONB, new Jsonb());
-//        oidMap.put(OID.BYTEA, new Bytea());
-//        oidMap.put(OID.BOOL, new Bool());
-//
-//        // date & time
-//        oidMap.put(OID.TIMESTAMPTZ, new Timestamptz());
-//        oidMap.put(OID.TIMESTAMP, new Timestamp());
-//        oidMap.put(OID.DATE, new Date());
-//        oidMap.put(OID.TIME, new Time());
-//        oidMap.put(OID.TIMETZ, new Timetz());
-
+        oidMap.put(OID._NAME, new Array(OID._NAME, OID.NAME));
+        oidMap.put(OID._BPCHAR, new Array(OID._BPCHAR, OID.BPCHAR));
+        oidMap.put(OID._UUID, new Array(OID._UUID, OID.UUID));
+        oidMap.put(OID._JSON, new Array(OID._JSON, OID.JSON));
+        oidMap.put(OID._JSONB, new Array(OID._JSONB, OID.JSONB));
+        oidMap.put(OID._BYTEA, new Array(OID._BYTEA, OID.BYTEA));
+        oidMap.put(OID._BOOL, new Array(OID._BOOL, OID.BOOL));
+        oidMap.put(OID._TIMESTAMPTZ, new Array(OID._TIMESTAMPTZ, OID.TIMESTAMPTZ));
+        oidMap.put(OID._TIMESTAMP, new Array(OID._TIMESTAMP, OID.TIMESTAMP));
+        oidMap.put(OID._DATE, new Array(OID._DATE, OID.DATE));
+        oidMap.put(OID._TIME, new Array(OID._TIME, OID.TIME));
+        oidMap.put(OID._TIMETZ, new Array(OID._TIMETZ, OID.TIMETZ));
     }
 
     public static IProcessor getProcessor(final int oid) {

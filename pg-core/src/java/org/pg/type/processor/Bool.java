@@ -1,9 +1,9 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
+import org.pg.codec.PrimitiveBin;
+import org.pg.codec.PrimitiveTxt;
 import org.pg.enums.OID;
-import org.pg.error.PGError;
-import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
 
@@ -14,7 +14,7 @@ public class Bool extends AProcessor {
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof Boolean b) {
-            return BBTool.ofBool(b);
+            return PrimitiveBin.encodeBool(b);
         } else {
             return binEncodingError(x, oid);
         }
@@ -23,7 +23,7 @@ public class Bool extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof Boolean b) {
-            return b ? "t" : "f";
+            return PrimitiveTxt.encodeBool(b);
         } else {
             return txtEncodingError(x, oid);
         }
@@ -31,20 +31,11 @@ public class Bool extends AProcessor {
 
     @Override
     public Boolean decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        final byte b = bb.get();
-        return switch (b) {
-            case 0: yield false;
-            case 1: yield true;
-            default: throw new PGError("incorrect binary boolean value: %s", b);
-        };
+        return PrimitiveBin.decodeBool(bb);
     }
 
     @Override
     public Boolean decodeTxt(final String string, final CodecParams codecParams) {
-        return switch (string) {
-            case "t" -> true;
-            case "f" -> false;
-            default -> throw new PGError("wrong boolean value: %s", string);
-        };
+        return PrimitiveTxt.decodeBool(string);
     }
 }

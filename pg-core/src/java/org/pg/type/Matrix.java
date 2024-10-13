@@ -1,4 +1,4 @@
-package org.pg.codec;
+package org.pg.type;
 
 import clojure.lang.Indexed;
 import clojure.lang.PersistentVector;

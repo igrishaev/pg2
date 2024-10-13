@@ -2,9 +2,8 @@ package org.pg.copy;
 
 import org.pg.ExecuteParams;
 import org.pg.codec.CodecParams;
-import org.pg.codec.EncoderBin;
-import org.pg.codec.EncoderTxt;
 import org.pg.enums.OID;
+import org.pg.type.processor.IProcessor;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -58,15 +57,17 @@ public class Copy {
         final int OIDLen = OIDs.length;
         short i = 0;
         int oid;
+        IProcessor processor;
         while (iterator.hasNext()) {
             oid = i < OIDLen ? OIDs[i] : OID.DEFAULT;
+            processor = codecParams.getProcessor(oid);
             i++;
             final Object item = iterator.next();
             if (item == null) {
                 sb.append(executeParams.CSVNull());
             }
             else {
-                final String encoded = EncoderTxt.encode(item, oid, codecParams);
+                final String encoded = processor.encodeTxt(item, codecParams);
                 sb.append(executeParams.CSVQuote());
                 sb.append(quoteCSV(encoded));
                 sb.append(executeParams.CSVQuote());
@@ -89,7 +90,7 @@ public class Copy {
         final int[] OIDs = executeParams.OIDs();
         final int OIDLen = OIDs.length;
         int oid;
-
+        IProcessor processor;
         int totalSize = 2;
 
         int i = -1;
@@ -101,7 +102,8 @@ public class Copy {
             }
             else {
                 oid = i < OIDLen ? OIDs[i] : OID.DEFAULT;
-                final ByteBuffer buf = EncoderBin.encode(item, oid, codecParams);
+                processor = codecParams.getProcessor(oid);
+                final ByteBuffer buf = processor.encodeBin(item, codecParams);
                 totalSize += 4 + buf.array().length;
                 bufs[i] = buf;
             }

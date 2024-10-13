@@ -73,19 +73,6 @@ public final class RowMap extends APersistentMap {
         }
     }
 
-    private IProcessor getProcessor(final int oid) {
-        IProcessor typeProcessor = Processors.getProcessor(oid);
-
-        if (typeProcessor == null) {
-            typeProcessor = codecParams.getProcessor(oid);
-        }
-
-        if (typeProcessor == null) {
-            typeProcessor = Processors.defaultProcessor;
-        }
-
-        return typeProcessor;
-    }
 
     private Object getValueByIndex_unlocked (final int i) {
 
@@ -106,7 +93,7 @@ public final class RowMap extends APersistentMap {
         final RowDescription.Column col = rowDescription.columns()[i];
         final int oid = col.typeOid();
 
-        final IProcessor typeProcessor = getProcessor(oid);
+        final IProcessor typeProcessor = codecParams.getProcessor(oid);
 
         final Object value = switch (col.format()) {
             case TXT -> {

@@ -1,7 +1,7 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
-import org.pg.codec.DT;
+import org.pg.util.DateTool;
 import org.pg.codec.DateTimeBin;
 import org.pg.codec.DateTimeTxt;
 import org.pg.enums.OID;
@@ -18,7 +18,7 @@ public class Timetz extends AProcessor {
         if (x instanceof OffsetTime ot) {
             return DateTimeBin.encodeTIMETZ(ot);
         } else if (x instanceof LocalTime lt) {
-            return DateTimeBin.encodeTIMETZ(DT.toOffsetTime(lt));
+            return DateTimeBin.encodeTIMETZ(DateTool.toOffsetTime(lt));
         } else {
             return binEncodingError(x, oid);
         }
@@ -27,7 +27,7 @@ public class Timetz extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof LocalTime lt) {
-            return DateTimeTxt.encodeTIMETZ(DT.toOffsetTime(lt));
+            return DateTimeTxt.encodeTIMETZ(DateTool.toOffsetTime(lt));
         } else if (x instanceof OffsetTime ot) {
             return DateTimeTxt.encodeTIMETZ(ot);
         } else if (x instanceof String s) {

@@ -2,9 +2,10 @@ package org.pg.codec;
 
 import clojure.lang.ITransientCollection;
 import clojure.lang.PersistentVector;
-import org.pg.enums.OID;
 import clojure.core$get_in;
 import org.pg.error.PGError;
+import org.pg.type.Matrix;
+import org.pg.type.processor.IProcessor;
 import org.pg.util.BBTool;
 
 import java.io.ByteArrayOutputStream;
@@ -24,10 +25,10 @@ public final class ArrayBin {
 
     public static ByteBuffer encode(
             final Object matrix,
-            final int oidArray,
             final int oidEl,
             final CodecParams codecParams
     ) {
+        final IProcessor processor = codecParams.getProcessor(oidEl);
         final int[] dims = Matrix.getDims(matrix);
         final int dimCount = dims.length;
         final int hasNulls = 1;
@@ -52,7 +53,7 @@ public final class ArrayBin {
             if (val == null) {
                 writeInt32(out, -1);
             } else {
-                byte[] ba = EncoderBin.encode(val, oidEl, codecParams).array();
+                byte[] ba = processor.encodeBin(val, codecParams).array();
                 writeInt32(out, ba.length);
                 out.writeBytes(ba);
             }
@@ -67,6 +68,7 @@ public final class ArrayBin {
         final int dimCount = buf.getInt();
         buf.getInt(); // has nulls (1 or 0)
         final int elOid = buf.getInt();
+        final IProcessor processor = codecParams.getProcessor(elOid);
         final int[] dims = new int[dimCount];
         for (int i = 0; i < dimCount; i++) {
             dims[i] = buf.getInt();
@@ -87,7 +89,7 @@ public final class ArrayBin {
                     final ByteBuffer bufEl = buf.slice();
                     bufEl.limit(len);
                     BBTool.skip(buf, len);
-                    val = DecoderBin.decode(bufEl, elOid, codecParams);
+                    val = processor.decodeBin(bufEl, codecParams);
                     result = result.conj(val);
                 }
             }
@@ -107,7 +109,7 @@ public final class ArrayBin {
                 final ByteBuffer bufEl = buf.slice();
                 bufEl.limit(len);
                 BBTool.skip(buf, len);
-                val = DecoderBin.decode(bufEl, elOid, codecParams);
+                val = processor.decodeBin(bufEl, codecParams);
                 matrix = Matrix.assocIn(matrix, path, val);
             }
         }

@@ -18,7 +18,7 @@ public class Array extends AProcessor {
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof Indexed) {
-            return ArrayBin.encode(x, oid, itemOid, codecParams);
+            return ArrayBin.encode(x, itemOid, codecParams);
         } else {
             return binEncodingError(x, oid);
         }
@@ -27,7 +27,7 @@ public class Array extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof Indexed) {
-            return ArrayTxt.encode(x, oid, itemOid, codecParams);
+            return ArrayTxt.encode(x, itemOid, codecParams);
         } else {
             return txtEncodingError(x, oid);
         }
@@ -40,6 +40,6 @@ public class Array extends AProcessor {
 
     @Override
     public Object decodeTxt(final String text, final CodecParams codecParams) {
-        return ArrayTxt.decode(text, oid, itemOid, codecParams);
+        return ArrayTxt.decode(text, itemOid, codecParams);
     }
 }

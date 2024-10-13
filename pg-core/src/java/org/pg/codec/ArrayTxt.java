@@ -4,6 +4,8 @@ import clojure.lang.PersistentVector;
 
 import clojure.lang.RT;
 import org.pg.error.PGError;
+import org.pg.type.Matrix;
+import org.pg.type.processor.IProcessor;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -36,7 +38,8 @@ public final class ArrayTxt {
         return sb.toString();
     }
 
-    public static String encode (final Object x, final int oidArray, final int oidEl, final CodecParams codecParams) {
+    public static String encode (final Object x, final int oidEl, final CodecParams codecParams) {
+        final IProcessor processor = codecParams.getProcessor(oidEl);
         Object val;
         if (x instanceof Indexed) {
             final Iterator<?> iterator = RT.iter(x);
@@ -44,7 +47,7 @@ public final class ArrayTxt {
             sb.append('{');
             while (iterator.hasNext()) {
                 val = iterator.next();
-                sb.append(encode(val, oidArray, oidEl, codecParams));
+                sb.append(encode(val, oidEl, codecParams));
                 if (iterator.hasNext()) {
                     sb.append(',');
                 }
@@ -54,7 +57,7 @@ public final class ArrayTxt {
         } else if (x == null) {
             return "NULL";
         } else {
-            return quoteElement(EncoderTxt.encode(x, oidEl, codecParams));
+            return quoteElement(processor.encodeTxt(x, codecParams));
         }
     }
 
@@ -147,8 +150,9 @@ public final class ArrayTxt {
         }
     }
 
-    public static Object decode(final String array, final int arrayOid, final int oidEl, final CodecParams codecParams) {
+    public static Object decode(final String array, final int oidEl, final CodecParams codecParams) {
         final PushbackReader reader = new PushbackReader(new StringReader(array));
+        final IProcessor processor = codecParams.getProcessor(oidEl);
         final int limit = 16;
         final int[] pathMax = new int[limit];
         final int[] path = new int[limit];
@@ -188,7 +192,7 @@ public final class ArrayTxt {
                 case '"': {
                     unread(reader, c);
                     buf = readQuotedString(reader);
-                    obj = DecoderTxt.decode(buf, oidEl, codecParams);
+                    obj = processor.decodeTxt(buf, codecParams);
                     elements.add(obj);
                     break;
                 }
@@ -198,7 +202,7 @@ public final class ArrayTxt {
                     if (buf == null) {
                         obj = null;
                     } else {
-                        obj = DecoderTxt.decode(buf, oidEl, codecParams);
+                        obj = processor.decodeTxt(buf, codecParams);
                     }
                     elements.add(obj);
                     break;
@@ -225,13 +229,13 @@ public final class ArrayTxt {
 //        System.out.println(decode("{1,2,3}", OID._INT2, CodecParams.standard()));
 //        System.out.println(decode("{{1,2,3},{1,2,3}}", OID._INT2, CodecParams.standard()));
 //        System.out.println(decode("{{{1,2,3},{4,5,6}},{{1,2,3},{4,5,6}}}", OID._INT2, CodecParams.standard()));
-        // System.out.println(quoteElement("{\"foo\": 123}"));
+//        System.out.println(quoteElement("{\"foo\": 123}"));
 //        System.out.println(encode(
 //                PersistentVector.create("a'a\\aa", "b\"bb", null, "hi \\\\test"),
 //                OID._TEXT,
 //                CodecParams.standard()
 //        ));
-        // System.out.println(readQuotedString(new PushbackReader(new StringReader("\"aaa\\\"bbb\""))));
+//        System.out.println(readQuotedString(new PushbackReader(new StringReader("\"aaa\\\"bbb\""))));
 //        System.out.println(readNonQuotedString(new PushbackReader(new StringReader("NuLL,"))));
 //
 //        System.out.println(decode("{{1,2,3},{4,null,6}}", OID._INT2, CodecParams.standard()));

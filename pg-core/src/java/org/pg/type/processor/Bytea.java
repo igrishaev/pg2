@@ -1,9 +1,9 @@
 package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
+import org.pg.codec.PrimitiveTxt;
 import org.pg.enums.OID;
 import org.pg.util.BBTool;
-import org.pg.util.HexTool;
 
 import java.nio.ByteBuffer;
 
@@ -25,7 +25,7 @@ public class Bytea extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof byte[] ba) {
-            return HexTool.formatHex(ba, "\\x");
+            return PrimitiveTxt.encodeBytea(ba);
         } else {
             return txtEncodingError(x, oid);
         }
@@ -37,7 +37,7 @@ public class Bytea extends AProcessor {
     }
 
     @Override
-    public byte[] decodeTxt(final String text, final CodecParams codecParams) {
-        return HexTool.parseHex(text, 2, text.length());
+    public byte[] decodeTxt(final String string, final CodecParams codecParams) {
+        return PrimitiveTxt.decodeBytea(string);
     }
 }

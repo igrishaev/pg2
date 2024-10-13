@@ -223,7 +223,7 @@ from
           (pg/execute conn "select 1 as \"user/foo-bar\""))]
     (is (= [{:user/foo-bar 1}] result))))
 
-;; TODO
+
 (deftest test-client-exception-in-the-middle
   (pg/with-connection [conn *CONFIG-TXT*]
     (try
@@ -231,9 +231,9 @@ from
       (is false)
       (catch PGError e
         (is true)
-        (is (-> e
-                ex-message
-                (str/starts-with? "cannot text-encode a value")))))
+        (is (->> e
+                 ex-message
+                 (re-matches #"value java.lang.Object.+? must be a string")))))
 
     (testing "still can use that connection"
       (is (= [{:foo "test"}]
@@ -483,7 +483,7 @@ from
       (let [res (pg/execute conn "select 42 as number")]
         (is (= [{:number 42}] res))))))
 
-;; TODO
+
 (deftest test-client-enum-type-bin
   (let [table
         (gen-table)
@@ -524,6 +524,7 @@ from
                 {:foo [108 111 108] :id 4}]
                (map fix-foo res)))))))
 
+;; TODO
 (deftest test-client-unsupported-type-txt
   (let [type-name (gen-type)]
 
@@ -542,7 +543,7 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (= "don't know how to text-encode value {:foo 42}. Try to pass its SQL string representation"
+            (is (= 1
                    message)))))
 
       (let [res (pg/execute conn "select * from test")]
@@ -577,6 +578,7 @@ from
                res))))))
 
 
+;; TODO
 (deftest test-client-unsupported-type-bin
   (let [type-name (gen-type)
 
@@ -610,7 +612,7 @@ from
                (for [row res]
                  (update row :triple vec))))))))
 
-;; TODO
+
 (deftest test-client-enum-type-txt
   (let [table
         (gen-table)
@@ -1388,18 +1390,18 @@ drop table %1$s;
           (pg/execute conn "select '{\"foo\": 123}'::jsonb as obj")]
       (is (= [{:obj {:foo 123}}] res)))))
 
-;; TODO
+
 (deftest test-client-json-wrapper
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
           (pg/execute conn
                       "select $1::json as obj"
                       {:params [(pg/json-wrap 42)]
-                       :first true})]
-      (is (= {:obj 42} res)))))
+                       :first? true})]
+      (is (= res {:obj 42})))))
 
 
-;; TODO
+
 (deftest test-client-json-wrapper-nil
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [res
@@ -3148,7 +3150,6 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                  (update-in [:arr 1] vec)))))))
 
 
-;; TODO
 (deftest test-array-read-bin
   (pg/with-connection [conn (assoc *CONFIG-TXT* :binary-decode? true)]
 
@@ -3247,7 +3248,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                           {:params [arr]})]
       (is (= [{:arr arr}] res)))))
 
-;; TODO
+
 (deftest test-array-multi-dim-bin-txt
   (pg/with-connection [conn (assoc *CONFIG-TXT*
                                    :binary-encode? true
