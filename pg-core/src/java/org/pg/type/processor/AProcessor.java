@@ -8,6 +8,9 @@ import java.nio.ByteBuffer;
 public abstract class AProcessor implements IProcessor {
 
     public static String txtEncodingError(final Object x) {
+        if (x == null) {
+            throw new PGError("cannot text-encode a null value");
+        }
         throw new PGError(
                 "cannot text-encode, value: %s, type: %s",
                 x, x.getClass().getName()
@@ -15,6 +18,9 @@ public abstract class AProcessor implements IProcessor {
     }
 
     public static String txtEncodingError(final Object x, final int oid) {
+        if (x == null) {
+            throw new PGError("cannot text-encode a null value");
+        }
         throw new PGError(
                 "cannot text-encode, oid: %s, value: %s, type: %s",
                 oid, x, x.getClass().getName()
@@ -22,6 +28,9 @@ public abstract class AProcessor implements IProcessor {
     }
 
     public static ByteBuffer binEncodingError(final Object x) {
+        if (x == null) {
+            throw new PGError("cannot binary-encode a null value");
+        }
         throw new PGError(
                 "cannot binary-encode, value: %s, type: %s",
                 x, x.getClass().getCanonicalName()
@@ -29,6 +38,9 @@ public abstract class AProcessor implements IProcessor {
     }
 
     public static ByteBuffer binEncodingError(final Object x, final int oid) {
+        if (x == null) {
+            throw new PGError("cannot binary-encode a null value");
+        }
         throw new PGError(
                 "cannot binary-encode, oid: %s, value: %s, type: %s",
                 oid, x, x.getClass().getCanonicalName()

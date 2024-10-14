@@ -159,6 +159,7 @@
           res (pg/encode-txt val oid/date)]
       (is (= "2023-07-25" res))))
 
+  ;; TODO
   (testing "LocalTime default"
     (let [val (LocalTime/parse "01:00:00.123456")
           res (pg/encode-txt val)]

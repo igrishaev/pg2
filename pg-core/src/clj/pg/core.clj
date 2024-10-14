@@ -1106,7 +1106,7 @@
          (or oid (OID/defaultOID obj))
          processor
          (-get-processor oid)]
-     (.encodeBin processor oid (->codec-params opt)))))
+     (.encodeBin processor obj (->codec-params opt)))))
 
 
 (defn encode-txt

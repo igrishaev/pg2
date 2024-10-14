@@ -19,11 +19,7 @@ public class Unsupported extends AProcessor {
         } else if (x instanceof byte[] ba) {
             return ByteBuffer.wrap(ba);
         } else {
-            throw new PGError(
-                    "cannot binary-encode value %s, type %s. " +
-                            "Try to pass its SQL binary representation as a byte array or a byte buffer.",
-                    x, x.getClass().getName()
-            );
+            return binEncodingError(x);
         }
     }
 
@@ -32,11 +28,7 @@ public class Unsupported extends AProcessor {
         if (x instanceof String s) {
             return s;
         } else {
-            throw new PGError(
-                    "cannot text-encode value %s, type %s. " +
-                            "Try to pass its SQL text representation as a string.",
-                    x, x.getClass().getName()
-            );
+            return txtEncodingError(x);
         }
     }
 
