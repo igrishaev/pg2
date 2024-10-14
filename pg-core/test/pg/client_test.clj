@@ -513,8 +513,8 @@ from
 
       (pg/execute conn
                   "insert into test (id, foo) values ($1, $2)"
-                  {:params [4 (pg/->enum :lol)]
-                   :oids [nil oid/default]})
+                  {:params [4 "lol"]
+                   :oids [nil]})
 
       (let [res
             (pg/execute conn "select * from test order by id")]
@@ -2503,7 +2503,7 @@ drop table %1$s;
 
       (is (= (str x1) (str x2))))))
 
-
+;; TODO
 (deftest test-read-write-numeric-bin
   (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
@@ -2773,7 +2773,6 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (is (= [{:one 1}] (pg/query conn "select 1 as one")))))))
 
 
-;; TODO
 (deftest test-copy-in-rows-exception-in-the-middle
 
   (pg/with-connection [conn *CONFIG-TXT*]
@@ -2789,12 +2788,10 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                          rows)
         (is false)
         (catch PGError e
-          (is (= 1 (ex-message e)))
-          #_
           (is (-> e
                   ex-cause
                   ex-message
-                  (str/starts-with? "cannot text-encode a value"))))))
+                  (str/starts-with? "cannot text-encode value java.lang.Object"))))))
 
     (testing "conn is ok"
       (is (= :I (pg/status conn)))
@@ -2857,19 +2854,12 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
              res-query)))))
 
 
-;; TODO
-(deftest test-copy-in-rows-ok-csv-wrong-oids
+(deftest test-copy-in-rows-ok-csv-wrong-oids-txt
 
   (pg/with-connection [conn *CONFIG-TXT*]
 
     (pg/query conn "create temp table foo (id int2)")
 
-    (pg/copy-in-rows conn
-                       "copy foo (id) from STDIN WITH (FORMAT CSV)"
-                       [[1] [2] [3]]
-                       {:oids [oid/uuid]})
-
-    #_
     (try
       (pg/copy-in-rows conn
                        "copy foo (id) from STDIN WITH (FORMAT CSV)"
@@ -2877,7 +2867,25 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                        {:oids [oid/uuid]})
       (is false)
       (catch PGError e
-        (is (= "Unhandled exception: cannot text-encode a value: 1, OID: 2950, type: java.lang.Long"
+        (is (= "Unhandled exception: cannot text-encode, oid: 2950, value: 1, type: java.lang.Long"
+               (ex-message e)))))))
+
+
+(deftest test-copy-in-rows-ok-csv-wrong-oids-bin
+
+  (pg/with-connection [conn *CONFIG-BIN*]
+
+    (pg/query conn "create temp table foo (id int2)")
+
+    (try
+      (pg/copy-in-rows conn
+                       "copy foo (id) from STDIN WITH (FORMAT BINARY)"
+                       [[1] [2] [3]]
+                       {:copy-bin? true
+                        :oids [oid/uuid]})
+      (is false)
+      (catch PGError e
+        (is (= "Unhandled exception: cannot binary-encode, oid: 2950, value: 1, type: java.lang.Long"
                (ex-message e)))))))
 
 

@@ -28,7 +28,7 @@
    {:encode-key-fn (comp reverse-string name)
     :decode-key-fn (comp keyword reverse-string)}))
 
-
+;; TODO
 (deftest test-bytea
   (let [res (pg/encode-txt (.getBytes "hello" "UTF-8"))]
     (is (= "\\x68656c6c6f" res))))
@@ -41,7 +41,7 @@
                oid/bpchar]]
     (is (= "test" (pg/encode-txt "test" oid)))))
 
-
+;; TODO
 (deftest test-encode-basic
 
   (is (= "1" (pg/encode-txt 1)))
@@ -273,7 +273,7 @@
 
     (is (= {"oof" 123} data))))
 
-
+;; TODO
 (deftest test-json-encode-txt
 
   (testing "json coll"

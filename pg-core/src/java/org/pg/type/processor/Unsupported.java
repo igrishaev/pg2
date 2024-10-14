@@ -12,7 +12,9 @@ public class Unsupported extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        if (x instanceof ByteBuffer bb) {
+        if (x instanceof String s) {
+            return ByteBuffer.wrap(s.getBytes(codecParams.clientCharset()));
+        } else if (x instanceof ByteBuffer bb) {
             return bb;
         } else if (x instanceof byte[] ba) {
             return ByteBuffer.wrap(ba);

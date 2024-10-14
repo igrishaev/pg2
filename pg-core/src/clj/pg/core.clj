@@ -37,18 +37,14 @@
    org.pg.codec.CodecParams$Builder
    org.pg.type.processor.IProcessor
    org.pg.type.processor.Processors
-   ;; org.pg.codec.DecoderBin
-   ;; org.pg.codec.DecoderTxt
-   ;; org.pg.codec.EncoderBin
-   ;; org.pg.codec.EncoderTxt
+   org.pg.enums.OID
    org.pg.enums.CopyFormat
    org.pg.enums.TXStatus
    org.pg.enums.TxLevel
    org.pg.error.PGError
    org.pg.error.PGErrorResponse
    org.pg.json.JSON
-   org.pg.json.JSON$Wrapper
-   org.pg.type.PGEnum))
+   org.pg.json.JSON$Wrapper))
 
 
 (def ^CopyFormat COPY_FORMAT_BIN CopyFormat/BIN)
@@ -1066,7 +1062,8 @@
 
 
 (defn- -get-processor ^IProcessor [oid]
-  (Processors/getProcessor oid))
+  (or (Processors/getProcessor oid)
+      Processors/unsupported))
 
 
 (defn decode-bin
@@ -1105,7 +1102,10 @@
    (encode-bin obj oid nil))
 
   (^ByteBuffer [obj oid opt]
-   (let [processor (-get-processor (or oid oid/default))]
+   (let [oid
+         (or oid (OID/defaultOID obj))
+         processor
+         (-get-processor oid)]
      (.encodeBin processor oid (->codec-params opt)))))
 
 
@@ -1120,20 +1120,11 @@
    (encode-txt obj oid nil))
 
   (^String [obj oid opt]
-   (let [processor (-get-processor (or oid oid/default))]
+   (let [oid
+         (or oid (OID/defaultOID obj))
+         processor
+         (-get-processor oid)]
      (.encodeTxt processor obj (->codec-params opt)))))
-
-
-;;
-;; Enum
-;;
-
-(defn ->enum
-  "
-  Wrap a value with a PGEnum class for proper enum encoding
-  "
-  ^PGEnum [x]
-  (PGEnum/of x))
 
 
 ;;

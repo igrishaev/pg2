@@ -69,7 +69,7 @@
 
     (is (= init encoded))))
 
-
+;; TODO
 (deftest test-json-bin
 
   (let [data

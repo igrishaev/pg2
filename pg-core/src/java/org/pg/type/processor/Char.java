@@ -1,11 +1,8 @@
 package org.pg.type.processor;
 
-import clojure.lang.Symbol;
 import org.pg.Const;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
-import org.pg.error.PGError;
-import org.pg.type.PGEnum;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;

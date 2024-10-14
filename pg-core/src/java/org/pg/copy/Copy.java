@@ -4,6 +4,7 @@ import org.pg.ExecuteParams;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 import org.pg.type.processor.IProcessor;
+import org.pg.util.Debug;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -57,17 +58,20 @@ public class Copy {
         final int OIDLen = OIDs.length;
         short i = 0;
         int oid;
+        String encoded;
         IProcessor processor;
         while (iterator.hasNext()) {
-            i++;
             final Object item = iterator.next();
             oid = i < OIDLen ? OIDs[i] : OID.defaultOID(item);
-            processor = codecParams.getProcessor(oid);
             if (item == null) {
                 sb.append(executeParams.CSVNull());
             }
             else {
-                final String encoded = processor.encodeTxt(item, codecParams);
+                processor = codecParams.getProcessor(oid);
+                encoded = processor.encodeTxt(item, codecParams);
+                if (Debug.isON) {
+                    Debug.debug("encodeRowCSV, i: %s, OIDs: %s, oid: %s, proc: %s, encoded: %s", i, Arrays.toString(OIDs), oid, processor, encoded);
+                }
                 sb.append(executeParams.CSVQuote());
                 sb.append(quoteCSV(encoded));
                 sb.append(executeParams.CSVQuote());
@@ -75,6 +79,7 @@ public class Copy {
             if (iterator.hasNext()) {
                 sb.append(executeParams.CSVCellSep());
             }
+            i++;
         }
         sb.append(executeParams.CSVLineSep());
         return sb.toString();
@@ -92,10 +97,8 @@ public class Copy {
         int oid;
         IProcessor processor;
         int totalSize = 2;
-
-        int i = -1;
+        int i = 0;
         for (final Object item: row) {
-            i++;
             if (item == null) {
                 totalSize += 4;
                 bufs[i] = null;
@@ -107,6 +110,7 @@ public class Copy {
                 totalSize += 4 + buf.array().length;
                 bufs[i] = buf;
             }
+            i++;
         }
 
         final ByteBuffer result = ByteBuffer.allocate(totalSize);
