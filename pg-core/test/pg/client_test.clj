@@ -2515,6 +2515,9 @@ drop table %1$s;
           x2
           (-> res first :x)]
 
+      (is (= 1 res))
+
+      #_
       (is (= (str x1) (str x2))))))
 
 

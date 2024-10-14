@@ -1,12 +1,10 @@
 package org.pg.type.processor;
 
-import clojure.lang.BigInt;
 import org.pg.codec.CodecParams;
 import org.pg.codec.NumericBin;
 import org.pg.enums.OID;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 public class Numeric extends AProcessor {
@@ -15,7 +13,9 @@ public class Numeric extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        if (x instanceof Number n) {
+        if (x instanceof BigDecimal bd) {
+            return NumericBin.encode(bd);
+        } else if (x instanceof Number n) {
             return NumericBin.encode(new BigDecimal(n.longValue()));
         } else {
             return binEncodingError(x, oid);
