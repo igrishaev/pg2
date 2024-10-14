@@ -4,6 +4,7 @@ import org.pg.json.JSON;
 
 public class JsonTxt {
 
+    // TODO: remove this
     public static String encodeJson(final Object x, final CodecParams codecParams) {
         if (x instanceof JSON.Wrapper jw) {
             return encodeJson(jw.value(), codecParams);

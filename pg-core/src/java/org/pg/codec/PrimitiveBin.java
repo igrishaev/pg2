@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 
 public class PrimitiveBin {
 
+
+    // TODO: remove this
     public static ByteBuffer encodeBool(final boolean b) {
         return BBTool.ofBool(b);
     }

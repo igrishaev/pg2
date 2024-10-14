@@ -1,6 +1,7 @@
 package org.pg.codec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pg.error.PGError;
 import org.pg.json.JSON;
 import org.pg.type.processor.IProcessor;
 import org.pg.type.processor.Processors;
@@ -30,6 +31,20 @@ public record CodecParams (
     }
 
     public IProcessor getProcessor(final int oid) {
+        IProcessor typeProcessor = Processors.getProcessor(oid);
+
+        if (typeProcessor == null) {
+            typeProcessor = oidMap.get(oid);
+        }
+
+        if (typeProcessor == null) {
+            typeProcessor = Processors.unsupported;
+        }
+
+        return typeProcessor;
+    }
+
+    public IProcessor getProcessorDefault(final int oid) {
         IProcessor typeProcessor = Processors.getProcessor(oid);
 
         if (typeProcessor == null) {

@@ -543,7 +543,7 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (= 1
+            (is (= "cannot text-encode value {:foo 42}, type clojure.lang.PersistentArrayMap. Try to pass its SQL text representation as a string."
                    message)))))
 
       (let [res (pg/execute conn "select * from test")]
@@ -564,7 +564,7 @@ from
 
     (pg/with-connection [conn (assoc *CONFIG-BIN*
                                      :type-map
-                                     {full-type ;; TODO: enums
+                                     {full-type
                                       org.pg.type.processor.Processors/defaultEnum})]
 
       (pg/query conn
@@ -578,7 +578,6 @@ from
                res))))))
 
 
-;; TODO
 (deftest test-client-unsupported-type-bin
   (let [type-name (gen-type)
 
@@ -604,7 +603,7 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (= "don't know how to binary-encode value {:foo 42}. Try to pass its SQL binary representation as a byte array or a byte buffer"
+            (is (= "cannot binary-encode value {:foo 42}, type clojure.lang.PersistentArrayMap. Try to pass its SQL binary representation as a byte array or a byte buffer."
                    message)))))
 
       (let [res (pg/execute conn "select * from test")]
@@ -2774,6 +2773,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (is (= [{:one 1}] (pg/query conn "select 1 as one")))))))
 
 
+;; TODO
 (deftest test-copy-in-rows-exception-in-the-middle
 
   (pg/with-connection [conn *CONFIG-TXT*]
@@ -2789,9 +2789,8 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                          rows)
         (is false)
         (catch PGError e
-          (is (-> e
-                  ex-message
-                  (str/starts-with? "Unhandled exception: cannot text-encode a value")))
+          (is (= 1 (ex-message e)))
+          #_
           (is (-> e
                   ex-cause
                   ex-message
@@ -2858,6 +2857,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
              res-query)))))
 
 
+;; TODO
 (deftest test-copy-in-rows-ok-csv-wrong-oids
 
   (pg/with-connection [conn *CONFIG-TXT*]

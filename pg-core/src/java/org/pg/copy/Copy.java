@@ -60,7 +60,7 @@ public class Copy {
         IProcessor processor;
         while (iterator.hasNext()) {
             oid = i < OIDLen ? OIDs[i] : OID.DEFAULT;
-            processor = codecParams.getProcessor(oid);
+            processor = codecParams.getProcessorDefault(oid);
             i++;
             final Object item = iterator.next();
             if (item == null) {
@@ -102,7 +102,7 @@ public class Copy {
             }
             else {
                 oid = i < OIDLen ? OIDs[i] : OID.DEFAULT;
-                processor = codecParams.getProcessor(oid);
+                processor = codecParams.getProcessorDefault(oid);
                 final ByteBuffer buf = processor.encodeBin(item, codecParams);
                 totalSize += 4 + buf.array().length;
                 bufs[i] = buf;

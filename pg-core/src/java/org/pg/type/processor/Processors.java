@@ -10,6 +10,9 @@ public class Processors {
     public static IProcessor defaultProcessor = new Default();
 
     @SuppressWarnings("unused")
+    public static IProcessor unsupported = new Unsupported();
+
+    @SuppressWarnings("unused")
     public static IProcessor defaultEnum = new Enum();
 
     static Map<Integer, IProcessor> oidMap = new HashMap<>();

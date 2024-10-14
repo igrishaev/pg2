@@ -20,6 +20,7 @@ public class Default extends AProcessor {
 
     public static final int oid = OID.DEFAULT;
 
+    // TODO: remove this
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof String s) {
@@ -116,15 +117,5 @@ public class Default extends AProcessor {
         } else {
             return txtEncodingError(x, oid);
         }
-    }
-
-    @Override
-    public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        return BBTool.getRestBytes(bb);
-    }
-
-    @Override
-    public Object decodeTxt(final String text, final CodecParams codecParams) {
-        return text;
     }
 }
