@@ -188,9 +188,8 @@
       (pg/encode-bin [1 2 3])
       (is false "must not be reached")
       (catch PGError e
-        (is (-> e
-                ex-message
-                (str/starts-with? "cannot binary-encode a value: [1 2 3], OID: 0"))))))
+        (is (= "cannot binary-encode, value: [1 2 3], type: clojure.lang.PersistentVector"
+               (ex-message e))))))
 
   (testing "json string"
     (let [bb (pg/encode-bin "[1,2,3]" oid/json)]
@@ -235,10 +234,11 @@
                  "342e10"
                  "-123e-8"]]
 
-    (let [x1 (bigdec value)
-          buf (pg/encode-bin x1 oid/numeric)
-          x2 (pg/decode-bin buf oid/numeric)]
-      (is (= x1 x2))))
+    (testing (format "value %s" value)
+      (let [x1 (bigdec value)
+            buf (pg/encode-bin x1 oid/numeric)
+            x2 (pg/decode-bin buf oid/numeric)]
+        (is (= x1 x2)))))
 
   (let [x1 (bigdec "1")
         buf (pg/encode-bin x1 oid/int2)]
@@ -447,8 +447,8 @@
                    (.toEpochMilli)
                    (Date.))
           buf (pg/encode-bin val1)
-          val2 (pg/decode-bin buf oid/date)]
-      (is (= (LocalDate/parse "2023-07-25") val2))))
+          val2 (pg/decode-bin buf oid/timestamptz)]
+      (is (= (OffsetDateTime/parse "2023-07-25T01:00:00.123Z") val2))))
 
   (testing "date"
     (let [val1 (-> "2023-07-25T01:00:00.123456Z"

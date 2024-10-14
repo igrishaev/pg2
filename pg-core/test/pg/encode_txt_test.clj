@@ -290,9 +290,8 @@
       (pg/encode-txt [1 2 3])
       (is false "must not be reached")
       (catch PGError e
-        (is (-> e
-                ex-message
-                (str/starts-with? "cannot text-encode a value: [1 2 3], OID: 0"))))))
+        (is (= "cannot text-encode, value: [1 2 3], type: clojure.lang.PersistentVector"
+               (ex-message e))))))
 
   (testing "json string"
     (let [string (pg/encode-txt "[1,2,3]" oid/json)]
@@ -318,7 +317,7 @@
     (let [string (pg/encode-txt (pg/json-wrap 1) oid/json)]
       (is (= "1" string)))))
 
-
+;; TODO
 (deftest test-array-encode-txt
 
   (testing "plain"

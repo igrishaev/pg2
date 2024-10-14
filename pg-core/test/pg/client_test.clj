@@ -543,7 +543,7 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (= "cannot text-encode value {:foo 42}, type clojure.lang.PersistentArrayMap. Try to pass its SQL text representation as a string."
+            (is (= "cannot text-encode, value: {:foo 42}, type: clojure.lang.PersistentArrayMap"
                    message)))))
 
       (let [res (pg/execute conn "select * from test")]
@@ -603,7 +603,7 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (= "cannot binary-encode value {:foo 42}, type clojure.lang.PersistentArrayMap. Try to pass its SQL binary representation as a byte array or a byte buffer."
+            (is (= "cannot binary-encode, value: {:foo 42}, type: clojure.lang.PersistentArrayMap"
                    message)))))
 
       (let [res (pg/execute conn "select * from test")]
@@ -2503,7 +2503,7 @@ drop table %1$s;
 
       (is (= (str x1) (str x2))))))
 
-;; TODO
+
 (deftest test-read-write-numeric-bin
   (pg/with-connection [conn *CONFIG-BIN*]
     (let [x1
@@ -2515,9 +2515,6 @@ drop table %1$s;
           x2
           (-> res first :x)]
 
-      (is (= 1 res))
-
-      #_
       (is (= (str x1) (str x2))))))
 
 
@@ -2791,10 +2788,10 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                          rows)
         (is false)
         (catch PGError e
-          (is (-> e
-                  ex-cause
-                  ex-message
-                  (str/starts-with? "cannot text-encode value java.lang.Object"))))))
+          (let [message (ex-message e)]
+            (is (str/starts-with?
+                 message
+                 "Unhandled exception: cannot text-encode, value: java.lang.Object"))))))
 
     (testing "conn is ok"
       (is (= :I (pg/status conn)))
@@ -2976,6 +2973,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
              res-query)))))
 
 
+;; TODO
 (deftest test-copy-in-maps-wrong-oid
 
   (pg/with-connection [conn *CONFIG-TXT*]
@@ -3059,11 +3057,11 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (catch PGError e
           (is (-> e
                   ex-message
-                  (str/starts-with? "Unhandled exception: cannot binary-encode value java.lang.Object")))
+                  (str/starts-with? "Unhandled exception: cannot binary-encode, value: java.lang.Object")))
           (is (-> e
                   ex-cause
                   ex-message
-                  (str/ends-with? "type java.lang.Object. Try to pass its SQL binary representation as a byte array or a byte buffer."))))))
+                  (str/ends-with? "type: java.lang.Object"))))))
 
     (testing "the conn still works"
       (is (= :I (pg/status conn)))

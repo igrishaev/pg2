@@ -239,7 +239,7 @@ public class OID {
         } else if (x instanceof IPersistentMap pm) {
             return JSONB;
         } else if (x instanceof LocalTime lt) {
-            return TIMESTAMP;
+            return TIME;
         } else if (x instanceof OffsetTime ot) {
             return TIMETZ;
         } else if (x instanceof LocalDate ld) {
