@@ -15,22 +15,8 @@ public class Numeric extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        if (x instanceof BigDecimal bd) {
-            return NumericBin.encode(bd);
-        } else if (x instanceof BigInteger bi) {
-            return NumericBin.encode(new BigDecimal(bi));
-        } else if (x instanceof BigInt bi) {
-            return NumericBin.encode(bi.toBigDecimal());
-        } else if (x instanceof Long l) {
-            return NumericBin.encode(new BigDecimal(l));
-        } else if (x instanceof Integer i) {
-            return NumericBin.encode(new BigDecimal(i));
-        } else if (x instanceof Short s) {
-            return NumericBin.encode(new BigDecimal(s));
-        } else if (x instanceof Float f) {
-            return NumericBin.encode(new BigDecimal(f));
-        } else if (x instanceof Double d) {
-            return NumericBin.encode(new BigDecimal(d));
+        if (x instanceof Number n) {
+            return NumericBin.encode(new BigDecimal(n.longValue()));
         } else {
             return binEncodingError(x, oid);
         }

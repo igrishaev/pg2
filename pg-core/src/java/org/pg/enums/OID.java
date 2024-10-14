@@ -1,5 +1,13 @@
 package org.pg.enums;
 
+import clojure.lang.IPersistentMap;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.time.*;
+import java.util.Date;
+
 @SuppressWarnings("unused")
 public class OID {
     public static final int DEFAULT                       =    0;
@@ -196,4 +204,56 @@ public class OID {
     public static final int ANYCOMPATIBLEMULTIRANGE       = 4538;
     public static final int PG_BRIN_BLOOM_SUMMARY         = 4600;
     public static final int PG_BRIN_MINMAX_MULTI_SUMMARY  = 4601;
+
+    public static int defaultOID(final Object x) {
+        if (x instanceof String s) {
+            return TEXT;
+        } else if (x instanceof Short s) {
+            return INT2;
+        } else if (x instanceof Integer i) {
+            return INT4;
+        } else if (x instanceof Long l) {
+            return INT8;
+        } else if (x instanceof Float f) {
+            return FLOAT4;
+        } else if (x instanceof Double d) {
+            return FLOAT8;
+        } else if (x instanceof BigDecimal bd) {
+            return NUMERIC;
+        } else if (x instanceof BigInteger bi) {
+            return NUMERIC;
+        } else if (x instanceof Boolean b) {
+            return BOOL;
+        } else if (x instanceof java.util.UUID u) {
+            return UUID;
+        } else if (x instanceof byte[] ba) {
+            return BYTEA;
+        } else if (x instanceof org.pg.json.JSON.Wrapper w) {
+            return JSONB;
+        } else if (x instanceof ByteBuffer bb) {
+            return BYTEA;
+        } else if (x instanceof Date d) {
+            return TIMESTAMPTZ;
+        } else if (x instanceof Instant i) {
+            return TIMESTAMPTZ;
+        } else if (x instanceof IPersistentMap pm) {
+            return JSONB;
+        } else if (x instanceof LocalTime lt) {
+            return TIMESTAMP;
+        } else if (x instanceof OffsetTime ot) {
+            return TIMETZ;
+        } else if (x instanceof LocalDate ld) {
+            return DATE;
+        } else if (x instanceof LocalDateTime ldt) {
+            return TIMESTAMP;
+        } else if (x instanceof OffsetDateTime odt) {
+            return TIMESTAMPTZ;
+        } else if (x instanceof ZonedDateTime zdt) {
+            return TIMESTAMPTZ;
+        } else if (x instanceof Byte b) {
+            return INT2;
+        } else {
+            return DEFAULT;
+        }
+    }
 }

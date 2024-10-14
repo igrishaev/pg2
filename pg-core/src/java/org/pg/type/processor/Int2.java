@@ -12,8 +12,8 @@ public class Int2 extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object value, final CodecParams codecParams) {
-        if (value instanceof Short s) {
-            return BBTool.ofShort(s);
+        if (value instanceof Number n) {
+            return BBTool.ofShort(n.shortValue());
         } else {
             return binEncodingError(value, oid);
         }

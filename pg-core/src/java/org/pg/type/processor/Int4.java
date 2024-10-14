@@ -12,12 +12,8 @@ public class Int4 extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        if (x instanceof Short s) {
-            return BBTool.ofInt(s.intValue());
-        } else if (x instanceof Integer i) {
-            return BBTool.ofInt(i);
-        } else if (x instanceof Long l) {
-            return BBTool.ofInt(l.intValue());
+        if (x instanceof Number n) {
+            return BBTool.ofInt(n.intValue());
         } else {
             return binEncodingError(x, oid);
         }

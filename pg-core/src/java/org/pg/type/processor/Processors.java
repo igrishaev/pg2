@@ -7,8 +7,6 @@ import java.util.Map;
 
 public class Processors {
 
-    public static IProcessor defaultProcessor = new Default();
-
     @SuppressWarnings("unused")
     public static IProcessor unsupported = new Unsupported();
 

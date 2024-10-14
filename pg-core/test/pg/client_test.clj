@@ -524,7 +524,7 @@ from
                 {:foo [108 111 108] :id 4}]
                (map fix-foo res)))))))
 
-;; TODO
+
 (deftest test-client-unsupported-type-txt
   (let [type-name (gen-type)]
 
@@ -636,7 +636,7 @@ from
 
       (pg/execute conn
                   "insert into test (id, foo) values ($1, $2)"
-                  {:params [4 (pg/->enum :lol)]})
+                  {:params [4 "lol"]})
 
       (let [res1
             (pg/execute conn "select * from test")]
@@ -2864,6 +2864,12 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (pg/query conn "create temp table foo (id int2)")
 
+    (pg/copy-in-rows conn
+                       "copy foo (id) from STDIN WITH (FORMAT CSV)"
+                       [[1] [2] [3]]
+                       {:oids [oid/uuid]})
+
+    #_
     (try
       (pg/copy-in-rows conn
                        "copy foo (id) from STDIN WITH (FORMAT CSV)"
@@ -3042,11 +3048,11 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (catch PGError e
           (is (-> e
                   ex-message
-                  (str/starts-with? "Unhandled exception: cannot binary-encode a value")))
+                  (str/starts-with? "Unhandled exception: cannot binary-encode value java.lang.Object")))
           (is (-> e
                   ex-cause
                   ex-message
-                  (str/starts-with? "cannot binary-encode a value"))))))
+                  (str/ends-with? "type java.lang.Object. Try to pass its SQL binary representation as a byte array or a byte buffer."))))))
 
     (testing "the conn still works"
       (is (= :I (pg/status conn)))

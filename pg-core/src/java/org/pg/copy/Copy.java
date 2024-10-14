@@ -59,10 +59,10 @@ public class Copy {
         int oid;
         IProcessor processor;
         while (iterator.hasNext()) {
-            oid = i < OIDLen ? OIDs[i] : OID.DEFAULT;
-            processor = codecParams.getProcessorDefault(oid);
             i++;
             final Object item = iterator.next();
+            oid = i < OIDLen ? OIDs[i] : OID.defaultOID(item);
+            processor = codecParams.getProcessor(oid);
             if (item == null) {
                 sb.append(executeParams.CSVNull());
             }
@@ -101,8 +101,8 @@ public class Copy {
                 bufs[i] = null;
             }
             else {
-                oid = i < OIDLen ? OIDs[i] : OID.DEFAULT;
-                processor = codecParams.getProcessorDefault(oid);
+                oid = i < OIDLen ? OIDs[i] : OID.defaultOID(item);
+                processor = codecParams.getProcessor(oid);
                 final ByteBuffer buf = processor.encodeBin(item, codecParams);
                 totalSize += 4 + buf.array().length;
                 bufs[i] = buf;

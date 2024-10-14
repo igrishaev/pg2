@@ -13,18 +13,8 @@ public class Float4 extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        if (x instanceof Float f) {
-            return BBTool.ofFloat(f);
-        } else if (x instanceof Double d) {
-            return BBTool.ofFloat(d.floatValue());
-        } else if (x instanceof Short s) {
-            return BBTool.ofFloat(s.floatValue());
-        } else if (x instanceof Integer i) {
-            return BBTool.ofFloat(i.floatValue());
-        }  else if (x instanceof Long l) {
-            return BBTool.ofFloat(l.floatValue());
-        } else if (x instanceof BigDecimal bc) {
-            return BBTool.ofFloat(bc.floatValue());
+        if (x instanceof Number n) {
+            return BBTool.ofFloat(n.floatValue());
         } else {
             return binEncodingError(x, oid);
         }

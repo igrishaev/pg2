@@ -5,7 +5,8 @@
   (:require
    [clojure.string :as str]
    [less.awful.ssl :as ssl]
-   [pg.fold :as fold])
+   [pg.fold :as fold]
+   [pg.oid :as oid])
   (:import
    clojure.lang.IDeref
    clojure.lang.IPersistentMap
@@ -1065,22 +1066,20 @@
 
 
 (defn- -get-processor ^IProcessor [oid]
-  (or (Processors/getProcessor oid)
-      Processors/defaultProcessor))
+  (Processors/getProcessor oid))
 
 
 (defn decode-bin
   "
   Decode a binary-encoded value from a ByteBuffer.
   "
-  ([^ByteBuffer buf]
-   (decode-bin buf nil))
+  ([^ByteBuffer buf oid]
+   (decode-bin buf oid nil))
 
-  #_
-  ([^ByteBuffer buf opt]
+  ([^ByteBuffer buf oid opt]
    (.rewind buf)
    (let [processor (-get-processor oid)]
-     (.decodeBin buf oid (->codec-params opt)))))
+     (.decodeBin processor buf (->codec-params opt)))))
 
 
 (defn decode-txt
@@ -1088,12 +1087,11 @@
   Decode a text-encoded value from a ByteBuffer.
   "
   ([^String obj oid]
-   #_
-   (DecoderTxt/decode obj oid))
+   (decode-txt obj oid nil))
 
   ([^String obj oid opt]
-   #_
-   (DecoderTxt/decode obj oid (->codec-params opt))))
+   (let [processor (-get-processor oid)]
+     (.decodeTxt processor obj (->codec-params opt)))))
 
 
 (defn encode-bin
@@ -1101,17 +1099,14 @@
   Binary-encode a value into a ByteBuffer.
   "
   (^ByteBuffer [obj]
-   #_
-   (encode-bin obj oid/default nil))
+   (encode-bin obj nil nil))
 
   (^ByteBuffer [obj oid]
-   #_
    (encode-bin obj oid nil))
 
   (^ByteBuffer [obj oid opt]
-   #_
-   (let [processor (-get-processor oid)]
-     (.encodeBin oid (->codec-params opt)))))
+   (let [processor (-get-processor (or oid oid/default))]
+     (.encodeBin processor oid (->codec-params opt)))))
 
 
 (defn encode-txt
@@ -1119,17 +1114,14 @@
   Text-encode a value into a string.
   "
   (^String [obj]
-   #_
-   (encode-txt obj oid/default nil))
+   (encode-txt obj nil nil))
 
   (^String [obj oid]
-   #_
    (encode-txt obj oid nil))
 
   (^String [obj oid opt]
-   #_
-   (let [processor (-get-processor oid)]
-     (.encodeTxt oid (->codec-params opt)))))
+   (let [processor (-get-processor (or oid oid/default))]
+     (.encodeTxt processor obj (->codec-params opt)))))
 
 
 ;;
