@@ -1,11 +1,12 @@
 package org.pg.type.processor;
 
+import clojure.lang.Symbol;
 import org.pg.codec.CodecParams;
 import org.pg.codec.PrimitiveBin;
-import org.pg.error.PGError;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
+import java.util.UUID;
 
 public class Text extends AProcessor {
 
@@ -14,7 +15,7 @@ public class Text extends AProcessor {
         if (x instanceof String s) {
             return PrimitiveBin.encodeString(s, codecParams);
         } else {
-            throw new PGError("value %s must be a string", x);
+            return binEncodingError(x);
         }
     }
 
@@ -22,8 +23,14 @@ public class Text extends AProcessor {
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof String s) {
             return s;
+        } else if (x instanceof UUID u) {
+            return u.toString();
+        } else if (x instanceof Symbol s) {
+            return s.toString();
+        } else if (x instanceof Character c) {
+            return c.toString();
         } else {
-            throw new PGError("value %s must be a string", x);
+            return txtEncodingError(x);
         }
     }
 

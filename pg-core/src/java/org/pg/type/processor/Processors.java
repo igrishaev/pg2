@@ -35,7 +35,7 @@ public class Processors {
         oidMap.put(OID.CHAR, new Char());
 
         // misc
-        oidMap.put(OID.UUID, new UUID());
+        oidMap.put(OID.UUID, new Uuid());
         oidMap.put(OID.JSON, new Json());
         oidMap.put(OID.JSONB, new Jsonb());
         oidMap.put(OID.BYTEA, new Bytea());

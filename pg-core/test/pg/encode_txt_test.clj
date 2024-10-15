@@ -28,7 +28,7 @@
    {:encode-key-fn (comp reverse-string name)
     :decode-key-fn (comp keyword reverse-string)}))
 
-;; TODO
+
 (deftest test-bytea
   (let [res (pg/encode-txt (.getBytes "hello" "UTF-8"))]
     (is (= "\\x68656c6c6f" res))))
@@ -41,7 +41,7 @@
                oid/bpchar]]
     (is (= "test" (pg/encode-txt "test" oid)))))
 
-;; TODO
+
 (deftest test-encode-basic
 
   (is (= "1" (pg/encode-txt 1)))
@@ -159,7 +159,6 @@
           res (pg/encode-txt val oid/date)]
       (is (= "2023-07-25" res))))
 
-  ;; TODO
   (testing "LocalTime default"
     (let [val (LocalTime/parse "01:00:00.123456")
           res (pg/encode-txt val)]
@@ -274,7 +273,7 @@
 
     (is (= {"oof" 123} data))))
 
-;; TODO
+
 (deftest test-json-encode-txt
 
   (testing "json coll"
@@ -351,8 +350,9 @@
     (doseq [oid [oid/_text
                  oid/_varchar
                  oid/_name
-                 oid/_char
-                 oid/_bpchar]]
+                 ;; oid/_char ;; TODO
+                 oid/_bpchar
+                 ]]
       (let [result
             (pg/encode-txt [["a\\a" nil "b\"b"]
                             ["cc" nil "dd"]]

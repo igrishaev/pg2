@@ -6,7 +6,7 @@ import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
 
-public class UUID extends AProcessor {
+public class Uuid extends AProcessor {
 
     private static final int oid = OID.UUID;
 

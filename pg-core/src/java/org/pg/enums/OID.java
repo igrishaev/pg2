@@ -1,6 +1,8 @@
 package org.pg.enums;
 
+import clojure.lang.BigInt;
 import clojure.lang.IPersistentMap;
+import clojure.lang.Symbol;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -208,6 +210,10 @@ public class OID {
     public static int defaultOID(final Object x) {
         if (x instanceof String s) {
             return TEXT;
+        } else if (x instanceof Symbol s) {
+            return TEXT;
+        } else if (x instanceof Character c) {
+            return TEXT;
         } else if (x instanceof Short s) {
             return INT2;
         } else if (x instanceof Integer i) {
@@ -221,6 +227,8 @@ public class OID {
         } else if (x instanceof BigDecimal bd) {
             return NUMERIC;
         } else if (x instanceof BigInteger bi) {
+            return NUMERIC;
+        } else if (x instanceof BigInt bi) {
             return NUMERIC;
         } else if (x instanceof Boolean b) {
             return BOOL;
