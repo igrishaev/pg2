@@ -3,6 +3,7 @@ package org.pg.type.processor;
 import org.pg.Const;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
+import org.pg.error.PGError;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
@@ -16,23 +17,35 @@ public class Char extends AProcessor {
         return ByteBuffer.wrap(bytes);
     }
 
+    private static String fromString(final String string) {
+        if (string.length() == 1) {
+            return string;
+        } {
+            throw new PGError(
+                    "String %s must be exactly of one character " +
+                            "because the database type is CHAR", string
+            );
+        }
+    }
+
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        if (x instanceof String s) {
-            return stringToBytes(s, codecParams);
-        } else if (x instanceof Character c) {
+        if (x instanceof Character c) {
             return stringToBytes(c.toString(), codecParams);
-        } else {
+        } else if (x instanceof String s) {
+            return stringToBytes(fromString(s), codecParams);
+        }
+        else {
             return binEncodingError(x, oid);
         }
     }
 
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
-        if (x instanceof String s) {
-            return s;
-        } else if (x instanceof Character c) {
+        if (x instanceof Character c) {
             return c.toString();
+        } else if (x instanceof String s) {
+            return fromString(s);
         } else {
             return txtEncodingError(x, oid);
         }

@@ -27,11 +27,10 @@ public class Processors {
         oidMap.put(OID.FLOAT8, new Float8());
 
         // text
-        final IProcessor text = new Text();
-        oidMap.put(OID.VARCHAR, text);
-        oidMap.put(OID.TEXT, text);
-        oidMap.put(OID.NAME, text);
-        oidMap.put(OID.BPCHAR, text);
+        oidMap.put(OID.VARCHAR, new Text(OID.VARCHAR));
+        oidMap.put(OID.TEXT, new Text(OID.TEXT));
+        oidMap.put(OID.NAME, new Text(OID.NAME));
+        oidMap.put(OID.BPCHAR, new Text(OID.BPCHAR));
         oidMap.put(OID.CHAR, new Char());
 
         // misc
@@ -60,6 +59,7 @@ public class Processors {
         oidMap.put(OID._TEXT, new Array(OID._TEXT, OID.TEXT));
         oidMap.put(OID._NAME, new Array(OID._NAME, OID.NAME));
         oidMap.put(OID._BPCHAR, new Array(OID._BPCHAR, OID.BPCHAR));
+        oidMap.put(OID._CHAR, new Array(OID._CHAR, OID.CHAR));
         oidMap.put(OID._UUID, new Array(OID._UUID, OID.UUID));
         oidMap.put(OID._JSON, new Array(OID._JSON, OID.JSON));
         oidMap.put(OID._JSONB, new Array(OID._JSONB, OID.JSONB));

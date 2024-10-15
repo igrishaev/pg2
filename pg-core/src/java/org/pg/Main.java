@@ -4,7 +4,10 @@ public final class Main {
 
     public static void main (final String[] args) {
 
-        String user = System.getenv("USER");
+        final long l = 123123123L;
+        System.out.println((short) l);
+
+        // String user = System.getenv("USER");
 
 //        Config config = Config.builder(user, user)
 //                .port(15432)
@@ -14,22 +17,22 @@ public final class Main {
 //                .binaryDecode(true)
 //                .build();
 
-        Config config = Config.builder("test", "test")
-                .port(10140)
-                .host("127.0.0.1")
-                .password("test")
-                .binaryEncode(true)
-                .binaryDecode(true)
-                .SOKeepAlive(true)
-                .build();
+//        Config config = Config.builder("test", "test")
+//                .port(10140)
+//                .host("127.0.0.1")
+//                .password("test")
+//                .binaryEncode(true)
+//                .binaryDecode(true)
+//                .SOKeepAlive(true)
+//                .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
-        Connection conn = Connection.connect(config);
+        // Connection conn = Connection.connect(config);
 
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());
 
-        conn.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10000000)");
+        // conn.query("select '{\"foo\": 555}'::jsonb as obj from generate_series(1, 10000000)");
 
         // System.out.println(conn.execute("select '{\"foo\": 555}'::jsonb as obj"));
 

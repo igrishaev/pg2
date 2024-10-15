@@ -34,12 +34,23 @@
     (is (= "\\x68656c6c6f" res))))
 
 
-(deftest test-char-types
+(deftest test-text-types
   (doseq [oid [oid/text
-               oid/char
                oid/varchar
                oid/bpchar]]
     (is (= "test" (pg/encode-txt "test" oid)))))
+
+
+(deftest test-char-type
+  (is (= "a" (pg/encode-txt "a" oid/char)))
+  (is (= "a" (pg/encode-txt \a oid/char)))
+
+  (try
+    (pg/encode-txt "ab" oid/char)
+    (is false)
+    (catch PGError e
+      (is (= "String ab must be exactly of one character because the database type is CHAR"
+             (ex-message e))))))
 
 
 (deftest test-encode-basic
@@ -316,7 +327,7 @@
     (let [string (pg/encode-txt (pg/json-wrap 1) oid/json)]
       (is (= "1" string)))))
 
-;; TODO
+
 (deftest test-array-encode-txt
 
   (testing "plain"
@@ -332,13 +343,11 @@
                          oid/_text)]
       (is (= "{{\"aa\",NULL,\"bb\"},{\"cc\",NULL,\"dd\"}}" result))))
 
-  (testing "numbers"
+  (testing "int numbers"
     (doseq [oid [oid/_int2
                  oid/_int4
                  oid/_int8
                  oid/_oid
-                 oid/_float4
-                 oid/_float8
                  oid/_numeric]]
       (let [result
             (pg/encode-txt [[1 nil 2]
@@ -346,18 +355,33 @@
                            oid)]
         (is (= "{{\"1\",NULL,\"2\"},{\"3\",NULL,\"4\"}}" result)))))
 
+  (testing "float numbers"
+    (doseq [oid [oid/_float4
+                 oid/_float8]]
+      (let [result
+            (pg/encode-txt [[1 nil 2]
+                            [3 nil 4]]
+                           oid)]
+        (is (= "{{\"1.0\",NULL,\"2.0\"},{\"3.0\",NULL,\"4.0\"}}" result)))))
+
   (testing "text"
     (doseq [oid [oid/_text
                  oid/_varchar
                  oid/_name
-                 ;; oid/_char ;; TODO
-                 oid/_bpchar
-                 ]]
+                 oid/_bpchar]]
       (let [result
             (pg/encode-txt [["a\\a" nil "b\"b"]
                             ["cc" nil "dd"]]
                            oid)]
         (is (= "{{\"a\\\\a\",NULL,\"b\\\"b\"},{\"cc\",NULL,\"dd\"}}" result)))))
+
+  (testing "char"
+    (doseq [oid [oid/_char]]
+      (let [result
+            (pg/encode-txt [[\a nil \b]
+                            [\c nil "d"]]
+                           oid)]
+        (is (= "{{\"a\",NULL,\"b\"},{\"c\",NULL,\"d\"}}" result)))))
 
   (testing "uuid"
     (doseq [oid [oid/_text

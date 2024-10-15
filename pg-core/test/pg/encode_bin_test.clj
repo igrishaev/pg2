@@ -56,9 +56,15 @@
 
   ;; char
 
-  (let [bb (pg/encode-bin "hello" oid/char)
+  (let [bb (pg/encode-bin "h" oid/char)
         res (pg/decode-bin bb oid/char)]
     (is (= \h res)))
+
+  (try
+    (pg/encode-bin "ha" oid/char)
+    (catch Throwable e
+      (is (= "String ha must be exactly of one character because the database type is CHAR"
+             (ex-message e)))))
 
   ;; varchar
 
@@ -75,6 +81,27 @@
 
 (deftest test-numbers
 
+  ;; short
+
+  (let [res (pg/encode-bin (short 1))]
+    (is (bb== (byte-array [0 1]) res)))
+
+  (let [res (pg/encode-bin 1 oid/int2)]
+    (is (bb== (byte-array [0 1]) res)))
+
+  (let [res (pg/encode-bin (float 1) oid/int2)]
+    (is (bb== (byte-array [0 1]) res)))
+
+  (let [res (pg/encode-bin (float 1.123456) oid/int2)]
+    (is (bb== (byte-array [0 1]) res)))
+
+  (try
+    (pg/encode-bin 99999 oid/int2)
+    (is false)
+    (catch PGError e
+      (is (= "number 99999 is out of INT2 range"
+             (ex-message e)))))
+
   ;; int
 
   (let [res (pg/encode-bin 1)]
@@ -85,6 +112,16 @@
 
   (let [res (pg/encode-bin (short 1))]
     (is (bb== (byte-array [0 1]) res)))
+
+  (let [res (pg/encode-bin 1 oid/int4)]
+    (is (bb== (byte-array [0 0 0 1]) res)))
+
+  (try
+    (pg/encode-bin 9999999999 oid/int4)
+    (is false)
+    (catch PGError e
+      (is (= "number 9999999999 is out of INT4 range"
+             (ex-message e)))))
 
   ;; byte
 
@@ -101,6 +138,13 @@
 
   (let [res (pg/encode-bin (float 1.1) oid/float4)]
     (is (bb== (byte-array [63, -116, -52, -51]) res)))
+
+  (try
+    (pg/encode-bin 9999999999999999999999999999999999999999999999999.42 oid/float4)
+    (is false)
+    (catch PGError e
+      (is (= "number 1.0E49 is out of FLOAT4 range"
+             (ex-message e)))))
 
   (let [res (pg/encode-bin (double 1.1) oid/float8)]
     (is (bb== (byte-array [63, -15, -103, -103, -103, -103, -103, -102]) res))

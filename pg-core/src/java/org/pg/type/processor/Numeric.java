@@ -13,6 +13,7 @@ public class Numeric extends AProcessor {
 
     public static final int oid = OID.NUMERIC;
 
+    // TODO
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof BigDecimal bd) {

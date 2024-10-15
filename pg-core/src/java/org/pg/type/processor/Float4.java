@@ -3,6 +3,7 @@ package org.pg.type.processor;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 import org.pg.util.BBTool;
+import org.pg.util.NumTool;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -14,7 +15,7 @@ public class Float4 extends AProcessor {
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof Number n) {
-            return BBTool.ofFloat(n.floatValue());
+            return BBTool.ofFloat(NumTool.toFloat(n));
         } else {
             return binEncodingError(x, oid);
         }
@@ -22,7 +23,11 @@ public class Float4 extends AProcessor {
 
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
-        return x.toString();
+        if (x instanceof Number n) {
+            return String.valueOf(NumTool.toFloat(n));
+        } else {
+            return txtEncodingError(x, oid);
+        }
     }
 
     @Override

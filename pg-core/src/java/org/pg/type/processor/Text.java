@@ -10,12 +10,18 @@ import java.util.UUID;
 
 public class Text extends AProcessor {
 
+    public final int oid;
+
+    public Text(final int oid) {
+        this.oid = oid;
+    }
+
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof String s) {
             return PrimitiveBin.encodeString(s, codecParams);
         } else {
-            return binEncodingError(x);
+            return binEncodingError(x, oid);
         }
     }
 
@@ -30,7 +36,7 @@ public class Text extends AProcessor {
         } else if (x instanceof Character c) {
             return c.toString();
         } else {
-            return txtEncodingError(x);
+            return txtEncodingError(x, oid);
         }
     }
 

@@ -3,6 +3,7 @@ package org.pg.type.processor;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 import org.pg.util.BBTool;
+import org.pg.util.NumTool;
 
 import java.nio.ByteBuffer;
 
@@ -13,7 +14,7 @@ public class Int8 extends AProcessor {
     @Override
     public ByteBuffer encodeBin(final Object x , final CodecParams codecParams) {
         if (x instanceof Number n) {
-            return BBTool.ofLong(n.longValue());
+            return BBTool.ofLong(NumTool.toLong(n));
         } else {
             return binEncodingError(x, oid);
         }
@@ -21,7 +22,11 @@ public class Int8 extends AProcessor {
 
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
-        return x.toString();
+        if (x instanceof Number n) {
+            return String.valueOf(NumTool.toLong(n));
+        } else {
+            return txtEncodingError(x, oid);
+        }
     }
 
     @Override

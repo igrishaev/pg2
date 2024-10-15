@@ -230,10 +230,9 @@ from
       (pg/execute conn "select $1 as foo" {:params [(new Object)]})
       (is false)
       (catch PGError e
-        (is true)
-        (is (->> e
-                 ex-message
-                 (re-matches #"value java.lang.Object.+? must be a string")))))
+        (is (-> e
+                ex-message
+                (str/includes? "cannot text-encode, oid: 25, value: java.lang.Object")))))
 
     (testing "still can use that connection"
       (is (= [{:foo "test"}]
@@ -2229,10 +2228,10 @@ drop table %1$s;
       (try
         (pg/execute-statement conn stmt {:params [(new Object)]})
         (is false)
-        (catch PGErrorResponse e
+        (catch PGError e
           (is (-> e
                   ex-message
-                  (str/includes? "invalid input syntax for ")))))
+                  (str/includes? "cannot text-encode, oid: 20, value: java.lang.Object")))))
 
       (let [res
             (pg/execute-statement conn stmt {:params [1]})]
@@ -2973,7 +2972,6 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
              res-query)))))
 
 
-;; TODO
 (deftest test-copy-in-maps-wrong-oid
 
   (pg/with-connection [conn *CONFIG-TXT*]
@@ -2997,12 +2995,11 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                               :copy-csv? true})
             (is false)
             (catch PGError e
-              (is true)))
+              (is (= "Unhandled exception: cannot text-encode, oid: 700, value: true, type: java.lang.Boolean"
+                     (ex-message e)))))]
 
-          res-query
-          (pg/query conn "select * from foo")]
-
-      (is (= [{:foo 42}] (pg/query conn "select 42 as foo"))))))
+      (is (= [{:foo 42}]
+             (pg/query conn "select 42 as foo"))))))
 
 
 (deftest test-copy-in-maps-ok-bin
