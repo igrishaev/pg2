@@ -392,8 +392,8 @@ public final class Connection implements AutoCloseable {
     }
 
     // Like sendBytes above but taking boundaries into account.
-    private void sendBytes (final byte[] buf, final int offset, final int len) {
-        IOTool.write(outStream, buf, offset, len);
+    private void sendBytes (final byte[] buf, final int len) {
+        IOTool.write(outStream, buf, 0, len);
     }
 
     private void sendBytesCopy(final byte[] bytes) {
@@ -431,6 +431,7 @@ public final class Connection implements AutoCloseable {
         sendMessage(msg);
     }
 
+    @SuppressWarnings("unused")
     private void sendCopyData (final byte[] buf) {
         sendMessage(new CopyData(ByteBuffer.wrap(buf)));
     }
@@ -876,7 +877,7 @@ public final class Connection implements AutoCloseable {
             bbLead.putInt(4 + read);
 
             sendBytes(bbLead.array());
-            sendBytes(buf, 0, read);
+            sendBytes(buf, read);
         }
 
         if (e == null) {
@@ -911,9 +912,8 @@ public final class Connection implements AutoCloseable {
                 break;
 
             case BIN:
-                ByteBuffer buf;
-                // TODO: use sendBytes
                 sendCopyData(Copy.COPY_BIN_HEADER);
+                ByteBuffer buf;
                 while (rows.hasNext()) {
                     try {
                         buf = Copy.encodeRowBin(rows.next(), executeParams, codecParams);

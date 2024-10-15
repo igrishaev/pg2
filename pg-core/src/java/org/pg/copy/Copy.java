@@ -4,7 +4,6 @@ import org.pg.ExecuteParams;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 import org.pg.type.processor.IProcessor;
-import org.pg.util.Debug;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -69,9 +68,6 @@ public class Copy {
             else {
                 processor = codecParams.getProcessor(oid);
                 encoded = processor.encodeTxt(item, codecParams);
-                if (Debug.isON) {
-                    Debug.debug("encodeRowCSV, i: %s, OIDs: %s, oid: %s, proc: %s, encoded: %s", i, Arrays.toString(OIDs), oid, processor, encoded);
-                }
                 sb.append(executeParams.CSVQuote());
                 sb.append(quoteCSV(encoded));
                 sb.append(executeParams.CSVQuote());

@@ -1,18 +1,14 @@
 
 - readme
 
-- OID enum -> int
-- bin: bb -> byte[]
-- add pg17
-
+- extendable enc/dec
 - json wrapper not needed
-- pgenum not needed
 - :enums param
 - :type-map keywords
-- EncoderBin EncoderTxt DecoderBin DecoderTxt not needed
-- pg_type: read the whole table?
+- pgvector support
+- postgis support
 
-- extendable enc/dec
+- add pg17
 
 - decode records
 - enable binary by default?

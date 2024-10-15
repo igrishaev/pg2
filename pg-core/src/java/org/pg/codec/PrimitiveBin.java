@@ -7,8 +7,6 @@ import java.nio.ByteBuffer;
 
 public class PrimitiveBin {
 
-
-    // TODO: remove this
     public static ByteBuffer encodeBool(final boolean b) {
         return BBTool.ofBool(b);
     }
@@ -20,10 +18,6 @@ public class PrimitiveBin {
             case 1: yield true;
             default: throw new PGError("incorrect binary boolean value: %s", b);
         };
-    }
-
-    public static ByteBuffer encodeShort(final short s) {
-        return BBTool.ofShort(s);
     }
 
     public static ByteBuffer encodeString(final String string, final CodecParams codecParams) {
