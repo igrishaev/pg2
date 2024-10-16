@@ -577,6 +577,33 @@ from
                res))))))
 
 
+(deftest test-client-pass-enum-bin-enums-option
+  (let [type-name (gen-type)
+        table-name (gen-table)
+
+        full-type
+        (format "public.%s" type-name)
+
+        type-kw
+        (keyword "public" (str type-name))]
+
+    (pg/with-connection [conn *CONFIG-BIN*]
+      (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
+      (pg/execute conn (format "create table %s (id integer, foo %s)" table-name type-name)))
+
+    (pg/with-connection [conn (assoc *CONFIG-BIN* :enums [type-kw])]
+
+      (pg/query conn
+                (format "insert into %s (id, foo) values (1, 'foo'), (1, 'bar'), (1, 'kek')"
+                        table-name))
+
+      (let [res (pg/execute conn (format "select * from %s order by id" table-name))]
+        (is (= [{:foo "foo", :id 1}
+                {:foo "bar", :id 1}
+                {:foo "kek", :id 1}]
+               res))))))
+
+
 (deftest test-client-unsupported-type-bin
   (let [type-name (gen-type)
 
@@ -3439,3 +3466,16 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
           (jdbc/execute! conn sql-vec)]
 
       (is (= [{:issue {:score "10", :quality "high"}}] res)))))
+
+
+(deftest test-client-vector-txt-ok
+  (pg/with-conn [conn *CONFIG-TXT*]
+    (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v "[1,2,3]"}]
+             res)))))
+
+(deftest test-client-vector-bin-ok
+  (pg/with-conn [conn *CONFIG-BIN*]
+    (let [res (pg/execute conn "select '[1,1,1]'::vector(3) as v")]
+      (is (= [{:v "[1,2,3]"}]
+             res)))))

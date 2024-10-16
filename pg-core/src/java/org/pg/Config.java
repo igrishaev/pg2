@@ -1,10 +1,12 @@
 package org.pg;
 
 import clojure.lang.IFn;
+import clojure.lang.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
 import org.pg.type.processor.IProcessor;
+import org.pg.type.processor.Processors;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;
@@ -82,7 +84,7 @@ public record Config(
         private int poolMaxSize = Const.POOL_SIZE_MAX;
         private int poolExpireThresholdMs = Const.POOL_EXPIRE_THRESHOLD_MS;
         private int poolBorrowConnTimeoutMs = Const.POOL_BORROW_CONN_TIMEOUT_MS;
-        private Map<String, IProcessor> typeMap = new HashMap<>();
+        private final Map<String, IProcessor> typeMap = new HashMap<>();
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -91,9 +93,32 @@ public record Config(
             this.pgParams.put("application_name", Const.APP_NAME);
         }
 
+        private void addTypeMapEntry(final Object x, final IProcessor processor) {
+            if (x instanceof String s) {
+                typeMap.put(s, processor);
+            } else if (x instanceof Named n) {
+                String schema = n.getNamespace();
+                String type = n.getName();
+                if (schema == null) {
+                    throw new PGError("type %s must have a schema/namespace", x);
+                }
+                String fullType = String.format("%s.%s", schema, type);
+                typeMap.put(fullType, processor);
+            }
+        }
+
+        public Builder enums(final Iterable<?> enumSeq) {
+            for (Object x: enumSeq) {
+                addTypeMapEntry(x, Processors.defaultEnum);
+            }
+            return this;
+        }
+
         @SuppressWarnings("unused")
-        public Builder typeMap(final Map<String, IProcessor> typeMap) {
-            this.typeMap = typeMap;
+        public Builder typeMap(final Map<?, IProcessor> typeMap) {
+            for (Map.Entry<?, IProcessor> me: typeMap.entrySet()) {
+                addTypeMapEntry(me.getKey(), me.getValue());
+            }
             return this;
         }
 
@@ -154,6 +179,7 @@ public record Config(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder binaryDecode(final boolean binaryDecode) {
             this.binaryDecode = binaryDecode;
             return this;
@@ -192,6 +218,7 @@ public record Config(
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder SOKeepAlive(final boolean SOKeepAlive) {
             this.SOKeepAlive = SOKeepAlive;
             return this;

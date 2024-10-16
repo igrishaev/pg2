@@ -11,11 +11,14 @@ docker-up:
 docker-down:
 	docker compose down --remove-orphans
 
+docker-build:
+	docker compose build --no-cache
+
 docker-rm:
 	docker compose rm --force
 
 docker-psql:
-	psql --port 35432 --host localhost -U test test
+	psql --port 10150 --host localhost -U test test
 
 toc-install:
 	npm install --save markdown-toc

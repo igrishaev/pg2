@@ -1,7 +1,8 @@
 services:
 
   pg11:
-    image: postgres:11
+    build:
+      dockerfile: Dockerfile.11.docker
     command: >
       -E
     hostname: pg11
@@ -15,7 +16,8 @@ services:
       - POSTGRES_USER=test
 
   pg12:
-    image: postgres:12
+    build:
+      dockerfile: Dockerfile.12.docker
     command: >
       -E
     hostname: pg12
@@ -29,7 +31,8 @@ services:
       - POSTGRES_USER=test
 
   pg13:
-    image: postgres:13
+    build:
+      dockerfile: Dockerfile.13.docker
     command: >
       -E
     hostname: pg13
@@ -43,7 +46,8 @@ services:
       - POSTGRES_USER=test
 
   pg14:
-    image: postgres:14
+    build:
+      dockerfile: Dockerfile.14.docker
     command: >
       -E
     hostname: pg14
@@ -57,7 +61,8 @@ services:
       - POSTGRES_USER=test
 
   pg15:
-    image: postgres:15
+    build:
+      dockerfile: Dockerfile.15.docker
     command: >
       -E
     hostname: pg15
@@ -71,7 +76,8 @@ services:
       - POSTGRES_USER=test
 
   pg16:
-    image: postgres:16
+    build:
+      dockerfile: Dockerfile.16.docker
     command: >
       -E
     hostname: pg16

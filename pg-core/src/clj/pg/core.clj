@@ -61,6 +61,23 @@
   (-> column (str/replace #"_" "-") keyword))
 
 
+;;
+;; Errors
+;;
+
+(defn get-error-fields [^PGErrorResponse e]
+  (when (instance? PGErrorResponse e)
+    (.getErrorFields e)))
+
+
+(defn error! [template & args]
+  (throw (new PGError (apply format template args))))
+
+
+;;
+;; Config builders
+;;
+
 (defn ->execute-params
   "
   Make an instance of ExecuteParams from a Clojure map.
@@ -239,6 +256,7 @@
       :finally
       (.build))))
 
+
 (defn ->config
   "
   Turn a Clojure map into an instance of Config.Builder.
@@ -300,7 +318,8 @@
                 pool-borrow-conn-timeout-ms
 
                 ;; types
-                type-map]}
+                type-map
+                enums]}
         params
 
         DB
@@ -388,6 +407,9 @@
 
       type-map
       (.typeMap type-map)
+
+      enums
+      (.enums enums)
 
       :finally
       (.build))))
@@ -1154,19 +1176,6 @@
 
 (defn ssl-context-reader [mapping]
   `(ssl-context ~mapping))
-
-
-;;
-;; Errors
-;;
-
-(defn get-error-fields [^PGErrorResponse e]
-  (when (instance? PGErrorResponse e)
-    (.getErrorFields e)))
-
-
-(defn error! [template & args]
-  (throw (new PGError (apply format template args))))
 
 
 ;;

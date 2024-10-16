@@ -1,12 +1,11 @@
 
 - readme
 
-- extendable enc/dec
-- json wrapper not needed
-- :enums param
 - :type-map keywords
+- :enums param
 - pgvector support
 - postgis support
+- json wrapper not needed
 
 - add pg17
 

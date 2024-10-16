@@ -1,0 +1,4 @@
+FROM postgis/postgis:14-3.4
+
+RUN apt-get update
+RUN apt install -y postgresql-14-pgvector
