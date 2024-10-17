@@ -1,6 +1,7 @@
 package org.pg.type.processor;
 
 import org.pg.enums.OID;
+import org.pg.type.processor.pgvector.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +13,9 @@ public class Processors {
 
     @SuppressWarnings("unused")
     public static IProcessor defaultEnum = new Enum();
+
+    @SuppressWarnings("unused")
+    public static IProcessor pgVector = new Vector();
 
     static Map<Integer, IProcessor> oidMap = new HashMap<>();
     static {

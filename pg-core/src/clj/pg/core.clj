@@ -319,7 +319,9 @@
 
                 ;; types
                 type-map
-                enums]}
+                enums
+
+                with-pgvector?]}
         params
 
         DB
@@ -410,6 +412,9 @@
 
       enums
       (.enums enums)
+
+      with-pgvector?
+      (.usePGVector)
 
       :finally
       (.build))))

@@ -2,59 +2,36 @@ package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
 import org.pg.error.PGError;
+import org.pg.util.TypeTool;
 
 import java.nio.ByteBuffer;
 
 public abstract class AProcessor implements IProcessor {
 
     public static String txtEncodingError(final Object x) {
-        if (x == null) {
-            throw new PGError("cannot text-encode a null value");
-        }
-        throw new PGError(
-                "cannot text-encode, value: %s, type: %s",
-                x, x.getClass().getName()
-        );
+        throw new PGError("cannot text-encode: %s", TypeTool.repr(x));
     }
 
     public static String txtEncodingError(final Object x, final int oid) {
-        if (x == null) {
-            throw new PGError("cannot text-encode a null value");
-        }
-        throw new PGError(
-                "cannot text-encode, oid: %s, value: %s, type: %s",
-                oid, x, x.getClass().getName()
-        );
+        throw new PGError("cannot text-encode, oid: %s, %s", oid, TypeTool.repr(x));
     }
 
     public static ByteBuffer binEncodingError(final Object x) {
-        if (x == null) {
-            throw new PGError("cannot binary-encode a null value");
-        }
-        throw new PGError(
-                "cannot binary-encode, value: %s, type: %s",
-                x, x.getClass().getCanonicalName()
-        );
+        throw new PGError("cannot binary-encode: %s", TypeTool.repr(x));
     }
 
     public static ByteBuffer binEncodingError(final Object x, final int oid) {
-        if (x == null) {
-            throw new PGError("cannot binary-encode a null value");
-        }
-        throw new PGError(
-                "cannot binary-encode, oid: %s, value: %s, type: %s",
-                oid, x, x.getClass().getCanonicalName()
-        );
+        throw new PGError("cannot binary-encode, oid: %s, %s", oid, TypeTool.repr(x));
     }
 
     @Override
-    public ByteBuffer encodeBin(final Object value, final CodecParams codecParams) {
-        throw new PGError("method 'encodeBin' is not implemented, type: %s", value.getClass().getName());
+    public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
+        throw new PGError("method 'encodeBin' is not implemented: %s", TypeTool.repr(x));
     }
 
     @Override
-    public String encodeTxt(final Object value, final CodecParams codecParams) {
-        throw new PGError("method 'encodeTxt' is not implemented, type: %s", value.getClass().getName());
+    public String encodeTxt(final Object x, final CodecParams codecParams) {
+        throw new PGError("method 'encodeTxt' is not implemented: %s", TypeTool.repr(x));
     }
 
     @Override

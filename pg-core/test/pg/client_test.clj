@@ -3472,10 +3472,35 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
   (pg/with-conn [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v "[1,2,3]"}]
+             res))))
+
+  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+    (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v [1.0 2.0 3.0]}]
+             res))))
+
+  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+    (pg/query conn "create temp table test (id int, items vector(3))")
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 [1 2 3]]})
+    (let [res (pg/execute conn "select * from test")]
+      (is (= [{:id 1, :items [1.0 2.0 3.0]}]
              res)))))
+
 
 (deftest test-client-vector-bin-ok
   (pg/with-conn [conn *CONFIG-BIN*]
-    (let [res (pg/execute conn "select '[1,1,1]'::vector(3) as v")]
-      (is (= [{:v "[1,2,3]"}]
+    (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v [0, 3, 0, 0, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0]}]
+             (update-in res [0 :v] vec)))))
+
+  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+    (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v [1.0 2.0 3.0]}]
+             res))))
+
+  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+    (pg/query conn "create temp table test (id int, items vector(3))")
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 [1 2 3]]})
+    (let [res (pg/execute conn "select * from test")]
+      (is (= [{:id 1, :items [1.0 2.0 3.0]}]
              res)))))

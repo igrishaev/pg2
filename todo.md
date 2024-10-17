@@ -1,12 +1,15 @@
 
 - readme
 
-- :type-map keywords
-- :enums param
 - pgvector support
+- vector
+-
 - postgis support
 - json wrapper not needed
 
+- fix .getClass.getName
+
+- fix pg11
 - add pg17
 
 - decode records

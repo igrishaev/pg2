@@ -115,6 +115,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder usePGVector() {
+            addTypeMapEntry("public.vector", Processors.pgVector);
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         public Builder typeMap(final Map<?, IProcessor> typeMap) {
             for (Map.Entry<?, IProcessor> me: typeMap.entrySet()) {
                 addTypeMapEntry(me.getKey(), me.getValue());
