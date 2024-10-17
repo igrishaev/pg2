@@ -84,6 +84,6 @@ public class Vector extends AProcessor {
         for (String item: items) {
             result = result.cons(Float.parseFloat(item));
         }
-        return  result;
+        return result;
     }
 }

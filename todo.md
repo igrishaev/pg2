@@ -2,8 +2,9 @@
 - readme
 
 - pgvector support
-- vector
--
+- bit
+- sparsevec
+- vector no dimensions
 - postgis support
 - json wrapper not needed
 
