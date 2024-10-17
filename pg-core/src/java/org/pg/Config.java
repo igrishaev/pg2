@@ -117,7 +117,6 @@ public record Config(
         @SuppressWarnings("unused")
         public Builder usePGVector() {
             addTypeMapEntry("public.vector", Processors.vector);
-            addTypeMapEntry("public.bit", Processors.bit);
             return this;
         }
 

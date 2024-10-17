@@ -1,7 +1,6 @@
 package org.pg.type.processor;
 
 import org.pg.enums.OID;
-import org.pg.type.processor.pgvector.Bit;
 import org.pg.type.processor.pgvector.Vector;
 
 import java.util.HashMap;
@@ -17,9 +16,6 @@ public class Processors {
 
     @SuppressWarnings("unused")
     public static IProcessor vector = new Vector();
-
-    @SuppressWarnings("unused")
-    public static IProcessor bit = new Bit();
 
     static Map<Integer, IProcessor> oidMap = new HashMap<>();
     static {
@@ -55,6 +51,9 @@ public class Processors {
         oidMap.put(OID.TIME, new Time());
         oidMap.put(OID.TIMETZ, new Timetz());
 
+        // misc
+        oidMap.put(OID.BIT, new Bit());
+
         // arrays
         oidMap.put(OID._INT2, new Array(OID._INT2, OID.INT2));
         oidMap.put(OID._INT4, new Array(OID._INT4, OID.INT4));
@@ -78,6 +77,7 @@ public class Processors {
         oidMap.put(OID._DATE, new Array(OID._DATE, OID.DATE));
         oidMap.put(OID._TIME, new Array(OID._TIME, OID.TIME));
         oidMap.put(OID._TIMETZ, new Array(OID._TIMETZ, OID.TIMETZ));
+        oidMap.put(OID._BIT, new Array(OID._BIT, OID.BIT));
     }
 
     public static IProcessor getProcessor(final int oid) {

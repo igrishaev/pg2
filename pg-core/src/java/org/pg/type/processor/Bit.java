@@ -1,17 +1,19 @@
-package org.pg.type.processor.pgvector;
+package org.pg.type.processor;
 
 import org.pg.codec.CodecParams;
+import org.pg.enums.OID;
 import org.pg.error.PGError;
-import org.pg.type.processor.AProcessor;
 
 import java.nio.ByteBuffer;
 
 public class Bit extends AProcessor {
 
+    public static int oid = OID.BIT;
     private static final byte[] masks = {-128, 64, 32, 16, 8, 4, 2, 1};
 
     @Override
     public ByteBuffer encodeBin(final Object x , final CodecParams codecParams) {
+        // TODO: not requied to divide by 8!
         if (x instanceof String s) {
             if (s.length() % 8 != 0) {
                 throw new PGError("binary string doesn't divide on 8: %s", s);
@@ -33,7 +35,7 @@ public class Bit extends AProcessor {
             bb.put(ba);
             return bb;
         } else {
-            return binEncodingError(x);
+            return binEncodingError(x, oid);
         }
     }
 
@@ -55,7 +57,7 @@ public class Bit extends AProcessor {
             }
             return sb.toString();
         } else {
-            return txtEncodingError(x);
+            return txtEncodingError(x, oid);
         }
     }
 

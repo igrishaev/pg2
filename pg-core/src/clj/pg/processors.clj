@@ -7,4 +7,3 @@
 
 
 (def ^IProcessor vector Processors/vector)
-(def ^IProcessor bit    Processors/bit)

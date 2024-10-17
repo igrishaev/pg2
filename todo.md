@@ -2,7 +2,6 @@
 - readme
 
 - pgvector support
-- bit
 - sparsevec
 - vector no dimensions
 - postgis support
@@ -12,6 +11,9 @@
 
 - fix pg11
 - add pg17
+
+- fix /8 bit
+- bit
 
 - decode records
 - enable binary by default?
