@@ -1,6 +1,7 @@
 package org.pg.type.processor;
 
 import org.pg.enums.OID;
+import org.pg.type.processor.pgvector.Sparsevec;
 import org.pg.type.processor.pgvector.Vector;
 
 import java.util.HashMap;
@@ -16,6 +17,9 @@ public class Processors {
 
     @SuppressWarnings("unused")
     public static IProcessor vector = new Vector();
+
+    @SuppressWarnings("unused")
+    public static IProcessor sparsevec = new Sparsevec();
 
     static Map<Integer, IProcessor> oidMap = new HashMap<>();
     static {

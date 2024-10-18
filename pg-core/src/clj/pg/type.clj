@@ -1,4 +1,4 @@
-(ns pg.processors
+(ns pg.type
   (:refer-clojure :exclude [vector])
   (:import
    org.pg.error.PGError
@@ -7,3 +7,4 @@
 
 
 (def ^IProcessor vector Processors/vector)
+(def ^IProcessor sparsevec Processors/sparsevec)

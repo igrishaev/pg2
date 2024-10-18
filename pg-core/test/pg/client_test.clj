@@ -3549,3 +3549,38 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (let [res (pg/execute conn "select * from test order by id")]
       (is (= [{:id 1, :items "0000000100000010"}]
              res)))))
+
+
+(deftest test-client-sparsevec
+
+  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+    (let [res (pg/execute conn "select '{1:1,3:2,5:3}/5'::sparsevec as v")]
+      (is (= [{:v "{1:1,3:2,5:3}/5"}]
+             res))))
+
+  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+    (let [res (pg/execute conn "select '{3:1.123, 1:0000.1}/99'::sparsevec as v")]
+      (is (= 1
+             res))))
+
+  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+    (let [res (pg/execute conn "select '{1:1,3:2,5:3}/5'::sparsevec as v")]
+      (is (= [{:v "{1:1,3:2,5:3}/5"}]
+             res))))
+
+  #_
+  [0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0]
+
+  #_
+  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+    (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v [1.0 2.0 3.0]}]
+             res))))
+
+  #_
+  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+    (pg/query conn "create temp table test (id int, items vector(3))")
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 [1 2 3]]})
+    (let [res (pg/execute conn "select * from test")]
+      (is (= [{:id 1, :items [1.0 2.0 3.0]}]
+             res)))))
