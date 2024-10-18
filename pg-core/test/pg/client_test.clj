@@ -232,7 +232,7 @@ from
       (catch PGError e
         (is (-> e
                 ex-message
-                (str/includes? "cannot text-encode, oid: 25, value: java.lang.Object")))))
+                (str/includes? "cannot text-encode, oid: 25, type: java.lang.Object, value: java.lang.Object@")))))
 
     (testing "still can use that connection"
       (is (= [{:foo "test"}]
@@ -542,7 +542,7 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (= "cannot text-encode, value: {:foo 42}, type: clojure.lang.PersistentArrayMap"
+            (is (= "cannot text-encode: type: clojure.lang.PersistentArrayMap, value: {:foo 42}"
                    message)))))
 
       (let [res (pg/execute conn "select * from test")]
@@ -629,7 +629,7 @@ from
         (is false)
         (catch Throwable e
           (let [message (ex-message e)]
-            (is (= "cannot binary-encode, value: {:foo 42}, type: clojure.lang.PersistentArrayMap"
+            (is (= "cannot binary-encode: type: clojure.lang.PersistentArrayMap, value: {:foo 42}"
                    message)))))
 
       (let [res (pg/execute conn "select * from test")]
@@ -2258,7 +2258,7 @@ drop table %1$s;
         (catch PGError e
           (is (-> e
                   ex-message
-                  (str/includes? "cannot text-encode, oid: 20, value: java.lang.Object")))))
+                  (str/includes? "cannot text-encode, oid: 20, type: java.lang.Object, value: java.lang.Object@")))))
 
       (let [res
             (pg/execute-statement conn stmt {:params [1]})]
@@ -2814,10 +2814,9 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                          rows)
         (is false)
         (catch PGError e
-          (let [message (ex-message e)]
-            (is (str/starts-with?
-                 message
-                 "Unhandled exception: cannot text-encode, value: java.lang.Object"))))))
+          (is (-> e
+                  (ex-message)
+                  (str/starts-with? "Unhandled exception: cannot text-encode: type: java.lang.Object, value: java.lang.Object@"))))))
 
     (testing "conn is ok"
       (is (= :I (pg/status conn)))
@@ -2893,7 +2892,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                        {:oids [oid/uuid]})
       (is false)
       (catch PGError e
-        (is (= "Unhandled exception: cannot text-encode, oid: 2950, value: 1, type: java.lang.Long"
+        (is (= "Unhandled exception: cannot text-encode, oid: 2950, type: java.lang.Long, value: 1"
                (ex-message e)))))))
 
 
@@ -2911,7 +2910,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                         :oids [oid/uuid]})
       (is false)
       (catch PGError e
-        (is (= "Unhandled exception: cannot binary-encode, oid: 2950, value: 1, type: java.lang.Long"
+        (is (= "Unhandled exception: cannot binary-encode, oid: 2950, type: java.lang.Long, value: 1"
                (ex-message e)))))))
 
 
@@ -3022,7 +3021,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                               :copy-csv? true})
             (is false)
             (catch PGError e
-              (is (= "Unhandled exception: cannot text-encode, oid: 700, value: true, type: java.lang.Boolean"
+              (is (= "Unhandled exception: cannot text-encode, oid: 700, type: java.lang.Boolean, value: true"
                      (ex-message e)))))]
 
       (is (= [{:foo 42}]
@@ -3081,11 +3080,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (catch PGError e
           (is (-> e
                   ex-message
-                  (str/starts-with? "Unhandled exception: cannot binary-encode, value: java.lang.Object")))
-          (is (-> e
-                  ex-cause
-                  ex-message
-                  (str/ends-with? "type: java.lang.Object"))))))
+                  (str/starts-with? "Unhandled exception: cannot binary-encode: type: java.lang.Object, value: java.lang.Object@"))))))
 
     (testing "the conn still works"
       (is (= :I (pg/status conn)))

@@ -75,7 +75,7 @@
     (pg/encode-txt nil)
     (is false)
     (catch PGError e
-      (is (= "cannot text-encode a null value"
+      (is (= "cannot text-encode: NULL"
              (ex-message e)))))
 
   (let [uuid (random-uuid)]
@@ -300,7 +300,7 @@
       (pg/encode-txt [1 2 3])
       (is false "must not be reached")
       (catch PGError e
-        (is (= "cannot text-encode, value: [1 2 3], type: clojure.lang.PersistentVector"
+        (is (= "cannot text-encode: type: clojure.lang.PersistentVector, value: [1 2 3]"
                (ex-message e))))))
 
   (testing "json string"

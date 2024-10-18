@@ -42,7 +42,7 @@
     (pg/encode-bin nil)
     (is false)
     (catch PGError e
-      (is (= "cannot binary-encode a null value"
+      (is (= "cannot binary-encode: NULL"
              (ex-message e))))))
 
 
@@ -232,7 +232,7 @@
       (pg/encode-bin [1 2 3])
       (is false "must not be reached")
       (catch PGError e
-        (is (= "cannot binary-encode, value: [1 2 3], type: clojure.lang.PersistentVector"
+        (is (= "cannot binary-encode: type: clojure.lang.PersistentVector, value: [1 2 3]"
                (ex-message e))))))
 
   (testing "json string"
