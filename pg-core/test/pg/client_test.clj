@@ -3506,43 +3506,51 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
              res)))))
 
 
-(deftest test-client-bit-txt-ok
+(deftest test-client-bit-txt-ok-15-bit
   (pg/with-conn [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '00010001'::bit(32) as b")]
       (is (= [{:b "00010001000000000000000000000000"}]
              res))))
 
   (pg/with-conn [conn *CONFIG-TXT*]
-    (let [res (pg/execute conn "select '00010001'::bit(32) as b")]
-      (is (= [{:b "00010001000000000000000000000000"}]
-             res))))
-
-  (pg/with-conn [conn *CONFIG-TXT*]
-    (pg/query conn "create temp table test (id int, items bit(16))")
-    (pg/execute conn "insert into test values ($1, $2)" {:params [1 "0001000000010000"]})
-    (pg/execute conn "insert into test values ($1, $2)" {:params [2 (byte-array [8 16])]})
+    (pg/query conn "create temp table test (id int, items bit(15))")
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 "000100000001000"]})
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 "100100000001001"]})
     (let [res (pg/execute conn "select * from test order by id")]
-      (is (= [{:id 1, :items "0001000000010000"}
-              {:id 2, :items "0000100000010000"}]
+      (is (= [{:id 1, :items "000100000001000"}
+              {:id 1, :items "100100000001001"}]
              res)))))
 
 
-(deftest test-client-bit-bin-ok
+(deftest test-client-bit-bin-ok-15-bit
   (pg/with-conn [conn *CONFIG-BIN*]
-    (let [res (pg/execute conn "select '00010001'::bit(32) as b")]
-      (is (= [{:b "00010001000000000000000000000000"}]
+    (let [res (pg/execute conn "select '00010001'::bit(15) as b")]
+      (is (= [{:b "000100010000000"}]
              res))))
 
   (pg/with-conn [conn *CONFIG-BIN*]
-    (let [res (pg/execute conn "select '00010001'::bit(32) as b")]
-      (is (= [{:b "00010001000000000000000000000000"}]
-             res))))
+    (pg/query conn "create temp table test (id int, items bit(15))")
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 "000100000001000"]})
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 "100100000001001"]})
+    (let [res (pg/execute conn "select * from test order by id")]
+      (is (= [{:id 1, :items "000100000001000"}
+              {:id 1, :items "100100000001001"}]
+             res)))))
 
+
+(deftest test-client-bit-txt-ok-16-bit
+  (pg/with-conn [conn *CONFIG-TXT*]
+    (pg/query conn "create temp table test (id int, items bit(16))")
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 (byte-array [1 2])]})
+    (let [res (pg/execute conn "select * from test order by id")]
+      (is (= [{:id 1, :items "0000000100000010"}]
+             res)))))
+
+
+(deftest test-client-bit-bin-ok-16-bit
   (pg/with-conn [conn *CONFIG-BIN*]
     (pg/query conn "create temp table test (id int, items bit(16))")
-    (pg/execute conn "insert into test values ($1, $2)" {:params [1 "0001000000010000"]})
-    ;; (pg/execute conn "insert into test values ($1, $2)" {:params [2 (byte-array [8 16])]})
+    (pg/execute conn "insert into test values ($1, $2)" {:params [1 (byte-array [1 2])]})
     (let [res (pg/execute conn "select * from test order by id")]
-      (is (= [{:id 1, :items "0001000000010000"}
-              {:id 2, :items "0000100000010000"}]
+      (is (= [{:id 1, :items "0000000100000010"}]
              res)))))
