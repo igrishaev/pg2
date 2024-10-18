@@ -4,16 +4,12 @@
 - pgvector support
 - sparsevec
 - vector no dimensions
+
 - postgis support
 - json wrapper not needed
 
-- fix .getClass.getName
-
 - fix pg11
 - add pg17
-
-- fix /8 bit
-- bit
 
 - decode records
 - enable binary by default?

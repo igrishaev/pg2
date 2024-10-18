@@ -2,6 +2,7 @@ package org.pg;
 
 import org.pg.error.PGError;
 import org.pg.util.BBTool;
+import org.pg.util.TypeTool;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -90,15 +91,21 @@ public final class Payload {
 
         buf.putInt(size + 4);
 
-        for(Object x: items) {
-            switch (x.getClass().getSimpleName()) {
-                case "Integer" -> buf.putInt((int)x);
-                case "Short" -> buf.putShort((short)x);
-                case "ByteBuffer", "HeapByteBuffer" -> buf.put((ByteBuffer)x);
-                case "Byte" -> buf.put((byte)x);
-                case "Long" -> buf.putLong((long)x);
-                case "byte[]" -> buf.put((byte[])x);
-                default -> throw new PGError("unsupported item: %s, type: %s", x, x.getClass());
+        for (Object x: items) {
+            if (x instanceof Integer i) {
+                buf.putInt(i);
+            } else if (x instanceof Short s) {
+                buf.putShort(s);
+            } else if (x instanceof ByteBuffer bb) {
+                buf.put(bb);
+            } else if (x instanceof Byte b) {
+                buf.put(b);
+            } else if (x instanceof Long l) {
+                buf.putLong(l);
+            } else if (x instanceof byte[] ba) {
+                buf.put(ba);
+            } else {
+                throw new PGError("unsupported item: %s", TypeTool.repr(x));
             }
         }
         return buf;
