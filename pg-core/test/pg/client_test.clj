@@ -3464,6 +3464,15 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-client-vector-txt-ok
+
+  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+    (pg/query conn "create temp table test (id int, items vector)")
+    (pg/execute conn "insert into test values (1, '[1,2,3]')")
+    (pg/execute conn "insert into test values (1, '[1,2,3,4,5]')")
+    (let [res (pg/execute conn "select * from test order by id")]
+      (is (= [{:id 1, :items [1.0 2.0 3.0]} {:id 1, :items [1.0 2.0 3.0 4.0 5.0]}]
+             res))))
+
   (pg/with-conn [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v "[1,2,3]"}]
@@ -3483,6 +3492,15 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-client-vector-bin-ok
+
+  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+    (pg/query conn "create temp table test (id int, items vector)")
+    (pg/execute conn "insert into test values (1, '[1,2,3]')")
+    (pg/execute conn "insert into test values (1, '[1,2,3,4,5]')")
+    (let [res (pg/execute conn "select * from test order by id")]
+      (is (= [{:id 1, :items [1.0 2.0 3.0]} {:id 1, :items [1.0 2.0 3.0 4.0 5.0]}]
+             res))))
+
   (pg/with-conn [conn *CONFIG-BIN*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v [0, 3, 0, 0, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0]}]
@@ -3557,6 +3575,18 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (let [res (pg/execute conn "select '{1:1,3:2,5:3}/5'::sparsevec as v")]
       (is (= [{:v "{1:1,3:2,5:3}/5"}]
              res))))
+
+  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+    (let [res (pg/execute conn "create temp table test (id int, v sparsevec)")]
+      (pg/execute conn "insert into test values (1, '{1:1}/9')")
+      (pg/execute conn "insert into test values (3, '{3:3}/3')")
+      (is (= 1
+             (pg/execute conn "select * from test order by id")
+
+             ))
+
+
+))
 
   (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
     (let [res (pg/execute conn "select '{3:1.123, 1:0000.1}/99'::sparsevec as v")]
