@@ -1,7 +1,6 @@
 # Connecting to the server
 
-To connect the server, define a config map and pass it into the `connect`
-function:
+Call `connect` with the config map:
 
 ~~~clojure
 (require '[pg.core :as pg])
@@ -17,24 +16,24 @@ function:
   (pg/connect config))
 ~~~
 
-The `conn` is an instance of the `org.pg.Connection` class.
+`conn` is an instance of the `org.pg.Connection` class.
 
-The `:host`, `:port`, and `:password` config fields have default values and
-might be skipped (the password is an empty string by default). Only the `:user`
-and `:database` fields are required when connecting. See the list of possible
-fields and their values in a separate section.
+`:host`, `:port`, and `:password` have default values and
+can be skipped (password is an empty string by default). Only `:user`
+and `:database` are required. See the list of possible
+options below.
 
-To close a connection, pass it into the `close` function:
+To close the connection call `close` with it:
 
 ~~~clojure
 (pg/close conn)
 ~~~
 
-You cannot open or use this connection again afterwards.
+You can't open or use this connection again afterwards.
 
-To close the connection automatically, use either `with-connection` or
-`with-open` macro. The `with-connection` macro takes a binding symbol and a
-config map; the connection gets bound to the binding symbold while the body is
+To close the connection automatically use either `with-connection` or
+`clojure.core/with-open` macros. `with-connection` takes a binding symbol and a
+config map; the connection gets bound to the binding symbol while the body is
 executed:
 
 ~~~clojure
@@ -49,18 +48,17 @@ There is a shorter version of this macro called `with-conn`:
   (pg/query conn "select 1 as one"))
 ~~~
 
-The standard `with-open` macro calls the `(.close connection)` method on exit:
+`clojure.core/with-open` calls `(.close connection)` method on exit:
 
 ~~~clojure
 (with-open [conn (pg/connect config)]
   (pg/query conn "select 1 as one"))
 ~~~
 
-Avoid situations when you close a connection manually. Use one of these two
-macros shown above.
+It's recommended to use one of these macros instead of closing connections manually.
 
 Use `:pg-params` field to specify connection-specific Postgres parameters. These
-are "TimeZone", "application_name", "DateStyle" and more. Both keys and values
+are "TimeZone", "application_name", "DateStyle", etc. Both keys and values
 are plain strings:
 
 ~~~clojure
@@ -74,54 +72,38 @@ are plain strings:
   (pg/connect config+))
 ~~~
 
-## Connection parameters
+## Connection Parameters
 
-The following table describes all the possible connection options with the
-possible values and semantics. Only the two first options are requred. All the
-rest have predefined values.
+The following table describes all possible connection options.
+Only `:user` and `:database` are requred, others have default values.
 
-| Field                  | Type         | Default            | Comment                                                                         |
-|------------------------|--------------|--------------------|---------------------------------------------------------------------------------|
-| `:user`                | string       | **required**       | the name of the DB user                                                         |
-| `:database`            | string       | **required**       | the name of the database                                                        |
-| `:host`                | string       | 127.0.0.1          | IP or hostname                                                                  |
-| `:port`                | integer      | 5432               | port number                                                                     |
-| `:password`            | string       | ""                 | DB user password                                                                |
-| `:pg-params`           | map          | {}                 | A map of session params like {string string}                                    |
-| `:binary-encode?`      | bool         | false              | Whether to use binary data encoding                                             |
-| `:binary-decode?`      | bool         | false              | Whether to use binary data decoding                                             |
-| `:read-only?`          | bool         | false              | Whether to initiate this connection in READ ONLY mode (see below)               |
-| `:in-stream-buf-size`  | integer      | 0xFFFF             | Size of the input buffered socket stream                                        |
-| `:out-stream-buf-size` | integer      | 0xFFFF             | Size of the output buffered socket stream                                       |
-| `:fn-notification`     | 1-arg fn     | logging fn         | A function to handle notifications                                              |
-| `:fn-protocol-version` | 1-arg fn     | logging fn         | A function to handle negotiation version protocol event                         |
-| `:fn-notice`           | 1-arg fn     | logging fn         | A function to handle notices                                                    |
-| `:use-ssl?`            | bool         | false              | Whether to use SSL connection                                                   |
-| `:ssl-context`         | SSLContext   | nil                | An custom instance of `SSLContext` class to wrap a socket                       |
-| `:so-keep-alive?`      | bool         | true               | Socket KeepAlive value                                                          |
-| `:so-tcp-no-delay?`    | bool         | true               | Socket TcpNoDelay value                                                         |
-| `:so-timeout`          | integer      | 15.000             | Socket timeout value, in ms                                                     |
-| `:so-recv-buf-size`    | integer      | 0xFFFF             | Socket receive buffer size                                                      |
-| `:so-send-buf-size`    | integer      | 0xFFFF             | Socket send buffer size                                                         |
-| `:cancel-timeout-ms`   | integer      | 5.000              | Default value for the `with-timeout` macro, in ms                               |
-| `:protocol-version`    | integer      | 196608             | Postgres protocol version                                                       |
-| `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section) |
+| Field                  | Type         | Default              | Comment                                                                                   |
+|------------------------|--------------|----------------------|-------------------------------------------------------------------------------------------|
+| `:user`                | string       | **required**         | DB user name                                                                              |
+| `:database`            | string       | **required**         | database name                                                                             |
+| `:host`                | string       | `"127.0.0.1"`        | IP or hostname                                                                            |
+| `:port`                | integer      | `5432`               | port number                                                                               |
+| `:password`            | string       | `""`                 | DB user password                                                                          |
+| `:pg-params`           | map          | `{}`                 | Map of session params like {string string}                                                |
+| `:binary-encode?`      | bool         | `false`              | Whether to use binary data encoding                                                       |
+| `:binary-decode?`      | bool         | `false`              | Whether to use binary data decoding                                                       |
+| `:read-only?`          | bool         | `false`              | Whether to initiate this connection in READ ONLY mode (see below)                         |
+| `:in-stream-buf-size`  | integer      | `0xFFFF`             | Size of the input buffered socket stream                                                  |
+| `:out-stream-buf-size` | integer      | `0xFFFF`             | Size of the output buffered socket stream                                                 |
+| `:fn-notification`     | 1-arg fn     | logging fn           | Function to handle notifications                                                          |
+| `:fn-protocol-version` | 1-arg fn     | logging fn           | Function to handle negotiation version protocol event                                     |
+| `:fn-notice`           | 1-arg fn     | logging fn           | Function to handle notices                                                                |
+| `:use-ssl?`            | bool         | `false`              | Whether to use SSL connection                                                             |
+| `:ssl-context`         | SSLContext   | `nil`                | Custom instance of `SSLContext` class to wrap a socket                                    |
+| `:so-keep-alive?`      | bool         | `true`               | Socket KeepAlive value                                                                    |
+| `:so-tcp-no-delay?`    | bool         | `true`               | Socket TcpNoDelay value                                                                   |
+| `:so-timeout`          | integer      | `15.000`             | Socket timeout value (in ms)                                                              |
+| `:so-recv-buf-size`    | integer      | `0xFFFF`             | Socket receive buffer size                                                                |
+| `:so-send-buf-size`    | integer      | `0xFFFF`             | Socket send buffer size                                                                   |
+| `:cancel-timeout-ms`   | integer      | `5000`               | Default value for the `with-timeout` macro (in ms)                                        |
+| `:protocol-version`    | integer      | `196608`             | Postgres protocol version                                                                 |
+| `:object-mapper`       | ObjectMapper | `JSON.defaultMapper` | Instance of `ObjectMapper` for custom JSON processing (see [JSON support](/docs/json.md)) |
 
-### Parameter notes
+### read-only mode
 
-#### Read Only Mode
-
-The `:read-only?` connection parameter does two things under the hood:
-
-1. It appends the `default_transaction_read_only` parameter to the startup
-   message set to `on`. Thus, any transaction gets started on `READ ONLY` mode.
-
-2. It prevents the `:read-only?` flag from overriding in the `with-tx`
-   macro. Say, even if the macro is called like this:
-
-~~~clojure
-(pg/with-tx [conn {:read-only? false}] ;; try to mute the global :read-only? flag
-  (pg/query conn "delete from students"))
-~~~
-
-The transaction will be in `READ ONLY` mode anyway.
+If you set `:read-only? true` _every transaction_ will be started in `READ ONLY` mode, even if `:read-only? false` is passed to `with-tx`.

@@ -1,23 +1,23 @@
 # Arrays support
 
-In JDBC, arrays have always been a pain. Every time you're about to pass an
-array to the database and read it back, you've got to wrap your data in various
-Java classes, extend protocols, and multimethods. In Postgres, the array type is
+In `JDBC` arrays have always been a pain. Every time you're about to pass
+array to the database and read it back, you have to wrap your data in various
+Java classes, extend protocols, and multimethods. In Postgres the array type is
 quite powerful yet underestimated due to poor support of drivers. This is one
 more reason for running this project: to bring easy access to Postgres arrays.
 
-PG2 tries its best to provide seamless connection between Clojure vectors and
-Postgres arrays. When reading an array, you get a Clojure vector. And vice
+`PG2` tries its best to provide seamless connection between Clojure vectors and
+Postgres arrays. When reading an array you get a Clojure vector. And vice
 versa: to pass an array object into a query, just submit a vector.
 
-PG2 supports arrays of any type: not only primitives like numbers and strings
-but `uuid`, `numeric`, `timestamp(tz)`, `json(b)`, and more as well.
+`PG2` supports arrays of any type: not only primitives like numbers and strings
+but `uuid`, `numeric`, `timestamp(tz)`, `json(b)`, and more.
 
-Arrays might have more than one dimension. Nothing prevents you from having a 3D
+Arrays can have more than one dimension. Nothing prevents you from having a 3D
 array of integers like `cube::int[][][]`, and it becomes a nested vector when
-fetched by PG2.
+fetched by `PG2`.
 
-*A technical note: PG2 supports both encoding and decoding of arrays in both
+*Technical note: `PG2` supports both encoding and decoding of arrays in both
 text and binary modes.*
 
 Here is a short demo session. Let's prepare a table with an array of strings:
@@ -34,7 +34,7 @@ Insert a simple item:
             {:params [["one" "two" "three"]]})
 ~~~
 
-In arrays, some elements might be NULL:
+In arrays some elements might be NULL:
 
 ~~~clojure
 (pg/execute conn
@@ -51,7 +51,7 @@ Now let's check what we've got so far:
  {:id 2 :text_arr ["foo" nil "bar"]}]
 ~~~
 
-Postgres supports plenty of operators for arrays. Say, the `&&` one checks if
+Postgres supports plenty of operators for arrays. Say `&&` checks if
 there is at least one common element on both sides. Here is how we find those
 records that have either "tree", "four", or "five":
 
@@ -92,8 +92,8 @@ Here is how you insert a matrix:
 {:inserted 1}
 ~~~
 
-Pay attention: each number can be NULL but you cannot have NULL for an entire
-sub-array. This will trigger an error response from Postgres.
+Pay attention: each number can be NULL but you can't have NULL for an entire
+sub-array, this will trigger an error response from Postgres.
 
 Reading the matrix back:
 
@@ -183,9 +183,9 @@ Inserting an array of three maps:
               {:params [[{:foo 1} {:bar 2} {:test [1 2 3]}]]})
 ~~~
 
-Elements might be everything that can be JSON-encoded: numbers, strings,
-boolean, etc. The only tricky case is a vector. To not break the algorithm that
-traverses the matrix, wrap a vector element with `pg/json-wrap`:
+Elements can be anything JSON-encodable: numbers, strings,
+boolean, etc. The only tricky case is vectors. To not break the algorithm that
+traverses the matrix, wrap vector element with `pg/json-wrap`:
 
 ~~~clojure
 (pg/execute conn

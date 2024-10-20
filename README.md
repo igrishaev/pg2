@@ -1,39 +1,30 @@
-# PG2: A *Fast* PostgreSQL Driver For Clojure
+# PG2: *Fast* PostgreSQL driver for Clojure
 
-[pg]: https://github.com/igrishaev/pg
+`PG2` is a JDBC-free PostgreSQL client library.
 
-PG2 is a client library for PostgreSQL server. It succeeds [PG(one)][pg] -- my
-early attempt to make a JDBC-free client. Comparing to it, PG2 has the following
-features:
+**It's fast**: [benchmarks](/docs/benchmarks.md) prove up to 3 times performance boost compared to
+`next.jdbc`. Simple HTTP application reading from the database and
+serving JSON handles 2 times more RPS.
 
-**It's fast.** Benchmarks prove up to 3 times performance boost compared to
-Next.JDBC. A simple HTTP application which reads data from the database and
-responds with JSON handles 2 times more RPS. For details, see the "benchmarks"
-below.
-
-**It's written in Java** with a Clojure layer on top of it. Unfortunately,
-Clojure is not as fast as Java. For performance sake, I've got to implement most
-of the logic in pure Java. The Clojure layer is extremely thin and serves only
+**It's written in Java** with a Clojure layer on top of it. Unfortunately
+Clojure is not as fast as Java so most of the logic had to be implemented in pure Java. The Clojure layer is extremely thin and serves only
 to call certain methods.
 
-It's still **Clojure friendly**: by default, all the queries return a vector of
-maps, where the keys are keywords. You don't need to remap the result in any
-way. But moreover, the library provides dozens of ways to group, index, a reduce
+**It's Clojure friendly**: by default all queries return vector of
+maps with keys as keywords. Also `PG2` provides dozens of ways to group, index, and reduce
 a result.
 
-It **supports JSON** out from the box: There is no need to extend any protocols
-and so on. Read and write json(b) with ease as Clojure data! Also, JSON reading
-and writing as *really fast*, again: 2-3 times faster than in Next.JDBC.
+**It supports JSON out of the box**: there is no need to extend any protocols. Read and write JSON(B) as Clojure data with ease! Also JSON reads/writes are *really fast* again: 2-3 times faster than in `next.jdbc`.
 
-It **supports COPY operations**: you can easily COPY OUT a table into a
-stream. You can COPY IN a set of rows without CSV-encoding them because it's
-held by the library. It also supports binary COPY format, which is faster.
+**It supports `COPY` operations**: you can easily `COPY OUT` a table into a
+stream. You can `COPY IN` a set of rows without CSV-encoding them because it's
+held by the library. It also supports binary `COPY` format which is faster.
 
-It **supports java.time.** classes. The ordinary JDBC clients still use
-`Timestamp` class for dates, which is horrible. In PG2, all the `java.time.*`
-classes are supported for reading and writing.
+**It supports `java.time.*`** classes. The ordinary JDBC clients still use
+`Timestamp` for dates which is horrible. In `PG2` all the `java.time.*`
+classes are supported for both reading and writing.
 
-...And plenty of other features.
+...and plenty of other features!
 
 ## Documentation
 
@@ -42,14 +33,14 @@ classes are supported for reading and writing.
 - [Benchmarks](/docs/benchmarks.md)
 - [Authentication](/docs/authentication.md)
 - [Connecting to the server](/docs/connecting.md)
-- [Query and Execute](/docs/query-execute.md)
+- [Query and Execute API](/docs/query-execute.md)
 - [Prepared Statements](/docs/prepared-statement.md)
 - [Transactions](/docs/transaction.md)
 - [Connection state](/docs/connection-state.md)
 - [Connection Pool](/docs/pool.md)
 - [HoneySQL Integration](/docs/honeysql.md)
 - [HugSQL Support](/docs/hugsql.md)
-- [Next.JDBC API layer](/docs/next-jdbc-layer.md)
+- [next.jdbc API layer](/docs/next-jdbc-layer.md)
 - [Folders (Reducers)](/docs/folders.md)
 - [JSON support](/docs/json.md)
 - [Arrays support](/docs/arrays.md)

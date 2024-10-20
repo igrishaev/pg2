@@ -2,7 +2,7 @@
 
 ## Query
 
-The `query` function sends a query to the server and returns the
+`query` function sends a query to the server and returns the
 result. Non-data queries return a map with a tag:
 
 ~~~clojure
@@ -22,7 +22,7 @@ reducers (see below).
 ~~~
 
 The SQL string might include several expressions concatenated with a
-semicolon. In this case, the result will be a vector of results:
+semicolon. In this case the result will be a vector of results:
 
 ~~~clojure
 (pg/query conn "insert into test1 (name) values ('Juan'); select * from test1")
@@ -33,9 +33,9 @@ semicolon. In this case, the result will be a vector of results:
   {:name "Juan", :id 3}]]
 ~~~
 
-Use this feature wisely; don't try to do lots of things at once.
+Use this feature wisely; don't try to do many things at once.
 
-**Important:** the `query` function doesn't support parameters. You cannot run a
+**Important:** `query` doesn't support parameters. You can't run a
 query like these two below or similar:
 
 ~~~clojure
@@ -44,21 +44,20 @@ query like these two below or similar:
 (pg/query conn ["select * from test1 where id = ?" 1])
 ~~~
 
-**NEVER(!), NEVER(!!), NEVER(!!!) put parameters into a SQL string using `str`,
+**NEVER(!), NEVER(!!), NEVER(!!!) put parameters into SQL string using `str`,
 `format`, or other functions that operate on strings. You will regret it one
-day. Use execute with parameters instead.**
+day. Use `execute` with parameters instead.**
 
 ## Execute
 
 The `execute` function acts like `query` but has the following peculiarities:
 
-- The SQL string cannot have many expressions concatenated with a
+- The SQL string can't have many expressions concatenated with a
   semicolon. There must be a single expression (although the trailing semicolon
   is allowed).
 
 - It may have parameters. The values for these parameters are passed
-  separately. Unlike in JDBC, the parameters use dollar sign with a number, for
-  example `$1`, `$2`, etc.
+  separately. Unlike in `JDBC` the parameters use dollar sign with a number: `$1`, `$2`, etc.
 
 Here is how you can query a row by its primary key:
 
@@ -67,11 +66,11 @@ Here is how you can query a row by its primary key:
 ;; [{:name "Huan", :id 2}]
 ~~~
 
-The values are passed into the `:params` key; they must be a vector, or a list,
-or a lazy sequence. Passing a set is not recommended as it doesn't guarantee the
-order of the values.
+Values are passed via `:params` key which must be vector, list,
+or lazy sequence. Passing set is not recommended as it doesn't guarantee the
+order of values.
 
-This is how you insert values into a table using parameters:
+This is how you insert values into table using `:params`:
 
 ~~~clojure
 (pg/execute conn
@@ -80,7 +79,7 @@ This is how you insert values into a table using parameters:
 ;; {:inserted 3}
 ~~~
 
-Pay attention that the values are always a flat list. Imagine you'd like to
+Pay attention that the `:params` is always a flat list. Imagine you'd like to
 insert rows with explicit ids:
 
 ~~~clojure
@@ -90,8 +89,8 @@ insert rows with explicit ids:
 ;; {:inserted 3}
 ~~~
 
-The `:params` vector consists from flat values but not pairs like `[1001
-"Harry"]`. For better readability, make a list of pairs and then `flatten` it:
+The `:params` vector consists of flat values but not pairs like `[1001
+"Harry"]`. For better readability one can make a list of pairs and then `flatten` it:
 
 ~~~clojure
 (def pairs
@@ -104,8 +103,8 @@ The `:params` vector consists from flat values but not pairs like `[1001
 ;; (1001 "Harry" 1002 "Hermione" 1003 "Ron")
 ~~~
 
-Since the parameters have explicit numbers, you can reference a certain value
-many times. The following query will create three agents Smith with different
+Since parameters have explicit numbers you can reference certain value
+many times. The following query will create three agents with different
 ids.
 
 ~~~clojure
@@ -116,4 +115,4 @@ ids.
 ~~~
 
 Both `query` and `execute` functions accept various options that affect data
-processing. Find their description in the next section.
+processing, see [Folders (Reducers)](/docs/folders.md).
