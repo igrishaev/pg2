@@ -5,7 +5,7 @@
 [bench3]: https://grishaev.me/en/pg2-bench-3
 [bench4]: https://grishaev.me/en/pg-0-1-12
 
-For benchmarks, see the following posts in my blog:
+See the following posts in my blog:
 
 - [PG2 early announce and benchmarks, part 1][bench1]
 - [PG2 benchmarks, part 2][bench2]

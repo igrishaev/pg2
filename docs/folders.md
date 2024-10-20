@@ -1,28 +1,26 @@
 # Folders (Reducers)
 
 Folders (which are also known as reducers) are objects that transform rows from
-network into something else. A typical folder consists from an initial value
+network into something else. A typical folder consists of an initial value
 (which might be mutable) and logic that adds the next row to that value. Before
-returning the value, a folder might post-process it somehow, for example turn it
+returning the value a folder might post-process it somehow, for example turn it
 into an immutable value.
 
 The default folder (which you don't need to specify) acts exactly like this: it
-spawns a new `transient` vector and `conj!`es all the incoming rows into
-it. Finally, it returns a `persistent!` version of this vector.
+spawns a new `transient` vector and `conj!`es all incoming rows into
+it. Finally it returns a `persistent!` version of this vector.
 
-PG2 provides a great variety of folders: to build maps or sets, to index or
-group rows by a certain function. With folders, it's possible to dump a database
+`PG2` provides a great variety of folders: to build maps or sets, to index or
+group rows by a certain function, etc. With folders it's possible to dump a database
 result into a JSON or EDN file.
 
-It's quite important that folders process rows on the fly. Like transducers,
+It's quite important that folders process rows on the fly. Like transducers
 they don't keep the whole dataset in memory. They only track the accumulator and
 the current row no matter how many of them have arrived from the database: one
 thousand or one million.
 
-## A Simple Folder
-
-Technically a folder is a function (an instance of `clojure.lang.IFn`) with
-three bodies of arity 0, 1, and 2, as follows:
+Technically folder is a function (an instance of `clojure.lang.IFn`) with
+three bodies of arity 0, 1, and 2:
 
 ~~~clojure
 (defn a-folder
@@ -36,12 +34,12 @@ three bodies of arity 0, 1, and 2, as follows:
 
 - The first 0-arity form produces an accumulator that might be mutable.
 
-- The third 2-arity form takes the accumulator and the current row and returns
-  an updated version of the accumulator.
-
 - The second 1-arity form accepts the last version of the accumulator and
   transforms it somehow, for example seals a transient collection into its
   persistent view.
+
+- The third 2-arity form takes the accumulator and the current row and returns
+  an updated version of the accumulator.
 
 Here is the `default` folder:
 
@@ -56,8 +54,7 @@ Here is the `default` folder:
 ~~~
 
 Some folders depend on initial settings and thus produce folding functions. Here
-is an example of the `map` folder that acts like the `map` function from
-`clojure.core`:
+is an example of the `map` folder that acts like `clojure.core/map`:
 
 ~~~clojure
 (defn map
@@ -71,9 +68,9 @@ is an example of the `map` folder that acts like the `map` function from
      (conj! acc! (f row)))))
 ~~~
 
-## Passing A Folder
+## Passing Custom Folder
 
-To pass a custom folder to process the result, specify the `:as` key as follows:
+Pass custom folder to process the result via `:as`:
 
 ~~~clojure
 (require '[pg.fold :as fold])
@@ -86,14 +83,9 @@ To pass a custom folder to process the result, specify the `:as` key as follows:
 ;; [10 53 14 32 ...]
 ~~~
 
-## Standard Folders and Aliases
+## Built-in Folders
 
-PG provides a number of built-in folders. Some of them are used so often that
-it's not needed to pass them explicitly. There are shortcuts that enable certain
-folders internally. Below, find the actual list of folders, their shortcuts and
-examples.
-
-### Column
+### `column`
 
 Takes a single column from each row returning a plain vector:
 
@@ -103,36 +95,33 @@ Takes a single column from each row returning a plain vector:
 ;; [1 2 3 4 ....]
 ~~~
 
-There is an alias `:column` that accepts a name of the column:
+Alias: `:column`
 
 ~~~clojure
 (pg/execute conn query {:column :id})
 ;; [1 2 3 4 ....]
 ~~~
 
-### Map
+### `map`
 
-Acts like the standard `map` function from `clojure.core`. Applies a function to
-each row and collects a vector of results.
-
-Passing the folder explicitly:
+Acts like `clojure.core/map`. Applies function to each row and returns a vector of results.
 
 ~~~clojure
 (pg/execute conn query {:as (fold/map func)})
 ~~~
 
-And with an alias:
+Alias: `:map`
 
 ~~~clojure
 (pg/execute conn query {:map func})
 ~~~
 
-### Default
+### `default`
 
 Collects unmodified rows into a vector. That's unlikely you'll need that folder
 as it gets applied internally when no other folders were specified.
 
-### Dummy
+### `dummy`
 
 A folder that doesn't accumulate the rows but just skips them and returns nil.
 
@@ -142,7 +131,7 @@ A folder that doesn't accumulate the rows but just skips them and returns nil.
 nil
 ~~~
 
-### First
+### `first`
 
 Perhaps the most needed folder, `first` returns the first row only and skips the
 rest. Pay attention, this folder doesn't have a state and thus doesn't need to
@@ -157,7 +146,7 @@ be initiated. Useful when you query a single row by its primary key:
 {:id 42 :email "test@test.com"}
 ~~~
 
-Or pass the `:first` (or `:first?`) option set to true:
+Alias: `:first`/`:first?`
 
 ~~~clojure
 (pg/execute conn
@@ -168,9 +157,9 @@ Or pass the `:first` (or `:first?`) option set to true:
 {:id 42 :email "test@test.com"}
 ~~~
 
-### Index by
+### `index-by`
 
-Often, you select rows as a vector and build a map like `{id => row}`, for
+Often you select rows as a vector and build a map like `{id => row}`, for
 example:
 
 ~~~clojure
@@ -187,11 +176,11 @@ example:
  }
 ~~~
 
-This process is known as indexing because later on, the map is used as an index
+This process is known as indexing because later that map is used as an index
 for quick lookups.
 
 This approach, although is quite common, has flaws. First, you traverse rows
-twice: when fetching them from the database, and then again inside
+twice: when fetching them from the database and then again inside
 `reduce`. Second, it takes extra lines of code.
 
 The `index-by` folder does exactly the same: it accepts a function which is
@@ -211,13 +200,13 @@ keyword:
  5 {:a 5 :b 6}})
 ~~~
 
-The shortcut `:index-by` accepts a function as well:
+Alias: `:index-by`
 
 ~~~clojure
 (pg/execute conn query {:index-by :a})
 ~~~
 
-### Group by
+### `group-by`
 
 The `group-by` folder is simlar to `index-by` but collects multiple rows per a
 grouping function. It produces a map like `{(f row) => [row1, row2, ...]}` where
@@ -250,13 +239,13 @@ This is what `group-by` returns when grouping by the `:role` field:
  [{:id 4, :name "Test4", :role "owner"}]}
 ~~~
 
-The folder has its own alias which accepts a function:
+Alias: `:group-by`
 
 ~~~clojure
 (pg/execute conn query {:group-by :role})
 ~~~
 
-### KV (Key and Value)
+### `kv` (key and value)
 
 The `kv` folder accepts two functions: the first one is for a key (`fk`), and
 the second is for a value (`fv`). Then it produces a map like `{(fk row) => (fv
@@ -276,7 +265,7 @@ quick email lookup by id. This is where `kv` does the job for you.
  3 "skotobaza@mail.ru"}
 ~~~
 
-The `:kv` alias accepts a vector of two functions:
+Alias: `:kv` (accepts vector of two functions)
 
 ~~~clojure
 (pg/execute conn
@@ -284,10 +273,10 @@ The `:kv` alias accepts a vector of two functions:
             {:kv [:id :email]})
 ~~~
 
-### Run
+### `run`
 
 The `run` folder is useful for processing rows with side effects, e.g. printing
-them, writing to files, passing via API. A one-argument function passed to `run`
+them, writing to files, passing via API, etc. A one-argument function passed to `run`
 is applied to each row ignoring the result. The folder counts a total number of
 rows being processed.
 
@@ -301,16 +290,16 @@ rows being processed.
 100 ;; the number of rows processed
 ~~~
 
-An example with an alias:
+Alias: `:run`
 
 ~~~clojure
 (pg/execute conn query {:run func})
 ~~~
 
-### Table
+### `table`
 
 The `table` folder returns a plain matrix (a vector of vectors) of database
-values. It reminds the `columns` folder but also keeps column names in the
+values. It's similar to `columns` but also keeps column names in the
 leading row. Thus, the resulting table always has at least one row (it's never
 empty because of the header). The table view is useful when saving the data into
 CSV.
@@ -326,7 +315,7 @@ parameters:
  [2 "skotobaza@mail.ru"]]
 ~~~
 
-The alias `:table` accepts any non-false value:
+Alias: `:table`
 
 ~~~clojure
 (pg/execute conn query {:table true})
@@ -336,7 +325,7 @@ The alias `:table` accepts any non-false value:
  [2 "skotobaza@mail.ru"]]
 ~~~
 
-### Java
+### `java`
 
 This folder produces `java.util.ArrayList` where each row is an instance of
 `java.util.HashMap`. It doesn't require initialization:
@@ -345,17 +334,15 @@ This folder produces `java.util.ArrayList` where each row is an instance of
 (pg/execute conn query {:as fold/java})
 ~~~
 
-Alias:
+Alias: `:java`
 
 ~~~clojure
 (pg/execute conn query {:java true})
 ~~~
 
-### Reduce
+### `reduce`
 
-The `reduce` folder acts like the same-name function from `clojure.core`. It
-accepts a function and an initial value (accumulator). The function accepts the
-accumulator and the current row, and returns an updated version of the
+Acts like `clojure.core/map`. It accepts a function and an initial value (accumulator). The function accepts the accumulator and the current row, and returns an updated version of the
 accumulator.
 
 Here is how you collect unique pairs of size and color from the database result:
@@ -375,27 +362,26 @@ Here is how you collect unique pairs of size and color from the database result:
 The folder ignores `reduced` logic: it performs iteration until all rows are
 consumed. It doesn't check if the accumulator is wrapped with `reduced`.
 
-The `:reduce` alias accepts a vector of a function and an initial value:
+Alias: `:reduce` (vector with function and accumulator)
 
 ~~~clojure
 (pg/execute conn query {:reduce [->pair #{}]})
 ~~~
 
-### Into (Transduce)
+### `into` (transduce)
 
-This folder mimics the `into` logic when it deals with an `xform`, also known as
-a transducer. Sometimes, you need to pass the result throughout a bunch of
-`map`/`filter`/`keep` functions. Each of them produces an intermediate
-collection which is not as fast as it could be with a transducer. Transducers
-are designed such that they compose a stack of actions, which, when being run,
-does not produce extra collections.
+This folder mimics `clojure.core/into` with `xform` (transducer).
+Sometimes you need to pass the result throughout a bunch of
+`map`/`filter` and similar functions. Each of them produces an intermediate
+collection which is not as fast as it could be with transducer. Transducers
+compose a stack of actions, which does not produce extra collections when run.
 
-The `into` folder accepts an `xform` produced by `map`/`filter`/`comp`,
-whatever. It also accepts a persistent collection which acts as an
-accumulator. The accumulator gets transformed into a transient view internally
-for better performance. The folder uses `conj!` to push values into the
-accumulator, so maps are not acceptable, only vectors, lists, or sets. When the
-accumulator is not passed, it's an empty vector.
+It accepts `xform` (produced by `map`/`filter`, etc) and persistent collection as
+accumulator (empty vector by default).
+
+Accumulator gets transformed into transient view internally for better performance.
+
+`conj!` is used to add values to accumulator so only vectors, lists, and sets are acceptable (no maps).
 
 Here is a quick example of `into` in action:
 
@@ -422,23 +408,22 @@ Another case where we pass a non-empty set to collect the values:
 ;; #{:a :b :c "1" "5"}
 ~~~
 
-The `:into` alias is a vector where the first item is an `xform` and the second
-is an accumulator:
+Alias: `:into` (vector with `xform` and accumulator)
 
 ~~~clojure
 (pg/execute conn query {:into [tx []]})
 ~~~
 
-### To EDN
+### `to-edn`
 
-This folder writes down rows into an EDN file. It accepts an instance of
+Writes rows into an EDN file. It accepts an instance of
 `java.io.Writer` which must be opened in advance. The folder doesn't open nor
 close the writer as these actions are beyond its scope. A common pattern is to
-wrap `pg/execute` or `pg/query` invocations with the `with-open` macro that
-handles closing procedure even in case of an exception.
+wrap `pg/execute` or `pg/query` invocations with `clojure.core/with-open` that
+handles closing even in case of exception.
 
-The folder writes down rows into the writer using `pr-str`. Each row takes one
-line, and the lines are split with `\n`. The leading line is `[`, and the
+The folder writes rows into the writer using `pr-str`. Each row takes one
+line and lines are split with `\n`. The leading line is `[`, and the
 trailing is `]`.
 
 The result is a number of rows processed. Here is an example of dumping rows
@@ -462,18 +447,18 @@ Let's check the content of the file:
 ]
 ~~~
 
-The alias `:to-edn` accepts a writer object:
+Alias: `:to-edn`
 
 ~~~clojure
 (with-open [out (-> "test.edn" io/file io/writer)]
   (pg/execute conn query {:to-edn out}))
 ~~~
 
-### To JSON
+### `to-json`
 
 Like `to-edn` but dumps rows into JSON. Accepts an instance of
 `java.io.Writer`. Writes rows line by line with no pretty printing. Lines are
-joined with a comma. The leading and trailing lines are square brackets. The
+joined with a comma. The leading and trailing lines are `[`/`]`. The
 result is the number of rows put into the writer.
 
 ~~~clojure
@@ -494,7 +479,7 @@ The content of the file:
 ]
 ~~~
 
-The `:to-json` alias accepts a writer object:
+Alias: `:to-json`
 
 ~~~clojure
 (with-open [out (-> "test.json" io/file io/writer)]

@@ -121,7 +121,7 @@
 
 ## 0.1.3
 
-- Next.JDBC wrapper
+- `next.jdbc` wrapper
 - more docs
 - with-tx macro refactored
 - error! function added

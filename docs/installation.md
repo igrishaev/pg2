@@ -2,70 +2,67 @@
 
 ## Core functionality
 
-The client and the connection pool, type encoding and decoding, COPY IN/OUT,
+The client and the connection pool, type encoding and decoding, `COPY IN/OUT`,
 SSL:
 
 ~~~clojure
 ;; lein
 [com.github.igrishaev/pg2-core "0.1.17"]
 
-;; deps
+;; deps.edn
 com.github.igrishaev/pg2-core {:mvn/version "0.1.17"}
 ~~~
 
-## HoneySQL integration
+## HoneySQL Integration
 
-Special version of `query` and `execute` that accept not a SQL string but a map
-that gets formatted to SQL under the hood. Also includes various helpers
-(`get-by-id`, `find`, `insert`, `udpate`, `delete`, etc).
+Special version of `query` and `execute` that accept `HoneySQL` map.
+Also includes helpers like `get-by-id`, `find`, `insert`, `update`, `delete`, etc.
 
 ~~~clojure
 ;; lein
 [com.github.igrishaev/pg2-honey "0.1.17"]
 
-;; deps
+;; deps.edn
 com.github.igrishaev/pg2-honey {:mvn/version "0.1.17"}
 ~~~
 
 [component]: https://github.com/stuartsierra/component
 
-## Component integration
+## Component Integration
 
-A package that extends the `Connection` and `Pool` objects with the `Lifecycle`
-protocol from the [Component][component] library.
+Extends `Connection` and `Pool` objects with `Lifecycle`
+protocol from [Component][component].
 
 ~~~clojure
 ;; lein
 [com.github.igrishaev/pg2-component "0.1.17"]
 
-;; deps
+;; deps.edn
 com.github.igrishaev/pg2-component {:mvn/version "0.1.17"}
 ~~~
 
 ## Migrations
 
-A package that provides migration management: migrate forward, rollback, create,
-list applied migrations and so on.
+Migrations management: migrate forward, rollback, create, list applied migrations, etc.
 
 ~~~clojure
 ;; lein
 [com.github.igrishaev/pg2-migration "0.1.17]
 
-;; deps
+;; deps.edn
 com.github.igrishaev/pg2-migration {:mvn/version "0.1.17"}
 ~~~
 
 [hugsql]: https://www.hugsql.org/
 
-## HugSQL support
+## HugSQL Integration
 
-A small wrapper on top of the well-known [HugSQL library][hugsql] which creates
-Clojure functions out from SQL files.
+Wrapper for [HugSQL][hugsql].
 
 ~~~clojure
 ;; lein
 [com.github.igrishaev/pg2-hugsql "0.1.17]
 
-;; deps
+;; deps.edn
 com.github.igrishaev/pg2-hugsql {:mvn/version "0.1.17"}
 ~~~

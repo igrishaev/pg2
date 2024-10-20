@@ -1,24 +1,24 @@
 # Migrations
 
-PG2 provides its own migration engine through the `pg2-migration` package (see
-[Installation](#installation)). Like Migratus or Ragtime, it allows to grow the
-database schema continuously, track changes and apply them with care.
+`PG2` provides its own migration engine through the `pg2-migration` package (see
+[Installation](#installation)). Like `Migratus` or `Ragtime` it allows to grow the
+database schema continuously, track changes, and apply them with care.
 
 ## Concepts
 
-Migrations are SQL files that are applied to the database in certain order. A
-migration has an id and a direction: next/up or prev/down. Usually it's split on
-two files called `<id>.up.sql` and `<id>.down.sql` holding SQL commands. Say,
-the -up file creates a table with an index, and the -down one drops the index
+Migrations are SQL files that are applied to the database in certain order.
+Migration has id and direction: next/up or prev/down. Usually it's split into
+two files called `<id>.up.sql` and `<id>.down.sql` holding SQL commands. Say
+`-up` file creates a table with an index, and `-down` one drops the index
 first, and then the table.
 
-Migrations might have a slug: a short human-friendly text describing
+Migrations can have a slug: a short human-friendly text describing
 changes. For example, in a file called `002.create-users-table.up.sql`, the slug
 is "Create users table".
 
 ## Naming
 
-In PG2, the migration framework looks for files matching the following pattern:
+In `PG2` the migration framework looks for files matching the following pattern:
 
 ~~~
 <id>.<slug>.<direction>.sql
@@ -26,8 +26,8 @@ In PG2, the migration framework looks for files matching the following pattern:
 
 where:
 
-- `id` is a Long number, for example 12345 (a counter), or 20240311 (date
-  precision), or 20240311235959 (date & time precision);
+- `id` is a `Long` number, for example `12345` (a counter), or `20240311` (date
+  precision), or `20240311235959` (date & time precision);
 
 - `slug` is an optional word or group of words joined with `-` or `_`, for
   example `create-users-table-and-index` or `remove_some_view`. When rendered,
@@ -43,9 +43,9 @@ Examples:
 - `012.next-only-migration.up.sql`
 - `153.add-some-table.next.sql`
 
-Above, the leading zeroes in ids are used for better alignment only. Infernally
-they are transferred into 1, 12 and 153 Long numbers. Thus, `001`, `01` and `1`
-become the same id 1 after parsing.
+Above, the leading zeroes in ids are used for better alignment only. Internally
+they are transferred into 1, 12 and 153 `Long` numbers. Thus, `001`, `01` and `1`
+become the same `1` after parsing.
 
 Each id has at most two directions: prev/down and next/up. On bootstrap, the
 engine checks it to prevent weird behaviour. The table below shows there are two
@@ -83,18 +83,16 @@ insert into test_users (name) values ('Juan');
 COMMIT;
 ~~~
 
-Pay attention to the following points.
+Pay attention to the following points:
 
-- A single file might have as many SQL expressions as you want. There is no need
-  to separate them with magic comments like `--;;` as Migratus requires. The
-  whole file is executed in a single query. Use the standard semicolon at the
-  end of each expression.
+- Single file might have as many SQL expressions as you want. There is no need
+  to separate them with special magic comments. The whole file is executed in a single query. Use the standard semicolon at the end of each expression.
 
 - There is no a hidden transaction management. Transactions are up to you: they
-  are explicit! Above, we wrap tree `INSERT` queries into a single
+  are explicit! Above, we wrap three `INSERT` queries into a single
   transaction. You can use save-points, rollbacks, or whatever you want. Note
   that not all expressions can be in a transaction. Say, the `CREATE TABLE` one
-  cannot and thus is out from the transaction scope.
+  can't and thus is out from the transaction scope.
 
 For granular transaction control, split your complex changes on two or three
 files named like this:
@@ -126,14 +124,14 @@ Migration files are stored in project resources. The default search path is
 `migrations`. Thus, their physical location is `resources/migrations`. The
 engine scans the `migrations` resource for children files. Files from nested
 directories are also taken into account. The engine supports Jar resources when
-running the code from an uberjar.
+running the code from uberjar.
 
 The resource path can be overridden with settings.
 
 ## Migration Table
 
 All the applied migrations are tracked in a database table called `migrations`
-by default. The engine saves the id and the slug or a migration applied as well
+by default. The engine saves the id and the slug of a migration applied as well
 as the current timestamp of the event. The timestamp field has a time zone. Here
 is the structure of the table:
 
@@ -146,7 +144,7 @@ CREATE TABLE IF NOT EXISTS migrations (
 ~~~
 
 Every time you apply a migration, a new record is inserted into the table. On
-rollback, a corresponding migration is deleted.
+rollback the corresponding migration is deleted.
 
 You can override the name of the table in settings (see below).
 
@@ -155,7 +153,7 @@ You can override the name of the table in settings (see below).
 The migration engine is controlled with both API and CLI interface. Let's review
 CLI first.
 
-The `pg.migration.cli` namespaces acts like the main entry point. It accepts
+The `pg.migration.cli` namespace acts like the main entry point. It accepts
 general options, a command, and command-specific options:
 
 ```
@@ -213,7 +211,7 @@ Here is how you review the migrations:
 |     5 | false    | add some table
 ~~~
 
-Every command has its own arguments and help message. For example, to review the
+Every command has its own arguments and help message. For example to review the
 `create` command, run:
 
 ~~~
@@ -446,7 +444,7 @@ There is a way to manage migrations through code. The `pg.migration.core`
 namespace provides basic functions to list, create, migrate, and rollback
 migrations.
 
-To migrate, call one of the following functions: `migrate-to`, `migrate-all`,
+To migrate call one of the following functions: `migrate-to`, `migrate-all`,
 and `migrate-one`. All of them accept a config map:
 
 ~~~clojure
@@ -532,8 +530,8 @@ Pass id and slug in options if needed:
 
 ## Conflicts
 
-On bootstrap, the engine checks migrations for conflicts. A conflict is a
-situation when a migration with less id has been applied before a migration with
+On bootstrap the engine checks migrations for conflicts. A conflict is a
+situation when a migration with lesser id has been applied before a migration with
 greater id. Usually it happens when two developers create migrations in parallel
 and merge them in a wrong order. For example:
 

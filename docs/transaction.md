@@ -1,7 +1,7 @@
 # Transactions
 
-To execute one or more queries in a transaction, wrap them with `begin` and
-`commit` functions as follows:
+To execute one or more queries in transaction wrap them with `begin` and
+`commit` as follows:
 
 ~~~clojure
 (pg/begin conn)
@@ -17,8 +17,8 @@ To execute one or more queries in a transaction, wrap them with `begin` and
 (pg/commit conn)
 ~~~
 
-Both rows are inserted in a transaction. Should one of them fail, none will
-succeed. By checking the database log, you'll see the following entries:
+Both rows are inserted in a transaction. Should one of them fail none will
+succeed. By checking the database log you'll see the following entries:
 
 ~~~
 statement: BEGIN
@@ -40,14 +40,14 @@ will be available during transaction but won't be stored at the end.
 (pg/rollback conn)
 ~~~
 
-## The macro
+## `with-tx` macro
 
-There is a macro what handles `BEGIN`, `COMMIT`, and `ROLLBACK` logic for
-you. The `with-tx` one wraps a block of code. It opens a transaction, executes
-the body and, if there was no an exception, commits it. If there was an
-exception, the macro rolls back the transaction and re-throws it.
+`with-tx` handles `BEGIN`, `COMMIT`, and `ROLLBACK` logic.
 
-The first argument of the macro is a connection object:
+It opens a transaction, executes it and commits if there was no an exception.
+If there was an exception it rolls back the transaction and re-throws it.
+
+The first argument is a connection object:
 
 ~~~clojure
 (pg/with-tx [conn]
@@ -59,7 +59,7 @@ The first argument of the macro is a connection object:
               {:params ["Test3"]}))
 ~~~
 
-The macro expands into something like this:
+It expands into something like this:
 
 ~~~clojure
 (pg/begin conn)
@@ -72,18 +72,18 @@ The macro expands into something like this:
     (throw e)))
 ~~~
 
-The macro accepts several optional parameters that affect a transaction, namely:
+`with-tx` accepts several optional parameters that affect a transaction:
 
 | Name               | Type              | Description                                                                  |
 |--------------------|-------------------|------------------------------------------------------------------------------|
-| `:read-only?`      | Boolean           | When true, only read operations are allowed                                  |
-| `:rollback?`       | Boolean           | When true, he transaction gets rolled back even if there was no an exception |
+| `:read-only?`      | Boolean           | When true only read operations are allowed                                   |
+| `:rollback?`       | Boolean           | When true the transaction gets rolled back even if there was no an exception |
 | `:isolation-level` | Keyword or String | Set isolation level for the current transaction                              |
 
-## Read Only
+## Read-only Mode
 
-The `:read-only?` parameter set to true restricts all the queries in this
-transaction to be read only. Thus, only `SELECT` queries will work. Running
+With `:read-only?` set to `true` only `SELECT` queries will work.
+
 `INSERT`, `UPDATE`, or `DELETE` will cause an exception:
 
 ~~~clojure
@@ -98,8 +98,9 @@ transaction to be read only. Thus, only `SELECT` queries will work. Running
 
 ## Rolling Back
 
-The `:rollback?` parameter, when set to true, rolls back a transaction even if
-it was successful. This is useful for tests:
+With `:rollback?` set to `true` transaction will be rolled back even if it was successful.
+
+This is useful for tests:
 
 ~~~clojure
 (pg/with-tx [conn {:rollback? true}]
@@ -113,15 +114,14 @@ it was successful. This is useful for tests:
 ;; statement: ROLLBACK
 ~~~
 
-Above, inside the `with-tx` macro, you'll have all the rows deleted but once you
-get back, they will be there again.
+In this example you'll have all the rows deleted inside `with-tx` but they will be back again after.
 
 ## Isolation Level
 
-Finally, the `:isolation-level` parameter sets isolation level for the current
+`:isolation-level` sets isolation level for the current
 transaction. The table below shows its possible values:
 
-| `:isolation-level` parameter              | Postgres level   |
+| `:isolation-level`                        | Postgres level   |
 |-------------------------------------------|------------------|
 | `:read-uncommitted`, `"READ UNCOMMITTED"` | READ UNCOMMITTED |
 | `:read-committed`, `"READ COMMITTED"`     | READ COMMITTED   |
@@ -148,7 +148,7 @@ Usage:
 ;; statement: COMMIT
 ~~~
 
-The default transation level depends on the settings of your database.
+The default transaction isolation level depends on the configuration of your database.
 
 [transaction-iso]: https://www.postgresql.org/docs/current/transaction-iso.html
 
@@ -157,70 +157,6 @@ refer to the [official documentation][transaction-iso] for more information.
 
 ## Nested Transactions
 
-Nested transactions happen when you put one `with-tx` inside another, for
-example:
+Nesting one `with-tx` inside another just works and you can easily nest functions which use `with-tx` inside.
 
-~~~clojure
-(with-tx [...]          ;; 1
-  (do-this ...)
-  (with-tx [...]        ;; 2
-    (do-that ...)))
-~~~
-
-It's not necessary to have them both explicitly; you can easily have two nested
-functions `(do-a)` and `(do-b)` each of them driven with the `with-tx` macro:
-
-~~~clojure
-(defn do-b [...]
-  (with-tx [...]
-    (do-something ...)))
-
-(defn do-a [...]
-  (with-tx [...]
-    (do-b ...)))
-~~~
-
-Before version 0.1.17, the library didn't handle nested transactions leaving
-them to be controlled by the database. The code above led to the following
-sequence of SQL commands:
-
-~~~sql
-BEGIN  -- from A
-...    -- from A
-BEGIN  -- from B
-...    -- from B
-COMMIT -- from B
-...    -- from A
-COMMIT -- from A
-~~~
-
-Since Postgres doesn't handle nested transactions, here is what going under the
-hood. The first `BEGIN` from `do-a` opens a transaction. The second `BEGIN` from
-`do-b` gets ignored producing a notice "there is already a transaction".
-
-When it comes to the first `COMMIT`, it commits the current transaction. But
-this command comes from `do-b`, not `do-a`! On other words, the order of
-`COMMIT` commands is reversed, but the database doesn't know about this. The
-first `COMMIT` closes the transaction leaving a part of `do-a` logic being
-uncovered. Calling the second `COMMIT` won't do anything since there is no an
-active transaction any longer. It will only produce a notice.
-
-Since 0.1.17, PG2 handles this case property. The `with-tx` macro checks if the
-connection is in transaction mode by calling the `(pg/in-transaction? ...)`
-function. If it's not, the macro works as before: it wraps a block of code with
-the `BEGIN/COMMIT/ROLLBACK` commands.
-
-But if the connection is already in transaction, the macro skips `BEGIN/COMMIT`
-commands leaving just the body. Thus, having two or more nested `with-tx` macros
-will produce the following sequence of SQL expressions:
-
-~~~sql
-BEGIN  -- from A
-...    -- from A
-...    -- from B
-...    -- from A
-COMMIT -- from A
-~~~
-
-With this improvement, you don't need to check manually if underlying code has
-its own `with-tx` macro calls.
+`with-tx` omits `BEGIN`/`COMMIT` if connection is in transaction mode already.

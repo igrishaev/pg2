@@ -3,17 +3,12 @@
 [honeysql]: https://github.com/seancorfield/honeysql
 
 The `pg-honey` package (see [Installation](/docs/installation.md)) allows you to
-call `query` and `execute` functions using maps rather than string SQL
-expressions. Internally, maps are transformed into SQL using the great [HoneySQL
-library][honeysql]. With HoneySQL, you don't need to format strings to build a
-SQL, which is clumsy and dangerous in terms of injections.
+call `query`/`execute` with [HoneySQL][honeysql] maps rather than string SQL expressions.
 
-The package also provides several shortcuts for such common dutiles as get a
-single row by id, get a bunch of rows by their ids, insert a row having a map of
-values, update by a map and so on.
+The package also provides several helpers for common actions like getting
+row(s) by id, inserting/updating row(s) with maps of values, etc.
 
-For a demo, let's import the package, declare a config map and create a table
-with some rows as follows:
+For a demo let's import the package and create a table with some rows:
 
 ~~~clojure
 (require '[pg.honey :as pgh])
@@ -41,21 +36,19 @@ with some rows as follows:
   (3, 'Juan', true)")
 ~~~
 
-## Get by id(s)
+## `get-by-id`
 
-The `get-by-id` function fetches a single row by a primary key which is `:id` by
-default:
+Fetches single row by primary key which is `:id` by default:
 
 ~~~clojure
 (pgh/get-by-id conn :test003 1)
 ;; {:name "Ivan", :active true, :id 1}
 ~~~
 
-*Here and below: pass a `Connection` object to the first argument but it could
+*Here and below: pass a `Connection` object as the first argument but it could
 be a plain config map or a `Pool` instance as well.*
 
-With options, you can specify the name of the primary key and the column names
-you're interested in:
+You can specify primary key and column names you're interested in:
 
 ~~~clojure
 (pgh/get-by-id conn
@@ -70,9 +63,11 @@ you're interested in:
 ;; parameters: $1 = '1', $2 = '1'
 ~~~
 
-The `get-by-ids` function accepts a collection of primary keys and fetches them
-using the `IN` operator. In additon to options that `get-by-id` has, you can
-specify the ordering:
+## `get-by-ids`
+
+Fetches multiple rows by primary keys using `IN` operator.
+
+In addition to options that `get-by-id` has you can specify the ordering:
 
 ~~~clojure
 (pgh/get-by-ids conn
@@ -90,13 +85,13 @@ specify the ordering:
 ~~~
 
 Passing many IDs at once is not recommended. Either pass them by chunks or
-create a temporary table, `COPY IN` ids into it and `INNER JOIN` with the main
+create a temporary table, `COPY IN` ids into it, and `INNER JOIN` with the main
 table.
 
-## Delete
+## `delete`
 
-The `delete` function removes rows from a table. By default, all the rows are
-deleted with no filtering, and the deleted rows are returned:
+Deletes rows from table. By default all rows are
+deleted without filtering and they are returned:
 
 ~~~clojure
 (pgh/delete conn :test003)
@@ -106,7 +101,7 @@ deleted with no filtering, and the deleted rows are returned:
  {:name "Juan", :active true, :id 3}]
 ~~~
 
-You can specify the `WHERE` clause and the column names of the result:
+You can specify `:where` clause and column names of the result:
 
 ~~~clojure
 (pgh/delete conn
@@ -119,12 +114,13 @@ You can specify the `WHERE` clause and the column names of the result:
 [{:name "Juan", :active true, :id 3}]
 ~~~
 
-When the `:returning` option set to `nil`, no rows are returned.
+With `:returning` set to `nil` no rows are returned.
 
-## Insert (one)
+## `insert`
 
-To observe all the features of the `insert` function, let's create a separate
-table:
+Inserts row(s) into table.
+
+To observe all the features of `insert` let's create a separate table:
 
 ~~~clojure
 (pg/query conn "create table test004 (
@@ -134,7 +130,7 @@ table:
 )")
 ~~~
 
-The `insert` function accepts a collection of maps each represents a row:
+`insert` accepts a collection of maps representing rows:
 
 ~~~clojure
 (pgh/insert conn
@@ -149,7 +145,7 @@ The `insert` function accepts a collection of maps each represents a row:
 
 It also accepts options to produce the `ON CONFLICT ... DO ...`  clause known as
 `UPSERT`. The following query tries to insert two rows with existing primary
-keys. Should they exist, the query updates the names of the corresponding rows:
+keys. Should they exist the query updates the names of the corresponding rows:
 
 ~~~clojure
 (pgh/insert conn
@@ -161,7 +157,7 @@ keys. Should they exist, the query updates the names of the corresponding rows:
              :returning [:id :name]})
 ~~~
 
-The resulting query looks like this:
+The resulting query:
 
 ~~~sql
 INSERT INTO test004 (id, name) VALUES ($1, $2), ($3, $4)
@@ -171,8 +167,9 @@ INSERT INTO test004 (id, name) VALUES ($1, $2), ($3, $4)
 parameters: $1 = '1', $2 = 'Snip', $3 = '2', $4 = 'Snap'
 ~~~
 
-The `insert-one` function acts like `insert` but accepts and returns a single
-map. It supports `:returning` and `ON CONFLICT ...` clauses as well:
+## `insert-one`
+
+Inserts one row into table. Acts like `insert` but accepts and returns a single map. It supports `:returning` and `:on-conflict` clauses as well:
 
 ~~~clojure
 (pgh/insert-one conn
@@ -185,7 +182,7 @@ map. It supports `:returning` and `ON CONFLICT ...` clauses as well:
 {:name "Alter Ego", :active true, :id 2}
 ~~~
 
-The logs:
+The resulting query:
 
 ~~~sql
 INSERT INTO test004 (id, name, active) VALUES ($1, $2, TRUE)
@@ -195,10 +192,32 @@ INSERT INTO test004 (id, name, active) VALUES ($1, $2, TRUE)
 parameters: $1 = '2', $2 = 'Alter Ego'
 ~~~
 
-## Update
+### Inserting JSON
 
-The `update` function alters rows in a table. By default, it doesn't do any
-filtering and returns all the rows affected. The following query sets the
+When inserting JSON you have to wrap the value with `[:lift ...]` or pass it via `:params` as below:
+
+~~~clojure
+(pgh/insert-one conn
+                :test_json
+                {:data [:lift {:another {:a {:value [1 2 3]}}}]})
+
+{:id 2, :data {:another {:json {:value [1 2 3]}}}}
+
+(pgh/insert-one conn
+                :test_json
+                {:data [:param :data]}
+                {:honey {:params {:data {:another {:a {:value [1 2 3]}}}}}})
+~~~
+
+
+Without `[:lift ...]` tag `HoneySQL` will treat the value as nested SQL map
+and try to render it as string (which will fail of course or lead to SQL
+injection).
+
+## `update`
+
+Updates rows in table. By default it doesn't do any
+filtering and updates all rows. The following query sets the
 boolean `active` value for all rows:
 
 ~~~clojure
@@ -211,7 +230,7 @@ boolean `active` value for all rows:
  {:name "Juan", :active true, :id 3}]
 ~~~
 
-The `:where` clause determines conditions for update. You can also specify
+`:where` determines conditions for update. You can also specify
 columns to return:
 
 ~~~clojure
@@ -224,9 +243,9 @@ columns to return:
 [{:id 1}]
 ~~~
 
-What is great about `update` is, you can use such complex expressions as
-increasing counters, negation and so on. Below, we alter the primary key by
-adding 100 to it, negate the `active` column, and change the `name` column with
+What's great about `update` is that you can use complex expressions like
+increasing counters, negation, etc. Below we alter primary key by
+adding 100 to it, negate `active` column, and change `name` column with
 dull concatenation:
 
 ~~~clojure
@@ -254,10 +273,9 @@ UPDATE test003
 parameters: $1 = '100', $2 = 'Ivan'
 ~~~
 
-## Find (first)
+## `find`
 
-The `find` function makes a lookup in a table by column-value pairs. All the
-pairs are joined using the `AND` operator:
+Finds rows in table by column-value pairs. All pairs are joined using the `AND` operator:
 
 ~~~clojure
 (pgh/find conn :test003 {:active true})
@@ -278,7 +296,7 @@ Find by two conditions:
 ;; parameters: $1 = 'Juan'
 ~~~
 
-The function accepts additional options for `LIMIT`, `OFFSET`, and `ORDER BY`
+`find` accepts additional options for `LIMIT`, `OFFSET`, and `ORDER BY`
 clauses:
 
 ~~~clojure
@@ -301,8 +319,11 @@ clauses:
 ;; parameters: $1 = '10', $2 = '1'
 ~~~
 
-The `find-first` function acts the same but returns a single row or
-`nil`. Internally, it adds the `LIMIT 1` clause to the query:
+## `find-first`
+
+Finds one row in table by column-value pairs.
+
+Acts the same as `find` but returns single row or `nil`. Internally it adds `LIMIT 1`.
 
 ~~~clojure
 (pgh/find-first conn :test003
@@ -315,9 +336,9 @@ The `find-first` function acts the same but returns a single row or
 {"id" 1, "name" "Ivan"}
 ~~~
 
-## Prepare
+## `prepare`
 
-The `prepare` function makes a prepared statement from a HoneySQL map:
+Makes prepared statement from `HoneySQL` map:
 
 ~~~clojure
 (def stmt
@@ -330,7 +351,7 @@ The `prepare` function makes a prepared statement from a HoneySQL map:
 
 Above, the zero value is a placeholder for an integer parameter.
 
-Now that the statement is prepared, execute it with the right id:
+Now that the statement is prepared execute it with the id:
 
 ~~~clojure
 (pg/execute-statement conn stmt {:params [3]
@@ -339,7 +360,7 @@ Now that the statement is prepared, execute it with the right id:
 {:name "Juan", :active true, :id 3}
 ~~~
 
-Alternately, use the `[:raw ...]` syntax to specify a parameter with a dollar
+Alternatively use `[:raw ...]` syntax to specify a parameter with a dollar
 sign:
 
 ~~~clojure
@@ -354,15 +375,24 @@ sign:
 {:name "Ivan", :active true, :id 1}
 ~~~
 
-## Query and Execute
+## `query`/`execute`
 
-There are two general functions called `query` and `execute`. Each of them
-accepts an arbitrary HoneySQL map and performs either `Query` or `Execute`
+There are two general functions: `query` and `execute`. Each of them
+accepts an arbitrary `HoneySQL` map and performs either `Query` or `Execute`
 request to the server.
 
-Pay attention that, when using `query`, a HoneySQL map cannot have
-parameters. This is a limitation of the `Query` command. The following query
-will lead to an error response from the server:
+Both `query` and `execute` accept not only `SELECT` but literally anything:
+inserting, updating, creating a table, an index, etc. You can build
+combinations like `INSERT ... FROM SELECT` or `UPDATE ... FROM DELETE` to
+perform complex logic in a single query.
+
+### `query`
+
+Runs given `HoneySQL` map WITH NO parameters.
+
+Pay attention that `HoneySQL` map can't have parameters when using `query`.
+This is a limitation of the `Query` command. The following query
+will lead to error response:
 
 ~~~clojure
 (pgh/query conn
@@ -375,7 +405,7 @@ will lead to an error response from the server:
 ;; Server error response: {severity=ERROR, ... message=there is no parameter $1, verbosity=ERROR}
 ~~~
 
-Instead, use either `[:raw ...]` syntax or `{:inline true}` option:
+Instead use either `[:raw ...]` syntax or `{:inline true}` option:
 
 ~~~clojure
 (pgh/query conn
@@ -400,7 +430,9 @@ Instead, use either `[:raw ...]` syntax or `{:inline true}` option:
 ;; SELECT id FROM test003 WHERE name = 'Ivan' ORDER BY id ASC
 ~~~
 
-The `execute` function acceps a HoneySQL map with parameters:
+### `execute`
+
+Executes given `HoneySQL` map with parameters:
 
 ~~~clojure
 (pgh/execute conn
@@ -412,16 +444,11 @@ The `execute` function acceps a HoneySQL map with parameters:
 [{:name "Ivan", :id 1}]
 ~~~
 
-Both `query` and `execute` accept not `SELECT` only but literally everything:
-inserting, updating, creating a table, an index, and more. You can build
-combinations like `INSERT ... FROM SELECT` or `UPDATE ... FROM DELETE` to
-perform complex logic in a single atomic query.
+## `HoneySQL` options
 
-## HoneySQL options
-
-Any HoneySQL-specific parameter might be passed through the `:honey` submap in
-options. Below, we pass the `:params` map to use the `[:param ...]`
-syntax. Also, we produce a pretty-formatted SQL for better logs:
+Any `HoneySQL`-specific parameter might be passed through `:honey` map in
+options. Below we pass `:params` map to use `[:param ...]`
+syntax. Also we produce a pretty-formatted SQL for better logs:
 
 ~~~clojure
 (pgh/execute conn
@@ -439,5 +466,4 @@ syntax. Also, we produce a pretty-formatted SQL for better logs:
 ;; parameters: $1 = 'Ivan'
 ~~~
 
-For more options, please refer to the official [HoneySQL
-documentation][honeysql].
+For more options please refer to the official [HoneySQL documentation][honeysql].

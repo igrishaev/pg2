@@ -1,12 +1,11 @@
 # Authentication
 
-The library suppors the following authentication types and pipelines:
+`PG2` supports the following authentication types and pipelines:
 
-- No password (for trusted clients);
+- No password (for trusted clients)
 
-- Clear text password (not used nowadays);
+- Clear text password (not used nowadays)
 
-- MD5 password with hash (default prior to Postgres ver. 15);
+- MD5 password with hash (default prior to Postgres 15)
 
-- SASL with the SCRAM-SHA-256 algorithm (default since Postgres ver. 15). The
-  SCRAM-SHA-256-PLUS algorithm is not implemented yet.
+- SASL with `SCRAM-SHA-256` (default since Postgres 15). `SCRAM-SHA-256-PLUS` is not implemented yet.
