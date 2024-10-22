@@ -70,11 +70,49 @@
            (.decodeBin t/vector bb nil)))))
 
 
-(deftest test-sparsevec-ok
-  (let [bb (->bb [0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0])]
-    (is (= [1.0 0 2.0 0 3.0]
-           (.decodeBin t/sparsevec bb nil)))
-    )
+(deftest test-sparsevec-parse-bin
+  (let [bb (->bb [0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0])
+        res (.decodeBin t/sparsevec bb nil)]
+    (is (= "org.pg.type.SparseVector"
+           (-> res class .getName)))
 
+    (is (= "{1:1.0,3:2.0,5:3.0}/5"
+           (str res)))
+
+    (is (= 5 (count res)))
+
+    (is (= {:dim 5
+            :nnz 3
+            :index {0 1.0 2 2.0 4 3.0}}
+           @res))))
+
+(deftest test-sparsevec-parse-txt
+  (let [txt "{1:1.0,3:2.0,5:3.0}/5"
+        res (.decodeTxt t/sparsevec txt nil)]
+    (is (= "org.pg.type.SparseVector"
+           (-> res class .getName)))
+    (is (= "{1:1.0,3:2.0,5:3.0}/5"
+           (str res)))
+    (is (= 5 (count res)))
+    (is (= {:dim 5
+            :nnz 3
+            :index {0 1.0 2 2.0 4 3.0}}
+           @res)))
+
+  #_
+  (let [txt "   {   }   /   5   "
+        res (.decodeTxt t/sparsevec txt nil)]
+    (is (= "org.pg.type.SparseVector"
+           (-> res class .getName)))
+
+    (is (= "{}/5"
+           (str res)))
+
+    (is (= 5 (count res)))
+
+    (is (= {:dim 5
+            :nnz 0
+            :index {}}
+           @res)))
 
   )

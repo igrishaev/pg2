@@ -3578,15 +3578,11 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
   (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
     (let [res (pg/execute conn "create temp table test (id int, v sparsevec)")]
-      (pg/execute conn "insert into test values (1, '{1:1}/9')")
+      (pg/execute conn "insert into test values (1, '{9:1}/9')")
+      (pg/execute conn "insert into test values (3, '{3:3}/3')")
       (pg/execute conn "insert into test values (3, '{3:3}/3')")
       (is (= 1
-             (pg/execute conn "select * from test order by id")
-
-             ))
-
-
-))
+             (pg/execute conn "select * from test order by id")))))
 
   (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
     (let [res (pg/execute conn "select '{3:1.123, 1:0000.1}/99'::sparsevec as v")]

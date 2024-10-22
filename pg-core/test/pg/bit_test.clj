@@ -3,7 +3,6 @@
    org.pg.error.PGError)
   (:require
    [pg.bb :refer [bb== ->bb]]
-   [pg.processors :as p]
    [pg.oid :as oid]
    [pg.core :as pg]
    [clojure.test :refer [is deftest]]))

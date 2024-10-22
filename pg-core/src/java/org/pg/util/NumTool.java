@@ -35,6 +35,14 @@ public class NumTool {
         }
     }
 
+    public static float toFloat(final Object x) {
+        if (x instanceof Number n) {
+            return toFloat(n);
+        } else {
+            throw new PGError("Object is not a number: %s", TypeTool.repr(x));
+        }
+    }
+
     public static double toDouble(final Number n) {
         return n.doubleValue();
     }

@@ -21,6 +21,9 @@ public final class KW {
     public final static Keyword NegotiateProtocolVersion = Keyword.intern("NegotiateProtocolVersion");
     public final static Keyword oid = Keyword.intern("oid");
     public final static Keyword type = Keyword.intern("type");
+    public final static Keyword dim = Keyword.intern("dim");
+    public final static Keyword nnz = Keyword.intern("nnz");
+    public final static Keyword index = Keyword.intern("index");
 
     public static void main(String... args) {
         System.out.println(inserted);
