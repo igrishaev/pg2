@@ -16,11 +16,12 @@ public class Sparsevec extends AProcessor {
         bb.putInt(sv.dim());
         bb.putInt(sv.nnz());
         bb.putInt(0);
-        for (int i = 0; i < sv.nnz(); i++) {
-            bb.putInt(sv.getIndex(i));
+        final Iterable<Integer> indexes = sv.sortedIndexes();
+        for (int idx: indexes) {
+            bb.putInt(idx);
         }
-        for (int i = 0; i < sv.nnz(); i++) {
-            bb.putFloat(sv.getValue(i));
+        for (int idx: indexes) {
+            bb.putFloat(sv.getValue(idx));
         }
         return bb;
     }
@@ -53,18 +54,7 @@ public class Sparsevec extends AProcessor {
 
     @Override
     public SparseVector decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        final int dim = bb.getInt();
-        final int nnz = bb.getInt();
-        final int ignored = bb.getInt();
-        final int[] indexes = new int[nnz];
-        final float[] values = new float[nnz];
-        for (int i = 0; i < nnz; i++) {
-            indexes[i] = bb.getInt();
-        }
-        for (int i = 0; i < nnz; i++) {
-            values[i] = bb.getFloat();
-        }
-        return new SparseVector(dim, nnz, indexes, values);
+        return SparseVector.ofByteBuffer(bb);
     }
 
     @Override

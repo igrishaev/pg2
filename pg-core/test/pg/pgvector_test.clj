@@ -6,6 +6,8 @@
    [pg.type :as t]
    [clojure.test :refer [is deftest]]))
 
+(set! *warn-on-reflection* true)
+
 
 (deftest test-vector-encode-txt
   (is (= "[1.0,2.0,3.0]"
@@ -87,6 +89,7 @@
            @res))))
 
 (deftest test-sparsevec-parse-txt
+
   (let [txt "{1:1.0,3:2.0,5:3.0}/5"
         res (.decodeTxt t/sparsevec txt nil)]
     (is (= "org.pg.type.SparseVector"
@@ -97,9 +100,19 @@
     (is (= {:dim 5
             :nnz 3
             :index {0 1.0 2 2.0 4 3.0}}
-           @res)))
+           @res))
 
-  #_
+    (is (= [1.0 0.0 2.0 0.0 3.0]
+           (vec res)))
+
+    (is (= 1.0 (nth res 0)))
+    (is (= 0.0 (nth res 1)))
+    (is (= 3.0 (last res)))
+    (is (= 1.0 (first res)))
+
+    (is (= "<SparseVector {1:1.0,3:2.0,5:3.0}/5>"
+           (pr-str res))))
+
   (let [txt "   {   }   /   5   "
         res (.decodeTxt t/sparsevec txt nil)]
     (is (= "org.pg.type.SparseVector"
@@ -113,6 +126,45 @@
     (is (= {:dim 5
             :nnz 0
             :index {}}
-           @res)))
+           @res))))
+
+
+(deftest test-sparsevec-encode-bin
+  (let [bb1 (->bb [0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0])
+        res (.decodeBin t/sparsevec bb1 nil)
+        bb2 (.encodeBin t/sparsevec res nil)]
+
+    (is (= (-> bb1 .array vec)
+           (-> bb2 .array vec)))
+
+    (.rewind bb2)
+
+    (is (= {:nnz 3, :index {0 1.0, 4 3.0, 2 2.0}, :dim 5}
+           @(.decodeBin t/sparsevec bb2 nil))))
 
   )
+
+(deftest test-sparsevec-encode-iter
+
+  (let [ ]
+
+    ;; (is (= (-> bb1 .array vec)
+    ;;        (-> bb2 .array vec)))
+
+    (is (= "{1:1.0,2:2.0,3:3.0,4:4.0,5:5.0}/5"
+           (.encodeTxt t/sparsevec [1 2 3 4 5] nil)))
+
+    #_
+    (is (= 1
+           (.encodeTxt t/sparsevec (repeat 8 0) nil)))
+
+    #_
+    (is (= 1
+           (.encodeTxt t/sparsevec (map inc [-2 -1 0 -2]) nil)))
+
+)
+
+  )
+
+
+;; TODO: sparsevec constructor
