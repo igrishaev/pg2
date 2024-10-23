@@ -28,7 +28,7 @@ public class NumTool {
 
     public static float toFloat(final Number n) {
         final double d = n.doubleValue();
-        if (Float.MIN_VALUE <= d && d <= Float.MAX_VALUE) {
+        if (-Float.MAX_VALUE <= d && d <= Float.MAX_VALUE) {
             return n.floatValue();
         } else {
             throw new PGError("number %s is out of FLOAT4 range", n);

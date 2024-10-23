@@ -140,31 +140,18 @@
     (.rewind bb2)
 
     (is (= {:nnz 3, :index {0 1.0, 4 3.0, 2 2.0}, :dim 5}
-           @(.decodeBin t/sparsevec bb2 nil))))
+           @(.decodeBin t/sparsevec bb2 nil)))))
 
-  )
+(deftest test-sparsevec-encode-txt-iter
 
-(deftest test-sparsevec-encode-iter
+  (is (= "{1:1.0,2:2.0,3:3.0,4:4.0,5:5.0}/5"
+         (.encodeTxt t/sparsevec [1 2 3 4 5] nil)))
 
-  (let [ ]
+  (is (= "{}/8"
+         (.encodeTxt t/sparsevec (repeat 8 0) nil)))
 
-    ;; (is (= (-> bb1 .array vec)
-    ;;        (-> bb2 .array vec)))
-
-    (is (= "{1:1.0,2:2.0,3:3.0,4:4.0,5:5.0}/5"
-           (.encodeTxt t/sparsevec [1 2 3 4 5] nil)))
-
-    #_
-    (is (= 1
-           (.encodeTxt t/sparsevec (repeat 8 0) nil)))
-
-    #_
-    (is (= 1
-           (.encodeTxt t/sparsevec (map inc [-2 -1 0 -2]) nil)))
-
-)
-
-  )
+  (is (= "{1:-1.0,3:1.0,4:-1.0}/4"
+         (.encodeTxt t/sparsevec (map inc [-2 -1 0 -2]) nil))))
 
 
 ;; TODO: sparsevec constructor
