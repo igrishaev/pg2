@@ -155,3 +155,11 @@
 
 
 ;; TODO: sparsevec constructor
+
+;; enc bin string
+;; enc bin sv
+;; enc bin iterable
+
+;; enc txt string
+;; enc txt sv
+;; enc txt iterable
