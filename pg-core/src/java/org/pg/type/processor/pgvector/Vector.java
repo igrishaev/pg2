@@ -2,7 +2,6 @@ package org.pg.type.processor.pgvector;
 
 import clojure.lang.PersistentVector;
 import org.pg.codec.CodecParams;
-import org.pg.error.PGError;
 import org.pg.type.processor.AProcessor;
 import org.pg.util.NumTool;
 
@@ -10,20 +9,11 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 
 import clojure.lang.RT;
-import org.pg.util.TypeTool;
 
 //
 // https://github.com/pgvector/pgvector/blob/049972a4a3a04e0f49de73d78915706377035f48/src/vector.c#L367
 //
 public class Vector extends AProcessor {
-
-    private static float toFloat(final Object x) {
-        if (x instanceof Number n) {
-            return NumTool.toFloat(n);
-        } else {
-            throw new PGError("item is not a number: %s", TypeTool.repr(x));
-        }
-    }
 
     @Override
     public ByteBuffer encodeBin(final Object x , final CodecParams codecParams) {
@@ -33,7 +23,7 @@ public class Vector extends AProcessor {
             bb.putShort(NumTool.toShort(count));
             bb.putShort((short)0); // ignored
             for (Object item: i) {
-                bb.putFloat(toFloat(item));
+                bb.putFloat(NumTool.toFloat(item));
             }
             return bb;
         } else {
@@ -50,7 +40,7 @@ public class Vector extends AProcessor {
             Object item;
             while (iterator.hasNext()) {
                 item = iterator.next();
-                sb.append(toFloat(item));
+                sb.append(NumTool.toFloat(item));
                 if (iterator.hasNext()) {
                     sb.append(',');
                 }

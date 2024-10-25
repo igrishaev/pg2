@@ -18,26 +18,27 @@
    org.pg.error.PGError
    org.pg.error.PGErrorResponse)
   (:require
-   honey.sql.pg-ops
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [com.stuartsierra.component :as component]
+   honey.sql.pg-ops
    [jsonista.core :as j]
    [less.awful.ssl :as ssl]
    [pg.component :as pgc]
    [pg.core :as pg]
    [pg.fold :as fold]
    [pg.honey :as pgh]
-   [pg.jdbc :as jdbc]
    [pg.integration :refer [*CONFIG-TXT*
                            *CONFIG-BIN*
                            *PORT*
                            fix-multi-port]]
+   [pg.jdbc :as jdbc]
    [pg.json :as json]
    [pg.oid :as oid]
-   [pg.pool :as pool]))
+   [pg.pool :as pool]
+   [pg.type :as t]))
 
 
 (use-fixtures :each fix-multi-port)
@@ -2256,9 +2257,10 @@ drop table %1$s;
         (pg/execute-statement conn stmt {:params [(new Object)]})
         (is false)
         (catch PGError e
+
           (is (-> e
                   ex-message
-                  (str/includes? "cannot text-encode, oid: 20, type: java.lang.Object, value: java.lang.Object@")))))
+                  (str/includes? "cannot coerce value to long: type: java.lang.Object, value: java.lang.Object")))))
 
       (let [res
             (pg/execute-statement conn stmt {:params [1]})]
@@ -3021,7 +3023,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                               :copy-csv? true})
             (is false)
             (catch PGError e
-              (is (= "Unhandled exception: cannot text-encode, oid: 700, type: java.lang.Boolean, value: true"
+              (is (= "Unhandled exception: cannot coerce value to float: type: java.lang.Boolean, value: true"
                      (ex-message e)))))]
 
       (is (= [{:foo 42}]
@@ -3569,44 +3571,52 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
              res)))))
 
 
-(deftest test-client-sparsevec
+(deftest test-client-sparsevec-txt
 
   (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
     (let [res (pg/execute conn "select '{1:1,3:2,5:3}/5'::sparsevec as v")]
-      (is (= [{:v "{1:1,3:2,5:3}/5"}]
+      (is (= [{:v (t/->sparse-vector 5 {0 1 2 2 4 3}) }]
              res))))
 
   (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
-    (let [res (pg/execute conn "create temp table test (id int, v sparsevec)")]
-      (pg/execute conn "insert into test values (1, '{9:1}/9')")
-      (pg/execute conn "insert into test values (3, '{3:3}/3')")
-      (pg/execute conn "insert into test values (3, '{3:3}/3')")
-      (is (= 1
-             (pg/execute conn "select * from test order by id")))))
+    (pg/execute conn "create temp table test (id int, v sparsevec)")
+    (pg/execute conn "insert into test values (1, '{9:1}/9')")
+    (pg/execute conn "insert into test values (3, '{3:3}/3')")
+    (pg/execute conn "insert into test values (3, '{1:5}/1')")
+    (let [res
+          (pg/execute conn "select * from test order by id")]
+      (is (= '({:v {:nnz 1, :index {8 1.0}, :dim 9}, :id 1}
+               {:v {:nnz 1, :index {2 3.0}, :dim 3}, :id 3}
+               {:v {:nnz 1, :index {0 5.0}, :dim 1}, :id 3})
+             (for [row res]
+               (update row :v deref))))))
 
   (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
     (let [res (pg/execute conn "select '{3:1.123, 1:0000.1}/99'::sparsevec as v")]
-      (is (= 1
-             res))))
+      (is (= [{:v (t/->sparse-vector 99 {0 0.1, 2 1.123})}]
+             res)))))
+
+(deftest test-client-sparsevec-bin
 
   (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
     (let [res (pg/execute conn "select '{1:1,3:2,5:3}/5'::sparsevec as v")]
-      (is (= [{:v "{1:1,3:2,5:3}/5"}]
+      (is (= [{:v (t/->sparse-vector 5 {0 1 2 2 4 3}) }]
              res))))
 
-  #_
-  [0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0]
+  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+    (pg/execute conn "create temp table test (id int, v sparsevec)")
+    (pg/execute conn "insert into test values (1, '{9:1}/9')")
+    (pg/execute conn "insert into test values (3, '{3:3}/3')")
+    (pg/execute conn "insert into test values (3, '{1:5}/1')")
+    (let [res
+          (pg/execute conn "select * from test order by id")]
+      (is (= '({:v {:nnz 1, :index {8 1.0}, :dim 9}, :id 1}
+               {:v {:nnz 1, :index {2 3.0}, :dim 3}, :id 3}
+               {:v {:nnz 1, :index {0 5.0}, :dim 1}, :id 3})
+             (for [row res]
+               (update row :v deref))))))
 
-  #_
-  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
-    (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
-      (is (= [{:v [1.0 2.0 3.0]}]
-             res))))
-
-  #_
-  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
-    (pg/query conn "create temp table test (id int, items vector(3))")
-    (pg/execute conn "insert into test values ($1, $2)" {:params [1 [1 2 3]]})
-    (let [res (pg/execute conn "select * from test")]
-      (is (= [{:id 1, :items [1.0 2.0 3.0]}]
+  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+    (let [res (pg/execute conn "select '{3:1.123, 1:0000.1}/99'::sparsevec as v")]
+      (is (= [{:v (t/->sparse-vector 99 {0 0.1, 2 1.123})}]
              res)))))

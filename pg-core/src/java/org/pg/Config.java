@@ -117,6 +117,7 @@ public record Config(
         @SuppressWarnings("unused")
         public Builder usePGVector() {
             addTypeMapEntry("public.vector", Processors.vector);
+            addTypeMapEntry("public.sparsevec", Processors.sparsevec);
             return this;
         }
 

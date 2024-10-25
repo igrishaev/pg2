@@ -15,6 +15,7 @@ public class Numeric extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
+
         if (x instanceof BigDecimal bd) {
             return NumericBin.encode(bd);
         } else if (x instanceof BigInteger bi) {

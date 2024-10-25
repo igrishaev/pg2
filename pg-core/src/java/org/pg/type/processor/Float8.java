@@ -13,20 +13,12 @@ public class Float8 extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        if (x instanceof Number n) {
-            return BBTool.ofDouble(NumTool.toDouble(n));
-        } else {
-            return binEncodingError(x, oid);
-        }
+        return BBTool.ofDouble(NumTool.toDouble(x));
     }
 
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
-        if (x instanceof Number n) {
-            return String.valueOf(NumTool.toDouble(n));
-        } else {
-            return txtEncodingError(x, oid);
-        }
+        return String.valueOf(NumTool.toDouble(x));
     }
 
     @Override

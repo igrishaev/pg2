@@ -13,20 +13,12 @@ public class Int8 extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x , final CodecParams codecParams) {
-        if (x instanceof Number n) {
-            return BBTool.ofLong(NumTool.toLong(n));
-        } else {
-            return binEncodingError(x, oid);
-        }
+        return BBTool.ofLong(NumTool.toLong(x));
     }
 
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
-        if (x instanceof Number n) {
-            return String.valueOf(NumTool.toLong(n));
-        } else {
-            return txtEncodingError(x, oid);
-        }
+        return String.valueOf(NumTool.toLong(x));
     }
 
     @Override

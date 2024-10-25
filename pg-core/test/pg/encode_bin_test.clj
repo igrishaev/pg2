@@ -98,8 +98,8 @@
   (try
     (pg/encode-bin 99999 oid/int2)
     (is false)
-    (catch PGError e
-      (is (= "number 99999 is out of INT2 range"
+    (catch IllegalArgumentException e
+      (is (= "Value out of range for short: 99999"
              (ex-message e)))))
 
   ;; int
@@ -119,8 +119,8 @@
   (try
     (pg/encode-bin 9999999999 oid/int4)
     (is false)
-    (catch PGError e
-      (is (= "number 9999999999 is out of INT4 range"
+    (catch ArithmeticException e
+      (is (= "integer overflow"
              (ex-message e)))))
 
   ;; byte
@@ -142,8 +142,8 @@
   (try
     (pg/encode-bin 9999999999999999999999999999999999999999999999999.42 oid/float4)
     (is false)
-    (catch PGError e
-      (is (= "number 1.0E49 is out of FLOAT4 range"
+    (catch IllegalArgumentException e
+      (is (= "Value out of range for float: 1.0E49"
              (ex-message e)))))
 
   (let [res (pg/encode-bin (double 1.1) oid/float8)]

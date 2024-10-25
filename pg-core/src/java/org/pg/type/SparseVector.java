@@ -2,7 +2,6 @@ package org.pg.type;
 
 import clojure.lang.*;
 import org.pg.clojure.KW;
-import org.pg.util.NumTool;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -86,7 +85,7 @@ public record SparseVector(
         Map<Integer, Float> index = new HashMap<>();
         float f;
         for (Object item: iterable) {
-            f = NumTool.toFloat(item);
+            f = RT.floatCast(item);
             if (f != 0) {
                 index.put(dim, f);
             }

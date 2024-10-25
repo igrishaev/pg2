@@ -24,15 +24,15 @@
   (try
     (.encodeTxt t/vector [1.2 999999999999999999999999999999999999999999999999999999 3.4] nil)
     (is false)
-    (catch PGError e
-      (is (= "number 999999999999999999999999999999999999999999999999999999 is out of FLOAT4 range"
+    (catch IllegalArgumentException e
+      (is (= "Value out of range for float: 999999999999999999999999999999999999999999999999999999"
              (ex-message e)))))
 
   (try
     (.encodeTxt t/vector [1 nil 3] nil)
     (is false)
     (catch PGError e
-      (is (= "item is not a number: NULL"
+      (is (= "cannot coerce value to float: NULL"
              (ex-message e))))))
 
 
@@ -55,14 +55,14 @@
   (try
     (.encodeBin t/vector [1.2 999999999999999999999999999999999999999999999999999999 3.4] nil)
     (is false)
-    (catch PGError e
-      (is (= "number 999999999999999999999999999999999999999999999999999999 is out of FLOAT4 range"
+    (catch IllegalArgumentException e
+      (is (= "Value out of range for float: 999999999999999999999999999999999999999999999999999999"
              (ex-message e)))))
   (try
     (.encodeBin t/vector [1 nil 3] nil)
     (is false)
     (catch PGError e
-      (is (= "item is not a number: NULL"
+      (is (= "cannot coerce value to float: NULL"
              (ex-message e))))))
 
 
@@ -130,6 +130,8 @@
 
 
 (deftest test-sparsevec-encode-bin
+
+  ;; sv
   (let [bb1 (->bb [0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0])
         res (.decodeBin t/sparsevec bb1 nil)
         bb2 (.encodeBin t/sparsevec res nil)]
@@ -140,10 +142,21 @@
     (.rewind bb2)
 
     (is (= {:nnz 3, :index {0 1.0, 4 3.0, 2 2.0}, :dim 5}
-           @(.decodeBin t/sparsevec bb2 nil)))))
+           @(.decodeBin t/sparsevec bb2 nil))))
 
-(deftest test-sparsevec-encode-txt-iter
+  ;; string
+  (let [bb (.encodeBin t/sparsevec "{1:1}/42" nil)]
+    (is (= [0 0 0 42 0 0 0 1 0 0 0 0 0 0 0 0 63 -128 0 0]
+           (-> bb .array vec))))
 
+  ;; iter
+  (let [bb (.encodeBin t/sparsevec (map inc [1 2 3]) nil)]
+    (is (= [0 0 0 3 0 0 0 3 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 2 64 0 0 0 64 64 0 0 64 -128 0 0]
+           (-> bb .array vec)))))
+
+(deftest test-sparsevec-encode-txt
+
+  ;; iter
   (is (= "{1:1.0,2:2.0,3:3.0,4:4.0,5:5.0}/5"
          (.encodeTxt t/sparsevec [1 2 3 4 5] nil)))
 
@@ -151,15 +164,13 @@
          (.encodeTxt t/sparsevec (repeat 8 0) nil)))
 
   (is (= "{1:-1.0,3:1.0,4:-1.0}/4"
-         (.encodeTxt t/sparsevec (map inc [-2 -1 0 -2]) nil))))
+         (.encodeTxt t/sparsevec (map inc [-2 -1 0 -2]) nil)))
 
+  ;; text
+  (is (= "{1:1.0}/5"
+         (.encodeTxt t/sparsevec "{1:1.0}/5" nil)))
 
-;; TODO: sparsevec constructor
-
-;; enc bin string
-;; enc bin sv
-;; enc bin iterable
-
-;; enc txt string
-;; enc txt sv
-;; enc txt iterable
+  ;; sv
+  (let [sv (t/->sparse-vector 5 {3 0.3})]
+    (is (= "{4:0.3}/5"
+           (.encodeTxt t/sparsevec sv nil)))))
