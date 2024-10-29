@@ -1,10 +1,6 @@
 
 - readme
 
-- pgvector support
-- sparsevec
-- vector no dimensions
-
 - postgis support
 - json wrapper not needed
 
@@ -33,7 +29,6 @@
 - docs:
   - pool
   - execute parameters
-  - reducers
   - enums
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
