@@ -1,15 +1,16 @@
-package org.pg.type.processor;
+package org.pg.processor;
 
 import org.pg.codec.CodecParams;
 import org.pg.codec.JsonBin;
 import org.pg.codec.JsonTxt;
+
 import java.nio.ByteBuffer;
 
-public class Json extends AProcessor {
+public class Jsonb extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        return JsonBin.encodeJSON(x, codecParams);
+        return JsonBin.encodeJSONB(x, codecParams);
     }
 
     @Override
@@ -19,7 +20,7 @@ public class Json extends AProcessor {
 
     @Override
     public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        return JsonBin.decodeJSON(bb, codecParams);
+        return JsonBin.decodeJSONB(bb, codecParams);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.pg.type.processor;
+package org.pg.processor;
 
 import clojure.lang.Indexed;
 import org.pg.codec.*;

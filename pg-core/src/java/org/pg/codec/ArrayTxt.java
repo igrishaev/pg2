@@ -5,7 +5,7 @@ import clojure.lang.PersistentVector;
 import clojure.lang.RT;
 import org.pg.error.PGError;
 import org.pg.type.Matrix;
-import org.pg.type.processor.IProcessor;
+import org.pg.processor.IProcessor;
 
 import java.io.IOException;
 import java.io.Reader;

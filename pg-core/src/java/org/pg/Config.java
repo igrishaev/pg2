@@ -5,8 +5,8 @@ import clojure.lang.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
-import org.pg.type.processor.IProcessor;
-import org.pg.type.processor.Processors;
+import org.pg.processor.IProcessor;
+import org.pg.processor.Processors;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;

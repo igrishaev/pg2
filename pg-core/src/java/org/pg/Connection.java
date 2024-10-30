@@ -6,13 +6,12 @@ import org.pg.auth.ScramSha256;
 import org.pg.clojure.KW;
 import org.pg.clojure.RowMap;
 import org.pg.codec.CodecParams;
-import org.pg.copy.Copy;
 import org.pg.enums.*;
 import org.pg.error.PGError;
 import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
-import org.pg.type.processor.IProcessor;
+import org.pg.processor.IProcessor;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;

@@ -1,4 +1,4 @@
-package org.pg.type.processor;
+package org.pg.processor;
 
 import org.pg.codec.CodecParams;
 import org.pg.codec.PrimitiveTxt;

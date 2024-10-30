@@ -4,8 +4,7 @@ import clojure.lang.*;
 import org.pg.codec.CodecParams;
 import org.pg.msg.server.DataRow;
 import org.pg.msg.server.RowDescription;
-import org.pg.type.processor.IProcessor;
-import org.pg.type.processor.Processors;
+import org.pg.processor.IProcessor;
 import org.pg.util.TryLock;
 
 import java.nio.ByteBuffer;

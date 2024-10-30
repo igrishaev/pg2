@@ -1,11 +1,8 @@
-package org.pg.type.processor;
+package org.pg.processor;
 
 import org.pg.codec.CodecParams;
-import org.pg.enums.OID;
-import org.pg.error.PGError;
 import org.pg.util.BBTool;
 
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 public class Unsupported extends AProcessor {

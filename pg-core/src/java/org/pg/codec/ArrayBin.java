@@ -5,7 +5,7 @@ import clojure.lang.PersistentVector;
 import clojure.core$get_in;
 import org.pg.error.PGError;
 import org.pg.type.Matrix;
-import org.pg.type.processor.IProcessor;
+import org.pg.processor.IProcessor;
 import org.pg.util.BBTool;
 
 import java.io.ByteArrayOutputStream;

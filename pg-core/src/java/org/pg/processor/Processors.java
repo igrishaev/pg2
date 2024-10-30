@@ -1,8 +1,8 @@
-package org.pg.type.processor;
+package org.pg.processor;
 
 import org.pg.enums.OID;
-import org.pg.type.processor.pgvector.Sparsevec;
-import org.pg.type.processor.pgvector.Vector;
+import org.pg.processor.pgvector.Sparsevec;
+import org.pg.processor.pgvector.Vector;
 
 import java.util.HashMap;
 import java.util.Map;

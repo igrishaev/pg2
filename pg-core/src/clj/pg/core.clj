@@ -35,8 +35,8 @@
    org.pg.clojure.RowMap
    org.pg.codec.CodecParams
    org.pg.codec.CodecParams$Builder
-   org.pg.type.processor.IProcessor
-   org.pg.type.processor.Processors
+   org.pg.processor.IProcessor
+   org.pg.processor.Processors
    org.pg.enums.OID
    org.pg.enums.CopyFormat
    org.pg.enums.TXStatus

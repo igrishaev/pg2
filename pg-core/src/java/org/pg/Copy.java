@@ -1,9 +1,8 @@
-package org.pg.copy;
+package org.pg;
 
-import org.pg.ExecuteParams;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
-import org.pg.type.processor.IProcessor;
+import org.pg.processor.IProcessor;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

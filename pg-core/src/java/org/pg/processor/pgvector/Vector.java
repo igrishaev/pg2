@@ -1,8 +1,8 @@
-package org.pg.type.processor.pgvector;
+package org.pg.processor.pgvector;
 
 import clojure.lang.PersistentVector;
 import org.pg.codec.CodecParams;
-import org.pg.type.processor.AProcessor;
+import org.pg.processor.AProcessor;
 import org.pg.util.NumTool;
 
 import java.nio.ByteBuffer;

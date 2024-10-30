@@ -2,8 +2,8 @@ package org.pg.codec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.json.JSON;
-import org.pg.type.processor.IProcessor;
-import org.pg.type.processor.Processors;
+import org.pg.processor.IProcessor;
+import org.pg.processor.Processors;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

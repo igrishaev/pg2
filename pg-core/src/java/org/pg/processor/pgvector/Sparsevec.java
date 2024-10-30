@@ -1,8 +1,8 @@
-package org.pg.type.processor.pgvector;
+package org.pg.processor.pgvector;
 
 import org.pg.codec.CodecParams;
 import org.pg.type.SparseVector;
-import org.pg.type.processor.AProcessor;
+import org.pg.processor.AProcessor;
 
 import java.nio.ByteBuffer;
 

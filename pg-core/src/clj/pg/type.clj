@@ -5,8 +5,8 @@
    java.io.Writer
    org.pg.type.SparseVector
    org.pg.error.PGError
-   org.pg.type.processor.IProcessor
-   org.pg.type.processor.Processors))
+   org.pg.processor.IProcessor
+   org.pg.processor.Processors))
 
 (def ^IProcessor vector Processors/vector)
 
