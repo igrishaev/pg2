@@ -12,6 +12,8 @@
 
 (def ^IProcessor sparsevec Processors/sparsevec)
 
+(def ^IProcessor enum Processors/defaultEnum)
+
 (defmethod print-method SparseVector
   [^SparseVector sv ^Writer w]
   (.write w (format "<SparseVector %s>" sv)))

@@ -563,9 +563,7 @@ from
       (pg/execute conn (format "create table %s (id integer, foo %s)" table-name type-name)))
 
     (pg/with-connection [conn (assoc *CONFIG-BIN*
-                                     :type-map
-                                     {full-type
-                                      org.pg.type.processor.Processors/defaultEnum})]
+                                     :type-map {full-type t/enum})]
 
       (pg/query conn
                 (format "insert into %s (id, foo) values (1, 'foo'), (1, 'bar'), (1, 'kek')"
@@ -3470,9 +3468,10 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
   (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
     (pg/query conn "create temp table test (id int, items vector)")
     (pg/execute conn "insert into test values (1, '[1,2,3]')")
-    (pg/execute conn "insert into test values (1, '[1,2,3,4,5]')")
+    (pg/execute conn "insert into test values (2, '[1,2,3,4,5]')")
     (let [res (pg/execute conn "select * from test order by id")]
-      (is (= [{:id 1, :items [1.0 2.0 3.0]} {:id 1, :items [1.0 2.0 3.0 4.0 5.0]}]
+      (is (= [{:id 1, :items [1.0 2.0 3.0]}
+              {:id 2, :items [1.0 2.0 3.0 4.0 5.0]}]
              res))))
 
   (pg/with-conn [conn *CONFIG-TXT*]
