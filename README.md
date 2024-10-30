@@ -38,36 +38,40 @@ classes are supported for reading and writing.
 ## Documentation
 
 - [Installation](/docs/installation.md)
-- [Quick start (Demo)](/docs/quick-start.md)
+- [Quick Start (Demo)](/docs/quick-start.md)
 - [Benchmarks](/docs/benchmarks.md)
 - [Authentication](/docs/authentication.md)
-- [Connecting to the server](/docs/connecting.md)
+- [Connecting to the Server](/docs/connecting.md)
 - [Query and Execute](/docs/query-execute.md)
 - [Prepared Statements](/docs/prepared-statement.md)
 - [Transactions](/docs/transaction.md)
-- [Connection state](/docs/connection-state.md)
+- [Connection State](/docs/connection-state.md)
 - [Connection Pool](/docs/pool.md)
 - [HoneySQL Integration](/docs/honeysql.md)
 - [HugSQL Support](/docs/hugsql.md)
 - [Next.JDBC API layer](/docs/next-jdbc-layer.md)
 - [Folders (Reducers)](/docs/folders.md)
-- [JSON support](/docs/json.md)
-- [Arrays support](/docs/arrays.md)
+- [JSON Support](/docs/json.md)
+- [Arrays Support](/docs/arrays.md)
 - [Migrations](/docs/migrations.md)
-- Common Execute parameters
-- Type hints
+- Common Execute Parameters
+- Type Hints (OIDs)
+- Non-Standard Types & Extensions
+  - [PGVector](/docs/pgvector.md)
+  - PostGIS
+  - Custom Type Processors
 - Working with Enums
 - Cloning a Connection
 - Cancelling a Query
 - Thread Safety
-- COPY IN/OUT
+- COPY FROM/TO
 - SSL Support
 - Type Mapping
 - Notify/Listen
 - Notices
 - Logging
 - Errors and Exceptions
-- Component integration
+- Component Integration
 - Ring middleware
 - Debugging
-- Running tests
+- Running Tests
