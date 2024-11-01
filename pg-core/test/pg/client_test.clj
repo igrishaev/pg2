@@ -3160,9 +3160,6 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= [] res-query)))))
 
 
-;; ------------------------
-
-
 (deftest test-client-array-read-bin-simple
   (pg/with-connection [conn *CONFIG-BIN*]
     (let [res (pg/execute conn

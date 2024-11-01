@@ -1,8 +1,20 @@
 
-## 0.1.18-SNAPSHOT
+## 0.1.19-SNAPSHOT
+
+- ?
+
+## 0.1.18
 
 - more tests for jsonb functions
 - better message render for debug
+- postgis + pgvector images for docker
+- docker pg11 is turned off
+- pgvector support
+- type processors
+- bit type support
+- integer OIDs
+- connection init type mapping
+- better tests
 
 ## 0.1.17
 
