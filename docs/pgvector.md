@@ -199,3 +199,57 @@ create table ... (id int, items sparsevec(5))
 The `sparsevec` type supports both binary and text Postgres wire protocol.
 
 ## Custom Schemas
+
+The text above assumes you have installed the `pgvector` extension globally,
+meaning it is hosted in the `public` schema. Sometimes though, extensions are
+being setup schema-wise, for example only a schema named `sales` has it.
+
+If it's your case and you have installed `pgvector` into a certain schema, the
+standard `:with-pgvector?` flag won't work. By default, PG2 scans the `pg_types`
+table for the "public.vector" and "public.sparsevec" types. Since the schema
+name is not "public" any longer but "sales", you need to specify it by passing a
+special option called `:type-map`. It's a map where keys are fully qualified
+type names (either a keyword or a string), and values are predefined instances
+of the `IProcessor` protocol:
+
+~~~clojure
+(def config
+  {:host "127.0.0.1"
+   :port 5432
+   :user "test"
+   :password "test"
+   :database "test"
+   :type-map {"sales.vector" t/vector
+              "sales.sparsevec" t/sparsevec}})
+~~~
+
+You can rely on keywords as well:
+
+~~~clojure
+(def config
+  {:host "127.0.0.1"
+   :port 5432
+   :user "test"
+   :password "test"
+   :database "test"
+   :type-map {:sales/vector t/vector
+              :sales/sparsevec t/sparsevec}})
+~~~
+
+The `t` alias references the `pg.type` namespace.
+
+Now if you install the extension into the "statistics" schema as well, add it
+into the map:
+
+~~~clojure
+(def config
+  {:host "127.0.0.1"
+   :port 5432
+   :user "test"
+   :password "test"
+   :database "test"
+   :type-map {:sales/vector t/vector
+              :sales/sparsevec t/sparsevec
+              :statistics/vector t/vector
+              :statistics/sparsevec t/sparsevec}})
+~~~

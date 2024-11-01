@@ -59,7 +59,7 @@ classes are supported for reading and writing.
 - Non-Standard Types & Extensions
   - [PGVector](/docs/pgvector.md)
   - PostGIS
-  - Custom Type Processors
+  - [Custom Type Processors](/docs/processors.md)
 - Working with Enums
 - Cloning a Connection
 - Cancelling a Query
