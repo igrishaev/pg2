@@ -9,5 +9,4 @@ public interface IProcessor {
     String encodeTxt(final Object value, final CodecParams codecParams);
     Object decodeBin(final ByteBuffer bb, final CodecParams codecParams);
     Object decodeTxt(final String text, final CodecParams codecParams);
-
 }

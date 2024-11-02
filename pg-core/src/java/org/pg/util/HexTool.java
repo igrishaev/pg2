@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 public final class HexTool {
 
-
     public static String formatHex(final byte[] input) {
         return formatHex(input, "");
     }
