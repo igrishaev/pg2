@@ -3616,3 +3616,20 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (let [res (pg/execute conn "select '{3:1.123, 1:0000.1}/99'::sparsevec as v")]
       (is (= [{:v (t/->sparse-vector 99 {0 0.1, 2 1.123})}]
              res)))))
+
+
+#_
+(deftest test-gis-geometry-txt
+  (pg/with-conn [conn *CONFIG-TXT*]
+    (pg/execute conn "create temp table test (id int, geom geometry)")
+    (pg/execute conn "insert into test values (1, 'POINT(2 3 4 5)')")
+    (pg/execute conn "insert into test values (1, 'POINT(0 0 0 0)')")
+
+    ;; (pg/execute conn "insert into test values (2, 'LINESTRING(0 0, 1 1, 2 1, 2 2)')")
+    ;; (pg/execute conn "insert into test values (3, 'POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))')")
+
+    (let [res
+          (pg/execute conn "SELECT 'SRID=4326;POINT(10.0 20.0 30.0 40.0)'::geometry;")]
+      (is (= 1
+             res))))
+  )
