@@ -3618,6 +3618,32 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
              res)))))
 
 
+(deftest test-geom-standard-point-txt
+  (pg/with-conn [conn *CONFIG-TXT*]
+    (pg/execute conn "create temp table test (id int, p point)")
+    (pg/execute conn "insert into test values (1, '(1.001, 2.002)')")
+    (pg/execute conn "insert into test values (2, '(-1.001, -2.002)')")
+
+    (let [res
+          (pg/execute conn "SELECT * from test")]
+      (is (= 1
+             res))))
+  )
+
+
+(deftest test-geom-standard-point-bin
+  (pg/with-conn [conn *CONFIG-BIN*]
+    (pg/execute conn "create temp table test (id int, p point)")
+    (pg/execute conn "insert into test values (1, '(1.001, 2.002)')")
+    (pg/execute conn "insert into test values (2, '(-1.001, -2.002)')")
+
+    (let [res
+          (pg/execute conn "SELECT * from test")]
+      (is (= 1
+             res))))
+  )
+
+
 #_
 (deftest test-gis-geometry-txt
   (pg/with-conn [conn *CONFIG-TXT*]
