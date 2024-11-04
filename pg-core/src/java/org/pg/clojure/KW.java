@@ -26,6 +26,9 @@ public final class KW {
     public final static Keyword index = Keyword.intern("index");
     public final static Keyword x = Keyword.intern("x");
     public final static Keyword y = Keyword.intern("y");
+    public final static Keyword a = Keyword.intern("a");
+    public final static Keyword b = Keyword.intern("b");
+    public final static Keyword c = Keyword.intern("c");
 
     public static void main(String... args) {
         System.out.println(inserted);

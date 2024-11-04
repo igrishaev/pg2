@@ -3,11 +3,12 @@
   (:import
    java.util.Map
    java.io.Writer
-   org.pg.type.SparseVector
-   org.pg.type.Point
+   (org.pg.type SparseVector
+                Point
+                Line)
    org.pg.error.PGError
-   org.pg.processor.IProcessor
-   org.pg.processor.Processors))
+   (org.pg.processor IProcessor
+                     Processors)))
 
 ;;
 ;; Processors
@@ -29,8 +30,12 @@
   (.write w (format "<SparseVector %s>" sv)))
 
 (defmethod print-method Point
-  [^SparseVector sv ^Writer w]
-  (.write w (format "<Point %s>" sv)))
+  [^Point p ^Writer w]
+  (.write w (format "<Point %s>" p)))
+
+(defmethod print-method Line
+  [^Line l ^Writer w]
+  (.write w (format "<Line %s>" l)))
 
 
 ;;
@@ -48,6 +53,10 @@
     (new SparseVector dim -index)))
 
 
+(defn point? [x]
+  (instance? Point x))
+
+
 (defn ->point
   "
   Make an instance of the Point object.
@@ -55,16 +64,48 @@
   (^Point [^double x ^double y]
    (new Point x y))
 
-  (^Point [map-or-vec]
+  (^Point [x]
    (cond
 
-     (map? map-or-vec)
-     (Point/fromMap map-or-vec)
+     (map? x)
+     (Point/fromMap x)
 
-     (vector? map-or-vec)
-     (Point/fromList map-or-vec)
+     (vector? x)
+     (Point/fromList x)
+
+     (point? x)
+     x
 
      :else
      (throw
       (new PGError
-           (format "wrong point input: %s" map-or-vec))))))
+           (format "wrong point input: %s" x))))))
+
+
+(defn line? [x]
+  (instance? Line x))
+
+
+(defn ->line
+  "
+  Make an instance of the Line object.
+  "
+  (^Point [^double a ^double b ^double c]
+   (new Line a b c))
+
+  (^Point [x]
+   (cond
+
+     (map? x)
+     (Line/fromMap x)
+
+     (vector? x)
+     (Line/fromList x)
+
+     (line? x)
+     x
+
+     :else
+     (throw
+      (new PGError
+           (format "wrong line input: %s" x))))))

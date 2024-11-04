@@ -3701,6 +3701,33 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= -2.2 (get p :y))))))
 
 
+(deftest test-geom-standard-line-txt
+  (pg/with-conn [conn *CONFIG-TXT*]
+    (pg/execute conn "create temp table test (id int, l line)")
+    (pg/execute conn "insert into test values (1, '{-1,2.3,3.00003}')")
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [2 (t/->line 1 2 3)]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [3 "{22.0,-33.0,11.33}"]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [4 [1 -2 3]]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [5 {:a 8 :b 3 :c 3}]})
+    (let [res
+          (pg/execute conn "SELECT * from test")]
+      (is (= '({:l {:c 3.00003, :b 2.3,   :a -1.0}, :id 1}
+               {:l {:c 3.0,     :b 2.0,   :a 1.0},  :id 2}
+               {:l {:c 11.33,   :b -33.0, :a 22.0}, :id 3}
+               {:l {:c 3.0,     :b -2.0,  :a 1.0},  :id 4}
+               {:l {:c 3.0,     :b 3.0,   :a 8.0},  :id 5})
+             (for [row res]
+               (update row :l deref)))))))
+
+
 #_
 (deftest test-gis-geometry-txt
   (pg/with-conn [conn *CONFIG-TXT*]

@@ -24,7 +24,7 @@ public record Point (double x, double y)
     public static Point fromByteBuffer(final ByteBuffer bb) {
         final double x = bb.getDouble();
         final double y = bb.getDouble();
-        return new org.pg.type.Point(x, y);
+        return new Point(x, y);
     }
 
     public static Point fromMap(final Map<?,?> map) {
@@ -106,12 +106,12 @@ public record Point (double x, double y)
         return PersistentHashMap.create(KW.x, x, KW.y, y);
     }
 
-    public static void main(String... args) {
-        System.out.println(Point.fromString("(1.23342 , -3.23234)"));
-    }
-
     @Override
     public Iterator<Double> iterator() {
         return List.of(x, y).iterator();
+    }
+
+    public static void main(String... args) {
+        System.out.println(Point.fromString("(1.23342 , -3.23234)"));
     }
 }
