@@ -2,8 +2,64 @@ package org.pg.type;
 
 import clojure.lang.*;
 import org.pg.clojure.KW;
+import org.pg.error.PGError;
+import org.pg.util.NumTool;
 
-public record Point (float x, float y) implements Counted, Indexed, ILookup, IDeref {
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+public record Point (double x, double y)
+        implements Counted, Indexed, ILookup, IDeref, Iterable<Double> {
+
+    public ByteBuffer toByteBuffer() {
+        final ByteBuffer bb = ByteBuffer.allocate(16);
+        bb.putDouble(x);
+        bb.putDouble(y);
+        return bb;
+    }
+
+    public static Point fromByteBuffer(final ByteBuffer bb) {
+        final double x = bb.getDouble();
+        final double y = bb.getDouble();
+        return new org.pg.type.Point(x, y);
+    }
+
+    public static Point fromMap(final Map<?,?> map) {
+        final double x = NumTool.toDouble(map.get(KW.x));
+        final double y = NumTool.toDouble(map.get(KW.y));
+        return new Point(x, y);
+    }
+
+    public static Point fromList(final List<?> list) {
+        final double x = NumTool.toDouble(list.get(0));
+        final double y = NumTool.toDouble(list.get(1));
+        return new Point(x, y);
+    }
+
+    public static Point fromString(final String text) {
+        final String[] partsRaw = text.split("[(,)]");
+        final List<String> partsClear = new ArrayList<>();
+        for (String part: partsRaw) {
+            String partClear = part.strip();
+            if (!partClear.isEmpty()) {
+                partsClear.add(partClear);
+            }
+        }
+        if (partsClear.size() != 2) {
+            throw new PGError("wrong point string: %s", text);
+        }
+        final double x = Double.parseDouble(partsClear.get(0));
+        final double y = Double.parseDouble(partsClear.get(1));
+        return new Point(x, y);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + x + "," + y + ")";
+    }
 
     @Override
     public Object nth(final int i) {
@@ -47,6 +103,15 @@ public record Point (float x, float y) implements Counted, Indexed, ILookup, IDe
 
     @Override
     public Object deref() {
-        return PersistentVector.create(x, y);
+        return PersistentHashMap.create(KW.x, x, KW.y, y);
+    }
+
+    public static void main(String... args) {
+        System.out.println(Point.fromString("(1.23342 , -3.23234)"));
+    }
+
+    @Override
+    public Iterator<Double> iterator() {
+        return List.of(x, y).iterator();
     }
 }

@@ -3,6 +3,7 @@ package org.pg.enums;
 import clojure.lang.BigInt;
 import clojure.lang.IPersistentMap;
 import clojure.lang.Symbol;
+import org.pg.type.Point;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -260,6 +261,8 @@ public class OID {
             return TIMESTAMPTZ;
         } else if (x instanceof Byte b) {
             return INT2;
+        } else if (x instanceof Point p) {
+            return POINT;
         } else {
             return DEFAULT;
         }

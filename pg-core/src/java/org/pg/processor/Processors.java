@@ -41,6 +41,9 @@ public class Processors {
         oidMap.put(OID.BPCHAR, new Text(OID.BPCHAR));
         oidMap.put(OID.CHAR, new Char());
 
+        // geometry
+        oidMap.put(OID.POINT, new Point());
+
         // misc
         oidMap.put(OID.UUID, new Uuid());
         oidMap.put(OID.JSON, new Json());
@@ -82,6 +85,7 @@ public class Processors {
         oidMap.put(OID._TIME, new Array(OID._TIME, OID.TIME));
         oidMap.put(OID._TIMETZ, new Array(OID._TIMETZ, OID.TIMETZ));
         oidMap.put(OID._BIT, new Array(OID._BIT, OID.BIT));
+        oidMap.put(OID._POINT, new Array(OID._POINT, OID.POINT));
     }
 
     public static IProcessor getProcessor(final int oid) {

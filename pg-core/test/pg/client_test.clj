@@ -3623,25 +3623,82 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (pg/execute conn "create temp table test (id int, p point)")
     (pg/execute conn "insert into test values (1, '(1.001, 2.002)')")
     (pg/execute conn "insert into test values (2, '(-1.001, -2.002)')")
-
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [3 (t/->point 3 4)]})
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [4 "(22.0,-33.0)"]})
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [5 [1 2]]})
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [6 {:x 8 :y 3}]})
     (let [res
           (pg/execute conn "SELECT * from test")]
-      (is (= 1
-             res))))
-  )
+      (is (= '({:id 1, :p {:y 2.002, :x 1.001}}
+               {:id 2, :p {:y -2.002, :x -1.001}}
+               {:id 3, :p {:y 4.0, :x 3.0}}
+               {:id 4, :p {:y -33.0, :x 22.0}}
+               {:id 5, :p {:y 2.0, :x 1.0}}
+               {:id 6, :p {:y 3.0, :x 8.0}})
+             (for [row res]
+               (update row :p deref)))))))
 
 
 (deftest test-geom-standard-point-bin
   (pg/with-conn [conn *CONFIG-BIN*]
     (pg/execute conn "create temp table test (id int, p point)")
-    (pg/execute conn "insert into test values (1, '(1.001, 2.002)')")
-    (pg/execute conn "insert into test values (2, '(-1.001, -2.002)')")
-
+    (pg/execute conn "insert into test values (1, '(1,-2.2)')")
+    (pg/execute conn "insert into test values (2, '(2,3)')")
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [3 (t/->point 3 4)]})
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [4 "(22.0,-33.0)"]})
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [5 [1 2]]})
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [6 {:x 8 :y 3}]})
     (let [res
-          (pg/execute conn "SELECT * from test")]
-      (is (= 1
-             res))))
-  )
+          (pg/execute conn "SELECT * from test")
+
+          p
+          (-> res first :p)]
+
+      (is (= '({:id 1, :p {:y -2.2, :x 1.0}}
+               {:id 2, :p {:y 3.0, :x 2.0}}
+               {:id 3, :p {:y 4.0, :x 3.0}}
+               {:id 4, :p {:y -33.0, :x 22.0}}
+               {:id 5, :p {:y 2.0, :x 1.0}}
+               {:id 6, :p {:y 3.0, :x 8.0}})
+             (for [row res]
+               (update row :p deref))))
+
+      ;; point props
+
+      (is (= org.pg.type.Point
+             (type p)))
+
+      (is (= "(1.0,-2.2)" (str p)))
+      (is (= "<Point (1.0,-2.2)>" (pr-str p)))
+
+      (is (= {:y -2.2, :x 1.0} @p))
+
+      (is (= [1.0 -2.2] (vec p)))
+
+      (is (= 1.0 (nth p 0)))
+      (is (= -2.2 (nth p 1)))
+
+      (try
+        (nth p 2)
+        (is false)
+        (catch IndexOutOfBoundsException e
+          (is true)))
+
+      (is (= ::miss (nth p 99 ::miss)))
+
+      (is (= 2 (count p)))
+
+      (is (nil? (get p "abc")))
+      (is (= 1.0 (get p :x)))
+      (is (= -2.2 (get p :y))))))
 
 
 #_
