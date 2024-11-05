@@ -16,3 +16,6 @@ ssl_ca_file = '/Users/ivan/work/pg2/certs/root.crt'
 
 create user test with password 'test';
 create database test;
+
+;; port
+export PG_SSL_PORT=15432

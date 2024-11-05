@@ -2,6 +2,9 @@
 repl: cleanup
 	PG_DEBUG=1 lein with-profile +test repl
 
+repl-ssl: cleanup
+	PG_DEBUG=1 PG_SSL_PORT=${ssl_port} lein with-profile +test repl
+
 test: cleanup
 	lein test
 

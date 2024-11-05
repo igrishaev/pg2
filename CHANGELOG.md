@@ -1,7 +1,7 @@
 
 ## 0.1.19-SNAPSHOT
 
-- ?
+- fix scram branching #21
 
 ## 0.1.18
 
