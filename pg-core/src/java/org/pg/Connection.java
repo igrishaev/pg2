@@ -15,11 +15,16 @@ import org.pg.processor.IProcessor;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import java.security.MessageDigest;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.*;
 import java.net.Socket;
@@ -802,6 +807,50 @@ public final class Connection implements AutoCloseable {
             throw new PGError("Cannot handle this message: %s", msg);
         }
 
+    }
+
+    //
+    // stolen from ongres/scram, file TlsServerEndpoint.java
+    //
+    private static MessageDigest getDigestAlgorithm(final String signatureAlgorithm) {
+        final int index = signatureAlgorithm.indexOf("with");
+        String algorithm = index > 0 ? signatureAlgorithm.substring(0, index) : "SHA-256";
+        if (!algorithm.startsWith("SHA3-")) {
+            algorithm = algorithm.replace("SHA", "SHA-");
+        }
+        if ("MD5".equals(algorithm) || "SHA-1".equals(algorithm)) {
+            algorithm = "SHA-256";
+        }
+        try {
+            return MessageDigest.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new PGError(e,
+                    "no such digest algorithm: %s, source: %s",
+                    algorithm, signatureAlgorithm
+            );
+        }
+    }
+
+    //
+    // stolen from jorsol/pgjdbc, file ScramAuthenticator.java
+    //
+    private byte[] getChannelBindingData() {
+        if (socket instanceof SSLSocket sslSocket) {
+            final Certificate peerCert = SSLTool.getPeerCertificate(sslSocket);
+            if (peerCert instanceof X509Certificate cert) {
+                final String sigAlgName = cert.getSigAlgName();
+                final MessageDigest digest = getDigestAlgorithm(sigAlgName);
+                try {
+                    return digest.digest(cert.getEncoded());
+                } catch (CertificateEncodingException e) {
+                    throw new PGError("cannot get encoded payload of certificate: %s", cert);
+                }
+            } else {
+                throw new PGError("certificate %s is not X509Certificate: %s", peerCert);
+            }
+        } else {
+            throw new PGError("cannot get channel binding data because connection is not SSL");
+        }
     }
 
     private void handleAuthenticationSASL (final AuthenticationSASL msg, final Result res) {
