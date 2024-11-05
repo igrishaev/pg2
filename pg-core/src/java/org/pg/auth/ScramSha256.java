@@ -1,5 +1,7 @@
 package org.pg.auth;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -61,10 +63,10 @@ public final class ScramSha256 {
             final String password,
             final byte[] bindData
     ) {
-        final String gs2header = "p=tls-server-end-point,,";
+        final String gs2header = "p=tls-server-end-point";
         final String nonce = UUID.randomUUID().toString();
         final String clientFirstMessageBare = "n=" + user + ",r=" + nonce;
-        final String clientFirstMessage = gs2header + clientFirstMessageBare;
+        final String clientFirstMessage = gs2header + ",," +clientFirstMessageBare;
         return new Step1(
                 user,
                 password,
@@ -112,7 +114,17 @@ public final class ScramSha256 {
     ) {}
 
     public static Step3 step3_clientFinalMessage (final Step1 step1, final Step2 step2) {
-        final String channelBinding = new String(HashTool.base64encode(step1.bindData()), StandardCharsets.UTF_8);
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try {
+            bos.write(step1.gs2header().getBytes(StandardCharsets.UTF_8));
+            bos.write(",,".getBytes(StandardCharsets.UTF_8));
+            bos.write(step1.bindData());
+            bos.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        final byte[] bindArray = bos.toByteArray();
+        final String channelBinding = new String(HashTool.base64encode(bindArray), StandardCharsets.UTF_8);
         final String nonce = step2.nonce;
         final String clientFinalMessageWithoutProof = "c=" + channelBinding + ",r=" + nonce;
         final String AuthMessage =
