@@ -857,20 +857,34 @@ public final class Connection implements AutoCloseable {
 
         res.scramPipeline = ScramSha256.pipeline();
 
-        if (msg.isScramSha256()) {
+//        if (msg.isScramSha256()) {
+//            final ScramSha256.Step1 step1 = ScramSha256.step1_clientFirstMessage(
+//                    config.user(), config.password()
+//            );
+//            final SASLInitialResponse msgSASL = new SASLInitialResponse(
+//                    SASL.SCRAM_SHA_256,
+//                    step1.clientFirstMessage()
+//            );
+//            res.scramPipeline.step1 = step1;
+//            sendMessage(msgSASL);
+//            flush();
+//
+//        } else
+
+        if (msg.isScramSha256Plus()) {
+            final byte[] bindData = getChannelBindingData();
+
             final ScramSha256.Step1 step1 = ScramSha256.step1_clientFirstMessage(
-                    config.user(), config.password()
+                    config.user(), config.password(), bindData
             );
             final SASLInitialResponse msgSASL = new SASLInitialResponse(
-                    SASL.SCRAM_SHA_256,
+                    SASL.SCRAM_SHA_256_PLUS,
                     step1.clientFirstMessage()
             );
             res.scramPipeline.step1 = step1;
             sendMessage(msgSASL);
             flush();
 
-        } else if (msg.isScramSha256Plus()) {
-            throw new PGError("SASL SCRAM SHA 256 PLUS method is not implemented yet");
 
         } else {
             throw new PGError("Unknown SCRAM algorithm: %s", msg);

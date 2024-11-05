@@ -4,8 +4,8 @@ public final class Main {
 
     public static void main (final String[] args) {
 
-        final long l = 123123123L;
-        System.out.println((short) l);
+//        final long l = 123123123L;
+//        System.out.println((short) l);
 
         // String user = System.getenv("USER");
 
@@ -17,17 +17,17 @@ public final class Main {
 //                .binaryDecode(true)
 //                .build();
 
-//        Config config = Config.builder("test", "test")
-//                .port(10140)
-//                .host("127.0.0.1")
-//                .password("test")
-//                .binaryEncode(true)
-//                .binaryDecode(true)
-//                .SOKeepAlive(true)
-//                .build();
+        Config config = Config.builder("test_owner", "test")
+                .port(5432)
+                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
+                .password("")
+                .useSSL(true)
+                .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
-        // Connection conn = Connection.connect(config);
+        Connection conn = Connection.connect(config);
+        System.out.println(conn.query("select 42 as num"));
+
 
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());

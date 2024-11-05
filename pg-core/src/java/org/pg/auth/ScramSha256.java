@@ -52,14 +52,16 @@ public final class ScramSha256 {
             String password,
             String gs2header,
             String clientFirstMessageBare,
-            String clientFirstMessage
+            String clientFirstMessage,
+            byte[] bindData
     ) {}
 
     public static Step1 step1_clientFirstMessage (
             final String user,
-            final String password
+            final String password,
+            final byte[] bindData
     ) {
-        final String gs2header = "n,,";
+        final String gs2header = "p=tls-server-end-point,,";
         final String nonce = UUID.randomUUID().toString();
         final String clientFirstMessageBare = "n=" + user + ",r=" + nonce;
         final String clientFirstMessage = gs2header + clientFirstMessageBare;
@@ -68,7 +70,8 @@ public final class ScramSha256 {
                 password,
                 gs2header,
                 clientFirstMessageBare,
-                clientFirstMessage
+                clientFirstMessage,
+                bindData
         );
     }
 
@@ -109,7 +112,7 @@ public final class ScramSha256 {
     ) {}
 
     public static Step3 step3_clientFinalMessage (final Step1 step1, final Step2 step2) {
-        final String channelBinding = HashTool.base64encode(step1.gs2header);
+        final String channelBinding = new String(HashTool.base64encode(step1.bindData()), StandardCharsets.UTF_8);
         final String nonce = step2.nonce;
         final String clientFinalMessageWithoutProof = "c=" + channelBinding + ",r=" + nonce;
         final String AuthMessage =
