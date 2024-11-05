@@ -2,6 +2,8 @@
 ## 0.1.22-SNAPSHOT
 
 - bump less-awful-ssl and fix pg.ssl
+- point type support
+- line type support
 
 ## 0.1.21
 
