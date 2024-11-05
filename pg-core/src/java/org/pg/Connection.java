@@ -15,7 +15,6 @@ import org.pg.processor.IProcessor;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import java.security.MessageDigest;
 import java.io.*;
@@ -809,9 +808,7 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    //
     // stolen from ongres/scram, file TlsServerEndpoint.java
-    //
     private static MessageDigest getDigestAlgorithm(final String signatureAlgorithm) {
         final int index = signatureAlgorithm.indexOf("with");
         String algorithm = index > 0 ? signatureAlgorithm.substring(0, index) : "SHA-256";
@@ -831,9 +828,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    //
     // stolen from jorsol/pgjdbc, file ScramAuthenticator.java
-    //
     private byte[] getChannelBindingData() {
         if (socket instanceof SSLSocket sslSocket) {
             final Certificate peerCert = SSLTool.getPeerCertificate(sslSocket);
@@ -857,38 +852,41 @@ public final class Connection implements AutoCloseable {
 
         res.scramPipeline = ScramSha256.pipeline();
 
-//        if (msg.isScramSha256()) {
-//            final ScramSha256.Step1 step1 = ScramSha256.step1_clientFirstMessage(
-//                    config.user(), config.password()
-//            );
-//            final SASLInitialResponse msgSASL = new SASLInitialResponse(
-//                    SASL.SCRAM_SHA_256,
-//                    step1.clientFirstMessage()
-//            );
-//            res.scramPipeline.step1 = step1;
-//            sendMessage(msgSASL);
-//            flush();
-//
-//        } else
+        ScramSha256.BindFlag bindFlag;
+        ScramSha256.BindType bindType;
+        byte[] bindData;
+        SASL saslType;
 
-        if (msg.isScramSha256Plus()) {
-            final byte[] bindData = getChannelBindingData();
+        if (msg.isScramSha256()) {
+            bindFlag = ScramSha256.BindFlag.NO;
+            bindType = ScramSha256.BindType.NONE;
+            bindData = new byte[0];
+            saslType = SASL.SCRAM_SHA_256;
 
-            final ScramSha256.Step1 step1 = ScramSha256.step1_clientFirstMessage(
-                    config.user(), config.password(), bindData
-            );
-            final SASLInitialResponse msgSASL = new SASLInitialResponse(
-                    SASL.SCRAM_SHA_256_PLUS,
-                    step1.clientFirstMessage()
-            );
-            res.scramPipeline.step1 = step1;
-            sendMessage(msgSASL);
-            flush();
-
+        } else if (msg.isScramSha256Plus()) {
+            bindFlag = ScramSha256.BindFlag.REQUIRED;
+            bindType = ScramSha256.BindType.TLS_SERVER_END_POINT;
+            bindData = getChannelBindingData();
+            saslType = SASL.SCRAM_SHA_256_PLUS;
 
         } else {
             throw new PGError("Unknown SCRAM algorithm: %s", msg);
         }
+
+        final ScramSha256.Step1 step1 = ScramSha256.step1_clientFirstMessage(
+                config.user(),
+                config.password(),
+                bindFlag,
+                bindType,
+                bindData
+        );
+        final SASLInitialResponse msgSASL = new SASLInitialResponse(
+                saslType,
+                step1.clientFirstMessage()
+        );
+        res.scramPipeline.step1 = step1;
+        sendMessage(msgSASL);
+        flush();
     }
 
     private void handleAuthenticationSASLContinue (final AuthenticationSASLContinue msg, final Result res) {

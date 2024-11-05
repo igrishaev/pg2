@@ -15,7 +15,31 @@ import org.pg.util.NormTool;
 
 public final class ScramSha256 {
 
-    public static byte[] Hi (
+    public enum BindFlag {
+        NO,
+        REQUIRED;
+        @Override
+        public String toString() {
+            return switch (this) {
+                case NO -> "n";
+                case REQUIRED -> "p";
+            };
+        }
+    }
+
+    public enum BindType {
+        NONE,
+        TLS_SERVER_END_POINT;
+        @Override
+        public String toString() {
+            return switch (this) {
+                case NONE -> "";
+                case TLS_SERVER_END_POINT -> "tls-server-end-point";
+            };
+        }
+    }
+
+    public static byte[] Hi(
             final byte[] secret,
             final byte[] message,
             final int iterations
@@ -33,7 +57,7 @@ public final class ScramSha256 {
         return u;
     }
 
-    public static byte[] H (byte[] input) {
+    public static byte[] H(byte[] input) {
         return HashTool.Sha256(input);
     }
 
@@ -42,8 +66,8 @@ public final class ScramSha256 {
         final String[] pairs = message.split(",");
         for (final String pair: pairs) {
             final String[] kv = pair.split("=", 2);
-            final String k = kv[0];
-            final String v = kv[1];
+            final String k = kv[0].strip();
+            final String v = kv[1].strip();
             result.put(k, v);
         }
         return result;
@@ -61,9 +85,14 @@ public final class ScramSha256 {
     public static Step1 step1_clientFirstMessage (
             final String user,
             final String password,
+            final BindFlag bindFlag,
+            final BindType bindType,
             final byte[] bindData
     ) {
-        final String gs2header = "p=tls-server-end-point";
+        final String gs2header = switch (bindFlag) {
+            case NO -> bindFlag.toString();
+            case REQUIRED -> bindFlag + "=" + bindType;
+        };
         final String nonce = UUID.randomUUID().toString();
         final String clientFirstMessageBare = "n=" + user + ",r=" + nonce;
         final String clientFirstMessage = gs2header + ",," +clientFirstMessageBare;
@@ -87,7 +116,7 @@ public final class ScramSha256 {
     public static String getField (final Map<String, String> keyval, final String key) {
         final String val = keyval.get(key);
         if (val == null) {
-            throw new PGError("the '%s' field is null", key);
+            throw new PGError("the '%s' field is missing", key);
         }
         else {
             return val;
