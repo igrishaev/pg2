@@ -1,4 +1,4 @@
-(defproject com.github.igrishaev/pg2-honey "0.1.19"
+(defproject com.github.igrishaev/pg2-honey "0.1.20-SNAPSHOT"
 
   :description
   "HoneySQL wrapper for PG2"
