@@ -1,7 +1,7 @@
 
 ## 0.1.20-SNAPSHOT
 
-- ?
+- scram plus auth
 
 ## 0.1.19
 
