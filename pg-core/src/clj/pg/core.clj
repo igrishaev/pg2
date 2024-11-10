@@ -23,7 +23,8 @@
    java.util.List
    java.util.Map
    java.util.UUID
-   javax.net.ssl.SSLContext
+   (javax.net.ssl SSLContext
+                  TrustManager)
    org.pg.CancelTimer
    org.pg.Config
    org.pg.Config$Builder
@@ -1169,6 +1170,17 @@
   (if ca-cert-file
     (ssl/ssl-context key-file cert-file ca-cert-file)
     (ssl/ssl-context key-file cert-file)))
+
+
+(defn ca-cert->ssl-context
+  ^SSLContext [^String ca-cert-file]
+  (let [trust-manager (-> ca-cert-file
+                          (ssl/trust-store)
+                          (ssl/trust-manager))]
+    (doto (SSLContext/getInstance "TLSv1.2")
+      (.init nil
+             (into-array TrustManager [trust-manager])
+             nil))))
 
 
 (defn is-ssl?
