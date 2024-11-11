@@ -11,7 +11,7 @@ test: cleanup
 ssl_port ?= $(error Please specify the ssl_port=... argument)
 
 test-ssl: cleanup
-	PG_SSL_PORT=${ssl_port} lein test pg.client.ssl-test
+	PG_SSL_PORT=${ssl_port} lein test pg.ssl-test
 
 cleanup:
 	rm -rf target
