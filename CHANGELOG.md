@@ -1,7 +1,11 @@
 
 ## 0.1.21-SNAPSHOT
 
-- ?
+- pg.ssl namespace
+- tested with neon.tech and supabase
+- ssl-context param sets ssl true
+- docs: ssl
+- docs: services tested with
 
 ## 0.1.20
 
