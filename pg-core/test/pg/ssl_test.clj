@@ -1,11 +1,12 @@
 (ns pg.ssl-test
   (:require
-   [pg.core :as pg]
    [clojure.test :refer [is
                          report
                          deftest
                          use-fixtures]]
-   [pg.integration :refer [*CONFIG*]]))
+   [pg.core :as pg]
+   [pg.integration :refer [*CONFIG*]]
+   [pg.ssl :as ssl]))
 
 
 (defn fix-if-ssl-set [t]
@@ -25,10 +26,10 @@
 (deftest test-ssl-ok
 
   (let [ssl-context
-        (pg/ssl-context
-         {:key-file "../certs/client.key"
-          :cert-file "../certs/client.crt"
-          :ca-cert-file "../certs/root.crt"})
+        (ssl/context
+         "../certs/client.key"
+         "../certs/client.crt"
+         "../certs/root.crt")
 
         config
         (merge *CONFIG*

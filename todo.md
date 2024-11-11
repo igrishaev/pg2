@@ -1,4 +1,8 @@
 
+
+- ssl namespace?
+- doc: tested with
+
 - readme
 
 - postgis support
@@ -6,6 +10,8 @@
 
 - fix pg11
 - add pg17
+
+- oid: coerce long to int
 
 - decode records
 - enable binary by default?

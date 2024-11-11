@@ -4,9 +4,9 @@
   "
   (:require
    [clojure.string :as str]
-   [less.awful.ssl :as ssl]
    [pg.fold :as fold]
-   [pg.oid :as oid])
+   [pg.oid :as oid]
+   [pg.ssl #_(load a reader tag)] )
   (:import
    clojure.lang.IDeref
    clojure.lang.IPersistentMap
@@ -23,8 +23,6 @@
    java.util.List
    java.util.Map
    java.util.UUID
-   (javax.net.ssl SSLContext
-                  TrustManager)
    org.pg.CancelTimer
    org.pg.Config
    org.pg.Config$Builder
@@ -36,16 +34,16 @@
    org.pg.clojure.RowMap
    org.pg.codec.CodecParams
    org.pg.codec.CodecParams$Builder
-   org.pg.processor.IProcessor
-   org.pg.processor.Processors
-   org.pg.enums.OID
    org.pg.enums.CopyFormat
+   org.pg.enums.OID
    org.pg.enums.TXStatus
    org.pg.enums.TxLevel
    org.pg.error.PGError
    org.pg.error.PGErrorResponse
    org.pg.json.JSON
-   org.pg.json.JSON$Wrapper))
+   org.pg.json.JSON$Wrapper
+   org.pg.processor.IProcessor
+   org.pg.processor.Processors))
 
 
 (def ^CopyFormat COPY_FORMAT_BIN CopyFormat/BIN)
@@ -1155,44 +1153,12 @@
      (.encodeTxt processor obj (->codec-params opt)))))
 
 
-;;
-;; SSL
-;;
-
-(defn ssl-context
-  "
-  Build a SSLContext instance from a Clojure map.
-  All the keys point to local files.
-  "
-  ^SSLContext [{:keys [^String key-file
-                       ^String cert-file
-                       ^String ca-cert-file]}]
-  (if ca-cert-file
-    (ssl/ssl-context key-file cert-file ca-cert-file)
-    (ssl/ssl-context key-file cert-file)))
-
-
-(defn ca-cert->ssl-context
-  ^SSLContext [^String ca-cert-file]
-  (let [trust-manager (-> ca-cert-file
-                          (ssl/trust-store)
-                          (ssl/trust-manager))]
-    (doto (SSLContext/getInstance "TLSv1.2")
-      (.init nil
-             (into-array TrustManager [trust-manager])
-             nil))))
-
-
 (defn is-ssl?
   "
   True if the Connection is SSL-encrypted.
   "
   ^Boolean [^Connection conn]
   (.isSSL conn))
-
-
-(defn ssl-context-reader [mapping]
-  `(ssl-context ~mapping))
 
 
 ;;
