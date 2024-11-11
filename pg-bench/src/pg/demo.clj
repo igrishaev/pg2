@@ -1291,3 +1291,34 @@ org.pg.type.SparseVector
        :type-map
        {:some_schema/vector t/vector
         :some_schema/sparsevec t/sparsevec})
+
+
+;; neon.tech
+
+(def config
+  {:host "ep-fancy-queen-XXXXX.eu-central-1.aws.neon.tech"
+   :port 5432
+   :user "test_owner"
+   :password "<password>"
+   :database "test"
+   :use-ssl? true ;; mandatory!
+   })
+
+(pg/with-conn [conn config]
+  (pg/query conn "select 1"))
+
+;; supabase
+
+(require '[pg.ssl :as ssl])
+
+(def ssl-context
+  (ssl/context "/Users/ivan/Downloads/prod-ca-2021.crt"))
+
+(def config
+  {:host "aws-0-eu-central-1.pooler.supabase.com"
+   :port 6543
+   :user "postgres.XXXX"
+   :password "<password>"
+   :database "postgres"
+   :ssl-context ssl-context ;; mandatory!
+   })

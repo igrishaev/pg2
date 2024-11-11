@@ -33,8 +33,7 @@
 
         config
         (merge *CONFIG*
-               {:use-ssl? true
-                :host "localhost"
+               {:host "localhost"
                 :ssl-context ssl-context})]
 
     (with-open [conn

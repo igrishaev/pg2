@@ -131,6 +131,7 @@ public record Config(
 
         @SuppressWarnings("unused")
         public Builder sslContext(final SSLContext sslContext) {
+            this.useSSL = true;
             this.sslContext = sslContext;
             return this;
         }
