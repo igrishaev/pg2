@@ -65,7 +65,7 @@ classes are supported for reading and writing.
 - Cancelling a Query
 - Thread Safety
 - COPY FROM/TO
-- SSL Support
+- [SSL Setup](/docs/ssl.md)
 - Type Mapping
 - Notify/Listen
 - Notices
