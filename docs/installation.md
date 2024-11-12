@@ -64,7 +64,7 @@ Clojure functions out from SQL files.
 
 ~~~clojure
 ;; lein
-[com.github.igrishaev/pg2-hugsql "0.1.21]
+[com.github.igrishaev/pg2-hugsql "0.1.21"]
 
 ;; deps
 com.github.igrishaev/pg2-hugsql {:mvn/version "0.1.21"}
