@@ -107,6 +107,8 @@ a keystore related to a JVM that you use for REPL. But when running an uberjar,
 another JVM is used, and it lacks those certificates. When passing them
 explicitly in code, there won't be such an error.
 
+[jdbc-ssl]: https://jdbc.postgresql.org/documentation/ssl/
+
 You may find more details about setting up SSL and JVM keystore in [this
 article][jdbc-ssl].
 
