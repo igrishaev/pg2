@@ -66,6 +66,7 @@ classes are supported for reading and writing.
 - Thread Safety
 - COPY FROM/TO
 - [SSL Setup](/docs/ssl.md)
+- [Services Tested With](/docs/services.md)
 - Type Mapping
 - Notify/Listen
 - Notices
