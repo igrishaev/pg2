@@ -1,6 +1,7 @@
 # Services Tested With
 
-This section brings real configuration samples for various services.
+This section brings real configuration samples for various services. Everyone is
+welcome to share their settings for AWS, Azure, etc.
 
 [neon.tech]: https://neon.tech/
 
@@ -16,13 +17,13 @@ flag:
    :user "test_owner"
    :password "<password>"
    :database "test"
-   :use-ssl? true ;; mandatory!
+   :use-ssl? true ;; always mandatory!
    })
 ~~~
 
 ## Supabase
 
-In Supabase, SSL in optimal and is off by default. You can enable it in the
+In Supabase, SSL in optional and is off by default. You can enable it in the
 dashboard:
 
 ![](/media/supabase.png)

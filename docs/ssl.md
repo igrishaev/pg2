@@ -1,25 +1,23 @@
 # SSL Setup
 
-Some PostgreSQL installations require connections to be protected with SSL. It's
-an often case for cloud providers when a database is reachable without SSL only
-from insides of the cloud. But when you connect from the outer world (say, your
-office), SSL is mandatory.
-
-When connecting a database with requires SSL without it, you'll get an error
-response from the server:
+Some PostgreSQL installations require connections to be protected with SSL. Most
+cloud providers allow non-SSL connections only when reaching the database from
+the cloud. But when you connect from the outer world (say, your office), SSL is
+mandatory. Reaching such a database without SSL results in the following error
+from the server:
 
 ~~~text
 severity=FATAL, code=XX000, message=SSL connection is required
 ~~~
 
-Setting up SSL certificates in Java is a mess, yet PG2 provides some workarounds
-for that.
+Setting up SSL certificates in Java is a bit miserable, but PG2 provides
+workarounds.
 
 ## Case 1: SSL Without Certificates
 
 Some cloud providers require SSL connection but do not share any certificate
 files. In that case, just pass the boolean `:use-ssl?` flag to the
-configuration:
+configuration, and that will be enough:
 
 ~~~clojure
 (def config
@@ -28,20 +26,21 @@ configuration:
    :user "ivan"
    :password "<password>"
    :database "test"
-   :use-ssl? true})
+   :use-ssl? true ;; this one
+   })
 ~~~
 
 ## Case 2: a Single Ca Certificate Validation
 
-Other providers share just one CA certificate file, meaning your JVM must trust
-this certificate chain. A good example is `supabase.com` provider who lets you
-an option to protect the database with SSL. When this checkbox is set, there is
-a button to download the `prod.ca-2021.crt` file:
+Other providers share one CA certificate file, meaning your JVM must trust it. A
+good example is Supabase.com who lets you decide if the database is
+SSL-protected. When the checkbox is set, there is a button to download a file
+called `prod.ca-2021.crt`:
 
 ![](/media/supabase.png)
 
-Once you've got this file, initiate a custom SSLContext instance out from this
-file. Use the `pg.ssl` namespace:
+Once you've got this file, initiate a custom `SSLContext` instance out from
+it. Use the `pg.ssl` namespace and the `context` function:
 
 ~~~clojure
 (require '[pg.ssl :as ssl])
@@ -50,8 +49,9 @@ file. Use the `pg.ssl` namespace:
   (ssl/context "/Users/ivan/Downloads/prod-ca-2021.crt"))
 ~~~
 
-Then pass this context into the config map. Passing a custom instance of
-`SSLContext` automatically enables the `:use-ssl?` flag as well.
+Add this context into the config map under the `:ssl-context` key. Passing a
+custom instance of `SSLContext` automatically enables the `:use-ssl?` flag as
+well:
 
 ~~~clojure
 (def config
@@ -60,23 +60,29 @@ Then pass this context into the config map. Passing a custom instance of
    :user "ivan"
    :password "<password>"
    :database "postgres"
-   :ssl-context ssl-context})
+   :ssl-context ssl-context ;; this
+   })
 ~~~
 
 ## Case 3: Key File and Cert Files
 
-These two files are usually called `client.key` and `client.crt`. The `context`
-function from `pg.ssl` has a special two-arity body which accepts them:
+A provider may share two files with you called `client.key` and
+`client.crt`. The `context` function from `pg.ssl` has a special two-arity body
+which accepts them:
 
 ~~~clojure
 (ssl/context "../certs/client.key"
              "../certs/client.crt")
 ~~~
 
+Pass the result into the `:ssl-context` config field.
+
+
 ## Case 3: Key, Cert, and CA/Root files
 
-The same as above but with an extra CA/root certificate file. Pass them in the
-same order into the `context` function:
+The same as above but with an extra CA/root certificate file (might be called
+`cert-CA`, `root-ca`, or just `root`). Pass them in the same order into the
+`context` function to make an SSL context:
 
 ~~~clojure
 (ssl/context "../certs/client.key"
@@ -94,12 +100,12 @@ keytool -keystore mystore -alias postgresql -import -file ...
 ~~~
 
 Once certificates are imported, they're held by Java so you only specify
-`:use-ssl?` flag without a custom instance of `SSLContext`.
+`:use-ssl?` flag without custom instances of `SSLContext`.
 
-Pay attention there is a chance to mess up: you import cerficiates into a
-keystore related to a JVM you use for REPL. But when running an uberjar, another
-JVM might be used which lacks those certificates. When passing them explicitly
-via config, there won't be such an error.
+Pay attention there is a chance to mess up. Imagine you import cerficiates into
+a keystore related to a JVM that you use for REPL. But when running an uberjar,
+another JVM is used, and it lacks those certificates. When passing them
+explicitly in code, there won't be such an error.
 
 You may find more details about setting up SSL and JVM keystore in [this
 article][jdbc-ssl].
