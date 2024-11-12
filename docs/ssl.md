@@ -38,7 +38,7 @@ this certificate chain. A good example is `supabase.com` provider who lets you
 an option to protect the database with SSL. When this checkbox is set, there is
 a button to download the `prod.ca-2021.crt` file:
 
-TODO
+![](/media/supabase.png)
 
 Once you've got this file, initiate a custom SSLContext instance out from this
 file. Use the `pg.ssl` namespace:
@@ -106,3 +106,8 @@ article][jdbc-ssl].
 
 Also see the related ["Services Tested With"](/docs/services.md) section with
 real examples of SSL configurations.
+
+[less-awful-ssl]: https://github.com/aphyr/less-awful-ssl
+
+**Gratitude:** in PG2, SSL is handled using the great [Less Awful
+SSL][less-awful-ssl] library. Thank you Kyle!
