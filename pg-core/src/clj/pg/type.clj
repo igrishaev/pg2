@@ -42,7 +42,7 @@
 ;; Constructors
 ;;
 
-(defn ->sparse-vector
+(defn sparse-vector
   ^SparseVector [^Integer dim ^Map index]
   (let [-index
         (reduce-kv
@@ -53,11 +53,20 @@
     (new SparseVector dim -index)))
 
 
+(def ^:deprecated ->sparse-vector
+  sparse-vector)
+
+
+(defn sparse-vector? [x]
+  (instance? SparseVector x))
+
+;;
+
 (defn point? [x]
   (instance? Point x))
 
 
-(defn ->point
+(defn point
   "
   Make an instance of the Point object.
   "
@@ -77,16 +86,14 @@
      x
 
      :else
-     (throw
-      (new PGError
-           (format "wrong point input: %s" x))))))
+     (throw (PGError/error "wrong point input: %s" x)))))
 
+;;
 
 (defn line? [x]
   (instance? Line x))
 
-
-(defn ->line
+(defn line
   "
   Make an instance of the Line object.
   "
@@ -106,6 +113,4 @@
      x
 
      :else
-     (throw
-      (new PGError
-           (format "wrong line input: %s" x))))))
+     (throw (PGError/error "wrong line input: %s" x)))))
