@@ -1,7 +1,7 @@
 
 ## 0.1.22-SNAPSHOT
 
-- ?
+- bump less-awful-ssl and fix pg.ssl
 
 ## 0.1.21
 

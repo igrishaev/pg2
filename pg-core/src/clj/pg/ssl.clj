@@ -6,8 +6,7 @@
   (:require
    [less.awful.ssl :as ssl])
   (:import
-   (javax.net.ssl SSLContext
-                  TrustManager)))
+   (javax.net.ssl SSLContext)))
 
 
 (defn context
@@ -17,20 +16,14 @@
   "
   ;; build from a single CA .cert file
   (^SSLContext [^String ca-cert-file]
-   (let [trust-manager (-> ca-cert-file
-                           (ssl/trust-store)
-                           (ssl/trust-manager))]
-     (doto (SSLContext/getInstance "TLSv1.2")
-       (.init nil
-              (into-array TrustManager [trust-manager])
-              nil))))
+   (ssl/ssl-context ca-cert-file))
 
   ;; from a key file + cert file
   (^SSLContext [^String key-file
                 ^String cert-file]
    (ssl/ssl-context key-file cert-file))
 
-  ;; all three
+  ;; all the three
   (^SSLContext [^String key-file
                 ^String cert-file
                 ^String ca-cert-file]

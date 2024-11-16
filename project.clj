@@ -53,7 +53,7 @@
    [org.clojure/clojure "1.11.1"]
    [org.clojure/tools.cli "1.1.230"]
    [com.github.seancorfield/honeysql "2.4.1078"]
-   [less-awful-ssl "1.0.6"]
+   [less-awful-ssl "1.0.7"]
    [com.github.seancorfield/next.jdbc "1.2.796"]
    [org.postgresql/postgresql "42.2.18"]
    [hikari-cp "3.0.1"]
