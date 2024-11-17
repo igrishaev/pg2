@@ -31,7 +31,7 @@ public class Line extends AProcessor {
         if (x instanceof org.pg.type.Line l) {
             return l.toString();
         } else if (x instanceof String s) {
-            return s;
+            return org.pg.type.Line.fromString(s).toString();
         } else if (x instanceof Map<?,?> m) {
             return org.pg.type.Line.fromMap(m).toString();
         } else if (x instanceof List<?> l) {

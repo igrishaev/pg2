@@ -4,6 +4,8 @@
 - bump less-awful-ssl and fix pg.ssl
 - point type support
 - line type support
+- type constructors naming
+- box type support
 
 ## 0.1.21
 

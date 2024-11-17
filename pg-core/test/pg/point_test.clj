@@ -68,8 +68,8 @@
 
 
 (deftest test-decode-txt
-  (let [line "   (   1.0  , 2.0  )   "
-        p (pg/decode-txt line oid/point)]
+  (let [text "   (   1.0  , 2.0  )   "
+        p (pg/decode-txt text oid/point)]
     (is (= {:y 2.0, :x 1.0} @p))))
 
 
