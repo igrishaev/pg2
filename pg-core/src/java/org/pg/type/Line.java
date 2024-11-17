@@ -14,6 +14,10 @@ import java.util.Map;
 public record Line (double a, double b, double c)
         implements Counted, Indexed, ILookup, IDeref, Iterable<Double> {
 
+    public static Line of(final double a, final double b, final double c) {
+        return new Line(a, b, c);
+    }
+
     public ByteBuffer toByteBuffer() {
         final ByteBuffer bb = ByteBuffer.allocate(24);
         bb.putDouble(a);
@@ -26,21 +30,21 @@ public record Line (double a, double b, double c)
         final double a = bb.getDouble();
         final double b = bb.getDouble();
         final double c = bb.getDouble();
-        return new Line(a, b, c);
+        return Line.of(a, b, c);
     }
 
     public static Line fromMap(final Map<?,?> map) {
         final double a = NumTool.toDouble(map.get(KW.a));
         final double b = NumTool.toDouble(map.get(KW.b));
         final double c = NumTool.toDouble(map.get(KW.c));
-        return new Line(a, b, c);
+        return Line.of(a, b, c);
     }
 
     public static Line fromList(final List<?> list) {
         final double a = NumTool.toDouble(list.get(0));
         final double b = NumTool.toDouble(list.get(1));
         final double c = NumTool.toDouble(list.get(2));
-        return new Line(a, b, c);
+        return Line.of(a, b, c);
     }
 
     public static Line fromString(final String text) {
@@ -58,7 +62,7 @@ public record Line (double a, double b, double c)
         final double a = Double.parseDouble(partsClear.get(0));
         final double b = Double.parseDouble(partsClear.get(1));
         final double c = Double.parseDouble(partsClear.get(2));
-        return new Line(a, b, c);
+        return Line.of(a, b, c);
     }
 
     @Override

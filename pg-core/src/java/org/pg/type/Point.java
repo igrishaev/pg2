@@ -14,6 +14,10 @@ import java.util.Map;
 public record Point (double x, double y)
         implements Counted, Indexed, ILookup, IDeref, Iterable<Double> {
 
+    public static Point of(final double x, final double y) {
+        return new Point(x, y);
+    }
+
     public ByteBuffer toByteBuffer() {
         final ByteBuffer bb = ByteBuffer.allocate(16);
         bb.putDouble(x);
@@ -24,19 +28,19 @@ public record Point (double x, double y)
     public static Point fromByteBuffer(final ByteBuffer bb) {
         final double x = bb.getDouble();
         final double y = bb.getDouble();
-        return new Point(x, y);
+        return Point.of(x, y);
     }
 
     public static Point fromMap(final Map<?,?> map) {
         final double x = NumTool.toDouble(map.get(KW.x));
         final double y = NumTool.toDouble(map.get(KW.y));
-        return new Point(x, y);
+        return Point.of(x, y);
     }
 
     public static Point fromList(final List<?> list) {
         final double x = NumTool.toDouble(list.get(0));
         final double y = NumTool.toDouble(list.get(1));
-        return new Point(x, y);
+        return Point.of(x, y);
     }
 
     public static Point fromString(final String text) {
@@ -53,7 +57,7 @@ public record Point (double x, double y)
         }
         final double x = Double.parseDouble(partsClear.get(0));
         final double y = Double.parseDouble(partsClear.get(1));
-        return new Point(x, y);
+        return Point.of(x, y);
     }
 
     @Override

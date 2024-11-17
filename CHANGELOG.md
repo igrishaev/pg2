@@ -6,6 +6,7 @@
 - line type support
 - type constructors naming
 - box type support
+- fromString when intput is a string
 
 ## 0.1.21
 
