@@ -29,6 +29,7 @@ public final class KW {
     public final static Keyword a = Keyword.intern("a");
     public final static Keyword b = Keyword.intern("b");
     public final static Keyword c = Keyword.intern("c");
+    public final static Keyword r = Keyword.intern("r");
     public final static Keyword x1 = Keyword.intern("x1");
     public final static Keyword y1 = Keyword.intern("y1");
     public final static Keyword x2 = Keyword.intern("x2");
