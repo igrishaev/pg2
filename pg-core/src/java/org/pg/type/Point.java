@@ -37,6 +37,20 @@ public record Point (double x, double y)
         return Point.of(x, y);
     }
 
+    public static Point fromObject(final Object x) {
+        if (x instanceof Map<?,?> m) {
+            return Point.fromMap(m);
+        } else if (x instanceof List<?> l) {
+            return Point.fromList(l);
+        } else if (x instanceof ByteBuffer bb) {
+            return Point.fromByteBuffer(bb);
+        } else if (x instanceof String s) {
+            return Point.fromString(s);
+        } else {
+            throw PGError.error("wrong point input: %s", x);
+        }
+    }
+
     public static Point fromList(final List<?> list) {
         final double x = NumTool.toDouble(list.get(0));
         final double y = NumTool.toDouble(list.get(1));

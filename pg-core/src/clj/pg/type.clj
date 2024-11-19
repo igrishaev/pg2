@@ -5,7 +5,9 @@
    java.io.Writer
    (org.pg.type SparseVector
                 Point
-                Line)
+                Line
+                Circle
+                Box)
    org.pg.error.PGError
    (org.pg.processor IProcessor
                      Processors)))
@@ -36,6 +38,10 @@
 (defmethod print-method Line
   [^Line l ^Writer w]
   (.write w (format "<Line %s>" l)))
+
+(defmethod print-method Circle
+  [^Circle c ^Writer w]
+  (.write w (format "<Circle %s>" c)))
 
 
 ;;
@@ -71,22 +77,10 @@
   Make an instance of the Point object.
   "
   (^Point [^double x ^double y]
-   (new Point x y))
+   (Point/of x y))
 
   (^Point [x]
-   (cond
-
-     (map? x)
-     (Point/fromMap x)
-
-     (vector? x)
-     (Point/fromList x)
-
-     (point? x)
-     x
-
-     :else
-     (throw (PGError/error "wrong point input: %s" x)))))
+   (Point/fromObject x)))
 
 ;;
 
@@ -97,20 +91,23 @@
   "
   Make an instance of the Line object.
   "
-  (^Point [^double a ^double b ^double c]
-   (new Line a b c))
+  (^Line [^double a ^double b ^double c]
+   (Line/of a b c))
 
-  (^Point [x]
-   (cond
+  (^Line [x]
+   (Line/fromObject x)))
 
-     (map? x)
-     (Line/fromMap x)
+;;
 
-     (vector? x)
-     (Line/fromList x)
+(defn circle? [x]
+  (instance? Circle x))
 
-     (line? x)
-     x
+(defn circle?
+  "
+  Make an instance of the Circle object.
+  "
+  (^Circle [x y r]
+   (Circle/of x y r))
 
-     :else
-     (throw (PGError/error "wrong line input: %s" x)))))
+  (^Circle [x]
+   (Circle/fromObject x)))

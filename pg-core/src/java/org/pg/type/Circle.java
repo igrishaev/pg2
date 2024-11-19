@@ -65,6 +65,21 @@ public record Circle(double x, double y, double r)
         return Circle.of(x, y, r);
     }
 
+    @SuppressWarnings("unused")
+    public static Circle fromObject(final Object x) {
+        if (x instanceof Map<?,?> m) {
+            return Circle.fromMap(m);
+        } else if (x instanceof List<?> l) {
+            return Circle.fromList(l);
+        } else if (x instanceof ByteBuffer bb) {
+            return Circle.fromByteBuffer(bb);
+        } else if (x instanceof String s) {
+            return Circle.fromString(s);
+        } else {
+            throw PGError.error("wrong point input: %s", x);
+        }
+    }
+
     @Override
     public String toString() {
         return "<(" + x + "," + y + ")," + r + ">";

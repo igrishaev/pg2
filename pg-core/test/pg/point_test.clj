@@ -84,7 +84,7 @@
 
   (testing "from text"
     (let [p (pg/encode-txt " (1, 2) " oid/point)]
-      (is (= " (1, 2) " p))))
+      (is (= "(1.0,2.0)" p))))
 
   (testing "from map"
     (let [p (pg/encode-txt {:x 1 :y 2} oid/point)]

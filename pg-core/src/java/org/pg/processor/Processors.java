@@ -44,6 +44,8 @@ public class Processors {
         // geometry
         oidMap.put(OID.POINT, new Point());
         oidMap.put(OID.LINE, new Line());
+        oidMap.put(OID.BOX, new Box());
+        oidMap.put(OID.CIRCLE, new Circle());
 
         // misc
         oidMap.put(OID.UUID, new Uuid());

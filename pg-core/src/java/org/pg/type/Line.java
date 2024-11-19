@@ -65,6 +65,21 @@ public record Line (double a, double b, double c)
         return Line.of(a, b, c);
     }
 
+    @SuppressWarnings("unused")
+    public static Line fromObject(final Object x) {
+        if (x instanceof Map<?,?> m) {
+            return Line.fromMap(m);
+        } else if (x instanceof List<?> l) {
+            return Line.fromList(l);
+        } else if (x instanceof ByteBuffer bb) {
+            return Line.fromByteBuffer(bb);
+        } else if (x instanceof String s) {
+            return Line.fromString(s);
+        } else {
+            throw PGError.error("wrong line input: %s", x);
+        }
+    }
+
     @Override
     public String toString() {
         return "{" + a + "," + b + "," + c + "}";

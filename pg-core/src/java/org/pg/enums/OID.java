@@ -3,6 +3,9 @@ package org.pg.enums;
 import clojure.lang.BigInt;
 import clojure.lang.IPersistentMap;
 import clojure.lang.Symbol;
+import org.pg.type.Box;
+import org.pg.type.Circle;
+import org.pg.type.Line;
 import org.pg.type.Point;
 
 import java.math.BigDecimal;
@@ -263,6 +266,12 @@ public class OID {
             return INT2;
         } else if (x instanceof Point p) {
             return POINT;
+        } else if (x instanceof Line l) {
+            return LINE;
+        } else if (x instanceof Box b) {
+            return BOX;
+        } else if (x instanceof Circle c) {
+            return CIRCLE;
         } else {
             return DEFAULT;
         }

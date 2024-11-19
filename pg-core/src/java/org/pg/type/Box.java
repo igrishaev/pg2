@@ -1,15 +1,22 @@
 package org.pg.type;
 
 import clojure.lang.*;
+import org.pg.clojure.KW;
 import org.pg.error.PGError;
+import org.pg.util.NumTool;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public record Box(Point p1, Point p2)
     implements IDeref, Counted, Indexed, Iterable<Point> {
+
+    public static Box of(final Point p1, final Point p2) {
+        return new Box(p1, p2);
+    }
 
     public static Box of(final double x1,
                          final double y1,
@@ -33,6 +40,22 @@ public record Box(Point p1, Point p2)
         final double x2 = bb.getDouble();
         final double y2 = bb.getDouble();
         return Box.of(x1, y1, x2, y2);
+    }
+
+    public static Box fromMap(final Map<?,?> map) {
+        final double x1 = NumTool.toDouble(map.get(KW.x1));
+        final double y1 = NumTool.toDouble(map.get(KW.y1));
+        final double x2 = NumTool.toDouble(map.get(KW.x2));
+        final double y2 = NumTool.toDouble(map.get(KW.y2));
+        return Box.of(x1, y1, x2, y2);
+    }
+
+    public static Box fromList(final List<?> list) {
+        final Object p1obj = list.get(0);
+        final Object p2obj = list.get(1);
+        final Point p1 = Point.fromObject(p1obj);
+        final Point p2 = Point.fromObject(p2obj);
+        return Box.of(p1, p2);
     }
 
     public static Box fromString(final String text) {

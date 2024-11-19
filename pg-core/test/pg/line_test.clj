@@ -84,7 +84,7 @@
 
   (testing "from text"
     (let [l (pg/encode-txt " { 1.0, 2.0 , 3.0 } " oid/line)]
-      (is (= " { 1.0, 2.0 , 3.0 } " l))))
+      (is (= "{1.0,2.0,3.0}" l))))
 
   (testing "from map"
     (let [l (pg/encode-txt {:a 1 :b 2 :c 3} oid/line)]
