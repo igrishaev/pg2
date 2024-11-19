@@ -43,6 +43,10 @@
   [^Circle c ^Writer w]
   (.write w (format "<Circle %s>" c)))
 
+(defmethod print-method Box
+  [^Box b ^Writer w]
+  (.write w (format "<Box %s>" b)))
+
 
 ;;
 ;; Constructors
@@ -74,7 +78,7 @@
 
 (defn point
   "
-  Make an instance of the Point object.
+  Make an instance of the Point class.
   "
   (^Point [^double x ^double y]
    (Point/of x y))
@@ -89,7 +93,7 @@
 
 (defn line
   "
-  Make an instance of the Line object.
+  Make an instance of the Line class.
   "
   (^Line [^double a ^double b ^double c]
    (Line/of a b c))
@@ -102,12 +106,30 @@
 (defn circle? [x]
   (instance? Circle x))
 
-(defn circle?
+(defn circle
   "
-  Make an instance of the Circle object.
+  Make an instance of the Circle class.
   "
   (^Circle [x y r]
    (Circle/of x y r))
 
   (^Circle [x]
    (Circle/fromObject x)))
+
+;;
+
+(defn box? [x]
+  (instance? Box x))
+
+(defn box
+  "
+  Make an instance of the Box class.
+  "
+  (^Box [x1 y1 x2 y2]
+   (Box/of x1 y1 x2 y2))
+
+  (^Box [p1 p2]
+   (Box/of (point p1) (point p2)))
+
+  (^Box [x]
+   (Box/fromObject x)))

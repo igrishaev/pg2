@@ -11,6 +11,13 @@
 
 
 (deftest test-props
+
+  (is (= (t/point 1 2)
+         (t/point 1 2)))
+
+  (is (not= (t/point 2 1)
+            (t/point 1 2)))
+
   (let [p (t/point 1 2)]
     (is (instance? Point p))
     (is (= "(1.0,2.0)" (str p)))

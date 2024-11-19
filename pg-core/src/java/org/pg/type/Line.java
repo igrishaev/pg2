@@ -75,6 +75,8 @@ public record Line (double a, double b, double c)
             return Line.fromByteBuffer(bb);
         } else if (x instanceof String s) {
             return Line.fromString(s);
+        } else if (x instanceof Line l) {
+            return l;
         } else {
             throw PGError.error("wrong line input: %s", x);
         }

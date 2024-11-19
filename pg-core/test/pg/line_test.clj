@@ -10,8 +10,18 @@
    [clojure.test :refer [is deftest testing]]))
 
 (deftest test-props
+
+  (is (= (t/line 1 2 3)
+         (t/line 1 2 3)))
+
+  (is (not= (t/line 1 2 3)
+            :lol))
+
+  (is (not= (t/line 1 2 3)
+            nil))
+
   (let [l (t/line 1 2 3)]
-    (is (instance? Line l))
+    (is (t/line? l))
 
     (is (= "{1.0,2.0,3.0}" (str l)))
     (is (= "<Line {1.0,2.0,3.0}>" (pr-str l)))
@@ -20,11 +30,11 @@
     (is (= 1.0 (:a l)))
     (is (= 2.0 (:b l)))
     (is (= 3.0 (:c l)))
+    (is (= ::miss (nth l 99 ::miss)))
 
     (is (= 1.0 (nth l 0)))
     (is (= 2.0 (nth l 1)))
     (is (= 3.0 (nth l 2)))
-    (is (= ::miss (nth l 99 ::miss)))
 
     (is (= :test (get l :dunno :test)))
     (is (nil? (get l :dunno)))

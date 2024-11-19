@@ -47,7 +47,7 @@ public record Circle(double x, double y, double r)
         }
         final double x = Double.parseDouble(partsClear.get(0));
         final double y = Double.parseDouble(partsClear.get(1));
-        final double r = Double.parseDouble(partsClear.get(0));
+        final double r = Double.parseDouble(partsClear.get(2));
         return Circle.of(x, y, r);
     }
 
@@ -75,6 +75,8 @@ public record Circle(double x, double y, double r)
             return Circle.fromByteBuffer(bb);
         } else if (x instanceof String s) {
             return Circle.fromString(s);
+        } else if (x instanceof Circle c) {
+            return c;
         } else {
             throw PGError.error("wrong point input: %s", x);
         }

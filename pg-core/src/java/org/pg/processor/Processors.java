@@ -90,6 +90,8 @@ public class Processors {
         oidMap.put(OID._BIT, new Array(OID._BIT, OID.BIT));
         oidMap.put(OID._POINT, new Array(OID._POINT, OID.POINT));
         oidMap.put(OID._LINE, new Array(OID._LINE, OID.LINE));
+        oidMap.put(OID._BOX, new Array(OID._BOX, OID.BOX));
+        oidMap.put(OID._CIRCLE, new Array(OID._CIRCLE, OID.CIRCLE));
     }
 
     public static IProcessor getProcessor(final int oid) {

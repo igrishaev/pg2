@@ -46,6 +46,8 @@ public record Point (double x, double y)
             return Point.fromByteBuffer(bb);
         } else if (x instanceof String s) {
             return Point.fromString(s);
+        } else if (x instanceof Point p) {
+            return p;
         } else {
             throw PGError.error("wrong point input: %s", x);
         }
