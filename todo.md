@@ -1,4 +1,5 @@
 
+- geom types: json, edn
 
 - ssl namespace?
 - doc: tested with

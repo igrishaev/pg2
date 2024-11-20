@@ -3804,9 +3804,75 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
+      (is (= '({:id 1, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
+               {:id 2, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
+               {:id 3, :b [{:y -33.0, :x 22.0} {:y -42.001, :x 11.33}]}
+               {:id 4, :b [{:y 4.0, :x 3.0} {:y -2.0, :x 1.0}]}
+               {:id 5, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+               {:id 6, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+               {:id 7, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]})
+             (for [row res]
+               (update row :b deref)))))))
+
+
+(deftest test-geom-standard-box-bin
+  (pg/with-conn [conn *CONFIG-BIN*]
+    (pg/execute conn "create temp table test (id int, b box)")
+    (pg/execute conn "insert into test values (1, '(1,2),(3,4)')")
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [2 (t/box 1 2 3 4)]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [3 "(22.0,-33.0),(11.33,-42.001)"]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [4 [[1 -2] [3 4]]]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [5 {:x1 8 :y1 3 :x2 5 :y2 -5}]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [6 [{:x 8 :y 3} {:x 5 :y -5}]]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [7 (t/box [1 2] {:x 3 :y 4})]})
+
+    (let [res
+          (pg/execute conn "SELECT * from test order by id")]
+      (is (= '({:id 1, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
+               {:id 2, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
+               {:id 3, :b [{:y -33.0, :x 22.0} {:y -42.001, :x 11.33}]}
+               {:id 4, :b [{:y 4.0, :x 3.0} {:y -2.0, :x 1.0}]}
+               {:id 5, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+               {:id 6, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+               {:id 7, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]})
+             (for [row res]
+               (update row :b deref)))))))
+
+
+(deftest test-geom-standard-polygon-txt
+  (pg/with-conn [conn *CONFIG-TXT*]
+    (pg/execute conn "create temp table test (id int, p polygon)")
+    (pg/execute conn "insert into test values (1, '((1,2),(3,4),(5,6),(7,8))')")
+
+    (let [res
+          (pg/execute conn "SELECT * from test order by id")]
       (is (= 1
              (for [row res]
-               (update row :b str #_deref)))))))
+               row))))))
+
+
+(deftest test-geom-standard-polygon-bin
+  (pg/with-conn [conn *CONFIG-BIN*]
+    (pg/execute conn "create temp table test (id int, p polygon)")
+    (pg/execute conn "insert into test values (1, '((1,2),(3,4),(5,6),(7,8))')")
+
+    (let [res
+          (pg/execute conn "SELECT * from test order by id")]
+      (is (= 1
+             (for [row res]
+               row))))))
 
 
 #_
