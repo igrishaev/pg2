@@ -3856,11 +3856,31 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (pg/execute conn "create temp table test (id int, p polygon)")
     (pg/execute conn "insert into test values (1, '((1,2),(3,4),(5,6),(7,8))')")
 
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [2 (t/polygon [[1 2] {:x 3 :y 4} [5 6]])]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [3 "((1,2),(7,8))"]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [4 [[1 -2] [3 4]]]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [6 [{:x 8 :y 3} {:x 5 :y -5}]]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [7 (t/polygon [(t/point 1 2) {:x 3 :y 4}])]})
+
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= 1
+      (is (= '({:id 1, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0} {:y 8.0, :x 7.0}]}
+               {:id 2, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}]}
+               {:id 3, :p [{:y 2.0, :x 1.0} {:y 8.0, :x 7.0}]}
+               {:id 4, :p [{:y -2.0, :x 1.0} {:y 4.0, :x 3.0}]}
+               {:id 6, :p [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+               {:id 7, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]})
              (for [row res]
-               row))))))
+               (update row :p deref)))))))
 
 
 (deftest test-geom-standard-polygon-bin
@@ -3868,11 +3888,46 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (pg/execute conn "create temp table test (id int, p polygon)")
     (pg/execute conn "insert into test values (1, '((1,2),(3,4),(5,6),(7,8))')")
 
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [2 (t/polygon [[1 2] {:x 3 :y 4} [5 6]])]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [3 "((1,2),(7,8))"]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [4 [[1 -2] [3 4]]]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [6 [{:x 8 :y 3} {:x 5 :y -5}]]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [7 (t/polygon [(t/point 1 2) {:x 3 :y 4}])]})
+
+    (let [res
+          (pg/execute conn "SELECT * from test order by id")]
+      (is (= '({:id 1, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0} {:y 8.0, :x 7.0}]}
+               {:id 2, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}]}
+               {:id 3, :p [{:y 2.0, :x 1.0} {:y 8.0, :x 7.0}]}
+               {:id 4, :p [{:y -2.0, :x 1.0} {:y 4.0, :x 3.0}]}
+               {:id 6, :p [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+               {:id 7, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]})
+             (for [row res]
+               (update row :p deref)))))))
+
+
+(deftest test-geom-standard-path-bin
+  (pg/with-conn [conn *CONFIG-BIN*]
+    (pg/execute conn "create temp table test (id int, p path)")
+    (pg/execute conn "insert into test values (1, '((1,2),(3,4),(5,6))')")
+    (pg/execute conn "insert into test values (1, '[(1,2),(3,4),(5,6)]')")
+
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
       (is (= 1
+             res
+             #_
              (for [row res]
-               row))))))
+               (update row :p deref)))))))
 
 
 #_

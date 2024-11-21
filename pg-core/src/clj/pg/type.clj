@@ -7,7 +7,8 @@
                 Point
                 Line
                 Circle
-                Box)
+                Box
+                Polygon)
    org.pg.error.PGError
    (org.pg.processor IProcessor
                      Processors)))
@@ -46,6 +47,10 @@
 (defmethod print-method Box
   [^Box b ^Writer w]
   (.write w (format "<Box %s>" b)))
+
+(defmethod print-method Polygon
+  [^Polygon p ^Writer w]
+  (.write w (format "<Polygon %s>" p)))
 
 
 ;;
@@ -133,3 +138,12 @@
 
   (^Box [x]
    (Box/fromObject x)))
+
+;;
+
+(defn polygon? [x]
+  (instance? Polygon x))
+
+(defn polygon
+  (^Polygon [points]
+   (Polygon/fromList points)))

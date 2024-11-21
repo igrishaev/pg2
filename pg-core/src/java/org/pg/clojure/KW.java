@@ -34,6 +34,8 @@ public final class KW {
     public final static Keyword y1 = Keyword.intern("y1");
     public final static Keyword x2 = Keyword.intern("x2");
     public final static Keyword y2 = Keyword.intern("y2");
+    public final static Keyword isClosed = Keyword.intern("closed?");
+    public final static Keyword points = Keyword.intern("points");
 
     public static void main(String... args) {
         System.out.println(inserted);

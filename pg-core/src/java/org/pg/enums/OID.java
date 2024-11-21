@@ -3,11 +3,7 @@ package org.pg.enums;
 import clojure.lang.BigInt;
 import clojure.lang.IPersistentMap;
 import clojure.lang.Symbol;
-import org.pg.type.Box;
-import org.pg.type.Circle;
-import org.pg.type.Polygon;
-import org.pg.type.Line;
-import org.pg.type.Point;
+import org.pg.type.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -275,6 +271,8 @@ public class OID {
             return CIRCLE;
         } else if (x instanceof Polygon p) {
             return POLYGON;
+        } else if (x instanceof Path p) {
+            return PATH;
         } else {
             return DEFAULT;
         }

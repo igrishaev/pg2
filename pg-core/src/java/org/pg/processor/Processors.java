@@ -47,6 +47,7 @@ public class Processors {
         oidMap.put(OID.BOX, new Box());
         oidMap.put(OID.CIRCLE, new Circle());
         oidMap.put(OID.POLYGON, new Polygon());
+        oidMap.put(OID.PATH, new Path());
 
         // misc
         oidMap.put(OID.UUID, new Uuid());
@@ -94,6 +95,7 @@ public class Processors {
         oidMap.put(OID._BOX, new Array(OID._BOX, OID.BOX));
         oidMap.put(OID._CIRCLE, new Array(OID._CIRCLE, OID.CIRCLE));
         oidMap.put(OID._POLYGON, new Array(OID._POLYGON, OID.POLYGON));
+        oidMap.put(OID._PATH, new Array(OID._PATH, OID.PATH));
     }
 
     public static IProcessor getProcessor(final int oid) {
