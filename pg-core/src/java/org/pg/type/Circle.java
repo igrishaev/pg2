@@ -4,9 +4,9 @@ import clojure.lang.*;
 import org.pg.clojure.KW;
 import org.pg.error.PGError;
 import org.pg.util.NumTool;
+import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,20 +34,13 @@ public record Circle(double x, double y, double r)
     }
 
     public static Circle fromString(final String text) {
-        final String[] partsRaw = text.split("[<(,)>]");
-        final List<String> partsClear = new ArrayList<>();
-        for (String part: partsRaw) {
-            String partClear = part.strip();
-            if (!partClear.isEmpty()) {
-                partsClear.add(partClear);
-            }
-        }
-        if (partsClear.size() != 3) {
+        final List<String> parts = StrTool.split(text, "[<(,)>]");
+        if (parts.size() != 3) {
             throw new PGError("wrong circle string: %s", text);
         }
-        final double x = Double.parseDouble(partsClear.get(0));
-        final double y = Double.parseDouble(partsClear.get(1));
-        final double r = Double.parseDouble(partsClear.get(2));
+        final double x = Double.parseDouble(parts.get(0));
+        final double y = Double.parseDouble(parts.get(1));
+        final double r = Double.parseDouble(parts.get(2));
         return Circle.of(x, y, r);
     }
 

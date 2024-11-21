@@ -1,5 +1,6 @@
 
 - geom types: json, edn
+- geom types: toString -> toSQL
 
 - ssl namespace?
 - doc: tested with

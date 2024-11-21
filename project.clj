@@ -61,6 +61,7 @@
    [org.clojure/data.csv "1.0.1"]
    [metosin/jsonista "0.3.8"]
    [criterium "0.4.6"]
+   [cheshire "5.13.0"]
    [ring/ring-json "0.5.1"]
    [ring/ring-core "1.12.1"]
    [ring/ring-jetty-adapter "1.12.1"]]

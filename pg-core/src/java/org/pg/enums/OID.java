@@ -5,6 +5,7 @@ import clojure.lang.IPersistentMap;
 import clojure.lang.Symbol;
 import org.pg.type.Box;
 import org.pg.type.Circle;
+import org.pg.type.Polygon;
 import org.pg.type.Line;
 import org.pg.type.Point;
 
@@ -272,6 +273,8 @@ public class OID {
             return BOX;
         } else if (x instanceof Circle c) {
             return CIRCLE;
+        } else if (x instanceof Polygon p) {
+            return POLYGON;
         } else {
             return DEFAULT;
         }

@@ -3,6 +3,8 @@
    (org.pg.type Point)
    org.pg.error.PGError)
   (:require
+   [cheshire.core :as ch]
+   [jsonista.core :as js]
    [pg.bb :refer [bb== ->bb]]
    [pg.oid :as oid]
    [pg.core :as pg]
@@ -19,6 +21,13 @@
             (t/point 1 2)))
 
   (let [p (t/point 1 2)]
+
+    ;; TODO: check it
+    #_
+    (is (= 1 (ch/generate-string p)))
+    #_
+    (is (= 1 (js/write-value-as-string p)))
+
     (is (instance? Point p))
     (is (= "(1.0,2.0)" (str p)))
     (is (= "<Point (1.0,2.0)>" (pr-str p)))

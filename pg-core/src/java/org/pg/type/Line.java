@@ -4,9 +4,9 @@ import clojure.lang.*;
 import org.pg.clojure.KW;
 import org.pg.error.PGError;
 import org.pg.util.NumTool;
+import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -48,20 +48,13 @@ public record Line (double a, double b, double c)
     }
 
     public static Line fromString(final String text) {
-        final String[] partsRaw = text.split("[{,}]");
-        final List<String> partsClear = new ArrayList<>();
-        for (String part: partsRaw) {
-            String partClear = part.strip();
-            if (!partClear.isEmpty()) {
-                partsClear.add(partClear);
-            }
-        }
-        if (partsClear.size() != 3) {
+        final List<String> parts = StrTool.split(text, "[{,}]");
+        if (parts.size() != 3) {
             throw new PGError("wrong line string: %s", text);
         }
-        final double a = Double.parseDouble(partsClear.get(0));
-        final double b = Double.parseDouble(partsClear.get(1));
-        final double c = Double.parseDouble(partsClear.get(2));
+        final double a = Double.parseDouble(parts.get(0));
+        final double b = Double.parseDouble(parts.get(1));
+        final double c = Double.parseDouble(parts.get(2));
         return Line.of(a, b, c);
     }
 

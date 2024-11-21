@@ -4,9 +4,9 @@ import clojure.lang.*;
 import org.pg.clojure.KW;
 import org.pg.error.PGError;
 import org.pg.util.NumTool;
+import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -60,19 +60,12 @@ public record Point (double x, double y)
     }
 
     public static Point fromString(final String text) {
-        final String[] partsRaw = text.split("[(,)]");
-        final List<String> partsClear = new ArrayList<>();
-        for (String part: partsRaw) {
-            String partClear = part.strip();
-            if (!partClear.isEmpty()) {
-                partsClear.add(partClear);
-            }
-        }
-        if (partsClear.size() != 2) {
+        final List<String> parts = StrTool.split(text, "[(,)]");
+        if (parts.size() != 2) {
             throw new PGError("wrong point string: %s", text);
         }
-        final double x = Double.parseDouble(partsClear.get(0));
-        final double y = Double.parseDouble(partsClear.get(1));
+        final double x = Double.parseDouble(parts.get(0));
+        final double y = Double.parseDouble(parts.get(1));
         return Point.of(x, y);
     }
 

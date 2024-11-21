@@ -4,6 +4,7 @@ import clojure.lang.*;
 import org.pg.clojure.KW;
 import org.pg.error.PGError;
 import org.pg.util.NumTool;
+import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -69,21 +70,14 @@ public record Box(Point p1, Point p2)
     }
 
     public static Box fromString(final String text) {
-        final String[] partsRaw = text.split("[(,)]");
-        final List<String> partsClear = new ArrayList<>();
-        for (String part: partsRaw) {
-            String partClear = part.strip();
-            if (!partClear.isEmpty()) {
-                partsClear.add(partClear);
-            }
-        }
-        if (partsClear.size() != 4) {
+        final List<String> parts = StrTool.split(text, "[(,)]");
+        if (parts.size() != 4) {
             throw new PGError("wrong box string: %s", text);
         }
-        final double x1 = Double.parseDouble(partsClear.get(0));
-        final double y1 = Double.parseDouble(partsClear.get(1));
-        final double x2 = Double.parseDouble(partsClear.get(2));
-        final double y2 = Double.parseDouble(partsClear.get(3));
+        final double x1 = Double.parseDouble(parts.get(0));
+        final double y1 = Double.parseDouble(parts.get(1));
+        final double x2 = Double.parseDouble(parts.get(2));
+        final double y2 = Double.parseDouble(parts.get(3));
         return Box.of(x1, y1, x2, y2);
     }
 
