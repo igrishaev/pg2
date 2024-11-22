@@ -7,15 +7,17 @@ import org.pg.util.NumTool;
 import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public record Point (double x, double y)
-        implements Counted, Indexed, ILookup, IDeref, Iterable<Double> {
+public record Point (double x, double y) {
 
     public static Point of(final double x, final double y) {
         return new Point(x, y);
+    }
+
+    public IPersistentMap toClojure() {
+        return PersistentHashMap.create(KW.x, x, KW.y, y);
     }
 
     public ByteBuffer toByteBuffer() {
@@ -45,7 +47,7 @@ public record Point (double x, double y)
         } else if (x instanceof ByteBuffer bb) {
             return Point.fromByteBuffer(bb);
         } else if (x instanceof String s) {
-            return Point.fromString(s);
+            return Point.fromSQL(s);
         } else if (x instanceof Point p) {
             return p;
         } else {
@@ -59,7 +61,7 @@ public record Point (double x, double y)
         return Point.of(x, y);
     }
 
-    public static Point fromString(final String text) {
+    public static Point fromSQL(final String text) {
         final List<String> parts = StrTool.split(text, "[(,)]");
         if (parts.size() != 2) {
             throw new PGError("wrong point string: %s", text);
@@ -69,62 +71,11 @@ public record Point (double x, double y)
         return Point.of(x, y);
     }
 
-    @Override
-    public String toString() {
+    public String toSQL() {
         return "(" + x + "," + y + ")";
     }
 
-    @Override
-    public Object nth(final int i) {
-        return switch (i) {
-            case 0 -> x;
-            case 1 -> y;
-            default -> throw new IndexOutOfBoundsException("index is out of range: " + i);
-        };
-    }
-
-    @Override
-    public Object nth(final int i, final Object notFound) {
-        return switch (i) {
-            case 0 -> x;
-            case 1 -> y;
-            default -> notFound;
-        };
-    }
-
-    @Override
-    public int count() {
-        return 2;
-    }
-
-    @Override
-    public Object valAt(final Object key) {
-        return valAt(key, null);
-    }
-
-    @Override
-    public Object valAt(final Object key, final Object notFound) {
-        if (key instanceof Keyword kw) {
-            if (kw == KW.x) {
-                return x;
-            } else if (kw == KW.y) {
-                return y;
-            }
-        }
-        return notFound;
-    }
-
-    @Override
-    public Object deref() {
-        return PersistentHashMap.create(KW.x, x, KW.y, y);
-    }
-
-    @Override
-    public Iterator<Double> iterator() {
-        return List.of(x, y).iterator();
-    }
-
     public static void main(String... args) {
-        System.out.println(Point.fromString("(1.23342 , -3.23234)"));
+        System.out.println(Point.fromSQL("(1.23342 , -3.23234)"));
     }
 }

@@ -1,45 +1,10 @@
 package org.pg.util;
 
 import clojure.lang.IMapEntry;
-import clojure.lang.Keyword;
 import org.pg.error.PGError;
 
-import java.util.Map;
-
+@SuppressWarnings("unused")
 public class CljTool {
-
-    public static boolean getBool(final Map<?,?> map, final Keyword kw) {
-        final Object x = map.get(kw);
-        if (x instanceof Boolean b) {
-            return b;
-        } else if (x == null) {
-            throw PGError.error("key %s is null", kw);
-        } else {
-            throw PGError.error("key %s is not boolean", kw);
-        }
-    }
-
-    public static boolean getBool(final Map<?,?> map, final Keyword kw, final boolean notFound) {
-        final Object x = map.get(kw);
-        if (x instanceof Boolean b) {
-            return b;
-        } else if (x == null) {
-            return notFound;
-        } else {
-            throw PGError.error("key %s is not boolean", kw);
-        }
-    }
-
-    public static Iterable<?> getIterable(final Map<?,?> map, final Keyword kw) {
-        final Object x = map.get(kw);
-        if (x instanceof Iterable<?> i) {
-            return i;
-        } else if (x == null) {
-            throw PGError.error("key %s is null", kw);
-        } else {
-            throw PGError.error("key %s is not iterable", kw);
-        }
-    }
 
     public static IMapEntry mapEntry(final Object key, final Object val) {
         return new IMapEntry() {

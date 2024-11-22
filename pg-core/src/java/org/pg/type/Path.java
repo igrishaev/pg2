@@ -3,9 +3,7 @@ package org.pg.type;
 import clojure.lang.IPersistentCollection;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentVector;
-import org.pg.clojure.IClojure;
 import org.pg.clojure.KW;
-import org.pg.util.CljTool;
 import org.pg.util.GeomTool;
 import org.pg.util.StrTool;
 
@@ -14,25 +12,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public record Path(boolean isClosed, List<Point> points) implements IClojure {
+public record Path(boolean isClosed, List<Point> points) {
 
     public static Path of(final boolean isClosed, final List<Point> points) {
         return new Path(isClosed, points);
     }
 
     public static Path fromMap(final Map<?,?> map) {
-        final boolean isClosed = CljTool.getBool(map, KW.isClosed, true);
-        final Iterable<?> points = CljTool.getIterable(map, KW.points);
-        return fromParams(isClosed, points);
-    }
-
-    @SuppressWarnings("unused")
-    public static Path fromIterable(final Iterable<?> rawPoints) {
-        return fromParams(true, rawPoints);
-    }
-
-    public static Path fromParams(final boolean isClosed, final Iterable<?> rawPoints) {
-        final List<Point> points = GeomTool.parsePoints(rawPoints);
+        Boolean isClosed = (Boolean) map.get(KW.isClosed);
+        if (isClosed == null) {
+            isClosed = true;
+        }
+        final Iterable<?> pointsRaw = (Iterable<?>) map.get(KW.points);
+        final List<Point> points = GeomTool.parsePoints(pointsRaw);
         return Path.of(isClosed, points);
     }
 
@@ -61,8 +53,7 @@ public record Path(boolean isClosed, List<Point> points) implements IClojure {
     }
 
     public String toSQL() {
-        // TODO
-        final String inner = String.join(",", points.stream().map(Point::toString).toList());
+        final String inner = String.join(",", points.stream().map(Point::toSQL).toList());
         return (isClosed ? "(" : "[") + inner + (isClosed ? ")" : "]");
     }
 
@@ -73,11 +64,12 @@ public record Path(boolean isClosed, List<Point> points) implements IClojure {
         return Path.of(isClosed, points);
     }
 
-    @Override
     public IPersistentCollection toClojure() {
         return PersistentHashMap.create(
                 KW.isClosed, isClosed,
-                KW.points, PersistentVector.create(points.stream().map(Point::deref).toList())
+                KW.points, PersistentVector.create(
+                        points.stream().map(Point::toClojure).toList()
+                )
         );
     }
 }

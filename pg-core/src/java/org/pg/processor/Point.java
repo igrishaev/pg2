@@ -16,7 +16,7 @@ public class Point extends AProcessor {
         if (x instanceof org.pg.type.Point p) {
             return p.toByteBuffer();
         } else if (x instanceof String s) {
-            return org.pg.type.Point.fromString(s).toByteBuffer();
+            return org.pg.type.Point.fromSQL(s).toByteBuffer();
         } else if (x instanceof Map<?,?> m) {
             return org.pg.type.Point.fromMap(m).toByteBuffer();
         } else if (x instanceof List<?> l) {
@@ -31,7 +31,7 @@ public class Point extends AProcessor {
         if (x instanceof org.pg.type.Point p) {
             return p.toString();
         } else if (x instanceof String s) {
-            return org.pg.type.Point.fromString(s).toString();
+            return org.pg.type.Point.fromSQL(s).toString();
         } else if (x instanceof Map<?,?> m) {
             return org.pg.type.Point.fromMap(m).toString();
         } else if (x instanceof List<?> l) {
@@ -42,12 +42,12 @@ public class Point extends AProcessor {
     }
 
     @Override
-    public org.pg.type.Point decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        return org.pg.type.Point.fromByteBuffer(bb);
+    public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
+        return org.pg.type.Point.fromByteBuffer(bb).toClojure();
     }
 
     @Override
-    public org.pg.type.Point decodeTxt(final String text, final CodecParams codecParams) {
-        return org.pg.type.Point.fromString(text);
+    public Object decodeTxt(final String text, final CodecParams codecParams) {
+        return org.pg.type.Point.fromSQL(text).toClojure();
     }
 }

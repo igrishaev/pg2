@@ -106,8 +106,8 @@ public record Box(Point p1, Point p2)
     @Override
     public Object deref() {
         return PersistentVector.create(
-                p1.deref(),
-                p2.deref()
+                p1.toClojure(),
+                p2.toClojure()
         );
     }
 

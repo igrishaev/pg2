@@ -15,8 +15,6 @@ public class Path extends AProcessor {
     public ByteBuffer encodeBin(final Object x , final CodecParams codecParams) {
         if (x instanceof org.pg.type.Path p) {
             return p.toByteBuffer();
-        } else if (x instanceof Iterable<?> i) {
-            return org.pg.type.Path.fromIterable(i).toByteBuffer();
         } else if (x instanceof Map<?,?> m) {
             return org.pg.type.Path.fromMap(m).toByteBuffer();
         } else if (x instanceof String s) {
@@ -30,8 +28,6 @@ public class Path extends AProcessor {
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof org.pg.type.Path p) {
             return p.toSQL();
-        } else if (x instanceof Iterable<?> i) {
-            return org.pg.type.Path.fromIterable(i).toSQL();
         } else if (x instanceof Map<?,?> m) {
             return org.pg.type.Path.fromMap(m).toSQL();
         } else if (x instanceof String s) {
