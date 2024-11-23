@@ -5,6 +5,12 @@ import org.pg.error.PGError;
 
 public class NumTool {
 
+    public final static double EPS = 0.000001;
+
+    public static boolean equal(final double d1, final double d2) {
+        return Math.abs(d1 - d2) < EPS;
+    }
+
     public static short toShort(final Object x) {
         if (x instanceof Number n) {
             return RT.shortCast(n);

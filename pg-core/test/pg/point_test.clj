@@ -3,12 +3,14 @@
    (org.pg.type Point)
    org.pg.error.PGError)
   (:require
+   [clojure.pprint :as pprint]
    [cheshire.core :as ch]
    [jsonista.core :as js]
    [pg.bb :refer [bb== ->bb]]
    [pg.oid :as oid]
    [pg.core :as pg]
    [pg.type :as t]
+   [clojure.string :as str]
    [clojure.test :refer [is deftest testing]]))
 
 
@@ -17,9 +19,31 @@
   (is (= (t/point 1 2)
          (t/point 1 2)))
 
+  #_
+  (is (= (t/point 1 2)
+         {:x 1 :y 2}))
+
   (is (not= (t/point 2 1)
             (t/point 1 2)))
 
+  (testing "pprint"
+    (is (= "{:y 2.0, :x 1.0}"
+           (str/trim
+            (with-out-str
+              (pprint/pprint (t/point 1 2)))))))
+
+  (testing "json"
+    (is (= "{\"y\":2.0,\"x\":1.0}"
+           (ch/generate-string (t/point 1 2))))
+    (is (= "{\"x\":1.0,\"y\":2.0}"
+           (js/write-value-as-string (t/point 1 2)))))
+
+  (testing "edn"
+    (is (= "{:y 2.0, :x 1.0}"
+           (pr-str (t/point 1 2)))))
+
+
+  #_
   (let [p (t/point 1 2)]
 
     ;; TODO: check it

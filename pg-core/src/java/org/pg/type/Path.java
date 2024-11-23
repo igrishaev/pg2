@@ -53,7 +53,7 @@ public record Path(boolean isClosed, List<Point> points) {
     }
 
     public String toSQL() {
-        final String inner = String.join(",", points.stream().map(Point::toSQL).toList());
+        final String inner = String.join(",", points.stream().map(Point::toString).toList());
         return (isClosed ? "(" : "[") + inner + (isClosed ? ")" : "]");
     }
 

@@ -33,8 +33,37 @@
   (.write w (format "<SparseVector %s>" sv)))
 
 (defmethod print-method Point
-  [^Point p ^Writer w]
-  (.write w (format "<Point %s>" p)))
+  [p ^Writer w]
+  (print-method @p w))
+
+;; (prefer-method print-method Point clojure.lang.IPersistentMap)
+
+;; (prefer-method print-method clojure.lang.IPersistentMap clojure.lang.IDeref)
+
+(prefer-method print-method Point clojure.lang.IDeref)
+
+(require '[clojure.pprint :as pprint] )
+
+#_
+(prefer-method pprint/simple-dispatch
+               ;; Point
+               clojure.lang.IPersistentMap
+               clojure.lang.IDeref
+               )
+
+#_
+(defmethod pprint/simple-dispatch Point
+  [point]
+  (pprint/pprint-map point))
+
+(defmethod pprint/simple-dispatch Point
+  [point]
+  (pprint/simple-dispatch @point))
+
+;; error: java.lang.IllegalArgumentException: Multiple methods in multimethod 'simple-dispatch' match dispatch value: class org.pg.type.Point -> interface clojure.lang.IPersistentMap and interface clojure.lang.IDeref, and neither is preferred
+
+;;    error: java.lang.IllegalArgumentException: Multiple methods in multimethod 'simple-dispatch' match dispatch value:
+;; class org.pg.type.Point -> interface clojure.lang.IPersistentMap and interface clojure.lang.IDeref, and neither is preferred
 
 (defmethod print-method Line
   [^Line l ^Writer w]
