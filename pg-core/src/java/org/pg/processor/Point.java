@@ -31,11 +31,11 @@ public class Point extends AProcessor {
         if (x instanceof org.pg.type.Point p) {
             return p.toString();
         } else if (x instanceof String s) {
-            return org.pg.type.Point.fromSQL(s).toString();
+            return org.pg.type.Point.fromSQL(s).toSQL();
         } else if (x instanceof Map<?,?> m) {
-            return org.pg.type.Point.fromMap(m).toString();
+            return org.pg.type.Point.fromMap(m).toSQL();
         } else if (x instanceof List<?> l) {
-            return org.pg.type.Point.fromList(l).toString();
+            return org.pg.type.Point.fromList(l).toSQL();
         } else {
             return txtEncodingError(x, oid);
         }

@@ -31,23 +31,23 @@ public class Line extends AProcessor {
         if (x instanceof org.pg.type.Line l) {
             return l.toString();
         } else if (x instanceof String s) {
-            return org.pg.type.Line.fromString(s).toString();
+            return org.pg.type.Line.fromString(s).toSQL();
         } else if (x instanceof Map<?,?> m) {
-            return org.pg.type.Line.fromMap(m).toString();
+            return org.pg.type.Line.fromMap(m).toSQL();
         } else if (x instanceof List<?> l) {
-            return org.pg.type.Line.fromList(l).toString();
+            return org.pg.type.Line.fromList(l).toSQL();
         } else {
             return txtEncodingError(x, oid);
         }
     }
 
     @Override
-    public org.pg.type.Line decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        return org.pg.type.Line.fromByteBuffer(bb);
+    public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
+        return org.pg.type.Line.fromByteBuffer(bb).toClojure();
     }
 
     @Override
-    public org.pg.type.Line decodeTxt(final String text, final CodecParams codecParams) {
-        return org.pg.type.Line.fromString(text);
+    public Object decodeTxt(final String text, final CodecParams codecParams) {
+        return org.pg.type.Line.fromString(text).toClojure();
     }
 }

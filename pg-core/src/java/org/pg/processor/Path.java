@@ -1,6 +1,5 @@
 package org.pg.processor;
 
-import clojure.lang.IPersistentCollection;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 
@@ -38,12 +37,12 @@ public class Path extends AProcessor {
     }
 
     @Override
-    public IPersistentCollection decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
+    public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
         return org.pg.type.Path.fromByteBuffer(bb).toClojure();
     }
 
     @Override
-    public IPersistentCollection decodeTxt(final String sql, final CodecParams codecParams) {
+    public Object decodeTxt(final String sql, final CodecParams codecParams) {
         return org.pg.type.Path.fromSQL(sql).toClojure();
     }
 

@@ -7,12 +7,10 @@ import org.pg.util.NumTool;
 import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public record Circle(double x, double y, double r)
-    implements IDeref, Counted, Indexed, ILookup, Iterable<Double> {
+public record Circle(double x, double y, double r) {
 
     public static Circle of(double x, double y, double r) {
         return new Circle(x, y ,r);
@@ -75,66 +73,15 @@ public record Circle(double x, double y, double r)
         }
     }
 
-    @Override
-    public String toString() {
+    public String toSQL() {
         return "<(" + x + "," + y + ")," + r + ">";
     }
 
-    @Override
-    public Object deref() {
+    public Object toClojure() {
         return PersistentHashMap.create(
                 KW.x, x,
                 KW.y, y,
                 KW.r, r
         );
-    }
-
-    @Override
-    public int count() {
-        return 3;
-    }
-
-    @Override
-    public Object valAt(final Object key) {
-        return valAt(key, null);
-    }
-
-    @Override
-    public Object valAt(final Object key, final Object notFound) {
-        if (key instanceof Keyword kw) {
-            if (kw == KW.x) {
-                return x;
-            } else if (kw == KW.y) {
-                return y;
-            } else if (kw == KW.r) {
-                return r;
-            }
-        }
-        return notFound;
-    }
-
-    @Override
-    public Object nth(int i) {
-        return switch (i) {
-            case 0 -> x;
-            case 1 -> y;
-            case 2 -> r;
-            default -> throw new IndexOutOfBoundsException("index is out of range: " + i);
-        };
-    }
-
-    @Override
-    public Object nth(int i, Object notFound) {
-        return switch (i) {
-            case 0 -> x;
-            case 1 -> y;
-            case 2 -> r;
-            default -> notFound;
-        };
-    }
-
-    @Override
-    public Iterator<Double> iterator() {
-        return List.of(x, y, r).iterator();
     }
 }

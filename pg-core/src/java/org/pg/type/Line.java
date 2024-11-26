@@ -1,18 +1,16 @@
 package org.pg.type;
 
-import clojure.lang.*;
+import clojure.lang.PersistentHashMap;
 import org.pg.clojure.KW;
 import org.pg.error.PGError;
 import org.pg.util.NumTool;
 import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public record Line (double a, double b, double c)
-        implements Counted, Indexed, ILookup, IDeref, Iterable<Double> {
+public record Line (double a, double b, double c) {
 
     public static Line of(final double a, final double b, final double c) {
         return new Line(a, b, c);
@@ -75,63 +73,12 @@ public record Line (double a, double b, double c)
         }
     }
 
-    @Override
-    public String toString() {
+    public String toSQL() {
         return "{" + a + "," + b + "," + c + "}";
     }
 
-    @Override
-    public Object nth(final int i) {
-        return switch (i) {
-            case 0 -> a;
-            case 1 -> b;
-            case 2 -> c;
-            default -> throw new IndexOutOfBoundsException("index is out of range: " + i);
-        };
-    }
-
-    @Override
-    public Object nth(final int i, final Object notFound) {
-        return switch (i) {
-            case 0 -> a;
-            case 1 -> b;
-            case 2 -> c;
-            default -> notFound;
-        };
-    }
-
-    @Override
-    public int count() {
-        return 3;
-    }
-
-    @Override
-    public Object valAt(final Object key) {
-        return valAt(key, null);
-    }
-
-    @Override
-    public Object valAt(final Object key, final Object notFound) {
-        if (key instanceof Keyword kw) {
-            if (kw == KW.a) {
-                return a;
-            } else if (kw == KW.b) {
-                return b;
-            } else if (kw == KW.c) {
-                return c;
-            }
-        }
-        return notFound;
-    }
-
-    @Override
-    public Object deref() {
+    public Object toClojure() {
         return PersistentHashMap.create(KW.a, a, KW.b, b, KW.c, c);
-    }
-
-    @Override
-    public Iterator<Double> iterator() {
-        return List.of(a, b, c).iterator();
     }
 
     public static void main(String... args) {

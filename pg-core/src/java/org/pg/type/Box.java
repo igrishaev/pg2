@@ -1,19 +1,16 @@
 package org.pg.type;
 
-import clojure.lang.*;
+import clojure.lang.PersistentVector;
 import org.pg.clojure.KW;
 import org.pg.error.PGError;
 import org.pg.util.NumTool;
 import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public record Box(Point p1, Point p2)
-    implements IDeref, Counted, Indexed, ILookup, Iterable<Point> {
+public record Box(Point p1, Point p2) {
 
     @Override
     public boolean equals(final Object x) {
@@ -60,7 +57,6 @@ public record Box(Point p1, Point p2)
         return Box.of(x1, y1, x2, y2);
     }
 
-    // TODO: group points?
     public static Box fromList(final List<?> list) {
         final Object p1obj = list.get(0);
         final Object p2obj = list.get(1);
@@ -98,65 +94,14 @@ public record Box(Point p1, Point p2)
         }
     }
 
-    @Override
-    public String toString() {
-        return p1.toString() + "," + p2.toString();
-    }
-
-    @Override
-    public Object deref() {
+    public Object toClojure() {
         return PersistentVector.create(
                 p1.toClojure(),
                 p2.toClojure()
         );
     }
 
-    @Override
-    public int count() {
-        return 2;
-    }
-
-    @Override
-    public Object nth(int i) {
-        return switch (i) {
-            case 0 -> p1;
-            case 1 -> p2;
-            default -> throw new IndexOutOfBoundsException("index is out of range: " + i);
-        };
-    }
-
-    @Override
-    public Object nth(int i, Object notFound) {
-        return switch (i) {
-            case 0 -> p1;
-            case 1 -> p2;
-            default -> notFound;
-        };
-    }
-
-    @Override
-    public Iterator<Point> iterator() {
-        return List.of(p1, p2).iterator();
-    }
-
-    @Override
-    public Object valAt(final Object key) {
-        return valAt(key, null);
-    }
-
-    @Override
-    public Object valAt(final Object key, final Object notFound) {
-        if (key instanceof Keyword kw) {
-            if (kw == KW.x1) {
-                return p1.x();
-            } else if (kw == KW.y1) {
-                return p1.y();
-            } else if (kw == KW.x2) {
-                return p2.x();
-            } else if (kw == KW.y2) {
-                return p2.y();
-            }
-        }
-        return notFound;
+    public String toSQL() {
+        return p1.toString() + "," + p2.toString();
     }
 }

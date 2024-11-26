@@ -31,23 +31,23 @@ public class Circle extends AProcessor {
         if (x instanceof org.pg.type.Circle b) {
             return b.toString();
         } else if (x instanceof String s) {
-            return org.pg.type.Circle.fromString(s).toString();
+            return org.pg.type.Circle.fromString(s).toSQL();
         } else if (x instanceof Map<?,?> m) {
-            return org.pg.type.Circle.fromMap(m).toString();
+            return org.pg.type.Circle.fromMap(m).toSQL();
         } else if (x instanceof List<?> l) {
-            return org.pg.type.Circle.fromList(l).toString();
+            return org.pg.type.Circle.fromList(l).toSQL();
         } else {
             return txtEncodingError(x, oid);
         }
     }
 
     @Override
-    public org.pg.type.Circle decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        return org.pg.type.Circle.fromByteBuffer(bb);
+    public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
+        return org.pg.type.Circle.fromByteBuffer(bb).toClojure();
     }
 
     @Override
-    public org.pg.type.Circle decodeTxt(final String text, final CodecParams codecParams) {
-        return org.pg.type.Circle.fromString(text);
+    public Object decodeTxt(final String text, final CodecParams codecParams) {
+        return org.pg.type.Circle.fromString(text).toClojure();
     }
 }

@@ -1,21 +1,14 @@
 package org.pg.type;
 
-import clojure.lang.Counted;
-import clojure.lang.IDeref;
-import clojure.lang.IFn;
-import clojure.java.api.Clojure;
+import clojure.lang.PersistentVector;
 import org.pg.error.PGError;
 import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-public record Polygon (List<Point> points) implements Counted, IDeref, Iterable<Point> {
-
-    public static IFn mapv = Clojure.var("clojure.core", "mapv");
-    public static IFn deref = Clojure.var("clojure.core", "deref");
+public record Polygon (List<Point> points) {
 
     public static Polygon of(List<Point> points) {
         return new Polygon(points);
@@ -89,23 +82,11 @@ public record Polygon (List<Point> points) implements Counted, IDeref, Iterable<
         }
     }
 
-    @Override
-    public String toString() {
+    public String toSQL() {
         return String.join(",", points.stream().map(Point::toString).toList());
     }
 
-    @Override
-    public int count() {
-        return points.size();
-    }
-
-    @Override
-    public Object deref() {
-        return mapv.invoke(deref, points);
-    }
-
-    @Override
-    public Iterator<Point> iterator() {
-        return points.iterator();
+    public Object toClojure() {
+        return PersistentVector.create(points.stream().map(Point::toClojure).toList());
     }
 }

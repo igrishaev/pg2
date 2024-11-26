@@ -31,23 +31,23 @@ public class Box extends AProcessor {
         if (x instanceof org.pg.type.Box b) {
             return b.toString();
         } else if (x instanceof String s) {
-            return org.pg.type.Box.fromString(s).toString();
+            return org.pg.type.Box.fromString(s).toSQL();
         } else if (x instanceof Map<?,?> m) {
-            return org.pg.type.Box.fromMap(m).toString();
+            return org.pg.type.Box.fromMap(m).toSQL();
         } else if (x instanceof List<?> l) {
-            return org.pg.type.Box.fromList(l).toString();
+            return org.pg.type.Box.fromList(l).toSQL();
         } else {
             return txtEncodingError(x, oid);
         }
     }
 
     @Override
-    public org.pg.type.Box decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
-        return org.pg.type.Box.fromByteBuffer(bb);
+    public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
+        return org.pg.type.Box.fromByteBuffer(bb).toClojure();
     }
 
     @Override
-    public org.pg.type.Box decodeTxt(final String text, final CodecParams codecParams) {
-        return org.pg.type.Box.fromString(text);
+    public Object decodeTxt(final String text, final CodecParams codecParams) {
+        return org.pg.type.Box.fromString(text).toClojure();
     }
 }
