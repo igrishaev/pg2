@@ -83,7 +83,9 @@ public record Polygon (List<Point> points) {
     }
 
     public String toSQL() {
-        return String.join(",", points.stream().map(Point::toString).toList());
+        return "(" +
+                String.join(",", points.stream().map(Point::toSQL).toList()) +
+                ")";
     }
 
     public Object toClojure() {

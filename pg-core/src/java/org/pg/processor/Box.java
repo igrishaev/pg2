@@ -29,7 +29,7 @@ public class Box extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof org.pg.type.Box b) {
-            return b.toString();
+            return b.toSQL();
         } else if (x instanceof String s) {
             return org.pg.type.Box.fromString(s).toSQL();
         } else if (x instanceof Map<?,?> m) {

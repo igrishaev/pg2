@@ -25,10 +25,9 @@ public class Processors {
     static {
 
         // numbers
-        final IProcessor int4 = new Int4();
         oidMap.put(OID.INT2, new Int2());
-        oidMap.put(OID.INT4, int4);
-        oidMap.put(OID.OID, int4);
+        oidMap.put(OID.INT4, new Int4());
+        oidMap.put(OID.OID, new Int4());
         oidMap.put(OID.INT8, new Int8());
         oidMap.put(OID.NUMERIC, new Numeric());
         oidMap.put(OID.FLOAT4, new Float4());

@@ -29,7 +29,7 @@ public class Point extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof org.pg.type.Point p) {
-            return p.toString();
+            return p.toSQL();
         } else if (x instanceof String s) {
             return org.pg.type.Point.fromSQL(s).toSQL();
         } else if (x instanceof Map<?,?> m) {

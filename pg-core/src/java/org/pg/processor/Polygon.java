@@ -26,7 +26,7 @@ public class Polygon extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof org.pg.type.Polygon p) {
-            return p.toString();
+            return p.toSQL();
         } else if (x instanceof String s) {
             return org.pg.type.Polygon.fromString(s).toSQL();
         } else if (x instanceof List<?> l) {

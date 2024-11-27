@@ -13,8 +13,8 @@ public class Circle extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x , final CodecParams codecParams) {
-        if (x instanceof org.pg.type.Circle b) {
-            return b.toByteBuffer();
+        if (x instanceof org.pg.type.Circle c) {
+            return c.toByteBuffer();
         } else if (x instanceof String s) {
             return org.pg.type.Circle.fromString(s).toByteBuffer();
         } else if (x instanceof Map<?,?> m) {
@@ -29,7 +29,7 @@ public class Circle extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof org.pg.type.Circle b) {
-            return b.toString();
+            return b.toSQL();
         } else if (x instanceof String s) {
             return org.pg.type.Circle.fromString(s).toSQL();
         } else if (x instanceof Map<?,?> m) {

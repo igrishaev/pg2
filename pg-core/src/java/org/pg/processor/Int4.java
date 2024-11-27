@@ -13,7 +13,7 @@ public class Int4 extends AProcessor {
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
-        return BBTool.ofLong(NumTool.toLong(x));
+        return BBTool.ofInt(NumTool.toInteger(x));
     }
 
     @Override

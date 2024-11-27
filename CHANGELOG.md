@@ -4,9 +4,12 @@
 - bump less-awful-ssl and fix pg.ssl
 - point type support
 - line type support
-- type constructors naming
 - box type support
+- polygon type support
+- circle type support
 - fromString when intput is a string
+- path type support
+- fix Int4 binary encoding(!)
 
 ## 0.1.21
 

@@ -3633,14 +3633,13 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                 {:params [6 {:x 8 :y 3}]})
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:id 1, :p {:y 2.002, :x 1.001}}
-               {:id 2, :p {:y -2.002, :x -1.001}}
-               {:id 3, :p {:y 4.0, :x 3.0}}
-               {:id 4, :p {:y -33.0, :x 22.0}}
-               {:id 5, :p {:y 2.0, :x 1.0}}
-               {:id 6, :p {:y 3.0, :x 8.0}})
-             (for [row res]
-               (update row :p deref)))))))
+      (is (= [{:id 1, :p {:y 2.002, :x 1.001}}
+              {:id 2, :p {:y -2.002, :x -1.001}}
+              {:id 3, :p {:y 4.0, :x 3.0}}
+              {:id 4, :p {:y -33.0, :x 22.0}}
+              {:id 5, :p {:y 2.0, :x 1.0}}
+              {:id 6, :p {:y 3.0, :x 8.0}}]
+             res)))))
 
 
 (deftest test-geom-standard-point-bin
@@ -3659,14 +3658,13 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
 
-      (is (= '({:id 1, :p {:y -2.2, :x 1.0}}
-               {:id 2, :p {:y 3.0, :x 2.0}}
-               {:id 3, :p {:y 4.0, :x 3.0}}
-               {:id 4, :p {:y -33.0, :x 22.0}}
-               {:id 5, :p {:y 2.0, :x 1.0}}
-               {:id 6, :p {:y 3.0, :x 8.0}})
-             (for [row res]
-               (update row :p deref)))))))
+      (is (= [{:id 1, :p {:y -2.2, :x 1.0}}
+              {:id 2, :p {:y 3.0, :x 2.0}}
+              {:id 3, :p {:y 4.0, :x 3.0}}
+              {:id 4, :p {:y -33.0, :x 22.0}}
+              {:id 5, :p {:y 2.0, :x 1.0}}
+              {:id 6, :p {:y 3.0, :x 8.0}}]
+             res)))))
 
 
 (deftest test-geom-standard-line-txt
@@ -3687,13 +3685,12 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                 {:params [5 {:a 8 :b 3 :c 3}]})
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:l {:c 3.00003, :b 2.3,   :a -1.0}, :id 1}
-               {:l {:c 3.0,     :b 2.0,   :a 1.0},  :id 2}
-               {:l {:c 11.33,   :b -33.0, :a 22.0}, :id 3}
-               {:l {:c 3.0,     :b -2.0,  :a 1.0},  :id 4}
-               {:l {:c 3.0,     :b 3.0,   :a 8.0},  :id 5})
-             (for [row res]
-               (update row :l deref)))))))
+      (is (= [{:l {:c 3.00003, :b 2.3, :a -1.0}, :id 1}
+              {:l {:c 3.0, :b 2.0, :a 1.0}, :id 2}
+              {:l {:c 11.33, :b -33.0, :a 22.0}, :id 3}
+              {:l {:c 3.0, :b -2.0, :a 1.0}, :id 4}
+              {:l {:c 3.0, :b 3.0, :a 8.0}, :id 5}]
+             res)))))
 
 
 (deftest test-geom-standard-line-bin
@@ -3714,13 +3711,12 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                 {:params [5 {:a 8 :b 3 :c 3}]})
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:l {:c 3.00003, :b 2.3,   :a -1.0}, :id 1}
-               {:l {:c 3.0,     :b 2.0,   :a 1.0},  :id 2}
-               {:l {:c 11.33,   :b -33.0, :a 22.0}, :id 3}
-               {:l {:c 3.0,     :b -2.0,  :a 1.0},  :id 4}
-               {:l {:c 3.0,     :b 3.0,   :a 8.0},  :id 5})
-             (for [row res]
-               (update row :l deref)))))))
+      (is (= [{:l {:c 3.00003, :b 2.3, :a -1.0}, :id 1}
+              {:l {:c 3.0, :b 2.0, :a 1.0}, :id 2}
+              {:l {:c 11.33, :b -33.0, :a 22.0}, :id 3}
+              {:l {:c 3.0, :b -2.0, :a 1.0}, :id 4}
+              {:l {:c 3.0, :b 3.0, :a 8.0}, :id 5}]
+             res)))))
 
 
 (deftest test-geom-standard-circle-txt
@@ -3742,13 +3738,12 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:c {:y 2.2, :r 3.3, :x -1.1},     :id 1}
-               {:c {:y 2.0, :r 3.0, :x 1.0},      :id 2}
-               {:c {:y -33.0, :r 11.33, :x 22.0}, :id 3}
-               {:c {:y -2.0, :r 3.0, :x 1.0},     :id 4}
-               {:c {:y 3.0, :r 5.0, :x 8.0},      :id 5})
-             (for [row res]
-               (update row :c deref)))))))
+      (is (= [{:c {:y 2.2, :r 3.3, :x -1.1}, :id 1}
+              {:c {:y 2.0, :r 3.0, :x 1.0}, :id 2}
+              {:c {:y -33.0, :r 11.33, :x 22.0}, :id 3}
+              {:c {:y -2.0, :r 3.0, :x 1.0}, :id 4}
+              {:c {:y 3.0, :r 5.0, :x 8.0}, :id 5}]
+             res)))))
 
 
 (deftest test-geom-standard-circle-bin
@@ -3770,13 +3765,12 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:c {:y 2.2, :r 3.3, :x -1.1},     :id 1}
-               {:c {:y 2.0, :r 3.0, :x 1.0},      :id 2}
-               {:c {:y -33.0, :r 11.33, :x 22.0}, :id 3}
-               {:c {:y -2.0, :r 3.0, :x 1.0},     :id 4}
-               {:c {:y 3.0, :r 5.0, :x 8.0},      :id 5})
-             (for [row res]
-               (update row :c deref)))))))
+      (is (= [{:c {:y 2.2, :r 3.3, :x -1.1}, :id 1}
+              {:c {:y 2.0, :r 3.0, :x 1.0}, :id 2}
+              {:c {:y -33.0, :r 11.33, :x 22.0}, :id 3}
+              {:c {:y -2.0, :r 3.0, :x 1.0}, :id 4}
+              {:c {:y 3.0, :r 5.0, :x 8.0}, :id 5}]
+             res)))))
 
 
 (deftest test-geom-standard-box-txt
@@ -3804,15 +3798,14 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:id 1, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
-               {:id 2, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
-               {:id 3, :b [{:y -33.0, :x 22.0} {:y -42.001, :x 11.33}]}
-               {:id 4, :b [{:y 4.0, :x 3.0} {:y -2.0, :x 1.0}]}
-               {:id 5, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
-               {:id 6, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
-               {:id 7, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]})
-             (for [row res]
-               (update row :b deref)))))))
+      (is (= [{:id 1, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
+              {:id 2, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
+              {:id 3, :b [{:y -33.0, :x 22.0} {:y -42.001, :x 11.33}]}
+              {:id 4, :b [{:y 4.0, :x 3.0} {:y -2.0, :x 1.0}]}
+              {:id 5, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+              {:id 6, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+              {:id 7, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}]
+             res)))))
 
 
 (deftest test-geom-standard-box-bin
@@ -3840,15 +3833,14 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:id 1, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
-               {:id 2, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
-               {:id 3, :b [{:y -33.0, :x 22.0} {:y -42.001, :x 11.33}]}
-               {:id 4, :b [{:y 4.0, :x 3.0} {:y -2.0, :x 1.0}]}
-               {:id 5, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
-               {:id 6, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
-               {:id 7, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]})
-             (for [row res]
-               (update row :b deref)))))))
+      (is (= [{:id 1, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
+              {:id 2, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}
+              {:id 3, :b [{:y -33.0, :x 22.0} {:y -42.001, :x 11.33}]}
+              {:id 4, :b [{:y 4.0, :x 3.0} {:y -2.0, :x 1.0}]}
+              {:id 5, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+              {:id 6, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+              {:id 7, :b [{:y 4.0, :x 3.0} {:y 2.0, :x 1.0}]}]
+             res)))))
 
 
 (deftest test-geom-standard-polygon-txt
@@ -3873,14 +3865,18 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:id 1, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0} {:y 8.0, :x 7.0}]}
-               {:id 2, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}]}
-               {:id 3, :p [{:y 2.0, :x 1.0} {:y 8.0, :x 7.0}]}
-               {:id 4, :p [{:y -2.0, :x 1.0} {:y 4.0, :x 3.0}]}
-               {:id 6, :p [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
-               {:id 7, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]})
-             (for [row res]
-               (update row :p deref)))))))
+      (is (= [{:id 1,
+               :p
+               [{:y 2.0, :x 1.0}
+                {:y 4.0, :x 3.0}
+                {:y 6.0, :x 5.0}
+                {:y 8.0, :x 7.0}]}
+              {:id 2, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}]}
+              {:id 3, :p [{:y 2.0, :x 1.0} {:y 8.0, :x 7.0}]}
+              {:id 4, :p [{:y -2.0, :x 1.0} {:y 4.0, :x 3.0}]}
+              {:id 6, :p [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+              {:id 7, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]}]
+             res)))))
 
 
 (deftest test-geom-standard-polygon-bin
@@ -3895,24 +3891,28 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                 {:params [3 "((1,2),(7,8))"]})
 
     (pg/execute conn "insert into test values ($1, $2)"
-                {:params [4 [[1 -2] [3 4]]]})
+              {:params [4 [[1 -2] [3 4]]]})
 
     (pg/execute conn "insert into test values ($1, $2)"
-                {:params [6 [{:x 8 :y 3} {:x 5 :y -5}]]})
+              {:params [6 [{:x 8 :y 3} {:x 5 :y -5}]]})
 
     (pg/execute conn "insert into test values ($1, $2)"
                 {:params [7 (t/polygon [(t/point 1 2) {:x 3 :y 4}])]})
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= '({:id 1, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0} {:y 8.0, :x 7.0}]}
-               {:id 2, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}]}
-               {:id 3, :p [{:y 2.0, :x 1.0} {:y 8.0, :x 7.0}]}
-               {:id 4, :p [{:y -2.0, :x 1.0} {:y 4.0, :x 3.0}]}
-               {:id 6, :p [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
-               {:id 7, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]})
-             (for [row res]
-               (update row :p deref)))))))
+      (is (= [{:id 1,
+               :p
+               [{:y 2.0, :x 1.0}
+                {:y 4.0, :x 3.0}
+                {:y 6.0, :x 5.0}
+                {:y 8.0, :x 7.0}]}
+              {:id 2, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}]}
+              {:id 3, :p [{:y 2.0, :x 1.0} {:y 8.0, :x 7.0}]}
+              {:id 4, :p [{:y -2.0, :x 1.0} {:y 4.0, :x 3.0}]}
+              {:id 6, :p [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+              {:id 7, :p [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]}]
+             res)))))
 
 
 (deftest test-geom-standard-path-bin
@@ -3923,11 +3923,15 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
-      (is (= 1
-             res
-             #_
-             (for [row res]
-               (update row :p deref)))))))
+      (is (= [{:id 1,
+               :p
+               {:points [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}],
+                :closed? true}}
+              {:id 1,
+               :p
+               {:points [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}],
+                :closed? false}}]
+             res)))))
 
 
 #_

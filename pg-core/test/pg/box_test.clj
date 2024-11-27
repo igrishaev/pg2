@@ -10,52 +10,6 @@
    [clojure.test :refer [is deftest testing]]))
 
 
-(deftest test-props
-
-  (is (= (t/box [1 2] [3 4])
-         (t/box [3 4] [1 2])))
-
-  (is (= (t/box [1 2] [3 4])
-         (t/box [1 2] [3 4])))
-
-  (is (not= (t/box [1 2] [3 4])
-            (t/box [3 4] [3 4])))
-
-  (let [x (t/box 1 2 3 4)]
-
-    (is (t/box? x))
-
-    (is (= "(1.0,2.0),(3.0,4.0)" (str x)))
-    (is (= "<Box (1.0,2.0),(3.0,4.0)>" (pr-str x)))
-    (is (= [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}] @x))
-
-    (is (= 1.0 (:x1 x)))
-    (is (= 2.0 (:y1 x)))
-    (is (= 3.0 (:x2 x)))
-    (is (= 4.0 (:y2 x)))
-
-    (is (= ::miss (nth x 99 ::miss)))
-
-    (is (= {:y 2.0, :x 1.0} @(nth x 0)))
-    (is (= {:y 4.0, :x 3.0} @(nth x 1)))
-
-    (is (= :test (get x :dunno :test)))
-    (is (nil? (get x :dunno)))
-
-    (is (= 2 (count x)))
-    (is (= [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}] (mapv deref x)))
-
-    (try
-      (nth x 3)
-      (is false)
-      (catch IndexOutOfBoundsException e
-        (is true))))
-
-  (let [x (t/box "(1,2),(3,4)")]
-    (is (= [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}] @x))
-    (is (= "(1.0,2.0),(3.0,4.0)" (str x)))))
-
-
 (deftest test-encode-bin
   (testing "from object"
     (let [bb (pg/encode-bin (t/box 1 2 3 4) oid/box)]
@@ -81,12 +35,12 @@
 (deftest test-decode-bin
   (let [bb (->bb [63 -16 0 0 0 0 0 0 64 0 0 0 0 0 0 0 64 8 0 0 0 0 0 0 64 16 0 0 0 0 0 0])
         x (pg/decode-bin bb oid/box)]
-    (is (= [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}] @x))))
+    (is (= [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}] x))))
 
 (deftest test-decode-txt
   (let [text " ( 1.0, 2.0 ) , (3.0 , 4.0 ) "
         x (pg/decode-txt text oid/box)]
-    (is (= [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}] @x))))
+    (is (= [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}] x))))
 
 
 (deftest test-encode-txt

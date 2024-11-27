@@ -9,45 +9,6 @@
    [pg.type :as t]
    [clojure.test :refer [is deftest testing]]))
 
-(deftest test-props
-
-  (is (= (t/line 1 2 3)
-         (t/line 1 2 3)))
-
-  (is (not= (t/line 1 2 3)
-            :lol))
-
-  (is (not= (t/line 1 2 3)
-            nil))
-
-  (let [l (t/line 1 2 3)]
-    (is (t/line? l))
-
-    (is (= "{1.0,2.0,3.0}" (str l)))
-    (is (= "<Line {1.0,2.0,3.0}>" (pr-str l)))
-    (is (= {:a 1.0 :b 2.0 :c 3.0} @l))
-
-    (is (= 1.0 (:a l)))
-    (is (= 2.0 (:b l)))
-    (is (= 3.0 (:c l)))
-    (is (= ::miss (nth l 99 ::miss)))
-
-    (is (= 1.0 (nth l 0)))
-    (is (= 2.0 (nth l 1)))
-    (is (= 3.0 (nth l 2)))
-
-    (is (= :test (get l :dunno :test)))
-    (is (nil? (get l :dunno)))
-
-    (is (= 3 (count l)))
-    (is (= [1.0 2.0 3.0] (vec l)))
-
-    (try
-      (nth l 3)
-      (is false)
-      (catch IndexOutOfBoundsException e
-        (is true)))))
-
 
 (deftest test-encode-bin
   (testing "from object"
@@ -74,13 +35,13 @@
 (deftest test-decode-bin
   (let [bb (->bb [63 -16 0 0 0 0 0 0 64 0 0 0 0 0 0 0 64 8 0 0 0 0 0 0])
         p (pg/decode-bin bb oid/line)]
-    (is (= {:c 3.0, :b 2.0, :a 1.0} @p))))
+    (is (= {:c 3.0, :b 2.0, :a 1.0} p))))
 
 
 (deftest test-decode-txt
   (let [text " { 1.0  ,  2.0  , 3.0 } "
         p (pg/decode-txt text oid/line)]
-    (is (= {:c 3.0, :b 2.0, :a 1.0} @p))))
+    (is (= {:c 3.0, :b 2.0, :a 1.0} p))))
 
 
 (deftest test-encode-txt

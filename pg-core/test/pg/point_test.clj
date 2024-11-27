@@ -4,7 +4,6 @@
    org.pg.error.PGError)
   (:require
    [clojure.pprint :as pprint]
-   [cheshire.core :as ch]
    [jsonista.core :as js]
    [pg.bb :refer [bb== ->bb]]
    [pg.oid :as oid]
@@ -12,72 +11,6 @@
    [pg.type :as t]
    [clojure.string :as str]
    [clojure.test :refer [is deftest testing]]))
-
-
-(deftest test-props
-
-  (is (= (t/point 1 2)
-         (t/point 1 2)))
-
-  #_
-  (is (= (t/point 1 2)
-         {:x 1 :y 2}))
-
-  (is (not= (t/point 2 1)
-            (t/point 1 2)))
-
-  (testing "pprint"
-    (is (= "{:y 2.0, :x 1.0}"
-           (str/trim
-            (with-out-str
-              (pprint/pprint (t/point 1 2)))))))
-
-  (testing "json"
-    (is (= "{\"y\":2.0,\"x\":1.0}"
-           (ch/generate-string (t/point 1 2))))
-    (is (= "{\"x\":1.0,\"y\":2.0}"
-           (js/write-value-as-string (t/point 1 2)))))
-
-  (testing "edn"
-    (is (= "{:y 2.0, :x 1.0}"
-           (pr-str (t/point 1 2)))))
-
-
-  #_
-  (let [p (t/point 1 2)]
-
-    ;; TODO: check it
-    #_
-    (is (= 1 (ch/generate-string p)))
-    #_
-    (is (= 1 (js/write-value-as-string p)))
-
-    (is (instance? Point p))
-    (is (= "(1.0,2.0)" (str p)))
-    (is (= "<Point (1.0,2.0)>" (pr-str p)))
-    (is (= {:y 2.0, :x 1.0} @p))
-
-    (is (= 1.0 (:x p)))
-    (is (= 2.0 (:y p)))
-
-    (is (= 1.0 (nth p 0)))
-    (is (= 2.0 (nth p 1)))
-
-    (is (= 2.0 (get p :y)))
-
-    (is (nil? (get p "abc")))
-
-    (is (= 2 (count p)))
-    (is (= [1.0 2.0] (vec p)))
-
-    (is (= ::miss (nth p 99 ::miss)))
-
-    (try
-      (nth p 2)
-      (is false)
-      (catch IndexOutOfBoundsException e
-        (is true)))))
-
 
 (deftest test-encode-bin
   (testing "from object"
@@ -104,13 +37,13 @@
 (deftest test-decode-bin
   (let [bb (->bb [63 -16 0 0 0 0 0 0 64 0 0 0 0 0 0 0])
         p (pg/decode-bin bb oid/point)]
-    (is (= {:y 2.0, :x 1.0} @p))))
+    (is (= {:y 2.0, :x 1.0} p))))
 
 
 (deftest test-decode-txt
   (let [text "   (   1.0  , 2.0  )   "
         p (pg/decode-txt text oid/point)]
-    (is (= {:y 2.0, :x 1.0} @p))))
+    (is (= {:y 2.0, :x 1.0} p))))
 
 
 (deftest test-encode-txt

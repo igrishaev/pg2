@@ -102,6 +102,6 @@ public record Box(Point p1, Point p2) {
     }
 
     public String toSQL() {
-        return p1.toString() + "," + p2.toString();
+        return p1.toSQL() + "," + p2.toSQL();
     }
 }

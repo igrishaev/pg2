@@ -32,55 +32,6 @@
   [^SparseVector sv ^Writer w]
   (.write w (format "<SparseVector %s>" sv)))
 
-(defmethod print-method Point
-  [p ^Writer w]
-  (print-method @p w))
-
-;; (prefer-method print-method Point clojure.lang.IPersistentMap)
-
-;; (prefer-method print-method clojure.lang.IPersistentMap clojure.lang.IDeref)
-
-(prefer-method print-method Point clojure.lang.IDeref)
-
-(require '[clojure.pprint :as pprint] )
-
-#_
-(prefer-method pprint/simple-dispatch
-               ;; Point
-               clojure.lang.IPersistentMap
-               clojure.lang.IDeref
-               )
-
-#_
-(defmethod pprint/simple-dispatch Point
-  [point]
-  (pprint/pprint-map point))
-
-(defmethod pprint/simple-dispatch Point
-  [point]
-  (pprint/simple-dispatch @point))
-
-;; error: java.lang.IllegalArgumentException: Multiple methods in multimethod 'simple-dispatch' match dispatch value: class org.pg.type.Point -> interface clojure.lang.IPersistentMap and interface clojure.lang.IDeref, and neither is preferred
-
-;;    error: java.lang.IllegalArgumentException: Multiple methods in multimethod 'simple-dispatch' match dispatch value:
-;; class org.pg.type.Point -> interface clojure.lang.IPersistentMap and interface clojure.lang.IDeref, and neither is preferred
-
-(defmethod print-method Line
-  [^Line l ^Writer w]
-  (.write w (format "<Line %s>" l)))
-
-(defmethod print-method Circle
-  [^Circle c ^Writer w]
-  (.write w (format "<Circle %s>" c)))
-
-(defmethod print-method Box
-  [^Box b ^Writer w]
-  (.write w (format "<Box %s>" b)))
-
-(defmethod print-method Polygon
-  [^Polygon p ^Writer w]
-  (.write w (format "<Polygon %s>" p)))
-
 
 ;;
 ;; Constructors
@@ -104,11 +55,10 @@
 (defn sparse-vector? [x]
   (instance? SparseVector x))
 
-;;
+;; point
 
 (defn point? [x]
   (instance? Point x))
-
 
 (defn point
   "
@@ -120,7 +70,7 @@
   (^Point [x]
    (Point/fromObject x)))
 
-;;
+;; line
 
 (defn line? [x]
   (instance? Line x))
@@ -135,7 +85,7 @@
   (^Line [x]
    (Line/fromObject x)))
 
-;;
+;; circle
 
 (defn circle? [x]
   (instance? Circle x))
@@ -150,7 +100,7 @@
   (^Circle [x]
    (Circle/fromObject x)))
 
-;;
+;; box
 
 (defn box? [x]
   (instance? Box x))
@@ -168,7 +118,7 @@
   (^Box [x]
    (Box/fromObject x)))
 
-;;
+;; poly
 
 (defn polygon? [x]
   (instance? Polygon x))

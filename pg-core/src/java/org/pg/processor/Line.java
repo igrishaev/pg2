@@ -29,7 +29,7 @@ public class Line extends AProcessor {
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof org.pg.type.Line l) {
-            return l.toString();
+            return l.toSQL();
         } else if (x instanceof String s) {
             return org.pg.type.Line.fromString(s).toSQL();
         } else if (x instanceof Map<?,?> m) {
