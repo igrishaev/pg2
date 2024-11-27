@@ -16,6 +16,8 @@ public class Path extends AProcessor {
             return p.toByteBuffer();
         } else if (x instanceof Map<?,?> m) {
             return org.pg.type.Path.fromMap(m).toByteBuffer();
+        } else if (x instanceof Iterable<?> i) {
+            return org.pg.type.Path.fromList(i).toByteBuffer();
         } else if (x instanceof String s) {
             return org.pg.type.Path.fromSQL(s).toByteBuffer();
         } else {
@@ -29,6 +31,8 @@ public class Path extends AProcessor {
             return p.toSQL();
         } else if (x instanceof Map<?,?> m) {
             return org.pg.type.Path.fromMap(m).toSQL();
+        } else if (x instanceof Iterable<?> i) {
+            return org.pg.type.Path.fromList(i).toSQL();
         } else if (x instanceof String s) {
             return org.pg.type.Path.fromSQL(s).toSQL();
         } else {

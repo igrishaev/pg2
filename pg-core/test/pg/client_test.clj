@@ -3919,7 +3919,25 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
   (pg/with-conn [conn *CONFIG-BIN*]
     (pg/execute conn "create temp table test (id int, p path)")
     (pg/execute conn "insert into test values (1, '((1,2),(3,4),(5,6))')")
-    (pg/execute conn "insert into test values (1, '[(1,2),(3,4),(5,6)]')")
+    (pg/execute conn "insert into test values (2, '[(1,2),(3,4),(5,6)]')")
+
+    ;; (pg/execute conn "insert into test values ($1, $2)"
+    ;;             {:params [2 (t/polygon [[1 2] {:x 3 :y 4} [5 6]])]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [3 "((1,2),(7,8))"]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+                {:params [4 "[(1,2),(7,8)]"]})
+
+    ;; (pg/execute conn "insert into test values ($1, $2)"
+    ;;             {:params [5 [[1 -2] [3 4]]]})
+
+    (pg/execute conn "insert into test values ($1, $2)"
+              {:params [6 {:points [[1 2] {:x 3 :y 4}]}]})
+
+    ;; (pg/execute conn "insert into test values ($1, $2)"
+    ;;             {:params [7 (t/polygon [(t/point 1 2) {:x 3 :y 4}])]})
 
     (let [res
           (pg/execute conn "SELECT * from test order by id")]
@@ -3927,10 +3945,16 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                :p
                {:points [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}],
                 :closed? true}}
-              {:id 1,
+              {:id 2,
                :p
                {:points [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}],
-                :closed? false}}]
+                :closed? false}}
+              {:id 3,
+               :p {:points [{:y 0.0, :x 0.0} {:y 0.0, :x 0.0}], :closed? true}}
+              {:id 4,
+               :p {:points [{:y 0.0, :x 0.0} {:y 0.0, :x 0.0}], :closed? false}}
+              {:id 6,
+               :p {:points [{:y 0.0, :x 0.0} {:y 0.0, :x 0.0}], :closed? true}}]
              res)))))
 
 

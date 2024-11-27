@@ -8,7 +8,8 @@
                 Line
                 Circle
                 Box
-                Polygon)
+                Polygon
+                Path)
    org.pg.error.PGError
    (org.pg.processor IProcessor
                      Processors)))
@@ -124,5 +125,23 @@
   (instance? Polygon x))
 
 (defn polygon
+  "
+  Make an instance of the Polygon class.
+  "
   (^Polygon [points]
    (Polygon/fromList points)))
+
+;; path
+
+(defn path? [x]
+  (instance? Path x))
+
+(defn path
+  "
+  Make an instance of the Path class.
+  "
+  (^Path [points closed?]
+   (Path/fromList points closed?))
+
+  (^Path [points]
+   (Path/fromList points)))
