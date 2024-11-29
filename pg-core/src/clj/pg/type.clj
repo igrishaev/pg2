@@ -9,7 +9,8 @@
                 Circle
                 Box
                 Polygon
-                Path)
+                Path
+                LineSegment)
    org.pg.error.PGError
    (org.pg.processor IProcessor
                      Processors)))
@@ -145,3 +146,21 @@
 
   (^Path [points]
    (Path/fromList points)))
+
+;; line segment
+
+(defn line-segment? [x]
+  (instance? LineSegment x))
+
+(defn line-segment
+  "
+  Make an instance of the LineSegment class.
+  "
+  (^LineSegment [x1 y1 x2 y2]
+   (LineSegment/of x1 y1 x2 y2))
+
+  (^LineSegment [p1 p2]
+   (LineSegment/of (point p1) (point p2)))
+
+  (^LineSegment [x]
+   (LineSegment/fromObject x)))

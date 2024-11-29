@@ -273,6 +273,8 @@ public class OID {
             return POLYGON;
         } else if (x instanceof Path p) {
             return PATH;
+        } else if (x instanceof LineSegment ls) {
+            return LSEG;
         } else {
             return DEFAULT;
         }
