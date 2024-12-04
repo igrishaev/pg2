@@ -7,11 +7,15 @@
 
 - readme
 
+
 - postgis support
 - json wrapper not needed
 
 - fix pg11
 - add pg17
+
+- to-json: coerce output with io ns
+- to-edn: coerce output with io ns
 
 - oid: coerce long to int
 

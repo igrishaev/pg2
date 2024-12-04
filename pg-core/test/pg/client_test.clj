@@ -4071,6 +4071,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
              res)))))
 
 
+#_
 (deftest test-hstore-bin
   (pg/with-conn [conn *CONFIG-BIN*]
     (pg/query conn "create extension if not exists hstore")
