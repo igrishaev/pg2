@@ -9,6 +9,7 @@ public final class DateTimeBin {
 
     private static final Duration PG_DIFF;
 
+    // 946684800 seconds
     static {
         PG_DIFF = Duration.between(
                 Instant.EPOCH,
