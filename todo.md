@@ -1,4 +1,7 @@
 
+ -> AuthenticationSASLFinal[serverFinalMessage=e=Wrong password]
+ fix this case
+
 - geom types: json, edn
 - geom types: toString -> toSQL
 

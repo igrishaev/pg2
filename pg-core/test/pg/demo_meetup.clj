@@ -90,11 +90,11 @@ from generate_series(1, 9) as seq(x)"
 (def config-sb
   {:host "aws-0-eu-central-1.pooler.supabase.com"
    :port 6543
-   :user "postgres.XXXX"
-   :password "<password>"
+   :user "postgres.hmtrzfggdhnofcaseomq"
+   :password (clojure.string/trim (slurp "PASS.txt"))
    :database "postgres"
-   :ssl-context ssl-context
-   })
+   :use-ssl? true
+   :ssl-context ssl-context})
 
 (pg/with-conn [c config-sb]
   (pg/query c "select 42 as the_answer"))
