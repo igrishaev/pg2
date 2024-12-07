@@ -37,6 +37,12 @@ classes are supported for reading and writing.
 
 ## Documentation
 
+[tests]: blob/master/pg-core/test/pg/client_test.clj
+
+*A note:* sections with no links mean they're implemented yet not documented. If
+you're interested in a non-documented feature, either ping me or [check out the
+tests][tests].
+
 - [Installation](/docs/installation.md)
 - [Quick Start (Demo)](/docs/quick-start.md)
 - [Benchmarks](/docs/benchmarks.md)
