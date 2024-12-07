@@ -65,11 +65,6 @@ migrations
 - types
   - interval
   - hstore
-  - geom.box
-  - geom.line
-  - geom.point
-  - geom.polygon
-  - geom.etc
   - inet/cidr
 
 - Unix socket connection type

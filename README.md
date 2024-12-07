@@ -56,7 +56,8 @@ classes are supported for reading and writing.
 - [Migrations](/docs/migrations.md)
 - Common Execute Parameters
 - Type Hints (OIDs)
-- Non-Standard Types & Extensions
+- Types & Extensions
+  - [Geometry (line, box, etc)](/docs/geometry.md)
   - [PGVector](/docs/pgvector.md)
   - PostGIS
   - [Custom Type Processors](/docs/processors.md)

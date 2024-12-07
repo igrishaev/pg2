@@ -10,6 +10,7 @@
 - fromString when intput is a string
 - path type support
 - fix Int4 binary encoding(!)
+- lseg type support
 
 ## 0.1.21
 
