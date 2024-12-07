@@ -123,9 +123,144 @@ The result:
 ~~~clojure
 (pg/execute conn "select * from test3")
 
-[{:l {:c 3.3, :b -2.2, :a 1.1}, :id 1}
- {:l {:c -3.0, :b -2.0, :a -1.0}, :id 2}
- {:l {:c -3.555, :b 3.11, :a -9.33}, :id 3}]
+[{:id 1, :l {:c 3.3, :b -2.2, :a 1.1}}
+ {:id 2, :l {:c -3.0, :b -2.0, :a -1.0}}
+ {:id 3, :l {:c -3.555, :b 3.11, :a -9.33}}]
 ~~~
 
 ## Circle
+
+A circle is a point plus its radius: `<(-1, 1), 3.3>`. In Clojure, it's either a
+map with `:x`, `:y`, and `:r` keys, or a vector of three: `[x y r]`. The radius
+cannot be negative.
+
+Prepare a table:
+
+~~~clojure
+(pg/query conn "create temp table test4 (id int, c circle)")
+~~~
+
+Insert in various forms:
+
+~~~clojure
+(pg/execute conn
+            "insert into test4 (id, c) values ($1, $2), ($3, $4), ($5, $6)"
+            {:params [1 {:x 1.1 :y -2.2 :r 3.3}
+                      2 [-1 -2 3]
+                      3 "<(-9.33, 3.11),3.555>"]})
+~~~
+
+The result:
+
+~~~clojure
+(pg/query conn "select * from test4")
+
+[{:id 1, :c {:y -2.2, :r 3.3, :x 1.1}}
+ {:id 2, :c {:y -2.0, :r 3.0, :x -1.0}}
+ {:id 3, :c {:y 3.11, :r 3.555, :x -9.33}}]
+~~~
+
+## Polygon
+
+A polygon is a collection of points surrounded by with parentheses:
+`((1.1,-2.2),(3.3,4.4),(-5.5,6.006))`. A table:
+
+~~~clojure
+(pg/query conn "create temp table test5 (id int, poly polygon)")
+~~~
+
+Insertion. Pay attention that points may follow in various forms: a map, a
+vector, then a map again:
+
+~~~clojure
+(pg/execute conn
+            "insert into test5 (id, poly) values ($1, $2), ($3, $4), ($5, $6)"
+            {:params [1 [[1 2] {:x 3 :y 4} [5 6]]
+                      2 [{:x 8 :y 3} {:x 5 :y -5}]
+                      3 "((1,2),(3,4),(5,6),(7,8))"]})
+~~~
+
+The result:
+
+~~~clojure
+(pg/query conn "select * from test5")
+
+[{:id 1
+  :poly [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0}]}
+ {:id 2
+  :poly [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+ {:id 3
+  :poly [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0} {:y 6.0, :x 5.0} {:y 8.0, :x 7.0}]}]
+~~~
+
+## Line segment
+
+A line segment is just a pair of points: `[(1,2),(3,4)]`. A table:
+
+~~~clojure
+(pg/query conn "create temp table test6 (id int, seg lseg)")
+~~~
+
+Insertion:
+
+~~~clojure
+(pg/execute conn
+            "insert into test6 (id, seg) values ($1, $2), ($3, $4), ($5, $6)"
+            {:params [1 [[1 2] {:x 3 :y 4}]
+                      2 [{:x 8 :y 3} {:x 5 :y -5}]
+                      3 "((1,2),(3,4))"]})
+~~~
+The result:
+
+~~~clojure
+(pg/execute conn "select * from test6")
+
+[{:id 1, :seg [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]}
+ {:id 2, :seg [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
+ {:id 3, :seg [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]}]
+ ~~~
+
+## Path
+
+Paths are a bit tricky. Technically a path is a collection of points with an
+additional flag. A path might be either **open** -- meaning there is no a
+connection between the first and the last points -- and **closed** -- meaning
+there is. Square brackets `[]` indicate an open path, while parentheses `()`
+indicate a closed path.
+
+That extra flag slightly complicates Clojure representation. A path is no longer
+a vector of points but a map with the `:points` and `:closed?` flag. When the
+flat is not set, the path is considered as **closed**.
+
+Prepare a table:
+
+~~~clojure
+(pg/query conn "create temp table test7 (id int, p path)")
+~~~
+
+Insertion:
+
+~~~clojure
+(pg/execute conn
+            "insert into test7 (id, p) values ($1, $2), ($3, $4), ($5, $6), ($7, $8), ($9, $10)"
+            {:params [1 [[1 -2] [3 4]]                  ;; a vector form, closed
+                      2 {:closed? true                  ;; a map form, closed
+                         :points [[1 2] {:x 3 :y 4}]}
+                      3 {:closed? false                 ;; a map form, open
+                         :points [[1 2] {:x 3 :y 4}]}
+                      4 "((1,2),(3,4))"                 ;; SQL form, closed
+                      5 "[(5,4),(3,2)]"                 ;; SQL form, open
+            ]})
+~~~
+
+The result:
+
+~~~clojure
+(pg/execute conn "select * from test7 order by id")
+
+[{:id 1, :p {:points [{:y -2.0, :x 1.0} {:y 4.0, :x 3.0}], :closed? true}}
+ {:id 2, :p {:points [{:y  2.0, :x 1.0} {:y 4.0, :x 3.0}], :closed? true}}
+ {:id 3, :p {:points [{:y  2.0, :x 1.0} {:y 4.0, :x 3.0}], :closed? false}}
+ {:id 4, :p {:points [{:y  2.0, :x 1.0} {:y 4.0, :x 3.0}], :closed? true}}
+ {:id 5, :p {:points [{:y  4.0, :x 5.0} {:y 2.0, :x 3.0}], :closed? false}}]
+ ~~~
