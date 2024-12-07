@@ -12,7 +12,6 @@ pom.xml.asc
 .hgignore
 .hg/
 
-.docker
 node_modules
 package-lock.json
 package.json
