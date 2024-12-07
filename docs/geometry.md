@@ -2,18 +2,18 @@
 
 [types]: https://www.postgresql.org/docs/current/datatype-geometric.html
 
-Postgres provides a [number of geometry types][types] such as line, box,
-polygon, etc. These types, although a bit primitive, can be used to build simple
-GIS systems where curve of the Earth doesn't count. Say, to model buildings and
+Postgres provides a [number of geometry types][types] such as a line, a box, a
+polygon, etc. These types, although a bit primitive, can serve simple GIS
+systems where curve of the Earth doesn't count. Say, to model buildings and
 routs across a city.
 
-Recent PG2 versions suppors these types: when you read them from a database,
-they arrive being parsed into Clojure maps and vectors. You can pass them back
-as Clojure values as well.
+Recent PG2 versions suppor these types. When you read them from a database, they
+arrive parsed into Clojure maps and vectors. You can pass them back as Clojure
+values as well.
 
 ## Point
 
-A point is a pair of `double` values. When read, it appears as a map with the
+A point is a pair of `double` values. When read, it becomes as a map with the
 `:x` and `:y` keys:
 
 ~~~clojure
@@ -40,7 +40,7 @@ You can pass it as a vector as well:
             {:params [2 [-3, 6.003]]})
 ~~~
 
-Or as a native SQL string:
+Or as a native SQL string with parentheses:
 
 ~~~clojure
 (pg/execute conn
@@ -74,7 +74,7 @@ Let's insert three boxes at once using various forms:
             "insert into test2 (id, b) values ($1, $2), ($3, $4), ($5, $6)"
             {:params [1 [{:x 0 :y 0} {:x 4 :y 6}]        ;; a vector of maps
                       2 [[-1 3] [6.003 8.33]]            ;; a vector of pairs
-                      3 "((5.003, 5.23),(9.23, -3.555))" ;; raw SQL form
+                      3 "((5.003, 5.23),(9.23, -3.555))" ;; a raw SQL form
                       ]})
 ~~~
 
@@ -89,7 +89,7 @@ The result:
 ~~~
 
 Pay attention that Postgres normalizes box's corners. When reading boxes back,
-the initial `[{:x 0 :y 0} {:x 4 :y 6}]` form becomes `[{:y 6.0, :x 4.0} {:y 0.0,
+the initial `[{:x 0 :y 0} {:x 4 :y 6}]` pair becomes `[{:y 6.0, :x 4.0} {:y 0.0,
 :x 0.0}]` (the points where swapped).
 
 ## Line
@@ -107,7 +107,7 @@ three `double` values. Prepare a table:
 (pg/query conn "create temp table test3 (id int, l line)")
 ~~~
 
-Insert in three various forms:
+Insert three lines in various forms:
 
 ~~~clojure
 (pg/execute conn
@@ -140,7 +140,7 @@ Prepare a table:
 (pg/query conn "create temp table test4 (id int, c circle)")
 ~~~
 
-Insert in various forms:
+Insert three circles in various forms:
 
 ~~~clojure
 (pg/execute conn
@@ -162,15 +162,15 @@ The result:
 
 ## Polygon
 
-A polygon is a collection of points surrounded by with parentheses:
-`((1.1,-2.2),(3.3,4.4),(-5.5,6.006))`. A table:
+A polygon is a collection of points surrounded with parentheses:
+`((1.1,-2.2),(3.3,4.4),(-5.5,6.6))`. A table:
 
 ~~~clojure
 (pg/query conn "create temp table test5 (id int, poly polygon)")
 ~~~
 
-Insertion. Pay attention that points may follow in various forms: a map, a
-vector, then a map again:
+Let's insert polygons. Pay attention that points may follow in various forms: a
+map, a vector, then a map again:
 
 ~~~clojure
 (pg/execute conn
@@ -195,7 +195,8 @@ The result:
 
 ## Line segment
 
-A line segment is just a pair of points: `[(1,2),(3,4)]`. A table:
+A line segment (the `lseg` type) is just a pair of points: `[(1,2),(3,4)]`. A
+table:
 
 ~~~clojure
 (pg/query conn "create temp table test6 (id int, seg lseg)")
@@ -222,15 +223,15 @@ The result:
 
 ## Path
 
-Paths are a bit tricky. Technically a path is a collection of points with an
-additional flag. A path might be either **open** -- meaning there is no a
-connection between the first and the last points -- and **closed** -- meaning
-there is. Square brackets `[]` indicate an open path, while parentheses `()`
-indicate a closed path.
+Paths are a bit tricky. Technically they are collections of points with an
+additional flag. A path might be either **open** (meaning there is no a
+connection between the first and the last points) and **closed** (meaning there
+is). Square brackets `[]` indicate an open path, while parentheses `()` indicate
+a closed path.
 
 That extra flag slightly complicates Clojure representation. A path is no longer
 a vector of points but a map with the `:points` and `:closed?` flag. When the
-flat is not set, the path is considered as **closed**.
+flag is not set, the path is considered as **closed**.
 
 Prepare a table:
 
@@ -238,12 +239,12 @@ Prepare a table:
 (pg/query conn "create temp table test7 (id int, p path)")
 ~~~
 
-Insertion:
+Passing multiple paths in various forms:
 
 ~~~clojure
 (pg/execute conn
             "insert into test7 (id, p) values ($1, $2), ($3, $4), ($5, $6), ($7, $8), ($9, $10)"
-            {:params [1 [[1 -2] [3 4]]                  ;; a vector form, closed
+            {:params [1 [[1 -2] {:x 3 :y 4}]            ;; a vector of points, closed
                       2 {:closed? true                  ;; a map form, closed
                          :points [[1 2] {:x 3 :y 4}]}
                       3 {:closed? false                 ;; a map form, open
