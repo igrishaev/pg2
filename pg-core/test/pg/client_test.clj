@@ -1,6 +1,7 @@
 (ns pg.client-test
   (:import
    java.io.ByteArrayOutputStream
+   java.io.ByteArrayInputStream
    java.io.File
    java.io.InputStream
    java.io.OutputStream
@@ -4069,6 +4070,53 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
               {:id 6, :b [{:y 3.0, :x 8.0} {:y -5.0, :x 5.0}]}
               {:id 7, :b [{:y 2.0, :x 1.0} {:y 4.0, :x 3.0}]}]
              res)))))
+
+
+(deftest test-client-error-sql-query
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (try
+      (pg/query conn "select +++ from ABC")
+      (is false)
+      (catch PGErrorResponse e
+        (is (= 1 (ex-message e)))))))
+
+
+(deftest test-client-error-sql-execute
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (try
+      (pg/query conn "select +++ from ABC")
+      (is false)
+      (catch PGErrorResponse e
+        (is (= 1 (ex-message e)))))))
+
+
+(deftest test-client-error-sql-prepare
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (try
+      (pg/prepare conn "select +++ from ABC")
+      (is false)
+      (catch PGErrorResponse e
+        (is (= 1 (ex-message e)))))))
+
+
+(deftest test-client-error-sql-copy-out
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (try
+      (with-open [out (new ByteArrayOutputStream)]
+        (pg/copy-out conn "copy +++ from ABC" out))
+      (is false)
+      (catch PGErrorResponse e
+        (is (= 1 (ex-message e)))))))
+
+
+(deftest test-client-error-sql-copy-in
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (try
+      (with-open [in (new ByteArrayInputStream (byte-array 0))]
+        (pg/copy-in conn "copy +++ from ABC" in))
+      (is false)
+      (catch PGErrorResponse e
+        (is (= 1 (ex-message e)))))))
 
 
 #_
