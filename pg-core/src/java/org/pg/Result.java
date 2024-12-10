@@ -77,6 +77,7 @@ public final class Result {
     private Node current;
     private Throwable exception;
     public ScramSha256.Pipeline scramPipeline;
+    private String sql;
 
     public static String[] unifyKeys (final String[] oldKeys) {
         final Map<String, Integer> map = new HashMap<>();
@@ -98,7 +99,12 @@ public final class Result {
     }
 
     public Result(final ExecuteParams executeParams) {
+        this(executeParams, null);
+    }
+
+    public Result(final ExecuteParams executeParams, final String sql) {
         this.executeParams = executeParams;
+        this.sql = sql;
         nodes = new ArrayList<>(2);
         addNode();
     }
@@ -197,7 +203,7 @@ public final class Result {
                 throw new PGError(exception, "Unhandled exception: %s", exception.getMessage());
             }
             else {
-                throw new PGErrorResponse(errorResponse);
+                throw new PGErrorResponse(errorResponse, sql);
             }
         }
     }

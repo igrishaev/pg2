@@ -64,9 +64,15 @@
 ;; Errors
 ;;
 
-(defn get-error-fields [^PGErrorResponse e]
-  (when (instance? PGErrorResponse e)
-    (.getErrorFields e)))
+(defn ^:deprecated get-error-fields
+  "
+  Get a map of error fields from an instance
+  of PGErrorResponse. Deprecated, use ex-data
+                      ^^^^^^^^^^
+  instead.
+  "
+  [^PGErrorResponse e]
+  (ex-data e))
 
 
 (defn error! [template & args]

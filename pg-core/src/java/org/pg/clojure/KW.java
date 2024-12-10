@@ -4,6 +4,7 @@ import clojure.lang.Keyword;
 
 public final class KW {
 
+    public final static Keyword query = Keyword.intern("query");
     public final static Keyword inserted = Keyword.intern("inserted");
     public final static Keyword updated = Keyword.intern("updated");
     public final static Keyword deleted = Keyword.intern("deleted");

@@ -4078,7 +4078,8 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (pg/query conn "select +++ from ABC")
       (is false)
       (catch PGErrorResponse e
-        (is (= 1 (ex-message e)))))))
+        (is (= 1 (ex-message e)))
+        (is (= 1 (ex-data e)))))))
 
 
 (deftest test-client-error-sql-execute

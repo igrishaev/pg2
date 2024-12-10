@@ -282,7 +282,7 @@ public final class Connection implements AutoCloseable {
 
     private void _authenticate () {
         sendStartupMessage();
-        interact(true);
+        interactStartup();
     }
 
     private boolean readSSLResponse () {
@@ -544,7 +544,7 @@ public final class Connection implements AutoCloseable {
     public Object query(final String sql, final ExecuteParams executeParams) {
         try (TryLock ignored = lock.get()) {
             sendQuery(sql);
-            return interact(executeParams).getResult();
+            return interact(executeParams, sql).getResult();
         }
     }
 
@@ -570,7 +570,7 @@ public final class Connection implements AutoCloseable {
         sendDescribeStatement(statement);
         sendSync();
         sendFlush();
-        final Result res = interact();
+        final Result res = interact(sql);
         final ParameterDescription paramDesc = res.getParameterDescription();
         final RowDescription rowDescription = res.getRowDescription();
         return new PreparedStatement(parse, paramDesc, rowDescription);
@@ -648,6 +648,7 @@ public final class Connection implements AutoCloseable {
             final PreparedStatement stmt,
             final ExecuteParams executeParams
     ) {
+        final String sql = stmt.parse().query();
         try (TryLock ignored = lock.get()) {
             final String portal = generatePortal();
             sendBind(portal, stmt, executeParams);
@@ -656,7 +657,7 @@ public final class Connection implements AutoCloseable {
             sendClosePortal(portal);
             sendSync();
             sendFlush();
-            return interact(executeParams).getResult();
+            return interact(executeParams, sql).getResult();
         }
     }
 
@@ -680,7 +681,7 @@ public final class Connection implements AutoCloseable {
             sendCloseStatement(stmt);
             sendSync();
             sendFlush();
-            return interact(executeParams).getResult();
+            return interact(executeParams, sql).getResult();
         }
     }
 
@@ -705,21 +706,22 @@ public final class Connection implements AutoCloseable {
     }
 
     public void closeStatement (final String statement) {
+        final String sql = String.format("--closing statement %s", statement);
         try (TryLock ignored = lock.get()) {
             sendCloseStatement(statement);
             sendSync();
             sendFlush();
-            interact();
+            interact(sql);
         }
     }
 
-    private Result interact (final ExecuteParams executeParams) {
-        return interact(executeParams, false);
+    private Result interact (final ExecuteParams executeParams, final String sql) {
+        return interact(executeParams, false, sql);
     }
 
-    private Result interact (final ExecuteParams executeParams, final boolean isAuth) {
+    private Result interact (final ExecuteParams executeParams, final boolean isAuth, final String sql) {
         flush();
-        final Result res = new Result(executeParams);
+        final Result res = new Result(executeParams, sql);
         while (true) {
             final IServerMessage msg = readMessage(res.hasException());
             if (Debug.isON) {
@@ -734,12 +736,12 @@ public final class Connection implements AutoCloseable {
         return res;
     }
 
-    private Result interact (final boolean isAuth) {
-        return interact(ExecuteParams.INSTANCE, isAuth);
+    private void interactStartup () {
+        interact(ExecuteParams.INSTANCE, true, null);
     }
 
-    private Result interact () {
-        return interact(ExecuteParams.INSTANCE, false);
+    private Result interact (final String sql) {
+        return interact(ExecuteParams.INSTANCE, false, sql);
     }
 
     private static void noop () {}
@@ -1098,7 +1100,7 @@ public final class Connection implements AutoCloseable {
     public Object copy (final String sql, final ExecuteParams executeParams) {
         try (TryLock ignored = lock.get()) {
             sendQuery(sql);
-            final Result res = interact(executeParams);
+            final Result res = interact(executeParams, sql);
             return res.getResult();
         }
     }
@@ -1214,23 +1216,25 @@ public final class Connection implements AutoCloseable {
         }
         try (TryLock ignored = lock.get()) {
             sendQuery(query);
-            interact();
+            interact(query);
         }
     }
 
     @SuppressWarnings("unused")
     public void commit () {
+        final String sql = "COMMIT";
         try (TryLock ignored = lock.get()) {
-            sendQuery("COMMIT");
-            interact();
+            sendQuery(sql);
+            interact(sql);
         }
     }
 
     @SuppressWarnings("unused")
     public void rollback () {
+        final String sql = "ROLLBACK";
         try (TryLock ignored = lock.get()) {
             sendQuery("ROLLBACK");
-            interact();
+            interact(sql);
         }
     }
 
@@ -1257,17 +1261,19 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public void setTxLevel (final TxLevel level) {
+        final String sql = SQLTool.SQLSetTxLevel(level);
         try (TryLock ignored = lock.get()) {
-            sendQuery(SQLTool.SQLSetTxLevel(level));
-            interact();
+            sendQuery(sql);
+            interact(sql);
         }
     }
 
     @SuppressWarnings("unused")
     public void setTxReadOnly () {
+        final String sql = SQLTool.SQLSetTxReadOnly;
         try (TryLock ignored = lock.get()) {
-            sendQuery(SQLTool.SQLSetTxReadOnly);
-            interact();
+            sendQuery(sql);
+            interact(sql);
         }
     }
 
