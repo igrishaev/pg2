@@ -925,12 +925,15 @@ from
         42)
       (is false)
       (catch PGErrorResponse e
-        (let [fields
-              (pg/get-error-fields e)]
+        (is (-> e
+                ex-message
+                (str/ends-with? ", sql: <unknown>")))
+        (let [fields (pg/get-error-fields e)]
           (is (= {:verbosity "FATAL"
                   :severity "FATAL"
                   :code "42704"
-                  :message "unrecognized configuration parameter \"pg_foobar\""}
+                  :message "unrecognized configuration parameter \"pg_foobar\""
+                  :sql nil}
                  (dissoc fields
                          :file
                          :line
@@ -4078,8 +4081,36 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (pg/query conn "select +++ from ABC")
       (is false)
       (catch PGErrorResponse e
-        (is (= 1 (ex-message e)))
-        (is (= 1 (ex-data e)))))))
+        (is (-> e
+                ex-message
+                (str/ends-with? ", sql: select +++ from ABC")))
+        (is (= {:sql "select +++ from ABC",
+                :verbosity "ERROR",
+                :severity "ERROR",
+                :code "42601",
+                :message "syntax error at or near \"from\""}
+               (-> e
+                   ex-data
+                   (select-keys [:sql
+                                 :verbosity
+                                 :severity
+                                 :code
+                                 :message]))))))
+    (try
+      (pg/query conn "select ... from XYZ")
+      (is false)
+      (catch PGErrorResponse e
+        (is (-> e
+                ex-message
+                (str/ends-with? ", sql: select ... from XYZ")))))
+
+    (try
+      (pg/query conn "SELECT ... FROM XYZ SOME LONG QUERY SELECT ... FROM XYZ SOME LONG QUERY SELECT ... FROM XYZ SOME LONG QUERY SELECT ... FROM XYZ SOME LONG QUERY SELECT ... FROM XYZ SOME LONG QUERY SELECT ... FROM XYZ SOME LONG QUERY SELECT ... FROM XYZ SOME LONG QUERY")
+      (is false)
+      (catch PGErrorResponse e
+        (is (-> e
+                ex-message
+                (str/ends-with? "SELECT ... FROM XYZ ...")))))))
 
 
 (deftest test-client-error-sql-execute
@@ -4088,7 +4119,9 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (pg/query conn "select +++ from ABC")
       (is false)
       (catch PGErrorResponse e
-        (is (= 1 (ex-message e)))))))
+        (is (-> e
+                ex-message
+                (str/ends-with? ", sql: select +++ from ABC")))))))
 
 
 (deftest test-client-error-sql-prepare
@@ -4097,27 +4130,33 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (pg/prepare conn "select +++ from ABC")
       (is false)
       (catch PGErrorResponse e
-        (is (= 1 (ex-message e)))))))
+        (is (-> e
+                ex-message
+                (str/ends-with? ", sql: select +++ from ABC")))))))
 
 
 (deftest test-client-error-sql-copy-out
   (pg/with-connection [conn *CONFIG-TXT*]
     (try
       (with-open [out (new ByteArrayOutputStream)]
-        (pg/copy-out conn "copy +++ from ABC" out))
+        (pg/copy-out conn "COPY +++ from ABC" out))
       (is false)
       (catch PGErrorResponse e
-        (is (= 1 (ex-message e)))))))
+        (is (-> e
+                ex-message
+                (str/ends-with? ", sql: COPY +++ from ABC")))))))
 
 
 (deftest test-client-error-sql-copy-in
   (pg/with-connection [conn *CONFIG-TXT*]
     (try
       (with-open [in (new ByteArrayInputStream (byte-array 0))]
-        (pg/copy-in conn "copy +++ from ABC" in))
+        (pg/copy-in conn "COPY +++ from ABC" in))
       (is false)
       (catch PGErrorResponse e
-        (is (= 1 (ex-message e)))))))
+        (is (-> e
+                ex-message
+                (str/ends-with? ", sql: COPY +++ from ABC")))))))
 
 
 #_

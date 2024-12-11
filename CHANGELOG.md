@@ -1,7 +1,8 @@
 
 ## 0.1.23-SNAPSHOT
 
-- ?
+- show SQL expression in PGErrorResponse (if possible)
+- make PGErrorResponse compatible with ex-data
 
 ## 0.1.22
 

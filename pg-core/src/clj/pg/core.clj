@@ -66,9 +66,8 @@
 
 (defn ^:deprecated get-error-fields
   "
-  Get a map of error fields from an instance
-  of PGErrorResponse. Deprecated, use ex-data
-                      ^^^^^^^^^^
+  Get a map of error fields from an instance of
+  `PGErrorResponse`. **Deprecated**, use `ex-data`
   instead.
   "
   [^PGErrorResponse e]

@@ -78,7 +78,7 @@ tests][tests].
 - Notify/Listen
 - Notices
 - Logging
-- Errors and Exceptions
+- [Errors and Exceptions](/docs/errors.md)
 - Component Integration
 - Ring middleware
 - Debugging
