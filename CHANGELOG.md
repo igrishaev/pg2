@@ -1,5 +1,9 @@
 
-## 0.1.23-SNAPSHOT
+## 0.1.24-SNAPSHOT
+
+- ?
+
+## 0.1.23
 
 - show SQL expression in PGErrorResponse (if possible)
 - make PGErrorResponse compatible with ex-data
