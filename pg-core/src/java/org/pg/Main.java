@@ -9,19 +9,21 @@ public final class Main {
 
         // String user = System.getenv("USER");
 
+        String user = "test";
+
 //        Config config = Config.builder(user, user)
 //                .port(15432)
-//                .host("127.0.0.1")
+//                .host("localhost")
 //                .password(user)
-//                .binaryEncode(true)
-//                .binaryDecode(true)
+//                // .binaryEncode(true)
+//                // .binaryDecode(true)
 //                .build();
 
         Config config = Config.builder("test_owner", "test")
                 .port(5432)
                 .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
                 .password("")
-                .useSSL(true)
+                // .useSSL(true)
                 .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
@@ -127,8 +129,6 @@ public final class Main {
 //
 //        Object res7 = conn.execute("select '[1, 2, 3, {\"foo/bar\": true}]'::jsonb");
 //        System.out.println(res7);
-
-
 
         // System.out.println(SourceType.STATEMENT.getCode());
     }

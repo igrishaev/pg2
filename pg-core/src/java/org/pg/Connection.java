@@ -16,6 +16,10 @@ import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -39,14 +43,15 @@ public final class Connection implements AutoCloseable {
     private int pid;
     private int secretKey;
     private TXStatus txStatus;
-    private Socket socket;
-    private InputStream inStream;
-    private OutputStream outStream;
+    // private Socket socket;
+    // private InputStream inStream;
+    // private OutputStream outStream;
     private final Map<String, String> params;
     private CodecParams codecParams;
     private boolean isSSL = false;
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
+    private SocketChannel channel;
 
     @Override
     public boolean equals (Object other) {
@@ -69,8 +74,8 @@ public final class Connection implements AutoCloseable {
     public static Connection connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
         conn._connect();
-        conn._setSocketOptions();
-        conn._preSSLStage();
+//        conn._setSocketOptions();
+//        conn._preSSLStage();
         if (sendStartup) {
             conn._authenticate();
             conn._initTypeMapping();
@@ -102,7 +107,12 @@ public final class Connection implements AutoCloseable {
             if (!isClosed) {
                 sendTerminate();
                 flush();
-                IOTool.close(socket);
+                // IOTool.close(socket);
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 isClosed = true;
             }
         }
@@ -156,16 +166,16 @@ public final class Connection implements AutoCloseable {
     }
 
     private void _setSocketOptions () {
-        try {
-            socket.setTcpNoDelay(config.SOTCPnoDelay());
-            socket.setSoTimeout(config.SOTimeout());
-            socket.setKeepAlive(config.SOKeepAlive());
-            socket.setReceiveBufferSize(config.SOReceiveBufSize());
-            socket.setSendBufferSize(config.SOSendBufSize());
-        }
-        catch (IOException e) {
-            throw new PGError(e, "couldn't set socket options");
-        }
+//        try {
+//            socket.setTcpNoDelay(config.SOTCPnoDelay());
+//            socket.setSoTimeout(config.SOTimeout());
+//            socket.setKeepAlive(config.SOKeepAlive());
+//            socket.setReceiveBufferSize(config.SOReceiveBufSize());
+//            socket.setSendBufferSize(config.SOSendBufSize());
+//        }
+//        catch (IOException e) {
+//            throw new PGError(e, "couldn't set socket options");
+//        }
     }
 
     private int nextInt () {
@@ -286,7 +296,18 @@ public final class Connection implements AutoCloseable {
     }
 
     private boolean readSSLResponse () {
-        final char c = (char) IOTool.read(inStream);
+//        return false;
+        final ByteBuffer bb = ByteBuffer.allocate(1);
+        while (bb.remaining() > 0) {
+            try {
+                channel.read(bb);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        bb.rewind();
+        final char c = (char) bb.get();
+        // final char c = (char) IOTool.read(inStream);
         return switch (c) {
             case 'N' -> false;
             case 'S' -> true;
@@ -313,29 +334,31 @@ public final class Connection implements AutoCloseable {
     private void upgradeToSSL () throws NoSuchAlgorithmException, IOException {
         final SSLContext sslContext = getSSLContext();
         final SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(
-                socket,
+                channel.socket(),
                 config.host(),
                 config.port(),
                 true
         );
 
-        final InputStream sslInStream = new BufferedInputStream(
-                IOTool.getInputStream(sslSocket),
-                config.inStreamBufSize()
-        );
+//        final InputStream sslInStream = new BufferedInputStream(
+//                IOTool.getInputStream(sslSocket),
+//                config.inStreamBufSize()
+//        );
 
-        final OutputStream sslOutStream = new BufferedOutputStream(
-                IOTool.getOutputStream(sslSocket),
-                config.outStreamBufSize()
-        );
+//        final OutputStream sslOutStream = new BufferedOutputStream(
+//                IOTool.getOutputStream(sslSocket),
+//                config.outStreamBufSize()
+//        );
 
         sslSocket.setUseClientMode(true);
         sslSocket.setEnabledProtocols(SSLProtocols);
         sslSocket.startHandshake();
 
-        socket = sslSocket;
-        inStream = sslInStream;
-        outStream = sslOutStream;
+        channel = sslSocket.getChannel();
+
+//        socket = sslSocket;
+//        inStream = sslInStream;
+//        outStream = sslOutStream;
         isSSL = true;
     }
 
@@ -372,17 +395,28 @@ public final class Connection implements AutoCloseable {
     }
 
     private void _connect_unlocked () {
+        // UnixDomainSocketAddress.of("aaaaa");
         final int port = getPort();
         final String host = getHost();
-        socket = IOTool.socket(host, port);
-        inStream = new BufferedInputStream(
-                IOTool.getInputStream(socket),
-                config.inStreamBufSize()
-        );
-        outStream = new BufferedOutputStream(
-                IOTool.getOutputStream(socket),
-                config.outStreamBufSize()
-        );
+
+        final SocketAddress address = new InetSocketAddress(host, port);
+        try {
+            channel = SocketChannel.open(address);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        System.out.println("aaa");
+
+//        socket = IOTool.socket(host, port);
+//        inStream = new BufferedInputStream(
+//                IOTool.getInputStream(socket),
+//                config.inStreamBufSize()
+//        );
+//        outStream = new BufferedOutputStream(
+//                IOTool.getOutputStream(socket),
+//                config.outStreamBufSize()
+//        );
     }
 
     // Send bytes into the output stream. Do not flush the buffer,
@@ -391,12 +425,22 @@ public final class Connection implements AutoCloseable {
         if (Debug.isON) {
             Debug.debug(" <- sendBytes: %s", Arrays.toString(buf));
         }
-        IOTool.write(outStream, buf);
+        final ByteBuffer bb = ByteBuffer.wrap(buf);
+        while (bb.remaining() > 0) {
+            try {
+                channel.write(bb);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // IOTool.write(outStream, buf);
     }
 
     // Like sendBytes above but taking boundaries into account.
     private void sendBytes (final byte[] buf, final int len) {
-        IOTool.write(outStream, buf, 0, len);
+        // IOTool.write(outStream, buf, 0, len);
+        // final ByteBuffer bb = ByteBuffer.wrap(buf);
+        // channel.
     }
 
     private void sendBytesCopy(final byte[] bytes) {
@@ -411,8 +455,16 @@ public final class Connection implements AutoCloseable {
         if (Debug.isON) {
             Debug.debug(" <- %s", msg);
         }
-        final ByteBuffer buf = msg.encode(codecParams.clientCharset());
-        IOTool.write(outStream, buf.array());
+        final ByteBuffer bb = msg.encode(codecParams.clientCharset());
+        bb.rewind();
+        while (bb.remaining() > 0) {
+            try {
+                channel.write(bb);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // IOTool.write(outStream, buf.array());
     }
 
     private String generateStatement () {
@@ -474,8 +526,19 @@ public final class Connection implements AutoCloseable {
 
     private IServerMessage readMessage (final boolean skipMode) {
 
-        final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
-        final ByteBuffer bbHeader = ByteBuffer.wrap(bufHeader);
+        final ByteBuffer bbHeader = ByteBuffer.allocate(5);
+
+        while (bbHeader.remaining() > 0) {
+            try {
+                channel.read(bbHeader);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        // final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
+
+        bbHeader.rewind();
 
         final char tag = (char) bbHeader.get();
         final int bodySize = bbHeader.getInt() - 4;
@@ -486,13 +549,31 @@ public final class Connection implements AutoCloseable {
         // just skip it.
         if (skipMode) {
             if (tag == 'D' || tag == 'd') {
-                IOTool.skip(inStream, bodySize);
+                final ByteBuffer bb = ByteBuffer.allocate(bodySize);
+                while (bb.remaining() > 0) {
+                    try {
+                        channel.read(bb);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                // IOTool.skip(inStream, bodySize);
                 return SkippedMessage.INSTANCE;
             }
         }
 
-        byte[] bufBody = IOTool.readNBytes(inStream, bodySize);
-        ByteBuffer bbBody = ByteBuffer.wrap(bufBody);
+        final ByteBuffer bbBody = ByteBuffer.allocate(bodySize);
+
+        while (bbBody.remaining() > 0) {
+            try {
+                channel.read(bbBody);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        bbBody.rewind();
 
         return switch (tag) {
             case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
@@ -636,7 +717,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void flush () {
-        IOTool.flush(outStream);
+        // IOTool.flush(outStream);
     }
 
     @SuppressWarnings("unused")
@@ -832,22 +913,23 @@ public final class Connection implements AutoCloseable {
 
     // stolen from jorsol/pgjdbc, file ScramAuthenticator.java
     private byte[] getChannelBindingData() {
-        if (socket instanceof SSLSocket sslSocket) {
-            final Certificate peerCert = SSLTool.getPeerCertificate(sslSocket);
-            if (peerCert instanceof X509Certificate cert) {
-                final String sigAlgName = cert.getSigAlgName();
-                final MessageDigest digest = getDigestAlgorithm(sigAlgName);
-                try {
-                    return digest.digest(cert.getEncoded());
-                } catch (CertificateEncodingException e) {
-                    throw new PGError("cannot get encoded payload of certificate: %s", cert);
-                }
-            } else {
-                throw new PGError("certificate %s is not X509Certificate: %s", peerCert);
-            }
-        } else {
-            throw new PGError("cannot get channel binding data because connection is not SSL");
-        }
+//        if (socket instanceof SSLSocket sslSocket) {
+//            final Certificate peerCert = SSLTool.getPeerCertificate(sslSocket);
+//            if (peerCert instanceof X509Certificate cert) {
+//                final String sigAlgName = cert.getSigAlgName();
+//                final MessageDigest digest = getDigestAlgorithm(sigAlgName);
+//                try {
+//                    return digest.digest(cert.getEncoded());
+//                } catch (CertificateEncodingException e) {
+//                    throw new PGError("cannot get encoded payload of certificate: %s", cert);
+//                }
+//            } else {
+//                throw new PGError("certificate %s is not X509Certificate: %s", peerCert);
+//            }
+//        } else {
+//            throw new PGError("cannot get channel binding data because connection is not SSL");
+//        }
+        return new byte[32];
     }
 
     private void handleAuthenticationSASL (final AuthenticationSASL msg, final Result res) {
