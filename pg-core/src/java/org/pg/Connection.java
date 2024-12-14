@@ -17,9 +17,7 @@ import tlschannel.ClientTlsChannel;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
-import java.net.SocketAddress;
-import java.net.UnixDomainSocketAddress;
-import java.net.InetSocketAddress;
+import java.net.*;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
 import java.security.KeyManagementException;
@@ -33,7 +31,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.*;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 
 public final class Connection implements AutoCloseable {
@@ -424,7 +421,14 @@ public final class Connection implements AutoCloseable {
         final int port = getPort();
         final String host = getHost();
 
-        final SocketAddress address = new InetSocketAddress(host, port);
+//        final SocketAddress address = new InetSocketAddress(host, port);
+//        try {
+//            channel = SocketChannel.open(address);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+
+        final SocketAddress address = UnixDomainSocketAddress.of("/private/tmp/.s.PGSQL.15432");
         try {
             channel = SocketChannel.open(address);
         } catch (IOException e) {
