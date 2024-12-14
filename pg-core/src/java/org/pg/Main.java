@@ -1,5 +1,10 @@
 package org.pg;
 
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
+import java.nio.channels.SocketChannel;
+
 public final class Main {
 
     public static void main (final String[] args) {
@@ -8,6 +13,16 @@ public final class Main {
 //        System.out.println((short) l);
 
         // String user = System.getenv("USER");
+
+//        SocketAddress addr = UnixDomainSocketAddress.of("/private/tmp/.s.PGSQL.15432");
+//        SocketChannel sc = null;
+//        try {
+//            sc = SocketChannel.open(addr);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+
+        // System.out.println(sc.socket());
 
         String user = "test";
 

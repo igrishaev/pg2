@@ -13,7 +13,8 @@
   :dependencies
   [[org.clojure/clojure]
    [metosin/jsonista]
-   [less-awful-ssl]]
+   [less-awful-ssl]
+   [com.github.marianobarrios/tls-channel]]
 
   :pom-addition
   [:properties
