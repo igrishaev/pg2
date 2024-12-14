@@ -75,7 +75,7 @@ public final class Connection implements AutoCloseable {
         final Connection conn = new Connection(config);
         conn._connect();
 //        conn._setSocketOptions();
-//        conn._preSSLStage();
+        conn._preSSLStage();
         if (sendStartup) {
             conn._authenticate();
             conn._initTypeMapping();
