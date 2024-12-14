@@ -13,12 +13,14 @@ import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.processor.IProcessor;
 import org.pg.util.*;
+import tlschannel.ClientTlsChannel;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.InetSocketAddress;
+import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.io.*;
@@ -51,7 +53,7 @@ public final class Connection implements AutoCloseable {
     private boolean isSSL = false;
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
-    private SocketChannel channel;
+    private ByteChannel channel;
 
     @Override
     public boolean equals (Object other) {
@@ -333,12 +335,17 @@ public final class Connection implements AutoCloseable {
 
     private void upgradeToSSL () throws NoSuchAlgorithmException, IOException {
         final SSLContext sslContext = getSSLContext();
-        final SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(
-                channel.socket(),
-                config.host(),
-                config.port(),
-                true
-        );
+
+        final ClientTlsChannel ch = ClientTlsChannel.newBuilder(channel, sslContext).build();
+        ch.handshake();
+        channel = ch;
+
+//        final SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(
+//                channel.socket(),
+//                config.host(),
+//                config.port(),
+//                true
+//        );
 
 //        final InputStream sslInStream = new BufferedInputStream(
 //                IOTool.getInputStream(sslSocket),
@@ -350,11 +357,11 @@ public final class Connection implements AutoCloseable {
 //                config.outStreamBufSize()
 //        );
 
-        sslSocket.setUseClientMode(true);
-        sslSocket.setEnabledProtocols(SSLProtocols);
-        sslSocket.startHandshake();
-
-        channel = sslSocket.getChannel();
+//        sslSocket.setUseClientMode(true);
+//        sslSocket.setEnabledProtocols(SSLProtocols);
+//        sslSocket.startHandshake();
+//
+//        channel = sslSocket.getChannel();
 
 //        socket = sslSocket;
 //        inStream = sslInStream;

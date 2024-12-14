@@ -64,6 +64,7 @@
    [cheshire "5.13.0"]
    [ring/ring-json "0.5.1"]
    [ring/ring-core "1.12.1"]
+   [com.github.marianobarrios/tls-channel "0.9.1"]
    [ring/ring-jetty-adapter "1.12.1"]]
 
   :profiles
