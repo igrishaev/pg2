@@ -38,6 +38,8 @@ public final class Main {
                 .port(5432)
                 .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
                 .password("")
+                // .pgParam("endpoint", "ep-fancy-queen-a2kw7zqr")
+                .pgParam("options", "endpoint=ep-fancy-queen-a2kw7zqr")
                 .useSSL(true)
                 .build();
 
