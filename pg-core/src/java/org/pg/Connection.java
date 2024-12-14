@@ -22,6 +22,7 @@ import java.net.UnixDomainSocketAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
+import java.security.KeyManagementException;
 import java.security.MessageDigest;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -336,8 +337,25 @@ public final class Connection implements AutoCloseable {
     private void upgradeToSSL () throws NoSuchAlgorithmException, IOException {
         final SSLContext sslContext = getSSLContext();
 
-        final ClientTlsChannel ch = ClientTlsChannel.newBuilder(channel, sslContext).build();
-        ch.handshake();
+//        "TLSv1.2",
+//                "TLSv1.1",
+//                "TLSv1"
+
+        SSLContext c = SSLContext.getInstance("TLSv1.2");
+        try {
+            c.init(null, null, null);
+        } catch (KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
+
+        // System.out.println(SSLContext.getDefault().getProtocol());
+
+        // final ClientTlsChannel ch = ClientTlsChannel.newBuilder(channel, sslContext).build();
+        final ClientTlsChannel ch = ClientTlsChannel.newBuilder(
+                channel,
+                sslContext
+                ).build();
+        // ch.handshake();
         channel = ch;
 
 //        final SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(
