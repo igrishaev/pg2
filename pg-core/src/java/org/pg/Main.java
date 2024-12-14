@@ -23,7 +23,7 @@ public final class Main {
                 .port(5432)
                 .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
                 .password("")
-                // .useSSL(true)
+                .useSSL(true)
                 .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
