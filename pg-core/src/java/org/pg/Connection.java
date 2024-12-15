@@ -417,25 +417,34 @@ public final class Connection implements AutoCloseable {
     }
 
     private void _connect_unlocked () {
-        // UnixDomainSocketAddress.of("aaaaa");
+
         final int port = getPort();
         final String host = getHost();
 
-//        final SocketAddress address = new InetSocketAddress(host, port);
+        final SocketAddress address = new InetSocketAddress(host, port);
+        try {
+            SocketChannel sc = SocketChannel.open(address);
+            sc.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+
+            sc.setOption(StandardSocketOptions.TCP_NODELAY, config.SOTCPnoDelay());
+            sc.setOption(StandardSocketOptions.SO_KEEPALIVE, config.SOKeepAlive());
+            sc.setOption(StandardSocketOptions.SO_RCVBUF, config.SOReceiveBufSize());
+            sc.setOption(StandardSocketOptions.SO_SNDBUF, config.SOSendBufSize());
+
+//
+//            socket.setSoTimeout(config.SOTimeout());
+
+            channel = sc;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+//        final SocketAddress address = UnixDomainSocketAddress.of("/private/tmp/.s.PGSQL.15432");
 //        try {
 //            channel = SocketChannel.open(address);
 //        } catch (IOException e) {
 //            throw new RuntimeException(e);
 //        }
-
-        final SocketAddress address = UnixDomainSocketAddress.of("/private/tmp/.s.PGSQL.15432");
-        try {
-            channel = SocketChannel.open(address);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        System.out.println("aaa");
 
 //        socket = IOTool.socket(host, port);
 //        inStream = new BufferedInputStream(
