@@ -335,6 +335,8 @@
            result))))
 
 
+;; todo: nested snippet
+;; todo: remove dynamic var
 (deftest test-aaa
   (let [result
         (snip-query-sqlvec {:select (select-snip {:foo 1 :bar "bar"})

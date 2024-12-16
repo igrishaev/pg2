@@ -27,7 +27,7 @@
   "
   [f]
   (fn [& args]
-    (binding [*$* *$*]
+    (binding [*$* 0]
       (apply f args))))
 
 
@@ -40,13 +40,34 @@
 
   p/SQLVecParam
   (sqlvec-param [param data options]
-    #bogus 1
+
+    ;; #bogus 1
+    #_
     (println param
              data
              options
              (get-in data (p/deep-get-vec (:name param)))
              )
-    (get-in data (p/deep-get-vec (:name param))))
+
+    (let [node
+          (get-in data (p/deep-get-vec (:name param)))]
+
+      (set! *$* (-> node count dec))
+
+      (get-in data (p/deep-get-vec (:name param)))))
+
+  #_
+  p/SQLVecParamList
+  #_
+  (sqlvec-param-list [param data options]
+
+    #_
+    (reduce
+     #(apply vector
+             (string/join " " [(first %1) (first %2)])
+             (concat (rest %1) (rest %2)))
+     (get-in data (deep-get-vec (:name param))))
+    )
 
   p/ValueParam
 
