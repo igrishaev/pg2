@@ -31,3 +31,12 @@ insert into :i:table (id, title) values :t*:rows returning *;
 
 -- :name select-identifiers-list :? :*
 select :i*:fields from :i:table order by :i:order-by;
+
+
+-- :snip select-snip
+select :foo, :bar
+
+-- :name snip-query :? :*
+:snip:select
+where foo = :title
+    and email = :email

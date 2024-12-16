@@ -334,4 +334,16 @@
     (is (= ["insert into table (title) values ($1);" "hello"]
            result))))
 
-;; docs
+
+(deftest test-aaa
+  (let [result
+        (snip-query-sqlvec {:select (select-snip {:foo 1 :bar "bar"})
+                            :title "abc"
+                            :email "test@test.com"
+                            })
+        ]
+    (is (= 1
+           result))
+    )
+
+  )

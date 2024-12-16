@@ -27,7 +27,7 @@
   "
   [f]
   (fn [& args]
-    (binding [*$* 0]
+    (binding [*$* *$*]
       (apply f args))))
 
 
@@ -37,6 +37,16 @@
 ;;
 
 (extend-type Object
+
+  p/SQLVecParam
+  (sqlvec-param [param data options]
+    #bogus 1
+    (println param
+             data
+             options
+             (get-in data (p/deep-get-vec (:name param)))
+             )
+    (get-in data (p/deep-get-vec (:name param))))
 
   p/ValueParam
 
