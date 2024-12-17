@@ -13,6 +13,18 @@
 (def ^:const $PARAM (str "$" PARAM))
 (def ^:const PARAM_RE (re-pattern PARAM))
 
+(def ^:dynamic *$* 0)
+
+(defn wrap-$
+  [f]
+  (fn [& args]
+    (binding [*$* *$*]
+      (apply f args))))
+
+(defn $next []
+  (set! *$* (inc *$*))
+  (format "$%s" *$*))
+
 
 (defn remap-$-params
   [^String sql]
@@ -28,14 +40,18 @@
 
   p/ValueParam
   (value-param [param data options]
-    [$PARAM
+    [($next)
      (get-in data (deep-get-vec (:name param)))])
 
   p/ValueParamList
   (value-param-list [param data options]
     (let [coll (get-in data (deep-get-vec (:name param)))]
       (apply vector
-             (string/join "," (repeat (count coll) $PARAM))
+             (string/join ","
+                          (for [_ (range 0 (count coll))]
+                            ($next))
+                          #_
+                          (repeat (count coll) $PARAM))
              coll))))
 
 
@@ -48,8 +64,8 @@
     (let [[sql & params]
           sqlvec
 
-          sql-$
-          (remap-$-params sql)
+          ;; sql-$
+          ;; (remap-$-params sql)
 
           {opt :pg}
           options
@@ -60,7 +76,7 @@
               (assoc :params params))]
 
       (pg/on-connection [conn db]
-        (pg/execute conn sql-$ opt-full))))
+        (pg/execute conn sql opt-full))))
 
   (query [this db sqlvec options]
     (adapter/execute this db sqlvec options))
@@ -143,6 +159,7 @@
     (intern *ns*
             (with-meta sym meta-new)
             (-> fn-obj
+                wrap-$
                 wrap-signature))))
 
 
@@ -157,7 +174,9 @@
   (let [sym (-> fn-name name symbol)]
     (intern *ns* sym
             (-> fn-obj
-                wrap-$-params))))
+                wrap-$
+                ;; wrap-$-params
+                ))))
 
 
 (defn def-db-fns

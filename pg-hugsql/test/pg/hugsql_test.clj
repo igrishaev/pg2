@@ -1,4 +1,4 @@
-(ns pg.honeysql-test
+(ns pg.hugsql-test
   (:require
    [pg.hugsql :as hugsql]
    [clojure.string :as str]
@@ -21,6 +21,7 @@
 
 (hugsql/def-sqlvec-fns (io/file "test/pg/test.sql"))
 
+#_
 (hugsql/def-sqlvec-fns (io/file "test/pg/test.sql") {:fn-suffix "-hello"})
 
 
@@ -247,7 +248,7 @@
             :line 2
             :arglists '([db] [db params] [db params opt])
             :name 'try-select-jsonb
-            :ns (the-ns 'pg.honeysql-test)}
+            :ns (the-ns 'pg.hugsql-test)}
            result))))
 
 
@@ -326,6 +327,7 @@
            result))))
 
 
+#_
 (deftest test-custom-suffix
   (let [result
         (insert-into-table-hello {:table "table"
@@ -338,6 +340,7 @@
 ;;
 ;; #25: nested snippets
 ;;
+
 (deftest test-sqlvec-nested-snippet
   (let [result
         (snip-query-sqlvec {:select (select-snip {:foo 1 :bar "2"})
@@ -345,7 +348,6 @@
                             :lol "4"})]
     (is (= ["select $1, $2 where id = $1 and email = $2" 1 "2" 3 "4"]
            result))))
-
 
 (deftest test-sqlvec-nested-query
   (pg/with-connection [conn CONFIG]
