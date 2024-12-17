@@ -32,11 +32,22 @@ insert into :i:table (id, title) values :t*:rows returning *;
 -- :name select-identifiers-list :? :*
 select :i*:fields from :i:table order by :i:order-by;
 
-
 -- :snip select-snip
 select :foo, :bar
 
 -- :name snip-query :? :*
-:snip:select
-where foo = :title
-    and email = :email
+:snip:select where id = :kek and email = :lol
+
+-- :snip select-cols
+select :i*:cols
+
+-- :snip filter-by-id
+id = :id
+
+-- :snip filter-by-title
+title = :title
+
+-- :name select-with-snippets
+:snip:select from :i:table
+where :snip:filter-id and :snip:filter-title and id > :id
+order by :i:order-by;

@@ -335,17 +335,43 @@
            result))))
 
 
-;; todo: nested snippet
-;; todo: remove dynamic var
-(deftest test-aaa
+;;
+;; #25: nested snippets
+;;
+(deftest test-sqlvec-nested-snippet
   (let [result
-        (snip-query-sqlvec {:select (select-snip {:foo 1 :bar "bar"})
-                            :title "abc"
-                            :email "test@test.com"
-                            })
-        ]
-    (is (= 1
-           result))
-    )
+        (snip-query-sqlvec {:select (select-snip {:foo 1 :bar "2"})
+                            :kek 3
+                            :lol "4"})]
+    (is (= ["select $1, $2 where id = $1 and email = $2" 1 "2" 3 "4"]
+           result))))
 
-  )
+
+(deftest test-sqlvec-nested-query
+  (pg/with-connection [conn CONFIG]
+    (let [table
+          (str (gensym "tmp"))
+
+          _
+          (create-test-table conn
+                             {:table table})
+
+          _
+          (insert-into-table conn {:table table
+                                   :title "aaa"})
+
+          _
+          (insert-into-table conn {:table table
+                                   :title "bbb"})
+
+          result
+          (select-with-snippets conn
+                                {:select (select-cols {:cols ["id" "title"]})
+                                 :table table
+                                 :id -999
+                                 :filter-id (filter-by-id {:id 1})
+                                 :filter-title (filter-by-title {:title "aaa"})
+                                 :order-by "id"})]
+
+      (is (= [{:title "aaa", :id 1}]
+             result)))))

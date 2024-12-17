@@ -1,91 +1,42 @@
 (ns pg.hugsql
+  (:import
+   java.util.function.Function)
   (:require
-   [clojure.string :as str]
-   [pg.core :as pg]
+   [clojure.string :as string]
+   [hugsql.adapter :as adapter]
    [hugsql.core :as hugsql]
-   [hugsql.parameters :as p]
-   [hugsql.adapter :as adapter]))
+   [hugsql.parameters :as p :refer [deep-get-vec]]
+   [pg.core :as pg]))
 
 
-(def ^:dynamic *$*
-  "The current index of $1, ... $n placeholders."
-  0)
-
-(defn $next
-  "
-  Bump the index and produce a '$n' string.
-  "
-  []
-  (set! *$* (inc *$*))
-  (format "$%d" *$*))
+(def ^:const PARAM "__PaRaM__")
+(def ^:const $PARAM (str "$" PARAM))
+(def ^:const PARAM_RE (re-pattern PARAM))
 
 
-(defn $wrap
-  "
-  Wrap a function into the binding macro to make
-  the `$next` function work.
-  "
-  [f]
-  (fn [& args]
-    (binding [*$* 0]
-      (apply f args))))
+(defn remap-$-params
+  [^String sql]
+  (.replaceAll (re-matcher PARAM_RE sql)
+               (let [counter! (atom 0)]
+                 (reify Function
+                   (apply [this x]
+                     (swap! counter! inc)
+                     (str @counter!))))))
 
-
-;;
-;; Here and below: override JDBC "?" placeholder with
-;; native Postgres ones like $1, ... $n.
-;;
 
 (extend-type Object
 
-  p/SQLVecParam
-  (sqlvec-param [param data options]
-
-    ;; #bogus 1
-    #_
-    (println param
-             data
-             options
-             (get-in data (p/deep-get-vec (:name param)))
-             )
-
-    (let [node
-          (get-in data (p/deep-get-vec (:name param)))]
-
-      (set! *$* (-> node count dec))
-
-      (get-in data (p/deep-get-vec (:name param)))))
-
-  #_
-  p/SQLVecParamList
-  #_
-  (sqlvec-param-list [param data options]
-
-    #_
-    (reduce
-     #(apply vector
-             (string/join " " [(first %1) (first %2)])
-             (concat (rest %1) (rest %2)))
-     (get-in data (deep-get-vec (:name param))))
-    )
-
   p/ValueParam
-
   (value-param [param data options]
-    (let [value
-          (get-in data (p/deep-get-vec (:name param)))]
-      [($next) value]))
+    [$PARAM
+     (get-in data (deep-get-vec (:name param)))])
 
   p/ValueParamList
-
   (value-param-list [param data options]
-    (let [coll
-          (get-in data (p/deep-get-vec (:name param)))
-
-          placeholders
-          (str/join "," (for [_ coll] ($next)))]
-
-      (into [placeholders] coll))))
+    (let [coll (get-in data (deep-get-vec (:name param)))]
+      (apply vector
+             (string/join "," (repeat (count coll) $PARAM))
+             coll))))
 
 
 (deftype PG2Adapter [defaults]
@@ -97,6 +48,9 @@
     (let [[sql & params]
           sqlvec
 
+          sql-$
+          (remap-$-params sql)
+
           {opt :pg}
           options
 
@@ -106,7 +60,7 @@
               (assoc :params params))]
 
       (pg/on-connection [conn db]
-        (pg/execute conn sql opt-full))))
+        (pg/execute conn sql-$ opt-full))))
 
   (query [this db sqlvec options]
     (adapter/execute this db sqlvec options))
@@ -142,6 +96,16 @@
    (new PG2Adapter defaults)))
 
 
+(defn wrap-$-params
+  "
+  Post-correct the ? params into native $1/2/... ones.
+  "
+  [-f]
+  (fn [& args]
+    (let [sqlvec (apply -f args)]
+      (update sqlvec 0 remap-$-params))))
+
+
 (defn wrap-signature
   "
   Slightly correct the signature of a function
@@ -149,14 +113,14 @@
   parameters through a dedicated key to prevent
   merging them with something else.
   "
-  [f]
+  [-f]
   (fn
     ([db]
-     (f db))
+     (-f db))
     ([db params]
-     (f db params))
+     (-f db params))
     ([db params opt]
-     (f db params {:pg opt}))))
+     (-f db params {:pg opt}))))
 
 
 (defn intern-function
@@ -179,7 +143,6 @@
     (intern *ns*
             (with-meta sym meta-new)
             (-> fn-obj
-                $wrap
                 wrap-signature))))
 
 
@@ -192,7 +155,9 @@
    fn-meta
    fn-obj]
   (let [sym (-> fn-name name symbol)]
-    (intern *ns* sym ($wrap fn-obj))))
+    (intern *ns* sym
+            (-> fn-obj
+                wrap-$-params))))
 
 
 (defn def-db-fns
