@@ -13,18 +13,6 @@
 (def ^:const $PARAM (str "$" PARAM))
 (def ^:const PARAM_RE (re-pattern PARAM))
 
-(def ^:dynamic *$* 0)
-
-(defn wrap-$
-  [f]
-  (fn [& args]
-    (binding [*$* *$*]
-      (apply f args))))
-
-(defn $next []
-  (set! *$* (inc *$*))
-  (format "$%s" *$*))
-
 
 (defn remap-$-params
   [^String sql]
@@ -40,7 +28,7 @@
 
   p/ValueParam
   (value-param [param data options]
-    [($next)
+    [$PARAM
      (get-in data (deep-get-vec (:name param)))])
 
   p/ValueParamList
@@ -48,9 +36,6 @@
     (let [coll (get-in data (deep-get-vec (:name param)))]
       (apply vector
              (string/join ","
-                          (for [_ (range 0 (count coll))]
-                            ($next))
-                          #_
                           (repeat (count coll) $PARAM))
              coll))))
 
@@ -64,8 +49,8 @@
     (let [[sql & params]
           sqlvec
 
-          ;; sql-$
-          ;; (remap-$-params sql)
+          sql
+          (remap-$-params sql)
 
           {opt :pg}
           options
@@ -159,7 +144,6 @@
     (intern *ns*
             (with-meta sym meta-new)
             (-> fn-obj
-                wrap-$
                 wrap-signature))))
 
 
@@ -171,12 +155,17 @@
   [fn-name
    fn-meta
    fn-obj]
-  (let [sym (-> fn-name name symbol)]
+  (let [sym
+        (-> fn-name name symbol)
+
+        {:keys [snip?]}
+        fn-meta]
+
     (intern *ns* sym
-            (-> fn-obj
-                wrap-$
-                ;; wrap-$-params
-                ))))
+            (if snip?
+              fn-obj
+              (-> fn-obj
+                  wrap-$-params)))))
 
 
 (defn def-db-fns

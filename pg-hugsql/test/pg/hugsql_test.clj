@@ -377,3 +377,26 @@
 
       (is (= [{:title "aaa", :id 1}]
              result)))))
+
+
+#_
+(select-with-snippets-sqlvec
+ {:select (select-cols {:cols ["id" "title"]})
+  :table "aaa"
+  :id -999
+  :filter-id (filter-by-id {:id 1})
+  :filter-title (filter-by-title {:title "aaa"})
+  :order-by "id"})
+
+
+#_
+(-> (select-with-snippets-sqlvec
+     {:select (select-cols {:cols ["id" "title"]})
+      :table "aaa"
+      :id -999
+      :filter-id (filter-by-id {:id 1})
+      :filter-title (filter-by-title {:title "aaa"})
+      :order-by "id"})
+    first
+    println
+    )
