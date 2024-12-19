@@ -1,5 +1,9 @@
 
-## 0.1.24-SNAPSHOT
+## 0.1.25-SNAPSHOT
+
+- ?
+
+## 0.1.24
 
 - #25 Fix Hugsql rendering with nested snippets
 
