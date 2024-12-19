@@ -16,6 +16,7 @@ import org.pg.util.*;
 import tlschannel.ClientTlsChannel;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
 import java.net.*;
 import java.nio.channels.ByteChannel;
@@ -26,6 +27,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -340,17 +342,20 @@ public final class Connection implements AutoCloseable {
 
         SSLContext c = SSLContext.getInstance("TLSv1.2");
         try {
-            c.init(null, null, null);
+            c.init(null, null, new SecureRandom());
         } catch (KeyManagementException e) {
             throw new RuntimeException(e);
         }
+
+        SSLEngine engine = c.createSSLEngine(getHost(), getPort());
+        engine.setUseClientMode(true);
 
         // System.out.println(SSLContext.getDefault().getProtocol());
 
         // final ClientTlsChannel ch = ClientTlsChannel.newBuilder(channel, sslContext).build();
         final ClientTlsChannel ch = ClientTlsChannel.newBuilder(
                 channel,
-                sslContext
+                engine
                 ).build();
         // ch.handshake();
         channel = ch;
