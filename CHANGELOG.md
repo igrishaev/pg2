@@ -1,7 +1,7 @@
 
 ## 0.1.24-SNAPSHOT
 
-- ?
+- #25 Fix Hugsql rendering with nested snippets
 
 ## 0.1.23
 

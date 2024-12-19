@@ -51,3 +51,9 @@ title = :title
 :snip:select from :i:table
 where :snip:filter-id and :snip:filter-title and id > :id
 order by :i:order-by;
+
+-- :snip snip-recur
+id = :id and :snip:snip
+
+-- :name select-recur
+select :foo from test where :snip:snip

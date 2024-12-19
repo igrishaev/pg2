@@ -21,8 +21,8 @@
 
 (hugsql/def-sqlvec-fns (io/file "test/pg/test.sql"))
 
-#_
-(hugsql/def-sqlvec-fns (io/file "test/pg/test.sql") {:fn-suffix "-hello"})
+(hugsql/def-sqlvec-fns (io/file "test/pg/test.sql")
+  {:fn-suffix "-hello"})
 
 
 (deftest test-query-select-default
@@ -327,7 +327,6 @@
            result))))
 
 
-#_
 (deftest test-custom-suffix
   (let [result
         (insert-into-table-hello {:table "table"
@@ -340,14 +339,14 @@
 ;;
 ;; #25: nested snippets
 ;;
-
 (deftest test-sqlvec-nested-snippet
   (let [result
         (snip-query-sqlvec {:select (select-snip {:foo 1 :bar "2"})
                             :kek 3
                             :lol "4"})]
-    (is (= ["select $1, $2 where id = $1 and email = $2" 1 "2" 3 "4"]
+    (is (= ["select $1, $2 where id = $3 and email = $4" 1 "2" 3 "4"]
            result))))
+
 
 (deftest test-sqlvec-nested-query
   (pg/with-connection [conn CONFIG]
@@ -379,24 +378,31 @@
              result)))))
 
 
-#_
-(select-with-snippets-sqlvec
- {:select (select-cols {:cols ["id" "title"]})
-  :table "aaa"
-  :id -999
-  :filter-id (filter-by-id {:id 1})
-  :filter-title (filter-by-title {:title "aaa"})
-  :order-by "id"})
-
-
-#_
-(-> (select-with-snippets-sqlvec
-     {:select (select-cols {:cols ["id" "title"]})
-      :table "aaa"
-      :id -999
-      :filter-id (filter-by-id {:id 1})
-      :filter-title (filter-by-title {:title "aaa"})
-      :order-by "id"})
-    first
-    println
-    )
+(deftest test-sqlvec-nested-snippet
+  (let [result
+        (select-recur-sqlvec
+         {:foo "FOO"
+          :snip
+          (snip-recur
+           {:id 1
+            :snip
+            (snip-recur
+             {:id 2
+              :snip
+              (snip-recur
+               {:id 3
+                :snip
+                (snip-recur
+                 {:id 4
+                  :snip
+                  (snip-recur
+                   {:id 5
+                    :snip nil})})})})})})]
+    (is (= ["select $1 from test where id = $2 and id = $3 and id = $4 and id = $5 and id = $6 and"
+            "FOO"
+            1
+            2
+            3
+            4
+            5]
+           result))))

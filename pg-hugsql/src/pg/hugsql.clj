@@ -1,4 +1,7 @@
 (ns pg.hugsql
+  "
+  HugSQL adapter for PG2. Hacks, hacks, hacks.
+  "
   (:import
    java.util.function.Function)
   (:require
@@ -9,12 +12,18 @@
    [pg.core :as pg]))
 
 
+;; A special stub to not mix ? parameters with
+;; question marks in string literals, comments,
+;; operators, etc.
 (def ^:const PARAM "__PaRaM__")
 (def ^:const $PARAM (str "$" PARAM))
 (def ^:const PARAM_RE (re-pattern PARAM))
 
 
 (defn remap-$-params
+  "
+  Replace all parameter stubs with $1, $2, etc.
+  "
   [^String sql]
   (.replaceAll (re-matcher PARAM_RE sql)
                (let [counter! (atom 0)]
@@ -26,6 +35,10 @@
 
 (extend-type Object
 
+  ;; Here and below: instead of ? for a parameter,
+  ;; put a recognizable figure like __PaRaM__ for
+  ;; further processing.
+
   p/ValueParam
   (value-param [param data options]
     [$PARAM
@@ -35,8 +48,7 @@
   (value-param-list [param data options]
     (let [coll (get-in data (deep-get-vec (:name param)))]
       (apply vector
-             (string/join ","
-                          (repeat (count coll) $PARAM))
+             (string/join ","  (repeat (count coll) $PARAM))
              coll))))
 
 
@@ -49,7 +61,7 @@
     (let [[sql & params]
           sqlvec
 
-          sql
+          sql ;; patch SQL with __PaRaM__ figures
           (remap-$-params sql)
 
           {opt :pg}
@@ -99,7 +111,8 @@
 
 (defn wrap-$-params
   "
-  Post-correct the ? params into native $1/2/... ones.
+  Post-correct SQL vector: replace __PaRaM__ figures
+  with dollar parameters.
   "
   [-f]
   (fn [& args]
@@ -158,10 +171,14 @@
   (let [sym
         (-> fn-name name symbol)
 
+        ;; Trick: do not wrap snippets because
+        ;; their correction happens not here
+        ;; but at the final step.
         {:keys [snip?]}
         fn-meta]
 
-    (intern *ns* sym
+    (intern *ns*
+            sym
             (if snip?
               fn-obj
               (-> fn-obj
@@ -180,7 +197,7 @@
   Arguments:
 
   - `file` is either a string, or a resource, or a file
-  object which is the source of .sql payload;
+  object which is the source of a .sql payload;
 
   - `defaults` is a map of arguments what will be passed
   to `pg.core/execute` on each call. See the PG2 readme file
@@ -232,15 +249,28 @@
 
 
 (defn def-sqlvec-fns
+  "
+  Read and inject sqlvec-functions from a .sql file.
+  These functions don't interact with a database
+  but produce pure SQL vectors. Useful for debugging
+  SQL you wrote, and for unit tests.
 
+  Acts like `hugsql.core/def-db-fns` but with some
+  internal steps.
+
+  - `file` is either a string, or a resource, or a file
+  object which is the source of a .sql payload;
+
+  - `options` is a map of hugsql parameters. The most
+  interesting is `:fn-suffix` to override the default
+  '-sqlvec' ending with something else.
+  "
   ([file]
    (def-sqlvec-fns file nil))
 
   ([file options]
-
    (let [defs
          (hugsql/map-of-sqlvec-fns file options)]
-
      (doseq [[fn-name {fn-meta :meta
                        fn-obj :fn}]
              defs]
