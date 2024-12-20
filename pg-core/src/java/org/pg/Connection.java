@@ -72,9 +72,7 @@ public final class Connection implements AutoCloseable {
 
     public static Connection connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
-        conn.connectInternal();
-        conn.setSocketOptions();
-        conn.preSSLStage();
+        conn.connectInet();
         if (sendStartup) {
             conn.authenticate();
             conn.initTypeMapping();
@@ -106,7 +104,9 @@ public final class Connection implements AutoCloseable {
             if (!isClosed) {
                 sendTerminate();
                 flush();
-                IOTool.close(socket);
+//                if (socket != null) {
+//                    IOTool.close(socket);
+//                }
                 isClosed = true;
             }
         }
@@ -165,7 +165,7 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    private void setSocketOptions() {
+    private void setSocketOptions(final Socket socket, final Config config) {
         try {
             socket.setTcpNoDelay(config.SOTCPnoDelay());
             socket.setSoTimeout(config.SOTimeout());
@@ -375,16 +375,16 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void connectInternal() {
+    private void connectInet() {
         try (TryLock ignored = lock.get()) {
-            _connect_unlocked();
+            connectInetUnlocked();
         }
     }
 
-    private void _connect_unlocked () {
+    private void connectInetUnlocked() {
         final int port = getPort();
         final String host = getHost();
-        socket = IOTool.socket(host, port);
+        socket = SocketTool.socket(host, port);
         inStream = new BufferedInputStream(
                 IOTool.getInputStream(socket),
                 config.inStreamBufSize()
@@ -393,6 +393,8 @@ public final class Connection implements AutoCloseable {
                 IOTool.getOutputStream(socket),
                 config.outStreamBufSize()
         );
+        setSocketOptions(socket, config);
+        preSSLStage();
     }
 
     // Send bytes into the output stream. Do not flush the buffer,

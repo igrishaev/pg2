@@ -9,6 +9,14 @@ import java.net.Socket;
 
 public final class IOTool {
 
+    public static void close (final InputStream inputStream) {
+        try {
+            inputStream.close();
+        } catch (IOException e) {
+            throw new PGError(e, "cannot close ");
+        }
+    }
+
     public static void skip (final InputStream inputStream, final int len) {
         try {
             inputStream.readNBytes(len);
@@ -77,15 +85,6 @@ public final class IOTool {
         }
     }
 
-    public static void close (final Socket socket) {
-        try {
-            socket.close();
-        }
-        catch (IOException e) {
-            throw new PGError(e, "could not close the socket");
-        }
-    }
-
     public static void write (
             final OutputStream outputStream,
             final byte[] buf,
@@ -123,20 +122,6 @@ public final class IOTool {
             throw new PGError(
                     e,
                     "cannot get an output stream from a socket"
-            );
-        }
-    }
-
-    public static Socket socket (final String host, final int port) {
-        try {
-            return new Socket(host, port);
-        }
-        catch (IOException e) {
-            throw new PGError(
-                    e,
-                    "cannot open a socket, host: %s, port: %s",
-                    host,
-                    port
             );
         }
     }
