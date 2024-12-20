@@ -2,6 +2,9 @@
  -> AuthenticationSASLFinal[serverFinalMessage=e=Wrong password]
  fix this case
 
+- socket timeout opt
+- old socket options
+
 - geom types: json, edn
 - geom types: toString -> toSQL
 
