@@ -119,8 +119,24 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    private static String guessUnixSocketPath(final Config config) {
+        return "";
+    }
+
+    private static String getUnixSocketPath(final Config config) {
+        String path = config.unixSocketPath();
+        if (path == null) {
+            path = guessUnixSocketPath(config);
+        }
+        return path;
+    }
+
+    // TODO: connection string
+    // strategy enum
+
     public void connectUnixSocket() {
-        final SocketAddress address = UnixDomainSocketAddress.of("path");
+        final String path = getUnixSocketPath(config);
+        final SocketAddress address = UnixDomainSocketAddress.of(path);
         final SocketChannel channel = SocketTool.open(address);
         inStream = Channels.newInputStream(channel);
         outStream = Channels.newOutputStream(channel);
