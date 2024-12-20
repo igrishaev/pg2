@@ -103,3 +103,11 @@ private final Map<UUID, Long> connUsedSince;
 this.connUsedSince = new HashMap<>(config.poolMaxSize());
 connUsedSince.remove(conn.getId());
 connUsedSince.put(conn.getId(), System.currentTimeMillis());
+
+
+final SocketAddress address = UnixDomainSocketAddress.of("/private/tmp/.s.PGSQL.15432");
+//        try {
+//            channel = SocketChannel.open(address);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
