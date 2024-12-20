@@ -16,6 +16,10 @@ import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
+import java.nio.channels.Channels;
+import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -68,12 +72,12 @@ public final class Connection implements AutoCloseable {
 
     public static Connection connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
-        conn._connect();
-        conn._setSocketOptions();
-        conn._preSSLStage();
+        conn.connectInternal();
+        conn.setSocketOptions();
+        conn.preSSLStage();
         if (sendStartup) {
-            conn._authenticate();
-            conn._initTypeMapping();
+            conn.authenticate();
+            conn.initTypeMapping();
         }
         return conn;
     }
@@ -106,10 +110,16 @@ public final class Connection implements AutoCloseable {
                 isClosed = true;
             }
         }
-
     }
 
-    private void _initTypeMapping() {
+    public void connectUnixSocket(final String path) {
+        final SocketAddress address = UnixDomainSocketAddress.of(path);
+        final SocketChannel channel = SocketTool.open(address);
+        inStream = Channels.newInputStream(channel);
+        outStream = Channels.newOutputStream(channel);
+    }
+
+    private void initTypeMapping() {
         final Map<String, IProcessor> sourceMap = config.typeMap();
         final int len = sourceMap.size();
         if (len == 0) {
@@ -155,7 +165,7 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    private void _setSocketOptions () {
+    private void setSocketOptions() {
         try {
             socket.setTcpNoDelay(config.SOTCPnoDelay());
             socket.setSoTimeout(config.SOTimeout());
@@ -280,7 +290,7 @@ public final class Connection implements AutoCloseable {
                              getDatabase());
     }
 
-    private void _authenticate () {
+    private void authenticate() {
         sendStartupMessage();
         interactStartup();
     }
@@ -339,7 +349,7 @@ public final class Connection implements AutoCloseable {
         isSSL = true;
     }
 
-    private void _preSSLStage () {
+    private void preSSLStage() {
         if (config.useSSL()) {
             final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
             sendMessage(msg);
@@ -365,7 +375,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void _connect () {
+    private void connectInternal() {
         try (TryLock ignored = lock.get()) {
             _connect_unlocked();
         }

@@ -43,7 +43,9 @@ public record Config(
         int poolMaxSize,
         int poolExpireThresholdMs,
         int poolBorrowConnTimeoutMs,
-        Map<String, IProcessor> typeMap
+        Map<String, IProcessor> typeMap,
+        boolean useUnixSocket,
+        String unixSocketPath
 ) {
 
     public static Builder builder (final String user, final String database) {
@@ -85,6 +87,8 @@ public record Config(
         private int poolExpireThresholdMs = Const.POOL_EXPIRE_THRESHOLD_MS;
         private int poolBorrowConnTimeoutMs = Const.POOL_BORROW_CONN_TIMEOUT_MS;
         private final Map<String, IProcessor> typeMap = new HashMap<>();
+        private boolean useUnixSocket = false;
+        private String unixSocketPath = "";
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -299,6 +303,18 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder useUnixSocket(final boolean useUnixSocket) {
+            this.useUnixSocket = useUnixSocket;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder unixSocketPath(final String unixSocketPath) {
+            this.unixSocketPath = unixSocketPath;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -338,7 +354,9 @@ public record Config(
                     this.poolMaxSize,
                     this.poolExpireThresholdMs,
                     this.poolBorrowConnTimeoutMs,
-                    this.typeMap
+                    this.typeMap,
+                    this.useUnixSocket,
+                    this.unixSocketPath
             );
         }
     }
