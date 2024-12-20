@@ -88,7 +88,7 @@ public record Config(
         private int poolBorrowConnTimeoutMs = Const.POOL_BORROW_CONN_TIMEOUT_MS;
         private final Map<String, IProcessor> typeMap = new HashMap<>();
         private boolean useUnixSocket = false;
-        private String unixSocketPath = "";
+        private String unixSocketPath = null;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");

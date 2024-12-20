@@ -72,12 +72,20 @@ public final class Connection implements AutoCloseable {
 
     public static Connection connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
-        conn.connectInet();
+        if (Connection.isUnixSocket(config)) {
+            conn.connectUnixSocket();
+        } else {
+            conn.connectInet();
+        }
         if (sendStartup) {
             conn.authenticate();
             conn.initTypeMapping();
         }
         return conn;
+    }
+
+    private static boolean isUnixSocket(final Config config) {
+        return config.useUnixSocket() || config.unixSocketPath() != null;
     }
 
     @SuppressWarnings("unused")
@@ -104,16 +112,15 @@ public final class Connection implements AutoCloseable {
             if (!isClosed) {
                 sendTerminate();
                 flush();
-//                if (socket != null) {
-//                    IOTool.close(socket);
-//                }
+                IOTool.close(inStream);
+                IOTool.close(outStream);
                 isClosed = true;
             }
         }
     }
 
-    public void connectUnixSocket(final String path) {
-        final SocketAddress address = UnixDomainSocketAddress.of(path);
+    public void connectUnixSocket() {
+        final SocketAddress address = UnixDomainSocketAddress.of("path");
         final SocketChannel channel = SocketTool.open(address);
         inStream = Channels.newInputStream(channel);
         outStream = Channels.newOutputStream(channel);
@@ -165,7 +172,7 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    private void setSocketOptions(final Socket socket, final Config config) {
+    private static void setSocketOptions(final Socket socket, final Config config) {
         try {
             socket.setTcpNoDelay(config.SOTCPnoDelay());
             socket.setSoTimeout(config.SOTimeout());
@@ -531,7 +538,6 @@ public final class Connection implements AutoCloseable {
             case 'G' -> CopyInResponse.fromByteBuffer(bbBody);
             default -> throw new PGError("Unknown message: %s", tag);
         };
-
     }
 
     private void sendDescribeStatement (final String statement) {

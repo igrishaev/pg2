@@ -13,7 +13,15 @@ public final class IOTool {
         try {
             inputStream.close();
         } catch (IOException e) {
-            throw new PGError(e, "cannot close ");
+            throw new PGError(e, "cannot close input stream");
+        }
+    }
+
+    public static void close (final OutputStream outputStream) {
+        try {
+            outputStream.close();
+        } catch (IOException e) {
+            throw new PGError(e, "cannot close output stream");
         }
     }
 
