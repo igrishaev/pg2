@@ -1,5 +1,9 @@
 
-## 0.1.25-SNAPSHOT
+## 0.1.26-SNAPSHOT
+
+- ?
+
+## 0.1.25
 
 - unix socket support
 - check password empty with scram sha-256
