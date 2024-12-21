@@ -176,7 +176,8 @@
   ;; bigint
 
   (let [res (pg/encode-bin (bigint 1) oid/numeric)]
-    (is (bb== (byte-array [0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]) res)))
+    (is (= [0, 1, 0, 0, 0, 0, 0, 0, 0, 1] (vec (.array res))))
+    )
 
   (let [res (pg/encode-bin (bigint 1) oid/int2)]
     (is (bb== (byte-array [0 1]) res)))
@@ -190,7 +191,7 @@
   ;; biginteger
 
   (let [res (pg/encode-bin (new BigInteger "1") oid/numeric)]
-    (is (bb== (byte-array [0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]) res)))
+    (is (bb== (byte-array [0, 1, 0, 0, 0, 0, 0, 0, 0, 1]) res)))
 
   (let [res (pg/encode-bin (new BigInteger "1") oid/int2)]
     (is (bb== (byte-array [0 1]) res)))
