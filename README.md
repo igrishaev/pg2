@@ -60,6 +60,7 @@ tests][tests].
 - [JSON Support](/docs/json.md)
 - [Arrays Support](/docs/arrays.md)
 - [Migrations](/docs/migrations.md)
+- [Unix Domain Socket](/docs/unix-socket.md)
 - Common Execute Parameters
 - Type Hints (OIDs)
 - Types & Extensions
