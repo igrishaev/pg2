@@ -295,6 +295,10 @@
                 use-ssl?
                 ssl-context
 
+                ;; unix domain socket
+                unix-socket?
+                unix-socket-path
+
                 ;; socket
                 so-keep-alive?
                 so-tcp-no-delay?
@@ -389,6 +393,12 @@
 
       so-send-buf-size
       (.SOSendBufSize so-send-buf-size)
+
+      (some? unix-socket?)
+      (.useUnixSocket unix-socket?)
+
+      unix-socket-path
+      (.unixSocketPath unix-socket-path)
 
       object-mapper
       (.objectMapper object-mapper)

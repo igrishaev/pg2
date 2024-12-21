@@ -156,6 +156,9 @@ public final class ScramSha256 {
                 + "," + step2.serverFirstMessage
                 + "," + clientFinalMessageWithoutProof;
         final byte[] passwordNorm = NormTool.normalizeNfc(step1.password).getBytes(StandardCharsets.UTF_8);
+        if (passwordNorm.length == 0) {
+            throw new PGError("password cannot be empty when using SCRAM SHA254 authentication");
+        }
         final byte[] SaltedPassword = Hi(passwordNorm, step2.salt, step2.iterationCount);
         final byte[] ClientKey = HashTool.HmacSha256(SaltedPassword, "Client Key".getBytes(StandardCharsets.UTF_8));
         final byte[] StoredKey = H(ClientKey);

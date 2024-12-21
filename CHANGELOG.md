@@ -1,7 +1,9 @@
 
 ## 0.1.25-SNAPSHOT
 
-- ?
+- unix socket support
+- check password empty with scram sha-256
+- better BIND debug format
 
 ## 0.1.24
 

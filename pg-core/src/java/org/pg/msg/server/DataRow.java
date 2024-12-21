@@ -3,6 +3,7 @@ package org.pg.msg.server;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public record DataRow (
         short count,
@@ -22,6 +23,14 @@ public record DataRow (
             }
         }
         return ToC;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("DataRow[count=%s, buf=%s]",
+                count,
+                Arrays.toString(buf.array())
+        );
     }
 
     public static DataRow fromByteBuffer(final ByteBuffer buf) {

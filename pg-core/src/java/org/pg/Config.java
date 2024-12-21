@@ -48,6 +48,16 @@ public record Config(
         String unixSocketPath
 ) {
 
+    public enum CONN_TYPE {INET4, UNIX_SOCKET}
+
+    public CONN_TYPE getConnType () {
+        if (useUnixSocket || unixSocketPath != null) {
+            return CONN_TYPE.UNIX_SOCKET;
+        } else {
+            return CONN_TYPE.INET4;
+        }
+    }
+
     public static Builder builder (final String user, final String database) {
         return new Builder(user, database);
     }

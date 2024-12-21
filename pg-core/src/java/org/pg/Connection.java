@@ -44,6 +44,7 @@ public final class Connection implements AutoCloseable {
     private int secretKey;
     private TXStatus txStatus;
     private Socket socket;
+    private String unixSocketPath;
     private InputStream inStream;
     private OutputStream outStream;
     private final Map<String, String> params;
@@ -72,20 +73,16 @@ public final class Connection implements AutoCloseable {
 
     public static Connection connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
-        if (Connection.isUnixSocket(config)) {
-            conn.connectUnixSocket();
-        } else {
-            conn.connectInet();
+        final Config.CONN_TYPE connType = config.getConnType();
+        switch (connType) {
+            case UNIX_SOCKET -> conn.connectUnixSocket();
+            case INET4 -> conn.connectInet();
         }
         if (sendStartup) {
             conn.authenticate();
             conn.initTypeMapping();
         }
         return conn;
-    }
-
-    private static boolean isUnixSocket(final Config config) {
-        return config.useUnixSocket() || config.unixSocketPath() != null;
     }
 
     @SuppressWarnings("unused")
@@ -119,23 +116,23 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private static String guessUnixSocketPath(final Config config) {
-        return "";
-    }
-
     private static String getUnixSocketPath(final Config config) {
-        String path = config.unixSocketPath();
+        final String path = config.unixSocketPath();
         if (path == null) {
-            path = guessUnixSocketPath(config);
+            final int port = config.port();
+            return SysTool.guessUnixSocketPath(port);
+        } else {
+            return path;
         }
-        return path;
     }
-
-    // TODO: connection string
-    // strategy enum
 
     public void connectUnixSocket() {
         final String path = getUnixSocketPath(config);
+        final File file = new File(path);
+        if (!file.exists()) {
+            throw new PGError("unix socket doesn't exist: %s", path);
+        }
+        this.unixSocketPath = path;
         final SocketAddress address = UnixDomainSocketAddress.of(path);
         final SocketChannel channel = SocketTool.open(address);
         inStream = Channels.newInputStream(channel);
@@ -306,11 +303,20 @@ public final class Connection implements AutoCloseable {
     }
 
     public String toString () {
-        return String.format("<PG connection %s@%s:%s/%s>",
-                             getUser(),
-                             getHost(),
-                             getPort(),
-                             getDatabase());
+        final Config.CONN_TYPE connType = config.getConnType();
+        return switch (connType) {
+            case UNIX_SOCKET -> String.format("<PG connection %s@%s %s>",
+                    getUser(),
+                    getHost(),
+                    unixSocketPath
+            );
+            case INET4 -> String.format("<PG connection %s@%s:%s/%s>",
+                    getUser(),
+                    getHost(),
+                    getPort(),
+                    getDatabase()
+            );
+        };
     }
 
     private void authenticate() {
