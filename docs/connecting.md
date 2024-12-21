@@ -96,8 +96,10 @@ rest have predefined values.
 | `:fn-notification`     | 1-arg fn     | logging fn         | A function to handle notifications                                              |
 | `:fn-protocol-version` | 1-arg fn     | logging fn         | A function to handle negotiation version protocol event                         |
 | `:fn-notice`           | 1-arg fn     | logging fn         | A function to handle notices                                                    |
-| `:use-ssl?`            | bool         | false              | Whether to use SSL connection                                                   |
-| `:ssl-context`         | SSLContext   | nil                | An custom instance of `SSLContext` class to wrap a socket                       |
+| `:use-ssl?`            | bool         | false              | Whether to use an SSL connection<sup>1</sup>                                    |
+| `:ssl-context`         | SSLContext   | nil                | An custom instance of `SSLContext` class to wrap a socket<sup>1</sup>           |
+| `:unix-socket?`        | bool         | false              | Whether to connect to a Unix domain socket<sup>2</sup>                          |
+| `:unix-socket-path`    | string       | null               | A custom path to Unix domain socket<sup>2</sup>                                 |
 | `:so-keep-alive?`      | bool         | true               | Socket KeepAlive value                                                          |
 | `:so-tcp-no-delay?`    | bool         | true               | Socket TcpNoDelay value                                                         |
 | `:so-timeout`          | integer      | 15.000             | Socket timeout value, in ms                                                     |
@@ -106,6 +108,9 @@ rest have predefined values.
 | `:cancel-timeout-ms`   | integer      | 5.000              | Default value for the `with-timeout` macro, in ms                               |
 | `:protocol-version`    | integer      | 196608             | Postgres protocol version                                                       |
 | `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section) |
+
+1. See the ["SSL Setup"](/docs/ssl.md) section.
+2. See the ["Unix Domain Socket"](/docs/unix-socket.md) section.
 
 ### Parameter notes
 

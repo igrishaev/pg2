@@ -305,9 +305,9 @@ public final class Connection implements AutoCloseable {
     public String toString () {
         final Config.CONN_TYPE connType = config.getConnType();
         return switch (connType) {
-            case UNIX_SOCKET -> String.format("<PG connection %s@%s %s>",
+            case UNIX_SOCKET -> String.format("<PG connection %s:%s %s>",
                     getUser(),
-                    getHost(),
+                    getDatabase(),
                     unixSocketPath
             );
             case INET4 -> String.format("<PG connection %s@%s:%s/%s>",
