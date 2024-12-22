@@ -5,6 +5,8 @@
 - geom types: json, edn
 - geom types: toString -> toSQL
 
+- user & database default values?
+
 - postgis support
 - json wrapper not needed
 
