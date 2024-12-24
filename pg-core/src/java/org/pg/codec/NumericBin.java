@@ -49,23 +49,27 @@ public final class NumericBin {
         }
 
         final short weight = bb.getShort();
-        final short sigh = bb.getShort();
+        final short sign = bb.getShort();
         final short scale = bb.getShort();
+
+        final int exp = (weight - digitsNum + 1) * DECIMAL_DIGITS;
+
+        BigInteger num = BigInteger.ZERO;
+
         final short[] shorts = new short[digitsNum];
         for (short i = 0; i < digitsNum; i++) {
-            shorts[i] = bb.getShort();
+            BigInteger base = TEN_THOUSAND.pow((int) digitsNum - i - 1);
+            BigInteger digit = BigInteger.valueOf(bb.getShort());
+            num = num.add(base.multiply(digit));
         }
-        final StringBuilder sb = new StringBuilder();
-        if (sigh != 0) {
-            sb.append("-");
+
+        if (sign != NUMERIC_POS) {
+            num = num.negate();
         }
-        sb.append("0.");
-        for (short i = 0; i < digitsNum; i++) {
-            sb.append(String.format("%04d", shorts[i]));
-        }
-        return new BigDecimal(sb.toString())
-                .movePointRight(4 * (weight + 1))
-                .setScale(scale, RoundingMode.DOWN);
+
+        return (new BigDecimal(num))
+            .scaleByPowerOfTen(exp)
+            .setScale(scale, RoundingMode.DOWN);
     }
 
     // Inspired by implementation here:
