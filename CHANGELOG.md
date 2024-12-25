@@ -1,7 +1,7 @@
 
 ## 0.1.27-SNAPSHOT
 
-- ?
+- #27 better BigDecimal binary decoding logic
 
 ## 0.1.26
 
