@@ -52,6 +52,7 @@ public final class Connection implements AutoCloseable {
     private boolean isSSL = false;
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
+    private final Map<String, PreparedStatement> PSCache;
 
     @Override
     public boolean equals (Object other) {
@@ -69,6 +70,7 @@ public final class Connection implements AutoCloseable {
         this.codecParams = CodecParams.builder().objectMapper(config.objectMapper()).build();
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
+        this.PSCache = new HashMap<>();
     }
 
     public static Connection connect(final Config config, final boolean sendStartup) {
@@ -603,17 +605,22 @@ public final class Connection implements AutoCloseable {
             final String sql,
             final ExecuteParams executeParams
     ) {
-        final String statement = generateStatement();
-        final int[] OIDs = executeParams.OIDs();
-        final Parse parse = new Parse(statement, sql, OIDs);
-        sendMessage(parse);
-        sendDescribeStatement(statement);
-        sendSync();
-        sendFlush();
-        final Result res = interact(sql);
-        final ParameterDescription paramDesc = res.getParameterDescription();
-        final RowDescription rowDescription = res.getRowDescription();
-        return new PreparedStatement(parse, paramDesc, rowDescription);
+        PreparedStatement ps = PSCache.get(sql);
+        if (ps == null) {
+            final String statement = generateStatement();
+            final int[] OIDs = executeParams.OIDs();
+            final Parse parse = new Parse(statement, sql, OIDs);
+            sendMessage(parse);
+            sendDescribeStatement(statement);
+            sendSync();
+            sendFlush();
+            final Result res = interact(sql);
+            final ParameterDescription paramDesc = res.getParameterDescription();
+            final RowDescription rowDescription = res.getRowDescription();
+            ps = new PreparedStatement(parse, paramDesc, rowDescription);
+            PSCache.put(sql, ps);
+        }
+        return ps;
     }
 
     private void sendBind (final String portal,
@@ -713,15 +720,16 @@ public final class Connection implements AutoCloseable {
     public Object execute (final String sql, final ExecuteParams executeParams) {
         try (final TryLock ignored = lock.get()) {
             final PreparedStatement stmt = prepare(sql, executeParams);
-            final String portal = generatePortal();
-            sendBind(portal, stmt, executeParams);
-            sendDescribePortal(portal);
-            sendExecute(portal, executeParams.maxRows());
-            sendClosePortal(portal);
-            sendCloseStatement(stmt);
-            sendSync();
-            sendFlush();
-            return interact(executeParams, sql).getResult();
+            return executeStatement(stmt, executeParams);
+//            final String portal = generatePortal();
+//            sendBind(portal, stmt, executeParams);
+//            sendDescribePortal(portal);
+//            sendExecute(portal, executeParams.maxRows());
+//            sendClosePorCloseStatement(stmt);
+////            sendSync();
+////            sendFtal(portal);
+//            sendlush();
+//            return interact(executeParams, sql).getResult();
         }
     }
 

@@ -1237,6 +1237,20 @@ from
         (is (= [{:foo 1}] res1))
         (is (= [{:foo 2}] res2))))))
 
+(deftest test-prepare-execute-delete
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (pg/with-statement [stmt conn "select $1::integer as foo"]
+
+      (pg/query conn "deallocate s1")
+
+      (try
+        (pg/execute-statement conn stmt {:params [1]})
+        (catch Exception e
+          (is (= "26000"
+                 (-> e ex-data ))))))))
+
 
 (deftest test-prepare-execute-with-options
 

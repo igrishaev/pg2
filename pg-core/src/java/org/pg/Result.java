@@ -16,7 +16,7 @@ import java.util.Map;
 
 public final class Result {
 
-     public final static class Node {
+    public final static class Node {
 
          private PortalSuspended portalSuspended;
          private RowDescription rowDescription;
@@ -77,7 +77,7 @@ public final class Result {
     private Node current;
     private Throwable exception;
     public ScramSha256.Pipeline scramPipeline;
-    private String sql;
+    private final String sql;
 
     public static String[] unifyKeys (final String[] oldKeys) {
         final Map<String, Integer> map = new HashMap<>();
@@ -190,6 +190,10 @@ public final class Result {
     private void addNode() {
         current = new Node();
         nodes.add(current);
+    }
+
+    public String errorCode() {
+        return errorResponse.fields().get("code");
     }
 
     public void maybeThrowError() {
