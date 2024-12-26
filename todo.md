@@ -6,6 +6,9 @@
 - geom types: toString -> toSQL
 
 - user & database default values?
+- unix socket buffered streams
+
+- prep statement cache
 
 - postgis support
 - json wrapper not needed
