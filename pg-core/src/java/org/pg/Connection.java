@@ -598,11 +598,11 @@ public final class Connection implements AutoCloseable {
 
     public PreparedStatement prepare (final String sql, final ExecuteParams executeParams) {
         try (TryLock ignored = lock.get()) {
-            return _prepare_unlocked(sql, executeParams);
+            return prepareUnlocked(sql, executeParams);
         }
     }
 
-    private PreparedStatement _prepare_unlocked (
+    private PreparedStatement prepareUnlocked(
             final String sql,
             final ExecuteParams executeParams
     ) {
@@ -716,6 +716,9 @@ public final class Connection implements AutoCloseable {
         try (final TryLock ignored = lock.get()) {
             PreparedStatement stmt = PSCache.get(sql);
             if (stmt == null) {
+                if (Debug.isON) {
+                    Debug.debug("Prepared statement not found: %s", sql);
+                }
                 stmt = prepare(sql, executeParams);
                 PSCache.put(sql, stmt);
             } else {
