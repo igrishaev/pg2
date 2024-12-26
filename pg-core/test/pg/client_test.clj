@@ -1584,6 +1584,17 @@ drop table %1$s;
     (let [res (pg/execute conn "select $1 as foo" {:params ["hi"]})]
       (is (= [{:foo "hi"}] res)))))
 
+;; TODO in progress
+#_
+(deftest test-client-execute-log-cache
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [sql "select $1::text as foo"
+          res1 (pg/execute conn sql {:params ["kek"]})
+          res2 (pg/execute conn sql {:params ["lol"]})
+          ]
+      #_
+      (is (= [{:foo "hi"}] res)))))
+
 
 (deftest test-client-execute-sqlvec-no-params
   (pg/with-connection [conn *CONFIG-TXT*]

@@ -29,6 +29,15 @@ public final class PGErrorResponse extends RuntimeException implements IExceptio
         this.sql = sql;
     }
 
+    /**
+     * Get the "code" filed of an error message returned
+     * by the server. Can be null. In rare cases, logic
+     * might depend on what was the cause of an error.
+     */
+    public String getCode () {
+        return errorResponse.fields().get("code");
+    }
+
     @Override
     public IPersistentMap getData() {
         final Map<String, String> fields = errorResponse.fields();

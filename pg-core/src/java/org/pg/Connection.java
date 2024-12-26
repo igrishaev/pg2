@@ -8,6 +8,7 @@ import org.pg.clojure.RowMap;
 import org.pg.codec.CodecParams;
 import org.pg.enums.*;
 import org.pg.error.PGError;
+import org.pg.error.PGErrorResponse;
 import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
@@ -52,6 +53,7 @@ public final class Connection implements AutoCloseable {
     private boolean isSSL = false;
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
+    private final Map<String, PreparedStatement> PSCache;
 
     @Override
     public boolean equals (Object other) {
@@ -69,6 +71,7 @@ public final class Connection implements AutoCloseable {
         this.codecParams = CodecParams.builder().objectMapper(config.objectMapper()).build();
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
+        this.PSCache = new HashMap<>();
     }
 
     public static Connection connect(final Config config, final boolean sendStartup) {
@@ -428,9 +431,9 @@ public final class Connection implements AutoCloseable {
 
     // Send bytes into the output stream. Do not flush the buffer,
     // must be done manually.
-    private void sendBytes (final byte[] buf) {
+    private void sendBytes (final byte[] buf, final String tag) {
         if (Debug.isON) {
-            Debug.debug(" <- sendBytes: %s", Arrays.toString(buf));
+            Debug.debug(" <- sendBytes (%s): %s", tag, Arrays.toString(buf));
         }
         IOTool.write(outStream, buf);
     }
@@ -444,8 +447,8 @@ public final class Connection implements AutoCloseable {
         final ByteBuffer bb = ByteBuffer.allocate(5);
         bb.put((byte)'d');
         bb.putInt(4 + bytes.length);
-        sendBytes(bb.array());
-        sendBytes(bytes);
+        sendBytes(bb.array(), "COPY");
+        sendBytes(bytes, "COPY");
     }
 
     private void sendMessage (final IClientMessage msg) {
@@ -669,9 +672,8 @@ public final class Connection implements AutoCloseable {
                 paramsFormat,
                 columnFormat
         );
-
         for (byte[] buf: msg.toByteArrays()) {
-            sendBytes(buf);
+            sendBytes(buf, "BIND");
         }
     }
 
@@ -712,19 +714,43 @@ public final class Connection implements AutoCloseable {
 
     public Object execute (final String sql, final ExecuteParams executeParams) {
         try (final TryLock ignored = lock.get()) {
-            final PreparedStatement stmt = prepare(sql, executeParams);
+            PreparedStatement stmt = PSCache.get(sql);
+            if (stmt == null) {
+                stmt = prepare(sql, executeParams);
+                PSCache.put(sql, stmt);
+            } else {
+                if (Debug.isON) {
+                    Debug.debug("Prepared statement found in cache: %s", stmt);
+                }
+            }
             final String portal = generatePortal();
             sendBind(portal, stmt, executeParams);
             sendDescribePortal(portal);
             sendExecute(portal, executeParams.maxRows());
             sendClosePortal(portal);
-            sendCloseStatement(stmt);
+            // sendCloseStatement(stmt); // don't close it for caching
             sendSync();
             sendFlush();
-            return interact(executeParams, sql).getResult();
+            try {
+                return interact(executeParams, sql).getResult();
+            } catch (PGErrorResponse e) {
+                if (Objects.equals(e.getCode(), ErrCode.PREPARED_STATEMENT_NOT_FOUND)) {
+                    if (Debug.isON) {
+                        Debug.debug("Prepared statement is missing: %s, error: %s",
+                                stmt,
+                                e.getMessage()
+                        );
+                    }
+                    PSCache.remove(sql);
+                    return execute(sql, executeParams);
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
+    @SuppressWarnings("unused")
     private void sendCloseStatement (final PreparedStatement stmt) {
         final Close msg = new Close(SourceType.STATEMENT, stmt.parse().statement());
         sendMessage(msg);
@@ -980,7 +1006,7 @@ public final class Connection implements AutoCloseable {
             bbLead.position(1);
             bbLead.putInt(4 + read);
 
-            sendBytes(bbLead.array());
+            sendBytes(bbLead.array(), "COPY IN");
             sendBytes(buf, read);
         }
 
@@ -1029,7 +1055,7 @@ public final class Connection implements AutoCloseable {
                     sendBytesCopy(buf.array());
                 }
                 if (e == null) {
-                    sendBytes(Copy.MSG_COPY_BIN_TERM);
+                    sendBytes(Copy.MSG_COPY_BIN_TERM, "COPY IN BIN");
                 }
                 break;
 
