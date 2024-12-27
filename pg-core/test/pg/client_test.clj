@@ -1584,16 +1584,61 @@ drop table %1$s;
     (let [res (pg/execute conn "select $1 as foo" {:params ["hi"]})]
       (is (= [{:foo "hi"}] res)))))
 
-;; TODO in progress
-#_
-(deftest test-client-execute-log-cache
+(deftest test-client-execute-prep-statement-cache
   (pg/with-connection [conn *CONFIG-TXT*]
-    (let [sql "select $1::text as foo"
-          res1 (pg/execute conn sql {:params ["kek"]})
-          res2 (pg/execute conn sql {:params ["lol"]})
-          ]
-      #_
-      (is (= [{:foo "hi"}] res)))))
+    (let [sql
+          "select $1::text as foo"
+
+          sql-ps
+          "select name, statement, parameter_types from pg_prepared_statements order by prepare_time asc"
+
+          res1
+          (pg/execute conn sql {:params ["kek"]})
+
+          statements1
+          (pg/query conn sql-ps)
+
+          res2
+          (pg/execute conn "select $1::text as baz" {:params ["lol"]})
+
+          statements2
+          (pg/query conn sql-ps)
+
+          _
+          (pg/query conn "deallocate all")
+
+          statements3
+          (pg/query conn sql-ps)
+
+          res3
+          (pg/execute conn sql {:params ["lol"]})
+
+          statements4
+          (pg/query conn sql-ps)]
+
+      (is (= [{:foo "kek"}] res1))
+      (is (= [{:foo "lol"}] res3))
+
+      (is (= [{:statement "select $1::text as foo"
+               :name "s1"
+               :parameter_types "{text}"}]
+             statements1))
+
+      (is (= [{:statement "select $1::text as foo"
+               :name "s1"
+               :parameter_types "{text}"}
+              {:statement "select $1::text as baz"
+               :name "s3"
+               :parameter_types "{text}"}]
+             statements2))
+
+      (is (= []
+             statements3))
+
+      (is (= [{:statement "select $1::text as foo"
+               :name "s6"
+               :parameter_types "{text}"}]
+             statements4)))))
 
 
 (deftest test-client-execute-sqlvec-no-params
