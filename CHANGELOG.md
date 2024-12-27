@@ -2,6 +2,10 @@
 ## 0.1.27-SNAPSHOT
 
 - #27 better BigDecimal binary decoding logic
+- prepared statement cache for execute
+- bench: extra case for execute
+- demo ns commented
+- sendBytes debug tag
 
 ## 0.1.26
 
