@@ -1178,147 +1178,155 @@ create table demo (
     ))
 
 
-(def conn
-  (jdbc/get-connection config))
-
-;; options
-
-(def conn
-  (jdbc/get-connection
-   (assoc config :with-pgvector? true)))
-
-(pg/query conn "create temp table test (id int, items vector)")
+(comment
 
 
+  (def conn
+    (jdbc/get-connection config))
 
-(pg/execute conn "insert into test values (1, '[1,2,3]')")
-(pg/execute conn "insert into test values (2, '[1,2,3,4,5]')")
+  ;; options
 
-(pg/execute conn "select * from test order by id")
+  (def conn
+    (jdbc/get-connection
+     (assoc config :with-pgvector? true)))
 
-[{:id 1, :items "[1,2,3]"} {:id 2, :items "[1,2,3,4,5]"}]
+  (pg/query conn "create temp table test (id int, items vector)")
 
-[{:id 1, :items [1.0 2.0 3.0]}
- {:id 2, :items [1.0 2.0 3.0 4.0 5.0]}]
+  (pg/execute conn "insert into test values (1, '[1,2,3]')")
+  (pg/execute conn "insert into test values (2, '[1,2,3,4,5]')")
 
+  (pg/execute conn "select * from test order by id")
 
-(pg/query conn "create temp table test2 (id int, items vector(5))")
-(pg/execute conn "insert into test2 values (1, '[1,2,3]')")
+  [{:id 1, :items "[1,2,3]"} {:id 2, :items "[1,2,3,4,5]"}]
 
-   ;; Server error response: {severity=ERROR, code=22000, file=vector.c, line=77,
-   ;; function=CheckExpectedDim, message=expected 5 dimensions, not 3,
-   ;; verbosity=ERROR}
-
-
-;; vector
-(pg/execute conn "insert into test2 values ($1, $2)"
-            {:params [1 [1 2 3 4 5]]})
-
-;; lazy
-(pg/execute conn "insert into test2 values ($1, $2)"
-            {:params [2 (map inc [1 2 3 4 5])]})
-
-(pg/execute conn "select * from test2 order by id")
-
-[{:id 1, :items [1.0 2.0 3.0 4.0 5.0]}
- {:id 2, :items [2.0 3.0 4.0 5.0 6.0]}]
-
-;; binary as well
-
-;; sparsevector
-
-(pg/execute conn "create temp table test3 (id int, v sparsevec)")
-
-(pg/execute conn "insert into test3 values (1, '{2:42.00001,7:99.00009}/9')")
-
-(pg/execute conn "select * from test3")
-
-;; [{:v <SparseVector {2:42.00001,7:99.00009}/9>, :id 1}]
-
-(def -sv
-  (-> (pg/execute conn "select * from test3")
-      first
-      :v))
-
-(type -sv)
-org.pg.type.SparseVector
-
--sv
-#<SparseVector@2df264c: {:nnz 2, :index {1 42.00001, 6 99.00009}, :dim 9}>
-
-@-sv
-{:nnz 2, :index {1 42.00001, 6 99.00009}, :dim 9}
-
-(nth -sv 0) ;; 0.0
-(nth -sv 1) ;; 42.00001
-(nth -sv 2) ;; 0.0
-
-(vec -sv)
-[0.0 42.00001 0.0 0.0 0.0 0.0 99.00009 0.0 0.0]
-
-;; insertion
-
-;; vector
-(pg/execute conn "insert into test3 values ($1, $2)"
-            {:params [2 [5 2 6 0 2 5 0 0]]})
-
-(pg/execute conn "select * from test3 where id = 2")
-[{:v <SparseVector {1:5.0,2:2.0,3:6.0,5:2.0,6:5.0}/8>, :id 2}]
-
-;; sparsevector
-(pg/execute conn "insert into test3 values ($1, $2)"
-            {:params [3 (t/->sparse-vector 9 {0 523.23423
-                                              7 623.52346})]})
+  [{:id 1, :items [1.0 2.0 3.0]}
+   {:id 2, :items [1.0 2.0 3.0 4.0 5.0]}]
 
 
-(pg/execute conn "select * from test3")
+  (pg/query conn "create temp table test2 (id int, items vector(5))")
+  (pg/execute conn "insert into test2 values (1, '[1,2,3]')")
 
-[{:v <SparseVector {2:42.00001,7:99.00009}/9>, :id 1}
- {:v <SparseVector {1:5.0,2:2.0,3:6.0,5:2.0,6:5.0}/8>, :id 2}
- {:v <SparseVector {1:523.23425,8:623.52344}/9>, :id 3}]
-
-;; binary as well
-
-;; custom schemas
+  ;; Server error response: {severity=ERROR, code=22000, file=vector.c, line=77,
+  ;; function=CheckExpectedDim, message=expected 5 dimensions, not 3,
+  ;; verbosity=ERROR}
 
 
-(assoc config
-       :type-map
-       {"some_schema.vector" t/vector
-        "some_schema.sparsevec" t/sparsevec})
+  ;; vector
+  (pg/execute conn "insert into test2 values ($1, $2)"
+              {:params [1 [1 2 3 4 5]]})
 
-(assoc config
-       :type-map
-       {:some_schema/vector t/vector
-        :some_schema/sparsevec t/sparsevec})
+  ;; lazy
+  (pg/execute conn "insert into test2 values ($1, $2)"
+              {:params [2 (map inc [1 2 3 4 5])]})
+
+  (pg/execute conn "select * from test2 order by id")
+
+  [{:id 1, :items [1.0 2.0 3.0 4.0 5.0]}
+   {:id 2, :items [2.0 3.0 4.0 5.0 6.0]}]
+
+  ;; binary as well
+
+  ;; sparsevector
+
+  (pg/execute conn "create temp table test3 (id int, v sparsevec)")
+
+  (pg/execute conn "insert into test3 values (1, '{2:42.00001,7:99.00009}/9')")
+
+  (pg/execute conn "select * from test3")
+
+  ;; [{:v <SparseVector {2:42.00001,7:99.00009}/9>, :id 1}]
+
+  (def -sv
+    (-> (pg/execute conn "select * from test3")
+        first
+        :v))
+
+  (type -sv)
+  org.pg.type.SparseVector
+
+  -sv
+  ;; <SparseVector@2df264c: {:nnz 2, :index {1 42.00001, 6 99.00009}, :dim 9}>
+
+  @-sv
+  {:nnz 2, :index {1 42.00001, 6 99.00009}, :dim 9}
+
+  (nth -sv 0) ;; 0.0
+  (nth -sv 1) ;; 42.00001
+  (nth -sv 2) ;; 0.0
+
+  (vec -sv)
+  [0.0 42.00001 0.0 0.0 0.0 0.0 99.00009 0.0 0.0]
+
+  ;; insertion
+
+  ;; vector
+  (pg/execute conn "insert into test3 values ($1, $2)"
+              {:params [2 [5 2 6 0 2 5 0 0]]})
+
+  (pg/execute conn "select * from test3 where id = 2")
+  ;; [{:v <SparseVector {1:5.0, 2:2.0,3:6.0,5:2.0,6:5.0}/8>, :id 2}]
+
+  )
+
+(comment
+
+  ;; sparsevector
+  (pg/execute conn "insert into test3 values ($1, $2)"
+              {:params [3 (t/->sparse-vector 9 {0 523.23423
+                                                7 623.52346})]})
 
 
-;; neon.tech
+  (pg/execute conn "select * from test3")
 
-(def config
-  {:host "ep-fancy-queen-XXXXX.eu-central-1.aws.neon.tech"
-   :port 5432
-   :user "test_owner"
-   :password "<password>"
-   :database "test"
-   :use-ssl? true ;; mandatory!
-   })
+  ;; [{:v <SparseVector {2:42.00001,7:99.00009}/9>, :id 1}
+  ;;  {:v <SparseVector {1:5.0,2:2.0,3:6.0,5:2.0,6:5.0}/8>, :id 2}
+  ;;  {:v <SparseVector {1:523.23425,8:623.52344}/9>, :id 3}]
 
-(pg/with-conn [conn config]
-  (pg/query conn "select 1"))
+  ;; binary as well
 
-;; supabase
+  ;; custom schemas
 
-(require '[pg.ssl :as ssl])
 
-(def ssl-context
-  (ssl/context "/Users/ivan/Downloads/prod-ca-2021.crt"))
+  (assoc config
+         :type-map
+         {"some_schema.vector" t/vector
+          "some_schema.sparsevec" t/sparsevec})
 
-(def config
-  {:host "aws-0-eu-central-1.pooler.supabase.com"
-   :port 6543
-   :user "postgres.XXXX"
-   :password "<password>"
-   :database "postgres"
-   :ssl-context ssl-context ;; mandatory!
-   })
+  (assoc config
+         :type-map
+         {:some_schema/vector t/vector
+          :some_schema/sparsevec t/sparsevec})
+
+
+  ;; neon.tech
+
+  (def config
+    {:host "ep-fancy-queen-XXXXX.eu-central-1.aws.neon.tech"
+     :port 5432
+     :user "test_owner"
+     :password "<password>"
+     :database "test"
+     :use-ssl? true ;; mandatory!
+     })
+
+  (pg/with-conn [conn config]
+    (pg/query conn "select 1")))
+
+(comment
+
+
+  ;; supabase
+
+  (require '[pg.ssl :as ssl])
+
+  (def ssl-context
+    (ssl/context "/Users/ivan/Downloads/prod-ca-2021.crt"))
+
+  (def config
+    {:host "aws-0-eu-central-1.pooler.supabase.com"
+     :port 6543
+     :user "postgres.XXXX"
+     :password "<password>"
+     :database "postgres"
+     :ssl-context ssl-context ;; mandatory!
+     }))

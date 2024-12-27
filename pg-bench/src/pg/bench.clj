@@ -285,6 +285,12 @@ from
   #_
   (with-title "pg select many fields NO ASSOC"
     (pg/with-connection [conn pg-config]
+      (quick-bench
+          (pg/execute conn QUERY_SELECT_RANDOM_MANY_FIELDS))))
+
+  #_
+  (with-title "pg select many fields NO ASSOC"
+    (pg/with-connection [conn pg-config]
       (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_MANY_FIELDS]
         (quick-bench
             (pg/execute-statement conn stmt)))))
