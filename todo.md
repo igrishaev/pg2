@@ -8,7 +8,8 @@
 - user & database default values?
 - unix socket buffered streams
 
-- prep statement cache
+- prep stmt: track pid, conn-id
+- prep stmt: check if belongs?
 
 - postgis support
 - json wrapper not needed
