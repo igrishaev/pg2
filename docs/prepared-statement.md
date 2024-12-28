@@ -70,5 +70,5 @@ connection. Don't share a statement opened in a connection A to B and vice
 versa. Do not share them across different threads.**
 
 **UPD:** a recent version of PG2 has an internal cache of prepared
-statements. See the [Prepared Statement Cache](docs/prepared-statement-cache.md)
+statements. See the [Prepared Statement Cache](/docs/prepared-statement-cache.md)
 section for more info.
