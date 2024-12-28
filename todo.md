@@ -11,6 +11,8 @@
 - prep stmt: track pid, conn-id
 - prep stmt: check if belongs?
 
+- common API protocol?
+
 - postgis support
 - json wrapper not needed
 
