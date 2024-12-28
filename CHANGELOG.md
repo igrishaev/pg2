@@ -1,5 +1,9 @@
 
-## 0.1.27-SNAPSHOT
+## 0.1.28-SNAPSHOT
+
+- ?
+
+## 0.1.27
 
 - #27 better BigDecimal binary decoding logic
 - prepared statement cache for execute
