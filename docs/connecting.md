@@ -109,8 +109,8 @@ rest have predefined values.
 | `:protocol-version`    | integer      | 196608             | Postgres protocol version                                                       |
 | `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section) |
 
-1. See the ["SSL Setup"](/docs/ssl.md) section.
-2. See the ["Unix Domain Socket"](/docs/unix-socket.md) section.
+1. See the [SSL Setup](/docs/ssl.md) section.
+2. See the [Unix Domain Socket](/docs/unix-socket.md) section.
 
 ### Parameter notes
 

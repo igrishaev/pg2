@@ -329,7 +329,7 @@ item is a SQL expressions and all the rest items are parameters. For example:
 
 Having this vector, you can pass it directly to the JDBC driver. Pay attention
 that PG2 mimics Next.JDBC as well and might be used with such vectors. See the
-["Next.JDBC API layer"](/docs/next-jdbc-layer.md) section for details.
+[Next.JDBC API layer](/docs/next-jdbc-layer.md) section for details.
 
 The `pg-honey` package has a function `def-sqlvec-fns` which acts the same: in
 the current namespace, it defines functions that produce SQL vectors when being

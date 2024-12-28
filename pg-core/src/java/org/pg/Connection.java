@@ -704,6 +704,26 @@ public final class Connection implements AutoCloseable {
     }
 
     @SuppressWarnings("unused")
+    public int closeCachedPreparedStatements() {
+        try (TryLock ignored = lock.get()) {
+            final int len = PSCache.size();
+            if (len > 0) {
+                for (Map.Entry<String, PreparedStatement>entry: PSCache.entrySet()) {
+                    if (Debug.isON) {
+                        Debug.debug("Closing cached statement: %s", entry.getValue());
+                    }
+                    sendCloseStatement(entry.getValue());
+                }
+                sendSync();
+                sendFlush();
+                interact("--clear prepared statement cache");
+                PSCache.clear();
+            }
+            return len;
+        }
+    }
+
+    @SuppressWarnings("unused")
     public Object execute (final String sql) {
         return execute(sql, ExecuteParams.INSTANCE);
     }

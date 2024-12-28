@@ -1589,6 +1589,9 @@ drop table %1$s;
     (let [sql
           "select $1::text as foo"
 
+          _
+          (is (= 0 (pg/close-cached-statements conn)))
+
           sql-ps
           "select name, statement, parameter_types from pg_prepared_statements order by prepare_time asc"
 
@@ -1614,6 +1617,12 @@ drop table %1$s;
           (pg/execute conn sql {:params ["lol"]})
 
           statements4
+          (pg/query conn sql-ps)
+
+          _
+          (is (= 2 (pg/close-cached-statements conn)))
+
+          statements5
           (pg/query conn sql-ps)]
 
       (is (= [{:foo "kek"}] res1))
@@ -1638,7 +1647,10 @@ drop table %1$s;
       (is (= [{:statement "select $1::text as foo"
                :name "s6"
                :parameter_types "{text}"}]
-             statements4)))))
+             statements4))
+
+      (is (= []
+             statements5)))))
 
 
 (deftest test-client-execute-sqlvec-no-params

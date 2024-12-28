@@ -65,7 +65,7 @@ describe more about its inner state and behavior.
 ## Configuration
 
 The pool object accepts the same config the `Connection` object does (see the
-["Connecting to the server"](/docs/connecting.md) section for the table of
+[Connecting to the server](/docs/connecting.md) section for the table of
 parameters). In addition to these, the fillowing options are accepted:
 
 | Field                          | Type    | Default          | Comment                                                                                                              |

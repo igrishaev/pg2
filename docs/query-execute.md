@@ -117,3 +117,7 @@ ids.
 
 Both `query` and `execute` functions accept various options that affect data
 processing. Find their description in the next section.
+
+**UPD:** in a recent relese, the `execute` function caches prepared statements.
+See the [Prepared Statement Cache](docs/prepared-statement-cache.md) section for
+more info.

@@ -596,6 +596,15 @@
    (.prepare conn sql (->execute-params opt))))
 
 
+(defn close-cached-statements
+  "
+  Close all the cached prepared statements
+  and clean up the cache.
+  "
+  ^Integer [^Connection conn]
+  (.closeCachedPreparedStatements conn))
+
+
 (defn execute-statement
 
   "

@@ -47,4 +47,4 @@ and pass it to the config as follows:
    })
 ~~~
 
-See the ["SSL Setup"](/docs/ssl.md) section for details.
+See the [SSL Setup](/docs/ssl.md) section for details.

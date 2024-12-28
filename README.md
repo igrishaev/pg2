@@ -50,6 +50,7 @@ tests][tests].
 - [Connecting to the Server](/docs/connecting.md)
 - [Query and Execute](/docs/query-execute.md)
 - [Prepared Statements](/docs/prepared-statement.md)
+- [Prepared Statement Cache](docs/prepared-statement-cache.md)
 - [Transactions](/docs/transaction.md)
 - [Connection State](/docs/connection-state.md)
 - [Connection Pool](/docs/pool.md)
@@ -66,7 +67,6 @@ tests][tests].
 - Types & Extensions
   - [Geometry (line, box, etc)](/docs/geometry.md)
   - [PGVector](/docs/pgvector.md)
-  - PostGIS
   - [Custom Type Processors](/docs/processors.md)
 - Working with Enums
 - Cloning a Connection
