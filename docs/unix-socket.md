@@ -85,10 +85,14 @@ Printing a connection will reflect its Unix socket path:
 
 ## Performance Gain
 
-When benchmarking Unix sockets versus TCP on localhost, I noticed a slight
-performace difference in favour of sockets: about 10% or something (140 ms vs
-160 ms). Some people claim, in special cases Unix sockets benefit a lot. There
-is quite an interesting article ["How many TPS can we get from a single Postgres
+When benchmarking Unix sockets versus TCP on localhost, I noticed about 10-15%
+performace gain in favour of sockets, namely:
+
+- 140ms vs 160ms on Intel core i5;
+- 76ms vs 93ms on ARM M3.
+
+Some people claim that in special cases, Unix sockets benefit a lot. There is
+quite an interesting article ["How many TPS can we get from a single Postgres
 node?"][linkedin] written by Nikolay Samokhvalov. According to Nikolay, Unix
 sockets might bring up to 25% of transaction per second rate, namely 4 million
 versus 3 million, which is significant.
