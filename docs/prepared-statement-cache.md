@@ -1,33 +1,32 @@
 # Prepared Statement Cache
 
 Prepared statements, although thought to bring much performance, might be
-inconvenient. The main problem with them is that they're bound to a certain
-connection. If one created a prepared statement in connection A, they cannot use
-it withing a connection B.
+inconvenient. The main problem with them is, they're bound to a certain
+connection. If you prepared a statement in connection A, you cannot use it in a
+connection B.
 
-This fact contradicts with real-life applications what use connection
+This fact contradicts with real-life applications what rely on connection
 pools. Every time you're about to perform a query, you borrow a connection from
 a pool, and there is no any guarantee this is connection you had a second
-ago. Thus, running a prepared statement agains a random connection is a bad
-idea.
+ago. Running a prepared statement against a random connection is a bad idea.
 
 The official JDBC driver for Postgres has an interesting feature that PG2
 derives. Every time a query gets executed, a corresponding prepared statement is
-not closed afterwards. Instead, it stays open and put in a cache map like `{SQL
--> Statement}`. If you execute the same query (even with other parameters), the
-statement is taken from a cache.
+kept open afterwards. It stays in a map like `{SQL -> Statement}`. If you
+execute the same query again (even with different parameters), the statement is
+taken from a cache.
 
-This technique greatly simplifies the pipeline. It's not needed to keep one's
-eye on prepared statements and their match to a certain connection.
+This technique greatly simplifies the pipeline. There is no need to keep one's
+eye on prepared statements any more, and check if a statement belongs to a
+certain connection.
 
-**Important:** only `execute` function caches prepared statements; the standard
-`query` function does not. They might look similar but act differently under the
-hood. To read more about the difference, please refer to [Query and
-Execute](/docs/query-execute.md) section.
+**Important:** only the `execute` function **does** cache prepared statements;
+the standard `query` function **does not**. They might look similar but act
+differently under the hood. To read more about the difference, please refer to
+[Query and Execute](/docs/query-execute.md) section.
 
-The following session demonstrates how cache does work. Let's connect to a
-database and, while the connection is fresh, check out what prepared statements
-we have:
+The following session demonstrates how a statement cache works. Let's connect to
+a database and check out what prepared statements are there:
 
 ~~~clojure
 (def config
@@ -42,8 +41,8 @@ we have:
 []
 ~~~
 
-We don't have any. But as soon as we execute a first query, its prepared
-statement takes place in the `pg_prepared_statements` view:
+We don't have any. But as soon as we execute a query, its prepared statement
+takes place in the `pg_prepared_statements` view:
 
 
 ~~~clojure
@@ -60,10 +59,11 @@ statement takes place in the `pg_prepared_statements` view:
   :parameter_types "{integer}"}]
 ~~~
 
-The system name is `s1`. The `from_sql` false value signals it was produced low
-level Postgres Wire protocol, but not `PREPARE s1 AS SELECT...` SQL query.
+The name of the statement is `s1`. The `from_sql` false value signals it was
+produced using the low level Postgres Wire protocol, but not `PREPARE s1 AS
+SELECT...` SQL query.
 
-Now if you execute the same query again, even with a different parameter, the
+Now if you execute the same query again, even with another parameter, the
 prepared statement `s1` will be reused:
 
 ~~~clojure
@@ -74,10 +74,12 @@ prepared statement `s1` will be reused:
 This step is hidden from a user but may gain performance. Simple queries like
 `select $1::int` do not benefit a lot from caching, of course. But complex
 queries that involve joins, grouping, etc might take a while when composing a
-query plan. Building this plan every time you `execute` the same query is
-ineffective.
+query plan. In Postgres, building a plan requires fetching statistics about
+tables, and this is expensive. But once a statement has been prepared, so has
+the plan, and you can easily reuse it.
 
-Imagine someone has cleaned up all the prepared statements with `DEALLOCATE`:
+Imagine someone has manually wiped all the prepared statements with
+`DEALLOCATE`:
 
 ~~~clojure
 (pg/query conn "deallocate all")
@@ -87,10 +89,11 @@ Imagine someone has cleaned up all the prepared statements with `DEALLOCATE`:
 ~~~
 
 The `Connection` object doesn't know about it, and perhaps you expect the next
-`execute` invocation will end with an error. Actually, it will but the `execute`
-function checks for the error code received. When it's 2600 (prepared statement
-not found), it will retry the query. This time, the failed prepared statement is
-removed from the cache and replaced with its new version:
+`execute` invocation to trigger an error. Actually, there will be a negative
+response from a server but the `execute` function checks for the error code
+before throwing an exception. When it's 2600 (prepared statement not found), the
+`execute` function retries the query. Next time, the failed prepared statement
+gets removed from the cache and replaced with a new version:
 
 ~~~clojure
 (pg/execute conn "select $1::int as num" {:params [3]})
@@ -134,8 +137,8 @@ a leading or a traling space), it is condidered as another expression:
   :parameter_types "{}"}]
 ~~~
 
-Use the `close-cached-statements` function to close all the cached statements
-and clean up the cache. It returs the number of statements closed:
+There is the `close-cached-statements` function to close all the cached
+statements and clean up the cache. It returs the number of statements closed:
 
 ~~~clojure
 (pg/close-cached-statements conn)

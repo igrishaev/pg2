@@ -6,6 +6,8 @@
 - bench: extra case for execute
 - demo ns commented
 - sendBytes debug tag
+- common wrap buffered in/out streams methods
+- wrap unix socket streams
 
 ## 0.1.26
 

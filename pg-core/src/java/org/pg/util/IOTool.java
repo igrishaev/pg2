@@ -2,9 +2,7 @@ package org.pg.util;
 
 import org.pg.error.PGError;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 
 public final class IOTool {
@@ -74,6 +72,22 @@ public final class IOTool {
             return inputStream.read();
         } catch (IOException e) {
             throw new PGError(e, "cannot read from the input stream");
+        }
+    }
+
+    public static BufferedInputStream wrapBuf(final InputStream in, final int size) {
+        if (in instanceof BufferedInputStream b) {
+            return b;
+        } else {
+            return new BufferedInputStream(in, size);
+        }
+    }
+
+    public static BufferedOutputStream wrapBuf(final OutputStream out, final int size) {
+        if (out instanceof BufferedOutputStream b) {
+            return b;
+        } else {
+            return new BufferedOutputStream(out, size);
         }
     }
 

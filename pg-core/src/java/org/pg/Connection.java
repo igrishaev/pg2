@@ -129,6 +129,16 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    private void setInputStream(final InputStream in) {
+        final int len = config.inStreamBufSize();
+        inStream = IOTool.wrapBuf(in, len);
+    }
+
+    private void setOutputStream(final OutputStream out) {
+        final int len = config.outStreamBufSize();
+        outStream = new BufferedOutputStream(out, len);
+    }
+
     public void connectUnixSocket() {
         final String path = getUnixSocketPath(config);
         final File file = new File(path);
@@ -138,8 +148,8 @@ public final class Connection implements AutoCloseable {
         this.unixSocketPath = path;
         final SocketAddress address = UnixDomainSocketAddress.of(path);
         final SocketChannel channel = SocketTool.open(address);
-        inStream = Channels.newInputStream(channel);
-        outStream = Channels.newOutputStream(channel);
+        setInputStream(Channels.newInputStream(channel));
+        setOutputStream(Channels.newOutputStream(channel));
     }
 
     private void initTypeMapping() {
@@ -361,23 +371,14 @@ public final class Connection implements AutoCloseable {
                 true
         );
 
-        final InputStream sslInStream = new BufferedInputStream(
-                IOTool.getInputStream(sslSocket),
-                config.inStreamBufSize()
-        );
-
-        final OutputStream sslOutStream = new BufferedOutputStream(
-                IOTool.getOutputStream(sslSocket),
-                config.outStreamBufSize()
-        );
+        setInputStream(IOTool.getInputStream(sslSocket));
+        setOutputStream(IOTool.getOutputStream(sslSocket));
 
         sslSocket.setUseClientMode(true);
         sslSocket.setEnabledProtocols(SSLProtocols);
         sslSocket.startHandshake();
 
         socket = sslSocket;
-        inStream = sslInStream;
-        outStream = sslOutStream;
         isSSL = true;
     }
 
@@ -417,14 +418,8 @@ public final class Connection implements AutoCloseable {
         final int port = getPort();
         final String host = getHost();
         socket = SocketTool.socket(host, port);
-        inStream = new BufferedInputStream(
-                IOTool.getInputStream(socket),
-                config.inStreamBufSize()
-        );
-        outStream = new BufferedOutputStream(
-                IOTool.getOutputStream(socket),
-                config.outStreamBufSize()
-        );
+        setInputStream(IOTool.getInputStream(socket));
+        setOutputStream(IOTool.getOutputStream(socket));
         setSocketOptions(socket, config);
         preSSLStage();
     }

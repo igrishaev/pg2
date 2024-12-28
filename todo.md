@@ -6,7 +6,6 @@
 - geom types: toString -> toSQL
 
 - user & database default values?
-- unix socket buffered streams
 
 - prep stmt: track pid, conn-id
 - prep stmt: check if belongs?
