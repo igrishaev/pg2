@@ -804,6 +804,40 @@ from
                (first invocations)))))))
 
 
+;; TODO: test cross/conn listen/notify
+;; TODO: pollUpdates pg/core function + docstring
+;; TODO: test notices
+
+(deftest test-client-test-poll-updates
+
+  (let [capture!
+        (atom [])
+
+        fn-notification
+        (fn [msg]
+          (swap! capture! conj msg))
+
+        config+
+        (assoc *CONFIG-BIN* :fn-notification fn-notification)]
+
+    (pg/with-connection [conn1 config+]
+      (pg/with-connection [conn2 config+]
+        (pg/listen conn2 "test")
+        (pg/notify conn1 "test" "hello")
+
+        (Thread/sleep 100)
+
+        (.pollUpdates conn2)))
+
+    (is (= [{:channel "test"
+             :msg :NotificationResponse
+             :message "hello"}]
+           (->> capture!
+                deref
+                (mapv (fn [fields]
+                        (dissoc fields :pid))))))))
+
+
 (deftest test-client-listen-notify-exception
 
   (let [capture!

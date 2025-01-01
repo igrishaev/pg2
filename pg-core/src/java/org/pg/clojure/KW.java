@@ -13,6 +13,7 @@ public final class KW {
     public final static Keyword command = Keyword.intern("command");
     public final static Keyword msg = Keyword.intern("msg");
     public final static Keyword NoticeResponse = Keyword.intern("NoticeResponse");
+    public final static Keyword NotificationResponse = Keyword.intern("NotificationResponse");
     public final static Keyword pid = Keyword.intern("pid");
     public final static Keyword channel = Keyword.intern("channel");
     public final static Keyword message = Keyword.intern("message");

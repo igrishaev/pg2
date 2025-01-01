@@ -7,6 +7,14 @@ import java.net.Socket;
 
 public final class IOTool {
 
+    public static int available (final InputStream inputStream) {
+        try {
+            return inputStream.available();
+        } catch (IOException e) {
+            throw new PGError(e, "cannot get bytes available");
+        }
+    }
+
     public static void close (final InputStream inputStream) {
         try {
             inputStream.close();

@@ -511,6 +511,10 @@ public final class Connection implements AutoCloseable {
         sendMessage(new SSLRequest(Const.SSL_CODE));
     }
 
+    private IServerMessage readMessage () {
+        return readMessage(false);
+    }
+
     private IServerMessage readMessage (final boolean skipMode) {
 
         final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
@@ -1380,6 +1384,29 @@ public final class Connection implements AutoCloseable {
         try (TryLock ignored = lock.get()) {
             final List<Object> params = List.of(channel, message);
             execute("select pg_notify($1, $2)", params);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public boolean pollUpdates() {
+        try (TryLock ignored = lock.get()) {
+            sendSync();
+            sendFlush();
+            flush();
+            if (IOTool.available(inStream) < 1) {
+                return false;
+            }
+            final IServerMessage msg = readMessage();
+            if (msg instanceof NotificationResponse nr) {
+                handleNotificationResponse(nr);
+            } else if (msg instanceof NoticeResponse nr) {
+                handleNoticeResponse(nr);
+            } else if (msg instanceof ReadyForQuery rfq) {
+                handleReadyForQuery(rfq);
+            } else {
+                throw new PGError("unexpected message in poll: %s", msg);
+            }
+            return true;
         }
     }
 
