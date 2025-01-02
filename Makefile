@@ -2,9 +2,6 @@
 release:
 	lein release
 
-snapshot:
-	lein sub with-profile uberjar deploy
-
 docker-up:
 	docker compose up
 
