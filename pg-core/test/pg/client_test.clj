@@ -819,38 +819,35 @@ from
     (pg/with-connection [conn1 config+]
       (pg/with-connection [conn2 config+]
 
-        (is (false? (pg/poll-updates conn2)))
-        (is (false? (pg/poll-updates conn1)))
+        (is (zero? (pg/poll-notifications conn2)))
+        (is (zero? (pg/poll-notifications conn1)))
 
         (pg/listen conn2 "test")
-        #_
-        (is (= 1
-               (pg/listen conn2 "test")))
+        (pg/notify conn1 "test" "1")
+        (pg/notify conn1 "test" "2")
+        (pg/notify conn1 "test" "3")
 
-        ()
+        (Thread/sleep 100)
+        (is (= 3 (pg/poll-notifications conn2)))
 
-
-
-        #_
-        (is (= 1
-               (pg/query conn2 "select 1")
-               ))
-
-        ;; (is (false? (pg/poll-updates conn2)))
-        ;; (is (false? (pg/poll-updates conn1)))
-
-        (pg/notify conn1 "test" "hello")
-
-        (pg/query conn2 "")
-
-        #_
-        (while (pg/poll-updates conn2)
-          (Thread/sleep 1000))))
+        (pg/execute conn2 "select 1")
+        (pg/poll-notifications conn2)
+        (pg/execute conn2 "select 2")
+        (pg/poll-notifications conn2)
+        (pg/execute conn2 "select 3")))
 
     (is (= [{:channel "test"
              :msg :NotificationResponse
              :self? false
-             :message "hello"}]
+             :message "1"}
+            {:channel "test"
+             :msg :NotificationResponse
+             :self? false
+             :message "2"}
+            {:channel "test"
+             :msg :NotificationResponse
+             :self? false
+             :message "3"}]
            (->> capture!
                 deref
                 (mapv (fn [fields]
