@@ -16,7 +16,7 @@ import java.util.Map;
 
 public final class Result {
 
-     public final static class Node {
+    public final static class Node {
 
          private PortalSuspended portalSuspended;
          private RowDescription rowDescription;
@@ -78,6 +78,7 @@ public final class Result {
     private Throwable exception;
     public ScramSha256.Pipeline scramPipeline;
     private String sql;
+    private int notificationCount;
 
     public static String[] unifyKeys (final String[] oldKeys) {
         final Map<String, Integer> map = new HashMap<>();
@@ -100,6 +101,15 @@ public final class Result {
 
     public Result(final ExecuteParams executeParams) {
         this(executeParams, null);
+    }
+
+    public Result incNotificationCount() {
+        notificationCount += 1;
+        return this;
+    }
+
+    public int getNotificationCount() {
+        return notificationCount;
     }
 
     public Result(final ExecuteParams executeParams, final String sql) {

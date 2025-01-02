@@ -1054,18 +1054,12 @@
   (.notify conn channel message))
 
 
-(defn poll-updates
+(defn poll-notifications
   "
-  Check if there are any pending notifications
-  or notices on the server. Emit an empty command
-  sequence to force the server to send them. Might
-  be unsuccessful even if a notification was sent
-  before due to their async nature. Retruns true
-  if a message was received and processed. False if
-  nothing was read.
+  TODO
   "
   ^Boolean [^Connection conn]
-  (.pollUpdates conn))
+  (.pollNotifications conn))
 
 
 ;;

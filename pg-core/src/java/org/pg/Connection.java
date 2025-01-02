@@ -511,10 +511,6 @@ public final class Connection implements AutoCloseable {
         sendMessage(new SSLRequest(Const.SSL_CODE));
     }
 
-    private IServerMessage readMessage () {
-        return readMessage(false);
-    }
-
     private IServerMessage readMessage (final boolean skipMode) {
 
         final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
@@ -844,7 +840,7 @@ public final class Connection implements AutoCloseable {
         if (msg instanceof DataRow x) {
             handleDataRow(x, res);
         } else if (msg instanceof NotificationResponse x) {
-            handleNotificationResponse(x);
+            handleNotificationResponse(x, res);
         } else if (msg instanceof AuthenticationCleartextPassword) {
             handleAuthenticationCleartextPassword();
         } else if (msg instanceof AuthenticationSASL x) {
@@ -1148,10 +1144,11 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void handleNotificationResponse (final NotificationResponse msg) {
+    private void handleNotificationResponse (final NotificationResponse msg, final Result res) {
         // Sometimes, it's important to know whether a notification
         // was triggered by the current connection or another.
         final boolean isSelf = msg.pid() == pid;
+        res.incNotificationCount();
         handlerCall(
                 config.fnNotification(),
                 msg.toClojure().assoc(KW.self_QMARK, isSelf)
@@ -1398,41 +1395,13 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    /*
-    Send an empty sequence of messages and check out if there is something
-    to read back. Use this method to gently ask the server if there are any
-    pending notifications or notices. The method doesn't guarantee there
-    will be a response immediately. Returns true if there was a message read,
-    and false otherwise.
-     */
     @SuppressWarnings("unused")
-    public boolean pollUpdates() {
+    public int pollNotifications() {
         try (TryLock ignored = lock.get()) {
-            sendFlush();
-            sendSync();
-            flush();
-            if (IOTool.available(inStream) < 1) {
-                return false;
-            }
-            final IServerMessage msg = readMessage();
-            // I believe, only the following messages can sneak in
-            // when polling the server outside the main pipeline
-            // (see the "interact" method).
-            if (msg instanceof NotificationResponse nr) {
-                handleNotificationResponse(nr);
-                return true;
-            } else if (msg instanceof NoticeResponse nr) {
-                handleNoticeResponse(nr);
-                return true;
-            } else if (msg instanceof ReadyForQuery rfq) {
-                handleReadyForQuery(rfq);
-                return true;
-            } else if (msg instanceof ParameterStatus ps) {
-                handleParameterStatus(ps);
-                return true;
-            } else {
-                throw new PGError("unexpected message in pollUpdates: %s", msg);
-            }
+            final String sql = "";
+            sendQuery(sql);
+            final Result res = interact(sql);
+            return res.getNotificationCount();
         }
     }
 

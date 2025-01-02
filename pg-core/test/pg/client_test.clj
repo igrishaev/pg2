@@ -823,15 +823,29 @@ from
         (is (false? (pg/poll-updates conn1)))
 
         (pg/listen conn2 "test")
+        #_
+        (is (= 1
+               (pg/listen conn2 "test")))
 
-        (is (false? (pg/poll-updates conn2)))
+        ()
+
+
+
+        #_
+        (is (= 1
+               (pg/query conn2 "select 1")
+               ))
+
+        ;; (is (false? (pg/poll-updates conn2)))
         ;; (is (false? (pg/poll-updates conn1)))
 
-        ;; (pg/notify conn1 "test" "hello")
+        (pg/notify conn1 "test" "hello")
+
+        (pg/query conn2 "")
 
         #_
         (while (pg/poll-updates conn2)
-          :dunno)))
+          (Thread/sleep 1000))))
 
     (is (= [{:channel "test"
              :msg :NotificationResponse
