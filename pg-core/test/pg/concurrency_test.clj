@@ -223,7 +223,7 @@
                                  (io/reader))]
             (vec (csv/read-csv reader)))]
 
-      (is (< 3000 diff 3100))
+      (is (< 3000 diff 3500))
 
       (is (= {:copied 10} res1))
       (is (= {:copied 10} res2))

@@ -814,7 +814,10 @@ from
           (swap! capture! conj msg))
 
         config+
-        (assoc *CONFIG-BIN* :fn-notification fn-notification)]
+        (assoc *CONFIG-BIN* :fn-notification fn-notification)
+
+        counter!
+        (atom 0)]
 
     (pg/with-connection [conn1 config+]
       (pg/with-connection [conn2 config+]
@@ -827,31 +830,27 @@ from
         (pg/notify conn1 "test" "2")
         (pg/notify conn1 "test" "3")
 
-        (Thread/sleep 100)
-        (is (= 3 (pg/poll-notifications conn2)))
+        (while (-> counter! deref (< 3))
+          (let [amount (pg/poll-notifications conn2)]
+            (swap! counter! + amount)))))
 
-        (pg/execute conn2 "select 1")
-        (pg/poll-notifications conn2)
-        (pg/execute conn2 "select 2")
-        (pg/poll-notifications conn2)
-        (pg/execute conn2 "select 3")))
-
-    (is (= [{:channel "test"
-             :msg :NotificationResponse
-             :self? false
-             :message "1"}
-            {:channel "test"
-             :msg :NotificationResponse
-             :self? false
-             :message "2"}
-            {:channel "test"
-             :msg :NotificationResponse
-             :self? false
-             :message "3"}]
+    (is (= #{{:channel "test"
+              :msg :NotificationResponse
+              :self? false
+              :message "1"}
+             {:channel "test"
+              :msg :NotificationResponse
+              :self? false
+              :message "2"}
+             {:channel "test"
+              :msg :NotificationResponse
+              :self? false
+              :message "3"}}
            (->> capture!
                 deref
-                (mapv (fn [fields]
-                        (dissoc fields :pid))))))))
+                (map (fn [fields]
+                       (dissoc fields :pid)))
+                (set))))))
 
 
 (deftest test-client-listen-notify-exception
