@@ -1,7 +1,9 @@
 
 ## 0.1.28-SNAPSHOT
 
-- ?
+- poll-updates function to check out notifications/notices
+- notification payload: add self? field
+- add and fix tests
 
 ## 0.1.27
 
