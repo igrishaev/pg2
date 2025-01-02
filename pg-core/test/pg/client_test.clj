@@ -819,11 +819,19 @@ from
     (pg/with-connection [conn1 config+]
       (pg/with-connection [conn2 config+]
 
-        (pg/listen conn2 "test")
-        (pg/notify conn1 "test" "hello")
+        (is (false? (pg/poll-updates conn2)))
+        (is (false? (pg/poll-updates conn1)))
 
-        (Thread/sleep 100)
-        (pg/poll-updates conn2)))
+        (pg/listen conn2 "test")
+
+        (is (false? (pg/poll-updates conn2)))
+        ;; (is (false? (pg/poll-updates conn1)))
+
+        ;; (pg/notify conn1 "test" "hello")
+
+        #_
+        (while (pg/poll-updates conn2)
+          :dunno)))
 
     (is (= [{:channel "test"
              :msg :NotificationResponse

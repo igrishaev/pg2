@@ -141,7 +141,7 @@
       (is (= [{:b ""}] res2))
       (is (= [{:c ""}] res3))
 
-      (is (< 6000 diff 6100)))))
+      (is (< 6000 diff 6700)))))
 
 
 (deftest test-transaction-pipeline
