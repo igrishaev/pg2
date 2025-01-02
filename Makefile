@@ -45,3 +45,7 @@ test:
 	PG_MIGRATION_PASS=test lein sub test
 
 .phony: test
+
+snapshot:
+	lein sub with-profile uberjar install
+	lein sub with-profile uberjar deploy
