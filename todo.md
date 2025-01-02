@@ -12,6 +12,8 @@
 
 - common API protocol?
 
+- CodecParams (setParam) make it mutable
+
 - postgis support
 - json wrapper not needed
 

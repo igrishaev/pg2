@@ -1026,6 +1026,10 @@
   (.write writer (.toString conn)))
 
 
+;;
+;; Listen/notify block
+;;
+
 (defn listen
   "
   Subscribe the connection to a given channel.
@@ -1048,6 +1052,20 @@
   "
   [^Connection conn ^String channel ^String message]
   (.notify conn channel message))
+
+
+(defn poll-updates
+  "
+  Check if there are any pending notifications
+  or notices on the server. Emit an empty command
+  sequence to force the server to send them. Might
+  be unsuccessful even if a notification was sent
+  before due to their async nature. Retruns true
+  if a message was received and processed. False if
+  nothing was read.
+  "
+  ^Boolean [^Connection conn]
+  (.pollUpdates conn))
 
 
 ;;

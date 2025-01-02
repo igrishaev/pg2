@@ -676,6 +676,11 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    /*
+    Flush the output stream meaning all the buffered bytes
+    get sent to a socket forcibly. Must be called *before*
+    reading something from the service back.
+     */
     private void flush () {
         IOTool.flush(outStream);
     }
@@ -1144,7 +1149,13 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handleNotificationResponse (final NotificationResponse msg) {
-        handlerCall(config.fnNotification(), msg.toClojure());
+        // Sometimes, it's important to know whether a notification
+        // was triggered by the current connection or another.
+        final boolean isSelf = msg.pid() == pid;
+        handlerCall(
+                config.fnNotification(),
+                msg.toClojure().assoc(KW.self_QMARK, isSelf)
+        );
     }
 
     private void handleNoticeResponse (final NoticeResponse msg) {
@@ -1387,6 +1398,13 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    /*
+    Send an empty sequence of messages and check out if there is something
+    to read back. Use this method to gently ask the server if there are any
+    pending notifications or notices. The method doesn't guarantee there
+    will be a response immediately. Returns true if there was a message read,
+    and false otherwise.
+     */
     @SuppressWarnings("unused")
     public boolean pollUpdates() {
         try (TryLock ignored = lock.get()) {
@@ -1397,16 +1415,24 @@ public final class Connection implements AutoCloseable {
                 return false;
             }
             final IServerMessage msg = readMessage();
+            // I believe, only the following messages can sneak in
+            // when polling the server outside the main pipeline
+            // (see the "interact" method).
             if (msg instanceof NotificationResponse nr) {
                 handleNotificationResponse(nr);
+                return true;
             } else if (msg instanceof NoticeResponse nr) {
                 handleNoticeResponse(nr);
+                return true;
             } else if (msg instanceof ReadyForQuery rfq) {
                 handleReadyForQuery(rfq);
+                return true;
+            } else if (msg instanceof ParameterStatus ps) {
+                handleParameterStatus(ps);
+                return true;
             } else {
-                throw new PGError("unexpected message in poll: %s", msg);
+                throw new PGError("unexpected message in pollUpdates: %s", msg);
             }
-            return true;
         }
     }
 

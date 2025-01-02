@@ -14,6 +14,7 @@ public final class KW {
     public final static Keyword msg = Keyword.intern("msg");
     public final static Keyword NoticeResponse = Keyword.intern("NoticeResponse");
     public final static Keyword NotificationResponse = Keyword.intern("NotificationResponse");
+    public final static Keyword self_QMARK = Keyword.intern("self?");
     public final static Keyword pid = Keyword.intern("pid");
     public final static Keyword channel = Keyword.intern("channel");
     public final static Keyword message = Keyword.intern("message");
@@ -36,7 +37,7 @@ public final class KW {
     public final static Keyword y1 = Keyword.intern("y1");
     public final static Keyword x2 = Keyword.intern("x2");
     public final static Keyword y2 = Keyword.intern("y2");
-    public final static Keyword isClosed = Keyword.intern("closed?");
+    public final static Keyword closed_QMARK = Keyword.intern("closed?");
     public final static Keyword points = Keyword.intern("points");
 
     public static void main(String... args) {

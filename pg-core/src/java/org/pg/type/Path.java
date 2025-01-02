@@ -39,7 +39,7 @@ public record Path(List<Point> points, boolean isClosed) {
     }
 
     public static Path fromMap(final Map<?,?> map) {
-        Boolean isClosed = (Boolean) map.get(KW.isClosed);
+        Boolean isClosed = (Boolean) map.get(KW.closed_QMARK);
         if (isClosed == null) {
             isClosed = true;
         }
@@ -98,7 +98,7 @@ public record Path(List<Point> points, boolean isClosed) {
 
     public IPersistentCollection toClojure() {
         return PersistentHashMap.create(
-                KW.isClosed, isClosed,
+                KW.closed_QMARK, isClosed,
                 KW.points, PersistentVector.create(
                         points.stream().map(Point::toClojure).toList()
                 )

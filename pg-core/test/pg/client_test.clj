@@ -797,16 +797,12 @@ from
 
         (is (= 1 (count invocations)))
 
-        (is (= {:msg :NoticeResponse
+        (is (= {:msg :NotificationResponse
                 :pid pid
+                :self? true
                 :channel channel
                 :message message}
                (first invocations)))))))
-
-
-;; TODO: test cross/conn listen/notify
-;; TODO: pollUpdates pg/core function + docstring
-;; TODO: test notices
 
 (deftest test-client-test-poll-updates
 
@@ -822,15 +818,16 @@ from
 
     (pg/with-connection [conn1 config+]
       (pg/with-connection [conn2 config+]
+
         (pg/listen conn2 "test")
         (pg/notify conn1 "test" "hello")
 
         (Thread/sleep 100)
-
-        (.pollUpdates conn2)))
+        (pg/poll-updates conn2)))
 
     (is (= [{:channel "test"
              :msg :NotificationResponse
+             :self? false
              :message "hello"}]
            (->> capture!
                 deref
@@ -913,15 +910,17 @@ from
 
           (pg/execute conn2 "")
 
-          (is (= (set [{:msg :NoticeResponse
-                         :pid pid1
-                         :channel "foo"
-                         :message "message1"}
+          (is (= (set [{:msg :NotificationResponse
+                        :pid pid1
+                        :self? false
+                        :channel "foo"
+                        :message "message1"}
 
-                        {:msg :NoticeResponse
-                         :pid pid1
-                         :channel "foo"
-                         :message "message2"}])
+                       {:msg :NotificationResponse
+                        :pid pid1
+                        :self? false
+                        :channel "foo"
+                        :message "message2"}])
 
                  (set @capture!))))))))
 
