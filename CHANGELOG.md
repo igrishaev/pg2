@@ -1,8 +1,9 @@
 
 ## 0.1.28-SNAPSHOT
 
-- poll-updates function to check out notifications/notices
+- pg/poll-notification function added
 - notification payload: add self? field
+- change the order of Flush and Sync
 - add and fix tests
 
 ## 0.1.27

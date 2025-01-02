@@ -1056,9 +1056,12 @@
 
 (defn poll-notifications
   "
-  TODO
+  Perform an empty query so that pending notifications
+  are sent to the client. Doesn't guarantee though they
+  will be sent for sure due to their async nature. The
+  result is a number of notifications got and processed.
   "
-  ^Boolean [^Connection conn]
+  ^Integer [^Connection conn]
   (.pollNotifications conn))
 
 
