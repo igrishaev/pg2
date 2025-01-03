@@ -12,6 +12,10 @@
 
 - common API protocol?
 
+- migrations: use PG* env vars
+- migrations: unix socket
+- migrations: dir path
+
 - postgis support
 - json wrapper not needed
 
