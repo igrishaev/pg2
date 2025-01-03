@@ -105,13 +105,16 @@
   Return a pair of `File` objects, prev and next.
   "
 
-  ([migrations-path]
-   (create-migration-files migrations-path nil))
+  ([url]
+   (create-migration-files url nil))
 
-  ([migrations-path {:keys [id slug]}]
+  ([url {:keys [id slug]}]
    (let [id
          (or id
              (generate-datetime-id))
+
+         dir
+         (fs/url->dir url)
 
          name-prev
          (make-file-name id slug :prev)
@@ -120,12 +123,12 @@
          (make-file-name id slug :next)
 
          file-prev
-         (io/file migrations-path name-prev)
+         (io/file dir name-prev)
 
          file-next
-         (io/file migrations-path name-next)]
+         (io/file dir name-next)]
 
-     (.mkdirs (io/file migrations-path))
+     (.mkdirs (io/file dir))
 
      (spit file-prev "")
      (spit file-next "")
@@ -258,10 +261,8 @@
   "
   Read all the migrations from a resource.
   "
-  ^Sorted [^String path]
-  (->> path
-       (fs/path->url)
-       (url->migrations)))
+  ^Sorted [^URL url]
+  (url->migrations url))
 
 
 (defn get-applied-migration-ids

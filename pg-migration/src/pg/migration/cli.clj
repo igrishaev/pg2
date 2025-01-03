@@ -11,12 +11,18 @@
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
+   [pg.migration.fs :as fs]
    [pg.migration.core :as mig]
    [pg.migration.log :as log]))
 
 
 (defmacro error! [template & args]
-  `(throw (new Error (format ~template ~@args))))
+  `(throw (new RuntimeException (format ~template ~@args))))
+
+(defmacro rethrow! [e template & args]
+  `(throw (new RuntimeException
+               (format ~template ~@args)
+               ~e)))
 
 
 (defn parse-int [string]
@@ -31,10 +37,6 @@
            (error! "Env variable %s is not set" vname))))})
 
 
-(def CONFIG-NAME
-  "migration.config.edn")
-
-
 (defn path->config [^String path]
   (->> path
        io/file
@@ -47,12 +49,14 @@
   (-> path io/file .exists))
 
 
-(defn parse-config [path]
-  (cond
-    path
-    (path->config path)
-    (path-exists? CONFIG-NAME)
-    (path->config CONFIG-NAME)))
+(defn load-config [url]
+  (try
+    (->> url
+         io/reader
+         (new PushbackReader)
+         (edn/read {:readers edn-readers}))
+    (catch Exception e
+      (rethrow! e "Failed read an EDN file: %s" url))))
 
 
 (defn current-user [_]
@@ -61,11 +65,9 @@
 
 (def CLI-OPT-MAIN
 
-  [["-c" "--config CONNFIG" "Path to the .edn config file"
+  [["-c" "--config CONFIG" "Path to the .edn config (a resource or a local file)"
     :id :config
-    :default nil
-    :default-desc CONFIG-NAME
-    :parse-fn parse-config]
+    :parse-fn fs/path->url]
 
    ["-p" "--port PORT" "Port number"
     :id :port
@@ -96,8 +98,9 @@
     :parse-fn keyword
     :default :migrations]
 
-   [nil "--path PATH" "Migrations path"
+   [nil "--path PATH" "Migrations path (a resource or a local file)"
     :id :migrations-path
+    :parse-fn fs/path->url
     :default "migrations"]])
 
 
@@ -344,7 +347,7 @@
       :else
       (let [[file-prev file-next]
             (mig/create-migration-files migrations-path
-                                  {:id id :slug slug})]
+                                        {:id id :slug slug})]
         (println (str file-prev))
         (println (str file-next))))))
 
@@ -445,8 +448,12 @@
                 summary]}
         parsed
 
-        {:keys [config]}
+        {config-url :config}
         options
+
+        config
+        (when config-url
+          (load-config config-url))
 
         config-full
         (-> options

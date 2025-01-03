@@ -12,9 +12,14 @@
 
 - common API protocol?
 
+- migrations: use PG* env vars
+- migrations: unix socket
+- migrations: dir path
+
 - unix socket local tests
 - ssl services local tests
 - CodecParams (setParam) make it mutable
+
 
 - postgis support
 - json wrapper not needed

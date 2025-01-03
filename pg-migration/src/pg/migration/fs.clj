@@ -18,17 +18,27 @@
 
 (defn path->url
   "
-  Turn a string path into a URL.
+  Turn a string path into a URL: either a resoure
   "
   ^URL [^String path]
   (or (io/resource path)
-      (error! "Resource %s doens't exist" path)))
+      (let [file (io/file path)]
+        (when (.exists file)
+          (.toURL file)))
+      (error! "Neither a resource nor a local file exists: %s " path)))
+
+
+(defn url->dir ^File [^URL url]
+  (let [file (io/as-file url)]
+    (if (.isDirectory file)
+      file
+      (error! "The path %s is not a directory: %s" url))))
 
 
 (defmulti url->children
   "
   Get child URLs for a given URL. The result
-  desn't unclude the given URL.
+  doesn't include the given URL.
   "
   (fn [^URL url]
     (.getProtocol url)))
@@ -37,6 +47,11 @@
 (defmethod url->children :default
   [url]
   (error! "Unsupported URL: %s" url))
+
+
+(defmethod url->children "resource"
+  [^URL url]
+  (error! "It looks like you're trying to read migration resources from a GraalVM-compiled file, which is not possible at the moment. Please point the migration path to a local directory, not a resource. Sorry but I cannot do anything about it. The current URL is %s" url))
 
 
 (defmethod url->children "file"
