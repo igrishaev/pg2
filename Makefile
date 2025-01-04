@@ -2,6 +2,7 @@
 release:
 	lein release
 
+	lein sub with-profile uberjar install
 docker-up:
 	docker compose up
 
