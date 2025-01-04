@@ -16,14 +16,18 @@
    [clojure.string :as str]
    [pg.core :as pg]
    [pg.honey :as pgh]
+   [pg.migration.err :refer [throw!]]
    [pg.migration.fs :as fs]
    [pg.migration.log :as log]))
 
 (set! *warn-on-reflection* true)
 
+(def MIG_TABLE :migrations)
+(def MIG_PATH "migrations")
+
 (def DEFAULTS
-  {:migrations-table :migrations
-   :migrations-path "migrations"})
+  {:migrations-table MIG_TABLE
+   :migrations-path MIG_PATH})
 
 
 (def RE_FILE
@@ -38,10 +42,6 @@
   (-> "yyyyMMddHHmmss"
       (DateTimeFormatter/ofPattern)
       (.withZone ZoneOffset/UTC)))
-
-
-(defmacro error! [template & args]
-  `(throw (new Error (format ~template ~@args))))
 
 
 (defn letters
@@ -105,16 +105,13 @@
   Return a pair of `File` objects, prev and next.
   "
 
-  ([url]
-   (create-migration-files url nil))
+  ([path]
+   (create-migration-files path nil))
 
-  ([url {:keys [id slug]}]
+  ([path {:keys [id slug]}]
    (let [id
          (or id
              (generate-datetime-id))
-
-         dir
-         (fs/url->dir url)
 
          name-prev
          (make-file-name id slug :prev)
@@ -123,12 +120,12 @@
          (make-file-name id slug :next)
 
          file-prev
-         (io/file dir name-prev)
+         (io/file path name-prev)
 
          file-next
-         (io/file dir name-next)]
+         (io/file path name-next)]
 
-     (.mkdirs (io/file dir))
+     (.mkdirs (io/file path))
 
      (spit file-prev "")
      (spit file-next "")
@@ -234,7 +231,7 @@
               (for [item items]
                 (-> item ^URL (:url) (.getFile)))]
 
-          (error! "Migration %s has %s %s files: %s"
+          (throw! "Migration %s has %s %s files: %s"
                   id
                   (count items)
                   (name direction)
@@ -312,7 +309,7 @@
           migration2 (get migrations (inc i))]
       (when (and (-> migration1 :applied? not)
                  (-> migration2 :applied?))
-        (error! "Migration conflict: migration %s has been applied before %s"
+        (throw! "Migration conflict: migration %s has been applied before %s"
                 (:id migration2)
                 (:id migration1))))))
 
@@ -323,7 +320,7 @@
   "
   [^Sorted migrations id]
   (when-not (contains? migrations id)
-    (error! "Migration %s doesn't exist" id)))
+    (throw! "Migration %s doesn't exist" id)))
 
 
 (defn make-scope
@@ -344,7 +341,10 @@
 
         {:keys [migrations-table
                 migrations-path]}
-        config]
+        config
+
+        url
+        (fs/path->url migrations-path)]
 
     (pg/with-connection [conn config]
 
@@ -354,7 +354,7 @@
             (get-applied-migration-ids conn migrations-table)
 
             migrations
-            (read-disk-migrations migrations-path)
+            (read-disk-migrations url)
 
             id-current
             (apply max -1 applied-ids-set)
@@ -372,8 +372,7 @@
         {:config config
          :id-current id-current
          :migrations migrations
-         :migrations-table migrations-table
-         :migrations-path migrations-path}))))
+         :migrations-table migrations-table}))))
 
 
 (defn log-connection-info

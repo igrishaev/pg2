@@ -8,12 +8,9 @@
    java.net.URL
    java.util.jar.JarEntry)
   (:require
+   [pg.migration.err :refer [throw!]]
    [clojure.java.io :as io]
    [clojure.string :as str]))
-
-
-(defmacro error! [template & args]
-  `(throw (new Error (format ~template ~@args))))
 
 
 (defn path->url
@@ -25,14 +22,7 @@
       (let [file (io/file path)]
         (when (.exists file)
           (.toURL file)))
-      (error! "Neither a resource nor a local file exists: %s " path)))
-
-
-(defn url->dir ^File [^URL url]
-  (let [file (io/as-file url)]
-    (if (.isDirectory file)
-      file
-      (error! "The path %s is not a directory: %s" url))))
+      (throw! "Neither a resource nor a local file exists: %s" path)))
 
 
 (defmulti url->children
@@ -46,12 +36,12 @@
 
 (defmethod url->children :default
   [url]
-  (error! "Unsupported URL: %s" url))
+  (throw! "Unsupported URL: %s" url))
 
 
 (defmethod url->children "resource"
   [^URL url]
-  (error! "It looks like you're trying to read migration resources from a GraalVM-compiled file, which is not possible at the moment. Please point the migration path to a local directory, not a resource. Sorry but I cannot do anything about it. The current URL is %s" url))
+  (throw! "It looks like you're trying to read migrations from a GraalVM-compiled file, which is not possible at the moment. Please point the migration path to a local directory, not a resource. Sorry but I cannot do anything about it. For debug: the current URL is %s" url))
 
 
 (defmethod url->children "file"

@@ -9,15 +9,30 @@
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
    [pg.honey :as pgh]
+   [pg.migration.fs :as fs]
    [pg.migration.cli :as cli]
    [pg.migration.core :as mig]))
 
 
 (deftest test-read-migrations
-  (let [migrations
-        (mig/read-disk-migrations "migrations")]
-    (is (= 5 (count migrations)))
-    (is (instance? PersistentTreeMap migrations))))
+  (testing "load resource"
+    (let [migrations
+          (mig/read-disk-migrations (fs/path->url "migrations"))]
+      (is (= 5 (count migrations)))
+      (is (instance? PersistentTreeMap migrations))))
+
+  (testing "load directory"
+    (let [migrations
+          (mig/read-disk-migrations (fs/path->url "test/resources/migrations"))]
+      (is (= 5 (count migrations)))))
+
+  (testing "not found"
+    (try
+      (mig/read-disk-migrations (fs/path->url "dunno"))
+      (is false)
+      (catch Exception e
+        (is (= "Neither a resource nor a local file exists: dunno"
+               (ex-message e)))))))
 
 
 (deftest test-parse-file-simple
@@ -252,7 +267,6 @@
         (is (= "Migration conflict: migration 7 has been applied before 6"
                (ex-message e)))))))
 
-
 (deftest test-create-migration-files
 
   (let [path
@@ -335,6 +349,6 @@
       (edn/read-string {:readers cli/edn-readers}
                        input)
       (is false)
-      (catch Error e
+      (catch RuntimeException e
         (is (= "Env variable FOOBAR is not set"
                (ex-message e)))))))

@@ -11,18 +11,10 @@
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
+   [pg.migration.err :refer [throw! rethrow!]]
    [pg.migration.fs :as fs]
    [pg.migration.core :as mig]
    [pg.migration.log :as log]))
-
-
-(defmacro error! [template & args]
-  `(throw (new RuntimeException (format ~template ~@args))))
-
-(defmacro rethrow! [e template & args]
-  `(throw (new RuntimeException
-               (format ~template ~@args)
-               ~e)))
 
 
 (defn parse-int [string]
@@ -34,29 +26,22 @@
    (fn [v]
      (let [vname (name v)]
        (or (System/getenv vname)
-           (error! "Env variable %s is not set" vname))))})
-
-
-(defn path->config [^String path]
-  (->> path
-       io/file
-       io/reader
-       (new PushbackReader)
-       (edn/read {:readers edn-readers})))
+           (throw! "Env variable %s is not set" vname))))})
 
 
 (defn path-exists? ^Boolean [^String path]
   (-> path io/file .exists))
 
 
-(defn load-config [url]
-  (try
-    (->> url
-         io/reader
-         (new PushbackReader)
-         (edn/read {:readers edn-readers}))
-    (catch Exception e
-      (rethrow! e "Failed read an EDN file: %s" url))))
+(defn load-config [path]
+  (let [url (fs/path->url path)]
+    (try
+      (->> url
+           io/reader
+           (new PushbackReader)
+           (edn/read {:readers edn-readers}))
+      (catch Exception e
+        (rethrow! e "Failed read an EDN config: %s" url)))))
 
 
 (defn current-user [_]
@@ -65,9 +50,8 @@
 
 (def CLI-OPT-MAIN
 
-  [["-c" "--config CONFIG" "Path to the .edn config (a resource or a local file)"
-    :id :config
-    :parse-fn fs/path->url]
+  [["-c" "--config CONFIG" "Path to an .edn config (a resource or a local file)"
+    :id :config-path]
 
    ["-p" "--port PORT" "Port number"
     :id :port
@@ -96,12 +80,11 @@
    [nil "--table TABLE" "Migrations table"
     :id :migrations-table
     :parse-fn keyword
-    :default :migrations]
+    :default mig/MIG_TABLE]
 
    [nil "--path PATH" "Migrations path (a resource or a local file)"
     :id :migrations-path
-    :parse-fn fs/path->url
-    :default "migrations"]])
+    :default mig/MIG_PATH]])
 
 
 (def OPT-HELP
@@ -448,12 +431,12 @@
                 summary]}
         parsed
 
-        {config-url :config}
+        {:keys [config-path]}
         options
 
         config
-        (when config-url
-          (load-config config-url))
+        (some-> config-path
+                load-config)
 
         config-full
         (-> options

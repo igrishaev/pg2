@@ -165,14 +165,14 @@ general options, a command, and command-specific options:
 General options are:
 
 ```
--c, --config CONNFIG     migration.config.edn      Path to the .edn config file
+-c, --config CONFIG                                Path to an .edn config (a resource or a local file)
 -p, --port PORT          5432                      Port number
 -h, --host HOST          localhost                 Host name
 -u, --user USER          The current USER env var  User
 -w, --password PASSWORD  <empty string>            Password
 -d, --database DATABASE  The current USER env var  Database
     --table TABLE        :migrations               Migrations table
-    --path PATH          migrations                Migrations path
+    --path PATH          migrations                Migrations path (a resource or a local file)
 ```
 
 Most of the options have default values. Both user and database names come from

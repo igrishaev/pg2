@@ -67,6 +67,12 @@
          (get-db-migrations CONFIG))))
 
 
+(deftest test-migration-migrate-all-local-dir
+  (mig/migrate-all (assoc CONFIG
+                          :migrations-path "test/resources/migrations"))
+  (is (= 5 (count (get-db-migrations CONFIG)))))
+
+
 (deftest test-migration-migrate-one
 
   (mig/migrate-one CONFIG)
@@ -287,14 +293,14 @@ Synatax:
 
 Global options:
 
-  -c, --config CONNFIG     migration.config.edn      Path to the .edn config file
+  -c, --config CONFIG                                Path to an .edn config (a resource or a local file)
   -p, --port PORT          5432                      Port number
   -h, --host HOST          localhost                 Host name
   -u, --user USER          The current USER env var  User
   -w, --password PASSWORD  <empty string>            Password
   -d, --database DATABASE  The current USER env var  Database
       --table TABLE        :migrations               Migrations table
-      --path PATH          migrations                Migrations path
+      --path PATH          migrations                Migrations path (a resource or a local file)
 
 Supported commands:
 
@@ -316,6 +322,26 @@ Command-specific help:
 
   (cli/with-exit
     (cli/main ARGS-BASE "migrate"))
+
+  (is (= [{:id 1 :slug "create users"}
+          {:id 2 :slug "create profiles"}
+          {:id 3 :slug "next only migration"}
+          {:id 4 :slug "prev only migration"}
+          {:id 5 :slug "add some table"}]
+         (get-db-migrations CONFIG))))
+
+
+(deftest test-cli-migrate-local-config-path
+
+  (cli/with-exit
+    (cli/main (conj ARGS-BASE
+                    "--config" "migration.config.edn")
+              "migrate"))
+
+  (cli/with-exit
+    (cli/main (conj ARGS-BASE
+                    "--config" "test/resources/migration.config.edn")
+              "migrate"))
 
   (is (= [{:id 1 :slug "create users"}
           {:id 2 :slug "create profiles"}
