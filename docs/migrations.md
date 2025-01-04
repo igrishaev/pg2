@@ -6,9 +6,9 @@ database schema continuously, track changes and apply them with care.
 
 ## Concepts
 
-Migrations are SQL files that are applied to the database in certain order. A
+Migrations are SQL files that get applied to a database in certain order. A
 migration has an id and a direction: next/up or prev/down. Usually it's split on
-two files called `<id>.up.sql` and `<id>.down.sql` holding SQL commands. Say,
+two files called `<id>.up.sql` and `<id>.down.sql` holding SQL expressions. Say,
 the -up file creates a table with an index, and the -down one drops the index
 first, and then the table.
 
@@ -18,7 +18,7 @@ is "Create users table".
 
 ## Naming
 
-In PG2, the migration framework looks for files matching the following pattern:
+The PG2 migration framework looks for files matching the following pattern:
 
 ~~~
 <id>.<slug>.<direction>.sql
@@ -30,12 +30,12 @@ where:
   precision), or 20240311235959 (date & time precision);
 
 - `slug` is an optional word or group of words joined with `-` or `_`, for
-  example `create-users-table-and-index` or `remove_some_view`. When rendered,
+  example `create-users-table-and-index` or `remove_some_table`. When rendered,
   both `-` and `_` are replaced with spaces, and the phrase is capitalized.
 
 - `direction` is either `prev/down` or `next/up`. Internally, `down` and `up`
-  are transformed to `prev` and `next` because these two have the same amount of
-  characters and files look better.
+  are transformed to `prev` and `next` because these two have the same
+  length. Thus, migration files look better when listing them.
 
 Examples:
 
@@ -44,13 +44,13 @@ Examples:
 - `153.add-some-table.next.sql`
 
 Above, the leading zeroes in ids are used for better alignment only. Infernally
-they are transferred into 1, 12 and 153 Long numbers. Thus, `001`, `01` and `1`
-become the same id 1 after parsing.
+they are transformed into 1, 12 and 153 Long numbers. Thus, `001`, `01` and `1`
+become the same number 1 after parsing.
 
 Each id has at most two directions: prev/down and next/up. On bootstrap, the
 engine checks it to prevent weird behaviour. The table below shows there are two
 rows which, after parsing, have the same (id, direction) pair. The bootstrap
-step will end up with an exception saying which files duplicate each other.
+step will end up with an exception saying which files are in conflict.
 
 | Filename                         | Parsed    |
 |----------------------------------|-----------|
@@ -86,17 +86,16 @@ COMMIT;
 Pay attention to the following points.
 
 - A single file might have as many SQL expressions as you want. There is no need
-  to separate them with magic comments like `--;;` as Migratus requires. The
-  whole file is executed in a single query. Use the standard semicolon at the
-  end of each expression.
+  to separate them with magic comments like `--;;` as Migratus does. The whole
+  file is executed in a single query. Use the standard semicolon at the end of
+  each expression.
 
 - There is no a hidden transaction management. Transactions are up to you: they
-  are explicit! Above, we wrap tree `INSERT` queries into a single
+  are explicit! Above, we wrap three `INSERT` queries into a single
   transaction. You can use save-points, rollbacks, or whatever you want. Note
-  that not all expressions can be in a transaction. Say, the `CREATE TABLE` one
-  cannot and thus is out from the transaction scope.
+  that some expressions can be in a transaction, for example `CREATE DATABASE`.
 
-For granular transaction control, split your complex changes on two or three
+For granular transaction control, split your complex changes on two or more
 files named like this:
 
 ```
@@ -114,21 +113,22 @@ files named like this:
 ## No Code-Driven Migrations
 
 At the moment, neither `.edn` nor `.clj` migrations are supported. This is by
-design because personally I'm highly against mixing SQL and Clojure. Every time
-I see an EDN transaction, I get angry. Mixing these two for database management
-is the worst idea one can come up with. If you're thinking about migrating a
-database with Clojure, please close you laptop and have a walk to the nearest
-park.
+design because personally I'm against mixing SQL and Clojure. It's an unobvious
+and fragile technique.
 
-## Migration Resources
+## Migrations' Location
 
-Migration files are stored in project resources. The default search path is
-`migrations`. Thus, their physical location is `resources/migrations`. The
-engine scans the `migrations` resource for children files. Files from nested
-directories are also taken into account. The engine supports Jar resources when
-running the code from an uberjar.
+Migrations might be referenced either as a resource or a local directory. The
+default search path is `migrations`. First, the framework checks out a resource
+running `(clojure.java.io/resource <path>)`. When it's not found, the local
+directory is taken into account. You can specify an absolute path as well like
+`/some/path/to/migrations`.
 
-The resource path can be overridden with settings.
+When location is found, the engine scans it for children files. Files from
+nested directories are also taken into account. The engine supports Jar
+resources when running the code from an uberjar.
+
+The resource path can be overridden with settings or command line arguments.
 
 ## Migration Table
 
@@ -165,7 +165,7 @@ general options, a command, and command-specific options:
 General options are:
 
 ```
--c, --config CONFIG                                Path to an .edn config (a resource or a local file)
+-c, --config CONFIG      migration.config.edn      Path to an .edn config (a resource or a local file)
 -p, --port PORT          5432                      Port number
 -h, --host HOST          localhost                 Host name
 -u, --user USER          The current USER env var  User
@@ -175,8 +175,8 @@ General options are:
     --path PATH          migrations                Migrations path (a resource or a local file)
 ```
 
-Most of the options have default values. Both user and database names come from
-the `USER` environment variable. The password is an empty string by default. For
+Most options have default values. Both user and database names come from the
+`USER` environment variable. The password is an empty string by default. For
 local trusted connections, the password might not be required.
 
 The list of the commands:
@@ -228,15 +228,17 @@ Syntax:
 ## Config
 
 Passing `-u`, `-h`, and other arguments all the time is inconvenient. The engine
-can read them at once from a config file. The default config location is
-`migration.config.edn`. Override the path to the config using the `-c`
-parameter:
+can read them all from an EDN config. The default path is
+`migration.config.edn`. Override it with `-c` or `--config` parameters. The path
+might point to either a resource or a local file, for example:
 
-~~~
-<lein/deps> -c config.edn list
+~~~bash
+<lein/deps> -c migration.config.edn list # a resource
+
+<lein/deps> -c /path/to/config.edn list  # a local file
 ~~~
 
-The config file has the following structure:
+A config file has the following structure:
 
 ~~~clojure
 {:host "127.0.0.1"
@@ -248,14 +250,15 @@ The config file has the following structure:
  :migrations-path "migrations"}
 ~~~
 
-The `:migrations-table` field must be a keyword because it takes place in a
-HoneySQL map.
+The `:migrations-table` field must be a keyword because it gets rendered using
+HoneySQL.
 
-The `:migrations-path` field is a string referencing a resource with migrations.
+The `:migrations-path` field is a string referencing a resource or a local
+directory with migrations.
 
 Pay attention to the `#env` tag. The engine uses custom readers when loading a
-config. The tag reads the actual value from an environment variable. Thus, the
-database password won't be exposed to everyone. When the variable is not set, an
+config. This tag reads the actual value from an environment variable. Thus, the
+password won't be exposed to everyone. When the variable is not set, an
 exception is thrown.
 
 ## Commands
@@ -372,8 +375,8 @@ Lein preamble looks usually something like this:
 ~~~
 
 The `pg2-migration` library must be in dependencies. Since migrations are
-managed aside from the main application, they're put into a separate profile,
-for example:
+usually managed aside from the main application, they're put into a separate
+profile as follows:
 
 ~~~clojure
 :profiles
@@ -384,8 +387,8 @@ for example:
   [[com.github.igrishaev/pg2-core ...]]}}
 ~~~
 
-Above, the `migrations` profile has the dependency and the `:main`
-attribute. Now run `lein run` with migration arguments:
+The `migrations` profile has a dependency and the `:main` attribute. Now run
+`lein run` with these arguments:
 
 ~~~bash
 > lein with-profile +migrations run -c migration.config.edn migrate --to 100500
@@ -393,7 +396,8 @@ attribute. Now run `lein run` with migration arguments:
 
 ## Deps.edn examples
 
-Here is an example of an alias in `deps.edn` that prints pending migrations:
+Here is an example of an alias in a `deps.edn` project that prints pending
+migrations:
 
 ~~~clojure
 {:aliases
@@ -420,13 +424,13 @@ Run it as follows:
 > clj -M:migrations-list
 ~~~
 
-You can shorten it by using the config file. Move all the parameters into the
+You can shorten it by using a config. Move all the parameters into a
 `migration.config.edn` file, and keep only a command with its sub-arguments in
 the `:main-opts` vector:
 
 ~~~clojure
 {:aliases
- {:migrations-migrate
+ {:migrations/migrate
   {:extra-deps
    {com.github.igrishaev/pg2-migration {:mvn/version "..."}}
    :extra-paths
@@ -434,17 +438,16 @@ the `:main-opts` vector:
    :main-opts ["migrate" "--all"]}}}
 ~~~
 
-To migrate:
+To migrate, run:
 
 ~~~
-> clj -M:migrations-migrate
+> clj -M:migrations/migrate
 ~~~
 
 ## API Interface
 
-There is a way to manage migrations through code. The `pg.migration.core`
-namespace provides basic functions to list, create, migrate, and rollback
-migrations.
+There is a way to manage migrations with code. The `pg.migration.core` namespace
+provides basic functions to list, create, migrate, and rollback migrations.
 
 To migrate, call one of the following functions: `migrate-to`, `migrate-all`,
 and `migrate-one`. All of them accept a config map:
@@ -533,20 +536,20 @@ Pass id and slug in options if needed:
 ## Conflicts
 
 On bootstrap, the engine checks migrations for conflicts. A conflict is a
-situation when a migration with less id has been applied before a migration with
-greater id. Usually it happens when two developers create migrations in parallel
-and merge them in a wrong order. For example:
+situation when a migration with a **less id** has been applied **before** a
+migration with a **greater id**. Usually it happens when two developers create
+migrations in parallel and merge them in a wrong order. For example:
 
 - the latest migration id is 20240312;
-- developer A makes a new branch and creates a migration 20240315;
-- the next day, developer B opens a new branch with a migration 20240316;
-- dev B merges the branch, now we have 20240312, then 20240316;
-- dev A merges the branch, and we have 20240312, 20240316, 20240315.
+- a developer A makes a new branch and creates a migration 20240315;
+- the next day, a developer B opens a new branch with a migration 20240316;
+- the developer B merges the branch, now we have 20240312, then 20240316;
+- the developer A merges the branch, and we have 20240312, 20240316, 20240315.
 
 When you try to apply migration 20240315, the engine will check if 20240316 has
-already been applied. If yes, an exception pops up saying which migration cause
-the problem (in our case, these are 20240316 and 20240315). To recover from the
-conflict, rename 20240315 to 20240317.
+already been applied. If yes, an exception pops up saying which migrations cause
+a problem (20240316 and 20240315, in our case). To recover from a conflict, just
+rename 20240315 to 20240317.
 
 In other words: this is a conflict:
 

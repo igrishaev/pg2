@@ -24,6 +24,7 @@
 
 (def MIG_TABLE :migrations)
 (def MIG_PATH "migrations")
+(def CFG_PATH "migration.config.edn")
 
 (def DEFAULTS
   {:migrations-table MIG_TABLE
@@ -258,8 +259,10 @@
   "
   Read all the migrations from a resource.
   "
-  ^Sorted [^URL url]
-  (url->migrations url))
+  ^Sorted [^String path]
+  (-> path
+      fs/path->url!
+      url->migrations))
 
 
 (defn get-applied-migration-ids
@@ -341,10 +344,7 @@
 
         {:keys [migrations-table
                 migrations-path]}
-        config
-
-        url
-        (fs/path->url migrations-path)]
+        config]
 
     (pg/with-connection [conn config]
 
@@ -354,7 +354,7 @@
             (get-applied-migration-ids conn migrations-table)
 
             migrations
-            (read-disk-migrations url)
+            (read-disk-migrations migrations-path)
 
             id-current
             (apply max -1 applied-ids-set)

@@ -15,13 +15,24 @@
 
 (defn path->url
   "
-  Turn a string path into a URL: either a resoure
+  Turn a string path into a URL: either a resoure or a local file.
+  The file is checked for existence. When nothing is found, return
+  nil.
   "
   ^URL [^String path]
   (or (io/resource path)
       (let [file (io/file path)]
         (when (.exists file)
-          (.toURL file)))
+          (.toURL file)))))
+
+
+(defn path->url!
+  "
+  An aggressive version of `path->url` what ends up with an exception
+  should nothing is found.
+  "
+  ^URL [^String path]
+  (or (path->url path)
       (throw! "Neither a resource nor a local file exists: %s" path)))
 
 

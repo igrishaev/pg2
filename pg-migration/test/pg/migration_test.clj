@@ -17,18 +17,18 @@
 (deftest test-read-migrations
   (testing "load resource"
     (let [migrations
-          (mig/read-disk-migrations (fs/path->url "migrations"))]
+          (mig/read-disk-migrations "migrations")]
       (is (= 5 (count migrations)))
       (is (instance? PersistentTreeMap migrations))))
 
   (testing "load directory"
     (let [migrations
-          (mig/read-disk-migrations (fs/path->url "test/resources/migrations"))]
+          (mig/read-disk-migrations "test/resources/migrations")]
       (is (= 5 (count migrations)))))
 
   (testing "not found"
     (try
-      (mig/read-disk-migrations (fs/path->url "dunno"))
+      (mig/read-disk-migrations "dunno")
       (is false)
       (catch Exception e
         (is (= "Neither a resource nor a local file exists: dunno"
@@ -328,7 +328,10 @@
             :database "test"
             :migrations-table :migrations_test
             :migrations-path "migrations"}
-           result))))
+           result)))
+
+  (is (map?
+       (cli/load-config "test/resources/migration.config.edn"))))
 
 
 (deftest test-env-edn-tag-ok

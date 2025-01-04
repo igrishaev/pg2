@@ -33,15 +33,36 @@
   (-> path io/file .exists))
 
 
-(defn load-config [path]
-  (let [url (fs/path->url path)]
-    (try
-      (->> url
-           io/reader
-           (new PushbackReader)
-           (edn/read {:readers edn-readers}))
-      (catch Exception e
-        (rethrow! e "Failed read an EDN config: %s" url)))))
+(defn read-config
+  "
+  Having a java.net.URL object, try to read an EDN config
+  which it points to.
+  "
+  [url]
+  (try
+    (->> url
+         io/reader
+         (new PushbackReader)
+         (edn/read {:readers edn-readers}))
+    (catch Exception e
+      (rethrow! e "Failed read an EDN config: %s" url))))
+
+
+(defn load-config
+  "
+  Try to load an EDN config. For the default path, skip
+  reading a file when it's missing. But when a custom
+  path is specified, throw an error should a file or
+  a resource is missing.
+  "
+  [path]
+  (if (= path mig/CFG_PATH)
+    (if-let [url (fs/path->url path)]
+      (read-config url)
+      (log/infof "The default config '%s' doesn't exist, skipping" path))
+    (-> path
+        fs/path->url!
+        read-config)))
 
 
 (defn current-user [_]
@@ -51,6 +72,7 @@
 (def CLI-OPT-MAIN
 
   [["-c" "--config CONFIG" "Path to an .edn config (a resource or a local file)"
+    :default mig/CFG_PATH
     :id :config-path]
 
    ["-p" "--port PORT" "Port number"
@@ -435,8 +457,7 @@
         options
 
         config
-        (some-> config-path
-                load-config)
+        (load-config config-path)
 
         config-full
         (-> options

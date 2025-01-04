@@ -222,7 +222,7 @@
   (try
     (mig/rollback-to CONFIG -100500)
     (is false)
-    (catch Error e
+    (catch Exception e
       (is (= "Migration -100500 doesn't exist"
              (ex-message e)))))
   (is (= [{:slug "create users", :id 1}
@@ -238,7 +238,7 @@
   (try
     (mig/migrate-to CONFIG 999)
     (is false)
-    (catch Error e
+    (catch RuntimeException e
       (is (= "Migration 999 doesn't exist"
              (ex-message e)))))
   (is (= [{:slug "create users", :id 1}
@@ -293,7 +293,7 @@ Synatax:
 
 Global options:
 
-  -c, --config CONFIG                                Path to an .edn config (a resource or a local file)
+  -c, --config CONFIG      migration.config.edn      Path to an .edn config (a resource or a local file)
   -p, --port PORT          5432                      Port number
   -h, --host HOST          localhost                 Host name
   -u, --user USER          The current USER env var  User
