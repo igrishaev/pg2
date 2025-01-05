@@ -12,6 +12,8 @@
 
 - common API protocol?
 
+- unix socket local tests
+
 - postgis support
 - json wrapper not needed
 
