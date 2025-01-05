@@ -1026,6 +1026,10 @@
   (.write writer (.toString conn)))
 
 
+;;
+;; Listen/notify block
+;;
+
 (defn listen
   "
   Subscribe the connection to a given channel.
@@ -1048,6 +1052,17 @@
   "
   [^Connection conn ^String channel ^String message]
   (.notify conn channel message))
+
+
+(defn poll-notifications
+  "
+  Perform an empty query so that pending notifications
+  are sent to the client. Doesn't guarantee though they
+  will be sent for sure due to their async nature. The
+  result is a number of notifications got and processed.
+  "
+  ^Integer [^Connection conn]
+  (.pollNotifications conn))
 
 
 ;;

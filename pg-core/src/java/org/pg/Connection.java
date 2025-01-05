@@ -613,8 +613,8 @@ public final class Connection implements AutoCloseable {
         final Parse parse = new Parse(statement, sql, OIDs);
         sendMessage(parse);
         sendDescribeStatement(statement);
-        sendSync();
         sendFlush();
+        sendSync();
         final Result res = interact(sql);
         final ParameterDescription paramDesc = res.getParameterDescription();
         final RowDescription rowDescription = res.getRowDescription();
@@ -679,6 +679,11 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    /*
+    Flush the output stream meaning all the buffered bytes
+    get sent to a socket forcibly. Must be called *before*
+    reading something from the service back.
+     */
     private void flush () {
         IOTool.flush(outStream);
     }
@@ -699,8 +704,8 @@ public final class Connection implements AutoCloseable {
             sendDescribePortal(portal);
             sendExecute(portal, executeParams.maxRows());
             sendClosePortal(portal);
-            sendSync();
             sendFlush();
+            sendSync();
             return interact(executeParams, sql).getResult();
         }
     }
@@ -716,8 +721,8 @@ public final class Connection implements AutoCloseable {
                     }
                     sendCloseStatement(entry.getValue());
                 }
-                sendSync();
                 sendFlush();
+                sendSync();
                 interact("--clear prepared statement cache");
                 PSCache.clear();
             }
@@ -754,8 +759,8 @@ public final class Connection implements AutoCloseable {
             sendExecute(portal, executeParams.maxRows());
             sendClosePortal(portal);
             // sendCloseStatement(stmt); // don't close it for caching
-            sendSync();
             sendFlush();
+            sendSync();
             try {
                 return interact(executeParams, sql).getResult();
             } catch (PGErrorResponse e) {
@@ -800,8 +805,8 @@ public final class Connection implements AutoCloseable {
         final String sql = String.format("--closing statement %s", statement);
         try (TryLock ignored = lock.get()) {
             sendCloseStatement(statement);
-            sendSync();
             sendFlush();
+            sendSync();
             interact(sql);
         }
     }
@@ -842,7 +847,7 @@ public final class Connection implements AutoCloseable {
         if (msg instanceof DataRow x) {
             handleDataRow(x, res);
         } else if (msg instanceof NotificationResponse x) {
-            handleNotificationResponse(x);
+            handleNotificationResponse(x, res);
         } else if (msg instanceof AuthenticationCleartextPassword) {
             handleAuthenticationCleartextPassword();
         } else if (msg instanceof AuthenticationSASL x) {
@@ -1146,8 +1151,15 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private void handleNotificationResponse (final NotificationResponse msg) {
-        handlerCall(config.fnNotification(), msg.toClojure());
+    private void handleNotificationResponse (final NotificationResponse msg, final Result res) {
+        // Sometimes, it's important to know whether a notification
+        // was triggered by the current connection or another.
+        final boolean isSelf = msg.pid() == pid;
+        res.incNotificationCount();
+        handlerCall(
+                config.fnNotification(),
+                msg.toClojure().assoc(KW.self_QMARK, isSelf)
+        );
     }
 
     private void handleNoticeResponse (final NoticeResponse msg) {
@@ -1387,6 +1399,16 @@ public final class Connection implements AutoCloseable {
         try (TryLock ignored = lock.get()) {
             final List<Object> params = List.of(channel, message);
             execute("select pg_notify($1, $2)", params);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public int pollNotifications() {
+        try (TryLock ignored = lock.get()) {
+            final String sql = "";
+            sendQuery(sql);
+            final Result res = interact(sql);
+            return res.getNotificationCount();
         }
     }
 

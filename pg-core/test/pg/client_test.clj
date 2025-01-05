@@ -797,11 +797,60 @@ from
 
         (is (= 1 (count invocations)))
 
-        (is (= {:msg :NoticeResponse
+        (is (= {:msg :NotificationResponse
                 :pid pid
+                :self? true
                 :channel channel
                 :message message}
                (first invocations)))))))
+
+(deftest test-client-test-poll-updates
+
+  (let [capture!
+        (atom [])
+
+        fn-notification
+        (fn [msg]
+          (swap! capture! conj msg))
+
+        config+
+        (assoc *CONFIG-BIN* :fn-notification fn-notification)
+
+        counter!
+        (atom 0)]
+
+    (pg/with-connection [conn1 config+]
+      (pg/with-connection [conn2 config+]
+
+        (is (zero? (pg/poll-notifications conn2)))
+        (is (zero? (pg/poll-notifications conn1)))
+
+        (pg/listen conn2 "test")
+        (pg/notify conn1 "test" "1")
+        (pg/notify conn1 "test" "2")
+        (pg/notify conn1 "test" "3")
+
+        (while (-> counter! deref (< 3))
+          (let [amount (pg/poll-notifications conn2)]
+            (swap! counter! + amount)))))
+
+    (is (= #{{:channel "test"
+              :msg :NotificationResponse
+              :self? false
+              :message "1"}
+             {:channel "test"
+              :msg :NotificationResponse
+              :self? false
+              :message "2"}
+             {:channel "test"
+              :msg :NotificationResponse
+              :self? false
+              :message "3"}}
+           (->> capture!
+                deref
+                (map (fn [fields]
+                       (dissoc fields :pid)))
+                (set))))))
 
 
 (deftest test-client-listen-notify-exception
@@ -879,15 +928,17 @@ from
 
           (pg/execute conn2 "")
 
-          (is (= (set [{:msg :NoticeResponse
-                         :pid pid1
-                         :channel "foo"
-                         :message "message1"}
+          (is (= (set [{:msg :NotificationResponse
+                        :pid pid1
+                        :self? false
+                        :channel "foo"
+                        :message "message1"}
 
-                        {:msg :NoticeResponse
-                         :pid pid1
-                         :channel "foo"
-                         :message "message2"}])
+                       {:msg :NotificationResponse
+                        :pid pid1
+                        :self? false
+                        :channel "foo"
+                        :message "message2"}])
 
                  (set @capture!))))))))
 

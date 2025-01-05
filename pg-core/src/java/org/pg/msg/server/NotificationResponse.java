@@ -16,7 +16,7 @@ public record NotificationResponse(int pid,
 
     public IPersistentMap toClojure () {
         return PersistentHashMap.create(
-                KW.msg, KW.NoticeResponse,
+                KW.msg, KW.NotificationResponse,
                 KW.pid, pid,
                 KW.channel, channel,
                 KW.message, message

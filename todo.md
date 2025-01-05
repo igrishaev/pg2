@@ -13,6 +13,7 @@
 - common API protocol?
 
 - unix socket local tests
+- CodecParams (setParam) make it mutable
 
 - postgis support
 - json wrapper not needed

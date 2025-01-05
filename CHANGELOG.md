@@ -2,6 +2,10 @@
 ## 0.1.28-SNAPSHOT
 
 - #30 refactor inet/unix connection code
+- pg/poll-notification function added
+- notification payload: add self? field
+- change the order of Flush and Sync
+- add and fix tests
 
 ## 0.1.27
 

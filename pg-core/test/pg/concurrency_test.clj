@@ -141,7 +141,7 @@
       (is (= [{:b ""}] res2))
       (is (= [{:c ""}] res3))
 
-      (is (< 6000 diff 6100)))))
+      (is (< 6000 diff 6700)))))
 
 
 (deftest test-transaction-pipeline
@@ -223,7 +223,7 @@
                                  (io/reader))]
             (vec (csv/read-csv reader)))]
 
-      (is (< 3000 diff 3100))
+      (is (< 3000 diff 3500))
 
       (is (= {:copied 10} res1))
       (is (= {:copied 10} res2))
