@@ -19,6 +19,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
+import java.net.InetSocketAddress;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
@@ -139,6 +140,13 @@ public final class Connection implements AutoCloseable {
         outStream = new BufferedOutputStream(out, len);
     }
 
+    private SocketChannel connectSocket(final SocketAddress address) {
+        final SocketChannel channel = SocketTool.open(address);
+        setInputStream(Channels.newInputStream(channel));
+        setOutputStream(Channels.newOutputStream(channel));
+        return channel;
+    }
+
     public void connectUnixSocket() {
         final String path = getUnixSocketPath(config);
         final File file = new File(path);
@@ -147,9 +155,7 @@ public final class Connection implements AutoCloseable {
         }
         this.unixSocketPath = path;
         final SocketAddress address = UnixDomainSocketAddress.of(path);
-        final SocketChannel channel = SocketTool.open(address);
-        setInputStream(Channels.newInputStream(channel));
-        setOutputStream(Channels.newOutputStream(channel));
+        connectSocket(address);
     }
 
     private void initTypeMapping() {
@@ -417,9 +423,10 @@ public final class Connection implements AutoCloseable {
     private void connectInetUnlocked() {
         final int port = getPort();
         final String host = getHost();
-        socket = SocketTool.socket(host, port);
-        setInputStream(IOTool.getInputStream(socket));
-        setOutputStream(IOTool.getOutputStream(socket));
+        final SocketAddress address = new InetSocketAddress(host, port);
+        final SocketChannel channel = connectSocket(address);
+
+        socket = channel.socket();
         setSocketOptions(socket, config);
         preSSLStage();
     }
