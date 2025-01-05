@@ -1,7 +1,7 @@
 
 ## 0.1.28-SNAPSHOT
 
-- ?
+- #30 refactor inet/unix connection code
 
 ## 0.1.27
 

@@ -425,7 +425,7 @@ public final class Connection implements AutoCloseable {
         final String host = getHost();
         final SocketAddress address = new InetSocketAddress(host, port);
         final SocketChannel channel = connectSocket(address);
-
+        // save socket for further SSL upgrade
         socket = channel.socket();
         setSocketOptions(socket, config);
         preSSLStage();
