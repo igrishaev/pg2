@@ -1,7 +1,7 @@
 
 ## 0.1.29-SNAPSHOT
 
-- ?
+- #31 fix order of fields in the config
 
 ## 0.1.28
 
