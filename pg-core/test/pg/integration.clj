@@ -71,6 +71,9 @@
       (testing (format "PORT %s" port)
         (t)))))
 
+(def has-virtual-threads?
+  (>= (.feature (Runtime/version)) 21))
+
 
 (defn is11? []
   (= *PORT* P11))

@@ -43,6 +43,7 @@
    org.pg.enums.TxLevel
    org.pg.error.PGError
    org.pg.error.PGErrorResponse
+   org.pg.PgExecutors
    org.pg.json.JSON
    org.pg.json.JSON$Wrapper
    org.pg.processor.IProcessor
@@ -53,6 +54,11 @@
 (def ^CopyFormat COPY_FORMAT_CSV CopyFormat/CSV)
 (def ^CopyFormat COPY_FORMAT_TAB CopyFormat/TAB)
 
+(def built-in-executors
+  {:default clojure.lang.Agent/soloExecutor
+   :future clojure.lang.Agent/soloExecutor
+   :threadpool PgExecutors/threadPoolExecutor
+   :direct PgExecutors/directExecutor})
 
 (defn ->kebab
   "
@@ -324,6 +330,7 @@
                 fn-notification
                 fn-protocol-version
                 fn-notice
+                executor
 
                 ;; ssl
                 use-ssl? ;; deprecated
@@ -420,6 +427,9 @@
 
       fn-notice
       (.fnNotice fn-notice)
+
+      executor
+      (.executor (get built-in-executors executor executor))
 
       (some? so-keep-alive?)
       (.SOKeepAlive so-keep-alive?)

@@ -2,6 +2,7 @@ package org.pg;
 
 import clojure.lang.IFn;
 import clojure.lang.Named;
+import clojure.lang.Agent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.enums.ConnType;
 import org.pg.enums.SSLValidation;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 
 public record Config(
         String user,
@@ -37,6 +39,7 @@ public record Config(
         IFn fnNotification,
         IFn fnProtocolVersion,
         IFn fnNotice,
+        Executor executor,
         SSLContext sslContext,
         SSLValidation sslValidation,
         long cancelTimeoutMs,
@@ -89,6 +92,7 @@ public record Config(
         private IFn fnNotification;
         private IFn fnProtocolVersion;
         private IFn fnNotice;
+        private Executor executor = Agent.soloExecutor;
         private SSLContext sslContext = null;
         private SSLValidation sslValidation = Const.SSL_VALIDATION;
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
@@ -205,6 +209,15 @@ public record Config(
             this.fnProtocolVersion = Objects.requireNonNull(
                     fnProtocolVersion,
                     "Protocol version function cannot be null"
+            );
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder executor(final Executor executor) {
+            this.executor = Objects.requireNonNull(
+                executor,
+                "executor cannot be null"
             );
             return this;
         }
@@ -364,6 +377,7 @@ public record Config(
                     this.fnNotification,
                     this.fnProtocolVersion,
                     this.fnNotice,
+                    this.executor,
                     this.sslContext,
                     this.sslValidation,
                     this.cancelTimeoutMs,

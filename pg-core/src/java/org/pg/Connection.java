@@ -5,6 +5,7 @@ import org.pg.auth.MD5;
 import org.pg.auth.ScramSha256;
 import org.pg.clojure.KW;
 import org.pg.clojure.RowMap;
+import org.pg.clojure.IClojure;
 import org.pg.codec.CodecParams;
 import org.pg.enums.*;
 import org.pg.error.PGError;
@@ -1152,31 +1153,33 @@ public final class Connection implements AutoCloseable {
         res.handlePortalSuspended(msg);
     }
 
-    private void handlerCall (final IFn f, final Object arg) {
+    private void handlerCall (final IFn f, final IClojure msg) {
         if (f != null) {
-            Agent.soloExecutor.submit(() -> {
-                f.invoke(arg);
+            config.executor().execute(() -> {
+                    f.invoke(msg.toClojure());
             });
         }
     }
 
     private void handleNotificationResponse (final NotificationResponse msg, final Result res) {
-        // Sometimes, it's important to know whether a notification
-        // was triggered by the current connection or another.
-        final boolean isSelf = msg.pid() == pid;
         res.incNotificationCount();
-        handlerCall(
-                config.fnNotification(),
-                msg.toClojure().assoc(KW.self_QMARK, isSelf)
-        );
+        final IFn f = config.fnNotification();
+        if (f != null) {
+            // Sometimes, it's important to know whether a notification
+            // was triggered by the current connection or another.
+            final boolean isSelf = msg.pid() == pid;
+            config.executor().execute(() -> {
+                    f.invoke(msg.toClojure().assoc(KW.self_QMARK, isSelf));
+            });
+        }
     }
 
     private void handleNoticeResponse (final NoticeResponse msg) {
-        handlerCall(config.fnNotice(), msg.toClojure());
+        handlerCall(config.fnNotice(), msg);
     }
 
     private void handleNegotiateProtocolVersion (final NegotiateProtocolVersion msg) {
-        handlerCall(config.fnProtocolVersion(), msg.toClojure());
+        handlerCall(config.fnProtocolVersion(), msg);
     }
 
     private void handleAuthenticationMD5Password (final AuthenticationMD5Password msg) {

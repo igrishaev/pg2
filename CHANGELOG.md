@@ -1,7 +1,7 @@
 
 ## 0.1.32-SNAPSHOT
 
-- ?
+- #32 introduce :executor connection option for async messages @jgdavey
 
 ## 0.1.31
 

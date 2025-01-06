@@ -34,7 +34,8 @@
    [pg.integration :refer [*CONFIG-TXT*
                            *CONFIG-BIN*
                            *PORT*
-                           fix-multi-port]]
+                           fix-multi-port
+                           has-virtual-threads?]]
    [pg.jdbc :as jdbc]
    [pg.json :as json]
    [pg.oid :as oid]
@@ -1161,19 +1162,22 @@ from
 
 
 (deftest test-client-notice-custom-function
-  (let [capture!
+  (let [complete (promise)
+
+        capture!
         (atom nil)
 
         config
         (assoc *CONFIG-TXT* :fn-notice
                (fn [message]
-                 (reset! capture! message)))]
+                 (reset! capture! message)
+                 (deliver complete true)))]
 
     (pg/with-connection [conn config]
       (let [res (pg/execute conn "ROLLBACK")]
         (is (= {:command "ROLLBACK"} res))))
 
-    (Thread/sleep 100)
+    (is (deref complete 100 false))
 
     (is (= {:msg :NoticeResponse
             :verbosity "WARNING",
@@ -1184,6 +1188,89 @@ from
            (-> capture!
                (deref)
                (dissoc :line :file))))))
+
+(deftest test-client-notice-direct-executor
+  (let [capture!
+        (atom nil)
+
+        config
+        (assoc *CONFIG-TXT*
+               :fn-notice (fn [message]
+                            (reset! capture! message))
+               :executor :direct)]
+
+    (pg/with-connection [conn config]
+      (let [res (pg/execute conn "ROLLBACK")]
+        (is (= {:command "ROLLBACK"} res))))
+
+    (is (= {:msg :NoticeResponse
+            :verbosity "WARNING",
+            :function "UserAbortTransactionBlock",
+            :severity "WARNING",
+            :code "25P01",
+            :message "there is no transaction in progress"}
+           (-> capture!
+               (deref)
+               (dissoc :line :file))))))
+
+(deftest test-client-notice-pool-executor
+  (let [complete (promise)
+
+        capture!
+        (atom nil)
+
+        config
+        (assoc *CONFIG-TXT*
+               :fn-notice (fn [message]
+                            (reset! capture! message)
+                            (deliver complete true))
+               :executor :threadpool)]
+
+    (pg/with-connection [conn config]
+      (let [res (pg/execute conn "ROLLBACK")]
+        (is (= {:command "ROLLBACK"} res))))
+
+    (is (deref complete 100 false))
+
+    (is (= {:msg :NoticeResponse
+            :verbosity "WARNING",
+            :function "UserAbortTransactionBlock",
+            :severity "WARNING",
+            :code "25P01",
+            :message "there is no transaction in progress"}
+           (-> capture!
+               (deref)
+               (dissoc :line :file))))))
+
+(if has-virtual-threads?
+  (deftest test-client-notice-vthread-executor
+    (let [complete (promise)
+
+          capture!
+          (atom nil)
+
+          config
+          (assoc *CONFIG-TXT*
+                 :fn-notice (fn [message]
+                              (reset! capture! message)
+                              (deliver complete true))
+                 :executor (java.util.concurrent.Executors/newVirtualThreadPerTaskExecutor))]
+
+      (pg/with-connection [conn config]
+        (let [res (pg/execute conn "ROLLBACK")]
+          (is (= {:command "ROLLBACK"} res))))
+
+      (is (deref complete 100 false))
+
+      (is (= {:msg :NoticeResponse
+              :verbosity "WARNING",
+              :function "UserAbortTransactionBlock",
+              :severity "WARNING",
+              :code "25P01",
+              :message "there is no transaction in progress"}
+             (-> capture!
+                 (deref)
+                 (dissoc :line :file)))))))
 
 
 (deftest test-client-insert-result-no-returning
