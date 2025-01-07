@@ -12,6 +12,11 @@
 
 - common API protocol?
 
+use PG* env vars
+
+.~/.pgpass
+https://www.postgresql.org/docs/current/libpq-pgpass.html
+
 - migrations: use PG* env vars
 - migrations: unix socket
 - migrations: dir path
