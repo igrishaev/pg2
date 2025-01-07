@@ -1,11 +1,11 @@
 
 ## 0.1.30-SNAPSHOT
 
-- ?
+- #33 generative tests for binary round-trips @jgdavey
 
 ## 0.1.29
 
-- #31 fix order of fields in the config
+- #31 fix order of fields in the config @jgdavey
 - migrations --config and --path params are resource/file
 - migrations copy & paste reduced
 - migrations GraalVM resource URL case
@@ -13,7 +13,7 @@
 
 ## 0.1.28
 
-- #30 refactor inet/unix connection code
+- #30 refactor inet/unix connection code @jgdavey
 - pg/poll-notification function added
 - notification payload: add self? field
 - change the order of Flush and Sync
@@ -21,7 +21,7 @@
 
 ## 0.1.27
 
-- #27 better BigDecimal binary decoding logic
+- #27 better BigDecimal binary decoding logic @jgdavey
 - prepared statement cache for execute
 - bench: extra case for execute
 - demo ns commented
@@ -31,7 +31,7 @@
 
 ## 0.1.26
 
-- #26 better BigDecimal binary encoding logic
+- #26 better BigDecimal binary encoding logic @jgdavey
 
 ## 0.1.25
 
