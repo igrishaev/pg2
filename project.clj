@@ -52,6 +52,7 @@
    [com.layerware/hugsql-adapter "0.5.3"]
    [org.clojure/clojure "1.11.1"]
    [org.clojure/tools.cli "1.1.230"]
+   [org.clojure/test.check "1.1.1"]
    [com.github.seancorfield/honeysql "2.4.1078"]
    [less-awful-ssl "1.0.7"]
    [com.github.seancorfield/next.jdbc "1.2.796"]

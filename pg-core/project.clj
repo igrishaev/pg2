@@ -41,6 +41,7 @@
   {:test
    {:dependencies
     [[org.clojure/data.csv]
+     [org.clojure/test.check]
      [cheshire]
      [com.github.igrishaev/pg2-honey]
      [com.github.igrishaev/pg2-component]]}})
