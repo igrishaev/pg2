@@ -1,5 +1,9 @@
 
-## 0.1.29-SNAPSHOT
+## 0.1.30-SNAPSHOT
+
+- ?
+
+## 0.1.29
 
 - #31 fix order of fields in the config
 - migrations --config and --path params are resource/file
