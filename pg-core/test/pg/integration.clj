@@ -74,6 +74,47 @@
 (def has-virtual-threads?
   (>= (.feature (Runtime/version)) 21))
 
+(defn jul-capture-handler [a]
+  (proxy [java.util.logging.Handler] []
+    (flush [])
+    (close [])
+    (publish [^java.util.logging.LogRecord record]
+      (swap! a conj {:level (str (.getLevel record))
+                     :logger (.getLoggerName record)
+                     :message (.getMessage record)
+                     :inst (java.util.Date/from (.getInstant record))
+                     :thrown (.getThrown record)}))))
+
+(defmacro with-captured-jul-logs
+  [binding & body]
+  (assert (vector? binding))
+  (let [[sym classes] binding
+        classes (mapv #(.getName %) (if (sequential? classes) classes [classes]))]
+    `(let [captures# (atom [])
+           capture-handler# (jul-capture-handler captures#)
+           loggers# (into {} (map
+                              (fn* [c#]
+                                   (let [logger# (java.util.logging.Logger/getLogger c#)]
+                                     [c# {:logger logger#
+                                          :orig-handlers (.getHandlers logger#)
+                                          :use-parent (.getUseParentHandlers logger#)}])))
+                          ~classes)]
+       (try
+         (doseq [l# loggers#]
+           (let* [logger# ^java.util.logging.Logger (:logger (val l#))]
+                 (.setUseParentHandlers logger# false)
+                 (doseq [handler# (:orig-handlers (val l#))]
+                   (.removeHandler logger# handler#))
+                 (.addHandler logger# capture-handler#)))
+         (let [~sym captures#]
+           ~@body)
+         (finally
+           (doseq [l# loggers#]
+             (let* [logger# ^java.util.logging.Logger (:logger (val l#))]
+                   (.removeHandler logger# capture-handler#)
+                   (.setUseParentHandlers logger# (:use-parent (val l#)))
+                   (doseq [handler# (:orig-handlers (val l#))]
+                     (.addHandler logger# handler#)))))))))
 
 (defn is11? []
   (= *PORT* P11))

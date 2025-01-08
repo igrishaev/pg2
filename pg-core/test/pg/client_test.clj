@@ -35,7 +35,8 @@
                            *CONFIG-BIN*
                            *PORT*
                            fix-multi-port
-                           has-virtual-threads?]]
+                           has-virtual-threads?
+                           with-captured-jul-logs]]
    [pg.jdbc :as jdbc]
    [pg.json :as json]
    [pg.oid :as oid]
@@ -904,6 +905,51 @@ from
         (is (instance? ArithmeticException e))
         (is (= "Divide by zero" (ex-message e)))))))
 
+(deftest test-client-listen-notify-direct-exception
+  (let [fn-notification
+        (fn [_] (/ 0 0))
+
+        config+
+        (assoc *CONFIG-TXT*
+               :fn-notification fn-notification
+               :executor :direct)]
+
+    (with-captured-jul-logs [capture! org.pg.PgExecutors]
+      (pg/with-connection [conn config+]
+        (let [channel
+              "!@#$%^&*();\" d'rop \"t'a'ble students--;42"
+
+              res1
+              (pg/listen conn channel)
+
+              message
+              "'; \n\t\rdrop table studets--!@#$%^\""
+
+              res2
+              (pg/notify conn channel message)
+
+              res3
+              (pg/unlisten conn channel)
+
+              res4
+              (pg/notify conn channel "more")
+
+              log-record
+              (-> capture! deref first)
+
+              e
+              (:thrown log-record)]
+
+          (is (nil? res1))
+          (is (nil? res2))
+          (is (nil? res3))
+          (is (nil? res4))
+
+          (is (= "WARNING" (:level log-record)))
+          (is (= "Uncaught exception while executing async message" (:message log-record)))
+
+          (is (instance? ArithmeticException e))
+          (is (= "Divide by zero" (ex-message e))))))))
 
 (deftest test-client-listen-notify-different-conns
 

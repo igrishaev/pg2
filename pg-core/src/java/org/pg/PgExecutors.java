@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class PgExecutors {
     final private static AtomicLong cachedThreadPoolCounter = new AtomicLong(0);
+    final private static System.Logger logger = System.getLogger(PgExecutors.class.getCanonicalName());
 
     @SuppressWarnings("unused")
     volatile public static Executor directExecutor = new DirectExecutor();
@@ -34,7 +35,11 @@ public class PgExecutors {
 
     private static class DirectExecutor implements Executor {
         public void execute(Runnable r) {
-            r.run();
+            try {
+                r.run();
+            } catch (Exception e) {
+                logger.log(System.Logger.Level.WARNING, "Uncaught exception while executing async message", e);
+            }
         }
     }
 
