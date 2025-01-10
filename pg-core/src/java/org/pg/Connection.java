@@ -20,8 +20,10 @@ import javax.net.ssl.SSLSocket;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.security.MessageDigest;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -49,6 +51,7 @@ public final class Connection implements AutoCloseable {
     private String unixSocketPath;
     private InputStream inStream;
     private OutputStream outStream;
+    private AsynchronousSocketChannel sockCh;
     private final Map<String, String> params;
     private CodecParams codecParams;
     private boolean isSSL = false;
@@ -140,10 +143,12 @@ public final class Connection implements AutoCloseable {
         outStream = new BufferedOutputStream(out, len);
     }
 
-    private SocketChannel connectSocket(final SocketAddress address) {
-        final SocketChannel channel = SocketTool.open(address);
+    private AsynchronousSocketChannel connectSocket(final SocketAddress address) {
+        final AsynchronousSocketChannel channel = SocketTool.open(address);
+        setSocketOptions(channel, config);
         setInputStream(Channels.newInputStream(channel));
         setOutputStream(Channels.newOutputStream(channel));
+        this.sockCh = channel;
         return channel;
     }
 
@@ -204,13 +209,13 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    private static void setSocketOptions(final Socket socket, final Config config) {
+    private static void setSocketOptions(final AsynchronousSocketChannel channel, final Config config) {
         try {
-            socket.setTcpNoDelay(config.SOTCPnoDelay());
-            socket.setSoTimeout(config.SOTimeout());
-            socket.setKeepAlive(config.SOKeepAlive());
-            socket.setReceiveBufferSize(config.SOReceiveBufSize());
-            socket.setSendBufferSize(config.SOSendBufSize());
+            channel.setOption(StandardSocketOptions.TCP_NODELAY, config.SOTCPnoDelay());
+            //channel.setOption(StandardSocketOptions., config.SOTimeout());
+            channel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.SOKeepAlive());
+            channel.setOption(StandardSocketOptions.SO_RCVBUF, config.SOReceiveBufSize());
+            channel.setOption(StandardSocketOptions.SO_SNDBUF, config.SOSendBufSize());
         }
         catch (IOException e) {
             throw new PGError(e, "couldn't set socket options");
@@ -424,10 +429,7 @@ public final class Connection implements AutoCloseable {
         final int port = getPort();
         final String host = getHost();
         final SocketAddress address = new InetSocketAddress(host, port);
-        final SocketChannel channel = connectSocket(address);
-        // save socket for further SSL upgrade
-        socket = channel.socket();
-        setSocketOptions(socket, config);
+        final AsynchronousSocketChannel channel = connectSocket(address);
         preSSLStage();
     }
 
@@ -1409,6 +1411,17 @@ public final class Connection implements AutoCloseable {
             sendQuery(sql);
             final Result res = interact(sql);
             return res.getNotificationCount();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public void loopNotifications() {
+        try (TryLock ignored = lock.get()) {
+            while (true) {
+                final String sql = "";
+                final Result res = interact(sql);
+            }
+        } catch (java.nio.channels.ReadPendingException e) {
         }
     }
 
