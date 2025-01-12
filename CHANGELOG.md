@@ -1,7 +1,7 @@
 
 ## 0.1.31-SNAPSHOT
 
-- ?
+- #34 add basic JDBC URL support via :connection-uri @jgdavey
 
 ## 0.1.30
 

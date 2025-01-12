@@ -4,6 +4,7 @@
   "
   (:require
    [clojure.string :as str]
+   [pg.connection-uri :as connection-uri]
    [pg.fold :as fold]
    [pg.oid :as oid]
    [pg.ssl #_(load a reader tag)] )
@@ -17,6 +18,7 @@
    java.io.Reader
    java.io.Writer
    java.lang.AutoCloseable
+   java.net.URI
    java.nio.ByteBuffer
    java.nio.charset.Charset
    java.time.ZoneId
@@ -275,20 +277,20 @@
       :finally
       (.build))))
 
-
 (defn ->config
   "
-  Turn a Clojure map into an instance of Config.Builder.
+  Turn a Clojure map into an instance of Config via Config.Builder
   "
-  ^Config$Builder [params]
-
-  (let [{:keys [;; general
+  ^Config [params]
+  (let [uri-params (some-> params :connection-uri connection-uri/parse)
+        pg-params (not-empty (merge (:pg-params uri-params) (:pg-params params)))
+        params (merge uri-params params)
+        {:keys [;; general
                 user
                 database
                 host
                 port
                 password
-                pg-params
 
                 ;; Next.JDBC
                 dbname
@@ -350,9 +352,11 @@
         params
 
         DB
-        (or database dbname)]
+        (or database dbname)
 
-    (cond-> (new Config$Builder user DB)
+        ^Config$Builder builder (new Config$Builder user DB)]
+
+    (cond-> builder
 
       password
       (.password password)

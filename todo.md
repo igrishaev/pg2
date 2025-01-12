@@ -65,7 +65,6 @@ https://www.postgresql.org/docs/current/libpq-pgpass.html
   - enums
 - keywords with namespaces (+ jdbc)
 - test parallel connection access
-- parse JDBC url
 - bulk statement execute
 - pg.jdbc batch
 - refactor locks? on Clojure level
