@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -16,8 +18,10 @@ public class SocketTool {
         try {
             final AsynchronousSocketChannel ch = AsynchronousSocketChannel.open();
             Future result = ch.connect(address);
-            result.get(timeout);
+            result.get(timeout, TimeUnit.MILLISECONDS);
             return ch;
+        } catch (TimeoutException e) {
+            throw new PGError(e, "timed out while connecting to address: %s", address);
         } catch (IOException | InterruptedException | ExecutionException e) {
             throw new PGError(e, "cannot open socket, address: %s", address);
         }
