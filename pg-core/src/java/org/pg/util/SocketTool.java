@@ -12,13 +12,21 @@ import java.nio.channels.SocketChannel;
 
 public class SocketTool {
 
-    public static AsynchronousSocketChannel open (final SocketAddress address) {
+    public static AsynchronousSocketChannel openAsync (final SocketAddress address, long timeout) {
         try {
             final AsynchronousSocketChannel ch = AsynchronousSocketChannel.open();
             Future result = ch.connect(address);
-            result.get();
+            result.get(timeout);
             return ch;
         } catch (IOException | InterruptedException | ExecutionException e) {
+            throw new PGError(e, "cannot open socket, address: %s", address);
+        }
+    }
+
+    public static SocketChannel open (final SocketAddress address) {
+        try {
+            return SocketChannel.open(address);
+        } catch (IOException e) {
             throw new PGError(e, "cannot open socket, address: %s", address);
         }
     }

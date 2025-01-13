@@ -21,9 +21,10 @@ import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
-import java.nio.channels.Channels;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.NetworkChannel;
+import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -51,7 +52,6 @@ public final class Connection implements AutoCloseable {
     private String unixSocketPath;
     private InputStream inStream;
     private OutputStream outStream;
-    private AsynchronousSocketChannel sockCh;
     private final Map<String, String> params;
     private CodecParams codecParams;
     private boolean isSSL = false;
@@ -143,13 +143,18 @@ public final class Connection implements AutoCloseable {
         outStream = new BufferedOutputStream(out, len);
     }
 
-    private AsynchronousSocketChannel connectSocket(final SocketAddress address) {
-        final AsynchronousSocketChannel channel = SocketTool.open(address);
-        setSocketOptions(channel, config);
-        setInputStream(Channels.newInputStream(channel));
-        setOutputStream(Channels.newOutputStream(channel));
-        this.sockCh = channel;
-        return channel;
+    private void connectSocket(final SocketAddress address) {
+        if (true) {
+            final AsynchronousSocketChannel channel = SocketTool.openAsync(address, config.SOTimeout());
+            setSocketOptions(channel, config);
+            setInputStream(Channels.newInputStream(channel));
+            setOutputStream(Channels.newOutputStream(channel));
+        } else {
+            final SocketChannel channel = SocketTool.open(address);
+            setSocketOptions(channel, config);
+            setInputStream(Channels.newInputStream(channel));
+            setOutputStream(Channels.newOutputStream(channel));
+        }
     }
 
     public void connectUnixSocket() {
@@ -209,10 +214,9 @@ public final class Connection implements AutoCloseable {
 
     }
 
-    private static void setSocketOptions(final AsynchronousSocketChannel channel, final Config config) {
+    private static void setSocketOptions(final NetworkChannel channel, final Config config) {
         try {
             channel.setOption(StandardSocketOptions.TCP_NODELAY, config.SOTCPnoDelay());
-            //channel.setOption(StandardSocketOptions., config.SOTimeout());
             channel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.SOKeepAlive());
             channel.setOption(StandardSocketOptions.SO_RCVBUF, config.SOReceiveBufSize());
             channel.setOption(StandardSocketOptions.SO_SNDBUF, config.SOSendBufSize());
@@ -429,7 +433,7 @@ public final class Connection implements AutoCloseable {
         final int port = getPort();
         final String host = getHost();
         final SocketAddress address = new InetSocketAddress(host, port);
-        final AsynchronousSocketChannel channel = connectSocket(address);
+        connectSocket(address);
         preSSLStage();
     }
 
