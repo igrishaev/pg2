@@ -995,7 +995,7 @@ from
 
   (let [config
         (assoc *CONFIG-TXT* :pg-params {"application_name" "Clojure"
-                                    "DateStyle" "ISO, MDY"})]
+                                        "DateStyle" "ISO, MDY"})]
 
     (pg/with-connection [conn config]
       (let [param

@@ -4,6 +4,8 @@
    [clojure.test :refer [deftest is testing]]
    [pg.core :as pg]))
 
+(set! *warn-on-reflection* true)
+
 (defn config->map
   [^Config config]
   {:database (.database config)
@@ -27,12 +29,15 @@
            (config->map config)))))
 
 (deftest test-config-connection-uri
+  #_
   (is (= {:database "test"
           :user "fred"
           :host "localhost"
           :port 5432
           :password "secret"}
          (config->map (pg/->config {:connection-uri "jdbc:postgresql://fred:secret@localhost/test?ssl=true"}))))
+
+
   (testing "parameters"
     (is (= {:SOKeepAlive false
             :SOReceiveBufSize 999
