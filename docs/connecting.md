@@ -1,4 +1,4 @@
-# Connecting to the server
+# Connecting to the Server
 
 To connect the server, define a config map and pass it into the `connect`
 function:

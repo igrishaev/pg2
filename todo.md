@@ -38,6 +38,7 @@ https://www.postgresql.org/docs/current/libpq-pgpass.html
   - logging
   - enums
   - type-map
+  - connect: accept a string?
 
 - postgis support
 - json wrapper not needed
