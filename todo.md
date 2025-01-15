@@ -31,6 +31,13 @@ https://www.postgresql.org/docs/current/libpq-pgpass.html
 - ssl services local tests
 - CodecParams (setParam) make it mutable
 
+- connection URI:
+  - nested pg-params
+  - ssl-context, ssl-cert-files
+  - unix socket
+  - logging
+  - enums
+  - type-map
 
 - postgis support
 - json wrapper not needed

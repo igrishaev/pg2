@@ -48,6 +48,7 @@ tests][tests].
 - [Benchmarks](/docs/benchmarks.md)
 - [Authentication](/docs/authentication.md)
 - [Connecting to the Server](/docs/connecting.md)
+- [URI Connection String](/docs/connection-uri.md)
 - [Query and Execute](/docs/query-execute.md)
 - [Prepared Statements](/docs/prepared-statement.md)
 - [Prepared Statement Cache](docs/prepared-statement-cache.md)

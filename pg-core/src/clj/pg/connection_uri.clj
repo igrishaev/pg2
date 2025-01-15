@@ -3,6 +3,7 @@
   Links:
   - https://jdbc.postgresql.org/documentation/use/
   "
+  (:refer-clojure :exclude [parse-long])
   (:require
    [clojure.string :as str])
   (:import
@@ -13,20 +14,20 @@
 (defmacro error! [template & args]
   `(throw (new Exception (format ~template ~@args))))
 
-(defn parse-query-bool ^Boolean [^String line]
+(defn parse-bool ^Boolean [^String line]
   (case (str/lower-case line)
     ("true" "on" "1" "yes") true
     ("false" "off" "0" "no") false
     (error! "cannot parse boolean value: %s" line)))
 
-(defn parse-query-long ^Long [^String line]
+(defn parse-long ^Long [^String line]
   (try
     (Long/parseLong line)
     (catch Exception e
       (error! "cannot parse long value: %s, reason: %s"
         line (ex-message e)))))
 
-(defn parse-query-ref [^String line]
+(defn parse-ref [^String line]
   (try
     (-> line
         symbol
@@ -57,7 +58,6 @@
       (->> query-args
            (replace {"" nil})
            (apply hash-map)))))
-
 
 (defn parse
   "
@@ -99,15 +99,15 @@
           (str/split user-info #":" 2))
 
         user
-        (or (not-empty user)
-            (get query-params "user"))
+        (or (get query-params "user")
+            (not-empty user))
 
         password
-        (or (not-empty password)
-            (get query-params "password"))
+        (or (get query-params "password")
+            (not-empty password))
 
         {:strs [read-only
-                ;; TODO options
+                ;; TODO :pg-params
 
                 ;; socket options
                 so-keep-alive
@@ -126,12 +126,12 @@
 
                 ;; ssl
                 ssl
+                ;; TODO: ssl certs for ssl context?
+                ;; TODO: ssl-context ref?
 
                 fn-notification
                 fn-protocol-version
                 fn-notice
-
-                ;; TODO: ssl certs for ssl context?
 
                 ;; TODO: unix:// or file:// scheme for unix socket?
                 ;; unix-socket
@@ -176,33 +176,32 @@
 
      ;; enc/dec format
      :binary-encode?
-     (some-> (or binaryTransfer binary-encode) parse-query-bool)
+     (some-> (or binaryTransfer binary-encode) parse-bool)
 
      :binary-decode?
-     (some-> binary-decode parse-query-bool)
+     (some-> (or binary-decode binaryTransfer) parse-bool)
 
      ;; copy in/out
      :in-stream-buf-size
-     (some-> in-stream-buf-size parse-query-long)
+     (some-> in-stream-buf-size parse-long)
 
      :out-stream-buf-size
-     (some-> out-stream-buf-size parse-query-long)
+     (some-> out-stream-buf-size parse-long)
 
      ;; handlers
 
      :fn-notification
-     (some-> fn-notification parse-query-ref)
+     (some-> fn-notification parse-ref)
 
      :fn-protocol-version
-     (some-> fn-protocol-version parse-query-ref)
+     (some-> fn-protocol-version parse-ref)
 
      :fn-notice
-     (some-> fn-notice parse-query-ref)
+     (some-> fn-notice parse-ref)
 
      ;; ssl
      :use-ssl?
-     (some-> ssl parse-query-bool)
-     ;; TODO: ssl-context
+     (some-> ssl parse-bool)
 
      ;; TODO unix domain socket
      ;; :unix-socket?
@@ -210,71 +209,63 @@
 
      ;; socket
      :so-keep-alive?
-     (some-> (or so-keep-alive tcpKeepAlive) parse-query-bool)
+     (some-> (or so-keep-alive tcpKeepAlive) parse-bool)
 
      :so-tcp-no-delay?
-     (some-> (or so-tcp-no-delay tcpNoDelay) parse-query-bool)
+     (some-> (or so-tcp-no-delay tcpNoDelay) parse-bool)
 
      :so-timeout
-     (some-> (or so-timeout connectTimeout) parse-query-long)
+     (some-> (or so-timeout connectTimeout) parse-long)
 
      :so-recv-buf-size
-     (some-> so-recv-buf-size parse-query-long)
+     (some-> so-recv-buf-size parse-long)
 
      :so-send-buf-size
-     (some-> so-send-buf-size parse-query-long)
+     (some-> so-send-buf-size parse-long)
 
      ;; TODO logging
      ;; :log-level
 
      ;; json
      :object-mapper
-     (some-> object-mapper parse-query-ref)
+     (some-> object-mapper parse-ref)
 
      ;; read only
 
      :read-only?
-     (some-> (or read-only readOnly) parse-query-bool)
+     (some-> (or read-only readOnly) parse-bool)
 
      ;; misc
 
      :cancel-timeout-ms
-     (some-> (or cancel-timeout-ms cancelSignalTimeout) parse-query-long)
+     (some-> (or cancel-timeout-ms cancelSignalTimeout) parse-long)
 
      :protocol-version
-     (some-> (or protocol-version protocolVersion) parse-query-long)
+     (some-> (or protocol-version protocolVersion) parse-long)
 
      ;; pool
 
      :pool-borrow-conn-timeout-ms
-     (some-> pool-borrow-conn-timeout-ms parse-query-long)
+     (some-> pool-borrow-conn-timeout-ms parse-long)
 
      :pool-expire-threshold-ms
-     (some-> pool-expire-threshold-ms parse-query-long)
+     (some-> pool-expire-threshold-ms parse-long)
 
      :pool-max-size
-     (some-> pool-max-size parse-query-long)
+     (some-> pool-max-size parse-long)
 
      :pool-min-size
-     (some-> pool-min-size parse-query-long)
+     (some-> pool-min-size parse-long)
 
      ;; TODO types
      ;; :type-map
      ;; :enums
 
      :with-pgvector?
-     (some-> with-pgvector parse-query-bool)
+     (some-> with-pgvector parse-bool)
 
-     ;; TODO
+     ;; TODO parse pg-params
      :pg-params
-     (cond-> {}
-       ApplicationName
-       (assoc "application_name" ApplicationName))
-
-     #_
-     (cond-> {}
-       options
-       (assoc "options" options)
-
+     (cond-> nil
        ApplicationName
        (assoc "application_name" ApplicationName))}))

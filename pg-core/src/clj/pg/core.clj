@@ -230,7 +230,7 @@
       (.reducer (fold/into (clojure.core/first into)
                            (second into)))
 
-      ;;
+      ;; end reducers
 
       (some? binary-encode?)
       (.binaryEncode binary-encode?)
@@ -279,7 +279,10 @@
 
 (defn ->config
   "
-  Turn a Clojure map into an instance of Config via Config.Builder
+  Turn a Clojure map into an instance of `Config` via `Config.Builder`.
+  First, try to parse the `connection-uri` URI string, if passed.
+  Then merge it with other parameters. Finally, build a `Config`
+  instance.
   "
   ^Config [params]
 
