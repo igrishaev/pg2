@@ -41,23 +41,30 @@
 (defn parse-query-string
   "
   Parse a decoded query string line into a Clojure map.
-  Empty string values are turned into nil, e.g:
-  foo=&bar=42 -> {:foo nil :bar '42'}. Throw an exception
-  in some incorrect cases.
+  Arguments with dots are treated as nested maps, e.g.:
+
+  name=test&params.id=123 ->
+  {'name' 'test', 'params' {'id' '123'}}
   "
   [^String line]
   (when-not (str/blank? line)
-    (let [query-args
-          (as-> (str/trim line) *
-            (str/split * #"&")
-            (mapcat #(str/split % #"=" 2) *))]
+    (let [key=vals
+          (str/split (str/trim line) #"&")]
 
-      (when-not (-> query-args count even?)
-        (error! "malformed query params: %s" line))
-
-      (->> query-args
-           (replace {"" nil})
-           (apply hash-map)))))
+      (->> key=vals
+           (map
+            (fn [key=val]
+              (str/split key=val #"=" 2)))
+           (remove
+            (fn [[_key val]]
+              (or (= val "") (= val nil))))
+           (map
+            (fn [[key val]]
+              [(str/split key #"\.") val]))
+           (reduce
+            (fn [acc [path val]]
+              (assoc-in acc path val))
+            nil)))))
 
 (defn parse
   "
@@ -107,7 +114,7 @@
             (not-empty password))
 
         {:strs [read-only
-                ;; TODO :pg-params
+                pg-params
 
                 ;; socket options
                 so-keep-alive
@@ -126,8 +133,8 @@
 
                 ;; ssl
                 ssl
+                ssl-context
                 ;; TODO: ssl certs for ssl context?
-                ;; TODO: ssl-context ref?
 
                 fn-notification
                 fn-protocol-version
@@ -203,6 +210,9 @@
      :use-ssl?
      (some-> ssl parse-bool)
 
+     :ssl-context
+     (some-> ssl-context parse-ref)
+
      ;; TODO unix domain socket
      ;; :unix-socket?
      ;; :unix-socket-path
@@ -264,8 +274,7 @@
      :with-pgvector?
      (some-> with-pgvector parse-bool)
 
-     ;; TODO parse pg-params
      :pg-params
-     (cond-> nil
+     (cond-> pg-params
        ApplicationName
        (assoc "application_name" ApplicationName))}))

@@ -2,6 +2,7 @@
   (:import org.pg.Config)
   (:require
    [clojure.test :refer [deftest is testing]]
+   [pg.connection-uri :as uri]
    [pg.core :as pg]))
 
 (set! *warn-on-reflection* true)
@@ -211,6 +212,15 @@
               :fn-notification clojure.core/+}
              (options->map [:user :fnNotification])))))
 
+(deftest test-parse-nested-params
+  (is (= {:user "fred",
+          :pgParams {"application_name" "pg2"
+                     "client_encoding" "UTF8"
+                     "opt_one" "aa,bb,cc"
+                     "opt_two" "100500.00"}}
+         (-> {:connection-uri "postgresql://fred:secret@localhost/test?pg-params.opt_one=aa,bb,cc&pg-params.opt_two=100500.00"}
+             (options->map [:user :pgParams])))))
+
 (deftest test-weird-cases
 
   (try
@@ -244,3 +254,30 @@
     (catch Exception e
       (is (= "cannot parse boolean value: dunno"
              (ex-message e))))))
+
+
+(deftest test-parse-query-string
+
+  (is (= nil
+         (uri/parse-query-string "")))
+
+  (is (= nil
+         (uri/parse-query-string nil)))
+
+  (is (= nil
+         (uri/parse-query-string "a")))
+
+  (is (= {"a" "1"}
+         (uri/parse-query-string "a=1")))
+
+  (is (= nil
+         (uri/parse-query-string "a=")))
+
+  (is (= {"a" "2"}
+         (uri/parse-query-string "a=1&a=2")))
+
+  (is (= {"a" "1" "b" "2"}
+         (uri/parse-query-string "a=1&b=2")))
+
+  (is (= {"a" {"b" "1", "c" "2"}}
+         (uri/parse-query-string "a.b=1&a.c=2"))))
