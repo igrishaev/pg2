@@ -16,7 +16,7 @@ workarounds.
 ## Case 1: SSL Without Certificates
 
 Some cloud providers require SSL connection but do not share any certificate
-files. In that case, just pass the boolean `:use-ssl?` flag to the
+files. In that case, just pass the boolean `:ssl?` flag to the
 configuration, and that will be enough:
 
 ~~~clojure
@@ -26,7 +26,7 @@ configuration, and that will be enough:
    :user "ivan"
    :password "<password>"
    :database "test"
-   :use-ssl? true ;; this one
+   :ssl? true ;; this one
    })
 ~~~
 
@@ -50,7 +50,7 @@ it. Use the `pg.ssl` namespace and the `context` function:
 ~~~
 
 Add this context into the config map under the `:ssl-context` key. Passing a
-custom instance of `SSLContext` automatically enables the `:use-ssl?` flag as
+custom instance of `SSLContext` automatically enables the `:ssl?` flag as
 well:
 
 ~~~clojure
@@ -99,8 +99,8 @@ down to the following bash command:
 keytool -keystore mystore -alias postgresql -import -file ...
 ~~~
 
-Once certificates are imported, they're held by Java so you only specify
-`:use-ssl?` flag without custom instances of `SSLContext`.
+Once certificates are imported, they're held by Java so you only specify `:ssl?`
+flag without custom instances of `SSLContext`.
 
 Pay attention there is a chance to mess up. Imagine you import cerficiates into
 a keystore related to a JVM that you use for REPL. But when running an uberjar,

@@ -11,7 +11,7 @@ public final class IOTool {
         try {
             inputStream.close();
         } catch (IOException e) {
-            throw new PGError(e, "cannot close input stream");
+            throw new PGError(e, "cannot close input stream, cause: %s", e.getMessage());
         }
     }
 
@@ -19,7 +19,7 @@ public final class IOTool {
         try {
             outputStream.close();
         } catch (IOException e) {
-            throw new PGError(e, "cannot close output stream");
+            throw new PGError(e, "cannot close output stream, cause: %s", e.getMessage());
         }
     }
 
@@ -28,7 +28,7 @@ public final class IOTool {
             inputStream.readNBytes(len);
         }
         catch (IOException e) {
-            throw new PGError("Could not skip %s byte(s)", len);
+            throw new PGError("Could not skip %s byte(s), cause: %s", len, e.getMessage());
         }
     }
 
@@ -37,7 +37,7 @@ public final class IOTool {
             return inputStream.readNBytes(len);
         }
         catch (IOException e) {
-            throw new PGError("Could not read %s byte(s)", len);
+            throw new PGError("Could not read %s byte(s), cause: %s", len, e.getMessage());
         }
     }
 

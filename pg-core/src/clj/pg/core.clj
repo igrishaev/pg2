@@ -36,6 +36,7 @@
    org.pg.codec.CodecParams$Builder
    org.pg.enums.CopyFormat
    org.pg.enums.OID
+   org.pg.enums.SSLValidation
    org.pg.enums.TXStatus
    org.pg.enums.TxLevel
    org.pg.error.PGError
@@ -81,6 +82,20 @@
 ;;
 ;; Config builders
 ;;
+
+(defn ->SSLValidation
+  "
+  Coerce a Clojure value to SSLValidation enum.
+  "
+  ^SSLValidation [x]
+  (case x
+    (nil false off none no "none" "off" "no" :none :off :no)
+    SSLValidation/NONE
+
+    (default :default "default")
+    SSLValidation/DEFAULT
+
+    (error! "unknown ssl validation value: %s" x)))
 
 (defn ->execute-params
   "
@@ -292,8 +307,10 @@
                 fn-notice
 
                 ;; ssl
-                use-ssl?
+                use-ssl? ;; deprecated
+                ssl?
                 ssl-context
+                ssl-validation
 
                 ;; unix domain socket
                 unix-socket?
@@ -366,6 +383,12 @@
 
       (some? use-ssl?)
       (.useSSL use-ssl?)
+
+      (some? ssl?)
+      (.useSSL ssl?)
+
+      ssl-validation
+      (.sslValidation (->SSLValidation ssl-validation))
 
       ssl-context
       (.sslContext ssl-context)

@@ -2,6 +2,8 @@
 ## 0.1.30-SNAPSHOT
 
 - #33 generative tests for binary round-trips @jgdavey
+- SSL no validation by default, tested with AWS
+- Config.ConnType -> to enum
 
 ## 0.1.29
 

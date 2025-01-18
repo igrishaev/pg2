@@ -77,7 +77,7 @@ public final class Connection implements AutoCloseable {
 
     public static Connection connect(final Config config, final boolean sendStartup) {
         final Connection conn = new Connection(config);
-        final Config.CONN_TYPE connType = config.getConnType();
+        final ConnType connType = config.getConnType();
         switch (connType) {
             case UNIX_SOCKET -> conn.connectUnixSocket();
             case INET4 -> conn.connectInet();
@@ -108,14 +108,18 @@ public final class Connection implements AutoCloseable {
                 .build());
     }
 
+    private void closeIO() {
+        IOTool.close(inStream);
+        IOTool.close(outStream);
+        isClosed = true;
+    }
+
     public void close () {
         try (TryLock ignored = lock.get()) {
             if (!isClosed) {
                 sendTerminate();
                 flush();
-                IOTool.close(inStream);
-                IOTool.close(outStream);
-                isClosed = true;
+                closeIO();
             }
         }
     }
@@ -322,7 +326,7 @@ public final class Connection implements AutoCloseable {
     }
 
     public String toString () {
-        final Config.CONN_TYPE connType = config.getConnType();
+        final ConnType connType = config.getConnType();
         return switch (connType) {
             case UNIX_SOCKET -> String.format("<PG connection %s:%s %s>",
                     getUser(),
@@ -358,19 +362,23 @@ public final class Connection implements AutoCloseable {
             "TLSv1"
     };
 
-    private SSLContext getSSLContext () throws NoSuchAlgorithmException {
+    private SSLContext getSSLContext() {
         final SSLContext configContext = config.sslContext();
         if (configContext == null) {
-            return SSLContext.getDefault();
+            return switch (config.sslValidation()) {
+                case NONE -> SSLTool.SSLContextNoValidation();
+                case DEFAULT -> SSLTool.SSLContextDefault();
+            };
         }
         else {
             return configContext;
         }
     }
 
-    private void upgradeToSSL () throws NoSuchAlgorithmException, IOException {
+    private void upgradeToSSL() {
         final SSLContext sslContext = getSSLContext();
-        final SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(
+        final SSLSocket sslSocket = SocketTool.open(
+                sslContext,
                 socket,
                 config.host(),
                 config.port(),
@@ -382,36 +390,35 @@ public final class Connection implements AutoCloseable {
 
         sslSocket.setUseClientMode(true);
         sslSocket.setEnabledProtocols(SSLProtocols);
-        sslSocket.startHandshake();
+        SocketTool.startHandshake(sslSocket);
 
         socket = sslSocket;
         isSSL = true;
     }
 
     private void preSSLStage() {
-        if (config.useSSL()) {
-            final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
-            sendMessage(msg);
-            flush();
-            final boolean ssl = readSSLResponse();
-            if (ssl) {
-                try {
-                    upgradeToSSL();
-                }
-                catch (Throwable e) {
-                    close();
-                    throw new PGError(
-                            e,
-                            "could not upgrade to SSL due to an exception: %s",
-                            e.getMessage()
-                    );
-                }
+        final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
+        sendMessage(msg);
+        flush();
+        final boolean ssl = readSSLResponse();
+        if (ssl) {
+            try {
+                upgradeToSSL();
             }
-            else {
-                close();
-                throw new PGError("the server is configured to not use SSL");
+            catch (Throwable e) {
+                closeIO();
+                throw new PGError(
+                        e,
+                        "could not upgrade to SSL due to an exception: %s",
+                        e.getMessage()
+                );
             }
         }
+        else {
+            close();
+            throw new PGError("the server is configured to not use SSL");
+        }
+
     }
 
     private void connectInet() {
@@ -428,7 +435,9 @@ public final class Connection implements AutoCloseable {
         // save socket for further SSL upgrade
         socket = channel.socket();
         setSocketOptions(socket, config);
-        preSSLStage();
+        if (config.useSSL()) {
+            preSSLStage();
+        }
     }
 
     // Send bytes into the output stream. Do not flush the buffer,

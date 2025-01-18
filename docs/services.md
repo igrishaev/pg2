@@ -7,7 +7,7 @@ welcome to share their settings for AWS, Azure, etc.
 
 ## Neon.tech
 
-[Neon.tech][neon.tech] requires SSL connection so always pass the `:use-ssl?`
+[Neon.tech][neon.tech] requires SSL connection so always pass the `:ssl?`
 flag:
 
 ~~~clojure
@@ -17,7 +17,7 @@ flag:
    :user "test_owner"
    :password "<password>"
    :database "test"
-   :use-ssl? true ;; always mandatory!
+   :ssl? true ;; always mandatory!
    })
 ~~~
 

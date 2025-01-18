@@ -2,6 +2,8 @@ package org.pg.util;
 
 import org.pg.error.PGError;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -9,25 +11,34 @@ import java.nio.channels.SocketChannel;
 
 public class SocketTool {
 
-    public static SocketChannel open (final SocketAddress address) {
+    public static void startHandshake(final SSLSocket socket) {
         try {
-            return SocketChannel.open(address);
+            socket.startHandshake();
         } catch (IOException e) {
-            throw new PGError(e, "cannot open socket, address: %s", address);
+            throw new PGError(e, "cannot start handshake, cause: %s", e.getMessage());
         }
     }
 
-    public static Socket socket (final String host, final int port) {
+    public static SocketChannel open(final SocketAddress address) {
         try {
-            return new Socket(host, port);
-        }
-        catch (IOException e) {
-            throw new PGError(
-                    e,
-                    "cannot open a socket, host: %s, port: %s",
-                    host,
-                    port
-            );
+            return SocketChannel.open(address);
+        } catch (IOException e) {
+            throw new PGError(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
         }
     }
+
+    public static SSLSocket open(final SSLContext sslContext,
+                                 final Socket socket,
+                                 final String host,
+                                 final int port,
+                                 final boolean autoClose) {
+        try {
+            return (SSLSocket) sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+        } catch (IOException e) {
+            throw new PGError(e, "cannot open an SSL socket, socket: %s, host: %s, port: %s, cause: %s",
+                    socket, host, port, e.getMessage());
+        }
+    }
+
+
 }

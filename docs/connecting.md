@@ -96,7 +96,9 @@ rest have predefined values.
 | `:fn-notification`     | 1-arg fn     | logging fn         | A function to handle notifications                                              |
 | `:fn-protocol-version` | 1-arg fn     | logging fn         | A function to handle negotiation version protocol event                         |
 | `:fn-notice`           | 1-arg fn     | logging fn         | A function to handle notices                                                    |
-| `:use-ssl?`            | bool         | false              | Whether to use an SSL connection<sup>1</sup>                                    |
+| `:ssl?`                | bool         | false              | Whether to use an SSL connection<sup>1</sup>                                    |
+| `:use-ssl?`            | bool         | false              | **Deprecated:** an outdated version of `:ssl?`                                   |
+| `:ssl-validation`      | mixed        | nil                | How (and if) to validate SSL certificates<sup>1</sup>                           |
 | `:ssl-context`         | SSLContext   | nil                | An custom instance of `SSLContext` class to wrap a socket<sup>1</sup>           |
 | `:unix-socket?`        | bool         | false              | Whether to connect to a Unix domain socket<sup>2</sup>                          |
 | `:unix-socket-path`    | string       | null               | A custom path to Unix domain socket<sup>2</sup>                                 |

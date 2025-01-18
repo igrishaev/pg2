@@ -3,6 +3,8 @@ package org.pg;
 import clojure.lang.IFn;
 import clojure.lang.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pg.enums.ConnType;
+import org.pg.enums.SSLValidation;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
 import org.pg.processor.IProcessor;
@@ -36,6 +38,7 @@ public record Config(
         IFn fnProtocolVersion,
         IFn fnNotice,
         SSLContext sslContext,
+        SSLValidation sslValidation,
         long cancelTimeoutMs,
         ObjectMapper objectMapper,
         boolean readOnly,
@@ -48,13 +51,11 @@ public record Config(
         String unixSocketPath
 ) {
 
-    public enum CONN_TYPE {INET4, UNIX_SOCKET}
-
-    public CONN_TYPE getConnType () {
+    public ConnType getConnType() {
         if (useUnixSocket || unixSocketPath != null) {
-            return CONN_TYPE.UNIX_SOCKET;
+            return ConnType.UNIX_SOCKET;
         } else {
-            return CONN_TYPE.INET4;
+            return ConnType.INET4;
         }
     }
 
@@ -89,6 +90,7 @@ public record Config(
         private IFn fnProtocolVersion;
         private IFn fnNotice;
         private SSLContext sslContext = null;
+        private SSLValidation sslValidation = Const.SSL_VALIDATION;
         private long cancelTimeoutMs = Const.MS_CANCEL_TIMEOUT;
         private ObjectMapper objectMapper = JSON.defaultMapper;
         private boolean readOnly = false;
@@ -147,6 +149,12 @@ public record Config(
         public Builder sslContext(final SSLContext sslContext) {
             this.useSSL = true;
             this.sslContext = sslContext;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder sslValidation(final SSLValidation sslValidation) {
+            this.sslValidation = sslValidation;
             return this;
         }
 
@@ -357,6 +365,7 @@ public record Config(
                     this.fnProtocolVersion,
                     this.fnNotice,
                     this.sslContext,
+                    this.sslValidation,
                     this.cancelTimeoutMs,
                     this.objectMapper,
                     this.readOnly,

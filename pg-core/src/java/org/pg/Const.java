@@ -1,9 +1,12 @@
 package org.pg;
 
+import org.pg.enums.SSLValidation;
+
 public final class Const {
     public static final int PROTOCOL_VERSION = 196608;
     public static final int CANCEL_CODE = 80877102;
     public static final int SSL_CODE = 80877103;
+    public static final SSLValidation SSL_VALIDATION = SSLValidation.NONE;
     public static final int COPY_BUFFER_SIZE = 0xFFFF;
     public static final String COPY_FAIL_EXCEPTION_MSG = "Terminated due to an exception on the client side";
     public static final int PG_PORT = 5432;

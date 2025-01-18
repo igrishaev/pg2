@@ -1,4 +1,10 @@
 
+- ssl:
+  - docs: ssl setup
+  - docs: test with aws
+  - switch to ssl by default?
+  - ssl 3rd-party tests
+
  -> AuthenticationSASLFinal[serverFinalMessage=e=Wrong password]
  fix this case
 
