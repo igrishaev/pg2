@@ -1,5 +1,9 @@
 
-## 0.1.30-SNAPSHOT
+## 0.1.31-SNAPSHOT
+
+- ?
+
+## 0.1.30
 
 - #33 generative tests for binary round-trips @jgdavey
 - SSL no validation by default, tested with AWS
