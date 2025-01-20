@@ -4,11 +4,20 @@ import org.pg.error.PGError;
 import org.pg.ssl.TrustManagerNoValidation;
 
 import javax.net.ssl.*;
+
+import java.io.IOException;
+import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 
 public class SSLTool {
+
+    private static final String[] SSLProtocols = new String[] {
+        "TLSv1.2",
+        "TLSv1.1",
+        "TLSv1"
+    };
 
     public static SSLContext SSLContext(final String protocol) {
         try {
@@ -53,6 +62,26 @@ public class SSLTool {
         } else {
             throw new PGError("peer certificates are empty, socket: %s", sslSocket);
         }
+    }
+
+    public static void startHandshake(final SSLSocket socket) {
+        try {
+            socket.startHandshake();
+        } catch (IOException e) {
+            throw new PGError(e, "cannot start handshake, cause: %s", e.getMessage());
+        }
+    }
+
+    public static SSLSocket connect(final SSLContext sslContext,
+                                 final Socket socket,
+                                 final String host,
+                                 final int port,
+                                 final boolean autoClose) {
+        SSLSocket sslSocket = SocketTool.open(sslContext, socket, host, port, autoClose);
+        sslSocket.setUseClientMode(true);
+        sslSocket.setEnabledProtocols(SSLProtocols);
+        startHandshake(sslSocket);
+        return sslSocket;
     }
 
 }
