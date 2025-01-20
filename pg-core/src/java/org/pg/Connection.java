@@ -16,12 +16,7 @@ import org.pg.processor.IProcessor;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
-import java.net.InetSocketAddress;
-import java.nio.channels.Channels;
-import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -32,7 +27,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.*;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 
 public final class Connection implements AutoCloseable {
@@ -45,7 +39,7 @@ public final class Connection implements AutoCloseable {
     private int pid;
     private int secretKey;
     private TXStatus txStatus;
-    private Socket socket;
+    private PGIOChannel ioChannel;
     private String unixSocketPath;
     private InputStream inStream;
     private OutputStream outStream;
@@ -144,11 +138,9 @@ public final class Connection implements AutoCloseable {
         outStream = IOTool.wrapBuf(out, len);
     }
 
-    private SocketChannel connectSocket(final SocketAddress address) {
-        final SocketChannel channel = SocketTool.open(address);
-        setInputStream(Channels.newInputStream(channel));
-        setOutputStream(Channels.newOutputStream(channel));
-        return channel;
+    private void connectStreams() {
+        setInputStream(ioChannel.getInputStream());
+        setOutputStream(ioChannel.getOutputStream());
     }
 
     public void connectUnixSocket() {
@@ -158,8 +150,8 @@ public final class Connection implements AutoCloseable {
             throw new PGError("unix socket doesn't exist: %s", path);
         }
         this.unixSocketPath = path;
-        final SocketAddress address = UnixDomainSocketAddress.of(path);
-        connectSocket(address);
+        this.ioChannel = PGDomainSocketChannel.connect(UnixDomainSocketAddress.of(path));
+        connectStreams();
     }
 
     private void initTypeMapping() {
@@ -206,19 +198,6 @@ public final class Connection implements AutoCloseable {
             }
         }
 
-    }
-
-    private static void setSocketOptions(final Socket socket, final Config config) {
-        try {
-            socket.setTcpNoDelay(config.SOTCPnoDelay());
-            socket.setSoTimeout(config.SOTimeout());
-            socket.setKeepAlive(config.SOKeepAlive());
-            socket.setReceiveBufferSize(config.SOReceiveBufSize());
-            socket.setSendBufferSize(config.SOSendBufSize());
-        }
-        catch (IOException e) {
-            throw new PGError(e, "couldn't set socket options");
-        }
     }
 
     private int nextInt () {
@@ -356,11 +335,6 @@ public final class Connection implements AutoCloseable {
         };
     }
 
-    private static final String[] SSLProtocols = new String[] {
-            "TLSv1.2",
-            "TLSv1.1",
-            "TLSv1"
-    };
 
     private SSLContext getSSLContext() {
         final SSLContext configContext = config.sslContext();
@@ -377,22 +351,9 @@ public final class Connection implements AutoCloseable {
 
     private void upgradeToSSL() {
         final SSLContext sslContext = getSSLContext();
-        final SSLSocket sslSocket = SocketTool.open(
-                sslContext,
-                socket,
-                config.host(),
-                config.port(),
-                true
-        );
+        this.ioChannel = ioChannel.upgradeToSSL(sslContext);
+        connectStreams();
 
-        setInputStream(IOTool.getInputStream(sslSocket));
-        setOutputStream(IOTool.getOutputStream(sslSocket));
-
-        sslSocket.setUseClientMode(true);
-        sslSocket.setEnabledProtocols(SSLProtocols);
-        SocketTool.startHandshake(sslSocket);
-
-        socket = sslSocket;
         isSSL = true;
     }
 
@@ -428,13 +389,8 @@ public final class Connection implements AutoCloseable {
     }
 
     private void connectInetUnlocked() {
-        final int port = getPort();
-        final String host = getHost();
-        final SocketAddress address = new InetSocketAddress(host, port);
-        final SocketChannel channel = connectSocket(address);
-        // save socket for further SSL upgrade
-        socket = channel.socket();
-        setSocketOptions(socket, config);
+        this.ioChannel = PGSocketChannel.connect(config);
+        connectStreams();
         if (config.useSSL()) {
             preSSLStage();
         }
@@ -937,8 +893,8 @@ public final class Connection implements AutoCloseable {
 
     // stolen from jorsol/pgjdbc, file ScramAuthenticator.java
     private byte[] getChannelBindingData() {
-        if (socket instanceof SSLSocket sslSocket) {
-            final Certificate peerCert = SSLTool.getPeerCertificate(sslSocket);
+        if (isSSL) {
+            final Certificate peerCert = ioChannel.getPeerCertificate();
             if (peerCert instanceof X509Certificate cert) {
                 final String sigAlgName = cert.getSigAlgName();
                 final MessageDigest digest = getDigestAlgorithm(sigAlgName);
