@@ -94,3 +94,6 @@ migrations
   - get-by-ids-temp
   - copy in/out
   - truncate
+
+- save notifications into a list?
+- get-notifications function?

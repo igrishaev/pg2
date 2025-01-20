@@ -4278,6 +4278,13 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                 (str/ends-with? ", sql: COPY +++ from ABC")))))))
 
 
+(deftest test-client-connection-uri
+  (let [uri (format "postgresql://test:test@localhost:%s/test?ssl=false" *PORT*)]
+    (pg/with-conn [conn {:connection-uri uri}]
+      (let [res (pg/query conn "select 1 as num")]
+        (is (= [{:num 1}] res))))))
+
+
 #_
 (deftest test-hstore-bin
   (pg/with-conn [conn *CONFIG-BIN*]
