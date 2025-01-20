@@ -49,32 +49,51 @@ configuration options described in the [Connecting to the
 Server](/docs/connecting.md) section with rare differences in names
 (e.g. "boolean?" names don't have a question mark at the end).
 
-| Parameter             | Parse as  | Comment                                                    |
-|-----------------------|-----------|------------------------------------------------------------|
-| `read-only`           | bool      | True if make connection always read only                   |
-| `so-keep-alive`       | bool      | Enable the standard "keep alive" socket option             |
-| `so-tcp-no-delay`     | bool      | Enable the standard "no delay" socket option               |
-| `so-timeout`          | long      | Long value for the standard "timeout" socket option        |
-| `so-recv-buf-size`    | long      | Socket receive buffer size                                 |
-| `so-send-buf-size`    | long      | Socket send buffer size                                    |
-| `binary-encode`       | bool      | Whether to use binary encoding                             |
-| `binary-decode`       | bool      | Whether to use binary decoding                             |
-| `in-stream-buf-size`  | long      | `BufferedInputStream` default size                         |
-| `out-stream-buf-size` | long      | `BufferedOutputStream` default size                        |
-| `ssl`                 | bool      | Whether to use SSL connection                              |
-| `ssl-context`         | reference | A reference to a custom `SSLContext` object                |
-| `fn-notification`     | reference | A reference to a function handling notifications           |
-| `fn-protocol-version` | reference | A reference to a function handling protocol mismatch event |
-| `fn-notice`           | reference | A reference to a function handling notices                 |
-| `cancel-timeout-ms`   | long      | A custom timeout duration when cancelling queries          |
-| `protocol-version`    | long      | A custom protocol version                                  |
-| `object-mapper`       | reference | A reference to custom JSON `ObjectMapper` instance         |
-|                       |           |                                                            |
-|                       |           |                                                            |
-|                       |           |                                                            |
-|                       |           |                                                            |
-|                       |           |                                                            |
-|                       |           |                                                            |
-|                       |           |                                                            |
-|                       |           |                                                            |
-|                       |           |                                                            |
+TODO: on parsing
+
+| Parameter                     | Parsed as  | Comment                                                    |
+|-------------------------------|------------|------------------------------------------------------------|
+| `read-only`                   | bool       | True if make connection always read only                   |
+| `so-keep-alive`               | bool       | Enable the standard "keep alive" socket option             |
+| `so-tcp-no-delay`             | bool       | Enable the standard "no delay" socket option               |
+| `so-timeout`                  | long       | Long value for the standard "timeout" socket option        |
+| `so-recv-buf-size`            | long       | Socket receive buffer size                                 |
+| `so-send-buf-size`            | long       | Socket send buffer size                                    |
+| `binary-encode`               | bool       | Whether to use binary encoding                             |
+| `binary-decode`               | bool       | Whether to use binary decoding                             |
+| `in-stream-buf-size`          | long       | `BufferedInputStream` default size                         |
+| `out-stream-buf-size`         | long       | `BufferedOutputStream` default size                        |
+| `ssl`                         | bool       | Whether to use SSL connection                              |
+| `ssl-context`                 | reference  | A reference to a custom `SSLContext` object                |
+| `fn-notification`             | reference  | A reference to a function handling notifications           |
+| `fn-protocol-version`         | reference  | A reference to a function handling protocol mismatch event |
+| `fn-notice`                   | reference  | A reference to a function handling notices                 |
+| `cancel-timeout-ms`           | long       | A custom timeout duration when cancelling queries          |
+| `protocol-version`            | long       | A custom protocol version                                  |
+| `object-mapper`               | reference  | A reference to custom JSON `ObjectMapper` instance         |
+| `pool-min-size`               | long       | Minimum pool connection size                               |
+| `pool-max-size`               | long       | Maximum pool connection size                               |
+| `pool-expire-threshold-ms`    | long       | Pool connection expire lifetime                            |
+| `pool-borrow-conn-timeout-ms` | long       | How long to wait when borrowing a connection from a pool   |
+| `with-pgvector`               | bool       | Parse vector types provided by the `pgvector` extension    |
+| `pg-params`                   | nested map | A nested map of Postgres runtime parameters (see below)    |
+
+## JDBC Compatible Parameters
+
+[jdbc-uri]: https://jdbc.postgresql.org/documentation/use/
+
+The following parameters are borrowed from the official [JDBC URI
+specification][jdbc-uri]:
+
+| JDBC Parameter        | Acts as                                     |
+|-----------------------|---------------------------------------------|
+| `readOnly`            | `read-only`                                 |
+| `connectTimeout`      | `so-timeout`                                |
+| `ApplicationName`     | `pg-params.application_name`                |
+| `cancelSignalTimeout` | `cancel-timeout-ms`                         |
+| `binaryTransfer`      | Enables `binary-encode` and `binary-decode` |
+| `tcpKeepAlive`        | `so-keep-alive`                             |
+| `tcpNoDelay`          | `so-tcp-no-delay`                           |
+| `protocolVersion`     | `protocol-version`                          |
+
+## Nested PG Params
