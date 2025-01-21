@@ -9,9 +9,15 @@ When reaching an RDS database from an internal resource (EC2, Lambda, etc),
 there is no need to specify SSL. But if you want to reach the database from the
 outer world (e.g. your office), some preparation is required.
 
-First, make your database publicly available (there is a dedicated checkbox
-somewhere in the "Modify" tab). Second, open a security group and allow incoming
-TCP traffic on port 5432.
+First, make your database publicly available. Select your database, click
+"Modify". Scroll down to the "Connectivity" section, and expand the "Additional
+configuration" widget. Mark the "Publicly available" checkbox:
+
+![](/media/aws1.png)
+
+Second, open a security group and allow incoming TCP traffic on port 5432:
+
+![](/media/aws2.png)
 
 Now that you have done it, connect to the database as follows:
 
