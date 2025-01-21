@@ -230,7 +230,7 @@
       (.reducer (fold/into (clojure.core/first into)
                            (second into)))
 
-      ;;
+      ;; end reducers
 
       (some? binary-encode?)
       (.binaryEncode binary-encode?)
@@ -279,12 +279,29 @@
 
 (defn ->config
   "
-  Turn a Clojure map into an instance of Config via Config.Builder
+  Turn a Clojure map into an instance of `Config` via `Config.Builder`.
+  First, try to parse the `connection-uri` URI string, if passed.
+  Then merge it with other parameters. Finally, build a `Config`
+  instance.
   "
   ^Config [params]
-  (let [uri-params (some-> params :connection-uri connection-uri/parse)
-        pg-params (not-empty (merge (:pg-params uri-params) (:pg-params params)))
-        params (merge uri-params params)
+
+  (let [{:keys [connection-uri
+                pg-params]}
+        params
+
+        uri-params
+        (some-> connection-uri connection-uri/parse)
+
+        {uri-pg-params :pg-params}
+        uri-params
+
+        pg-params
+        (merge uri-pg-params pg-params)
+
+        params
+        (merge uri-params params)
+
         {:keys [;; general
                 user
                 database
@@ -352,11 +369,9 @@
         params
 
         DB
-        (or database dbname)
+        (or database dbname)]
 
-        ^Config$Builder builder (new Config$Builder user DB)]
-
-    (cond-> builder
+    (cond-> (new Config$Builder user DB)
 
       password
       (.password password)
@@ -370,7 +385,7 @@
       protocol-version
       (.protocolVersion protocol-version)
 
-      pg-params
+      (seq pg-params)
       (.pgParams pg-params)
 
       (some? binary-encode?)
@@ -459,7 +474,6 @@
 
       :finally
       (.build))))
-
 
 (defn connect
 

@@ -31,6 +31,16 @@ https://www.postgresql.org/docs/current/libpq-pgpass.html
 - ssl services local tests
 - CodecParams (setParam) make it mutable
 
+- connection URI:
+  - docs
+  - ssl-cert-files
+  - unix socket
+  - logging
+  - enums
+  - type-map
+  - connect: accept a string?
+
+config & uri: rename pg-params to params?
 
 - postgis support
 - json wrapper not needed
@@ -84,3 +94,6 @@ migrations
   - get-by-ids-temp
   - copy in/out
   - truncate
+
+- save notifications into a list?
+- get-notifications function?

@@ -995,7 +995,7 @@ from
 
   (let [config
         (assoc *CONFIG-TXT* :pg-params {"application_name" "Clojure"
-                                    "DateStyle" "ISO, MDY"})]
+                                        "DateStyle" "ISO, MDY"})]
 
     (pg/with-connection [conn config]
       (let [param
@@ -4276,6 +4276,13 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (is (-> e
                 ex-message
                 (str/ends-with? ", sql: COPY +++ from ABC")))))))
+
+
+(deftest test-client-connection-uri
+  (let [uri (format "postgresql://test:test@localhost:%s/test?ssl=false" *PORT*)]
+    (pg/with-conn [conn {:connection-uri uri}]
+      (let [res (pg/query conn "select 1 as num")]
+        (is (= [{:num 1}] res))))))
 
 
 #_
