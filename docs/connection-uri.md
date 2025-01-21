@@ -59,28 +59,34 @@ pass the password in URI. It's better to submit it through a dedicated
 
 This table lists query parameters supported by URI. They act like the standard
 configuration options described in the [Connecting to the
-Server](/docs/connecting.md) section with some rare differences in names
+Server](/docs/connecting.md) section with some minor differences in names
 (e.g. "boolean?" names don't have a question mark at the end).
 
 Before you read, here is a brief description of types and parsing agreements.
 
-- **bool(ean)** values are passes as `true`, `on`, `1`, `yes` for truth, and
+- **boolean** values are passed as `true`, `on`, `1`, `yes` for true, and
   `false`, `off`, `0`, `no` for false, for example `read-only=true` or
   `read-only=off`;
 
 - **long** values are passed as a group of numbers: `so-timeout=5000`;
 
-- **ref(erence)** values must be fully qualified strings pointing to a certain
-  Clojure definition, for example: `fn-notification=com.acme.server/my-handler`.
-  The `com.acme.server/my-handler` string gets transformed into a symbol first,
-  and then it passed to the `requiring-resolve` function that gets a variable by
-  a symbol loading a namespace if it was not loaded before. Passing a string
-  that points to an object that doesn't exist will cause an exception.
+- **reference** values must be fully qualified strings pointing to a certain
+  Clojure definition, for example:
 
-- **nested** means nested maps, for example: `foo.bar=1&foo.kek=2` will become
-  `{:foo {:bar 1 :kek 2}}` when parsed. Each parameter is split by a dot on a
-  vector of lexems, and it gets passed into the `assoc-in` function in a
-  loop. So far, only one group of parameters rely on nesting (see below).
+  ~~~
+  fn-notification=com.acme.server/my-handler
+  ~~~
+
+  The `com.acme.server/my-handler` string gets transformed into a symbol first,
+  and then passed to the `requiring-resolve` function that returns a Clojure
+  variable. It also loads a namepsace if it was not loaded before. Passing a
+  string that points to non-existing object will cause an exception.
+
+- **nested** means nested maps, for example: `foo.bar=1&foo.kek=2`. This
+  expression becomes `{:foo {:bar 1 :kek 2}}` when parsed. Each parameter is
+  split with a dot on a vector of lexems, and each vector is passed into the
+  `assoc-in` function in a loop. So far, only one group of parameters rely on
+  nesting (see below).
 
 | Parameter                     | Parsed as | Comment                                                    |
 |-------------------------------|-----------|------------------------------------------------------------|
@@ -114,18 +120,18 @@ Before you read, here is a brief description of types and parsing agreements.
 [jdbc-uri]: https://jdbc.postgresql.org/documentation/use/
 
 The following parameters are borrowed from the official [JDBC URI
-specification][jdbc-uri]:
+specification][jdbc-uri] and act like aliases:
 
-| JDBC Parameter        | Acts as                                     |
-|-----------------------|---------------------------------------------|
-| `readOnly`            | `read-only`                                 |
-| `connectTimeout`      | `so-timeout`                                |
-| `ApplicationName`     | `pg-params.application_name`                |
-| `cancelSignalTimeout` | `cancel-timeout-ms`                         |
-| `binaryTransfer`      | Enables `binary-encode` and `binary-decode` |
-| `tcpKeepAlive`        | `so-keep-alive`                             |
-| `tcpNoDelay`          | `so-tcp-no-delay`                           |
-| `protocolVersion`     | `protocol-version`                          |
+| JDBC Parameter        | Alias for                                        |
+|-----------------------|--------------------------------------------------|
+| `readOnly`            | `read-only`                                      |
+| `connectTimeout`      | `so-timeout`                                     |
+| `ApplicationName`     | `pg-params.application_name`                     |
+| `cancelSignalTimeout` | `cancel-timeout-ms`                              |
+| `binaryTransfer`      | Enables both `binary-encode` and `binary-decode` |
+| `tcpKeepAlive`        | `so-keep-alive`                                  |
+| `tcpNoDelay`          | `so-tcp-no-delay`                                |
+| `protocolVersion`     | `protocol-version`                               |
 
 ## Postgres Runtime Parameters (pg-params)
 
@@ -144,11 +150,17 @@ pg-param.<setting1>=<value1>&pg-param.<setting2>=<value2>...
 where
 
 - `settingN` is a name of a setting, e.g. `application_name`, or
-  `default_transaction_read_only`, or something else. It should exactly
-  match the name of a setting in Postgres;
+  `default_transaction_read_only`, or something else. It should exactly match
+  the name of a Postgres runtime parameter, e.g. keep underscores;
 
-- `valueN` is a value of a setting, e.g. a string or a number, or a comma
-  separated list.
+- `valueN` is a value of a runtime parameter, e.g. a string or a number, or a
+  comma-separated list.
 
-For more details, take a look at the [list of runtime parameters][runtime]
-supported.
+Example:
+
+~~~
+pg-param.application_name=my-super-app&pg-param.default_transaction_read_only=off
+~~~
+
+For more details, take a look at the [list of Postgres runtime
+parameters][runtime] supported.
