@@ -3,6 +3,33 @@
 This section brings real configuration samples for various services. Everyone is
 welcome to share their settings for AWS, Azure, etc.
 
+## AWS RDS
+
+When reaching an RDS database from an internal resource (EC2, Lambda, etc),
+there is no need to specify SSL. But if you want to reach the database from the
+outer world (e.g. your office), some preparation is required.
+
+First, make your database publicly available (there is a dedicated checkbox
+somewhere in the "Modify" tab). Second, open a security group and allow incoming
+TCP traffic on port 5432.
+
+Now that you have done it, connect to the database as follows:
+
+~~~clojure
+(def config
+  {:host "database-1.cxyw0khwga3x.us-east-1.rds.amazonaws.com"
+   :port 5432
+   :user "postgres"
+   :password "......"
+   :database "postgres"
+   :ssl? true}) ;; SSL is mandatory!
+
+(with-conn [conn config]
+  (query conn "select 1"))
+~~~
+
+When reaching the database from EC2 or Lambda, you can skip the `:ssl?` flag.
+
 [neon.tech]: https://neon.tech/
 
 ## Neon.tech

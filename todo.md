@@ -1,7 +1,5 @@
 
 - ssl:
-  - docs: ssl setup
-  - docs: test with aws
   - switch to ssl by default?
   - ssl 3rd-party tests
 
