@@ -2,18 +2,18 @@
 
 Is it possible to specify most of connection parameters using a URI string. It
 reminds Connection URI in JDBC but with minor differences. A URI is useful when
-you cannot pass a structured data like JSON/EDN, or in some other rare cases.
+you cannot pass a structured data like JSON or EDN.
 
-A URI might carry a username, a password, a host, a port, and a database
-name. Its query string also passes additional parameters. Here is an example of
-a URI string:
+A URI might carry a username, a password, a host, a port, and a database name. A
+query string also passes additional parameters. Here is an example of a URI
+string:
 
 ~~~text
 jdbc:postgresql://fred:secret@localhost:5432/test?ssl=true
 ~~~
 
-Above, the `jdbc:` prefix is just ignored; it's only left for compatibility with
-JDBC. When parsed, the URI becomes a map like this:
+Above, the `jdbc:` prefix is ignored; it is for compatibility with JDBC
+only. When parsed, the URI becomes a map like this:
 
 ~~~clojure
 {:user "fred"
@@ -38,6 +38,19 @@ follows:
 (def URI "postgresql://test:test@127.0.0.1:5432/test?ssl=false")
 
 (pg/with-conn [conn {:connection-uri URI}]
+  (let [res (pg/query conn "select 1 as num")]
+    ...))
+~~~
+
+The top-level options override values from a URI. For example, it's unsafe to
+pass the password in URI. It's better to submit it through a dedicated
+`:password` top-level field:
+
+~~~clojure
+(def URI "postgresql://ivan@127.0.0.1:5432/test?ssl=false")
+
+(pg/with-conn [conn {:connection-uri URI
+                     :password (System/getenv "DB_PASSWORD")}]
   (let [res (pg/query conn "select 1 as num")]
     ...))
 ~~~
