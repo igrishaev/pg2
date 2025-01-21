@@ -1,4 +1,4 @@
-# Connecting to the server
+# Connecting to the Server
 
 To connect the server, define a config map and pass it into the `connect`
 function:
@@ -84,6 +84,7 @@ rest have predefined values.
 |------------------------|--------------|--------------------|---------------------------------------------------------------------------------|
 | `:user`                | string       | **required**       | the name of the DB user                                                         |
 | `:database`            | string       | **required**       | the name of the database                                                        |
+| `:connection-uri`      | string       | nil                | A URI string with a user, database, and other parameters<sup>1</sup>            |
 | `:host`                | string       | 127.0.0.1          | IP or hostname                                                                  |
 | `:port`                | integer      | 5432               | port number                                                                     |
 | `:password`            | string       | ""                 | DB user password                                                                |
@@ -96,12 +97,12 @@ rest have predefined values.
 | `:fn-notification`     | 1-arg fn     | logging fn         | A function to handle notifications                                              |
 | `:fn-protocol-version` | 1-arg fn     | logging fn         | A function to handle negotiation version protocol event                         |
 | `:fn-notice`           | 1-arg fn     | logging fn         | A function to handle notices                                                    |
-| `:ssl?`                | bool         | false              | Whether to use an SSL connection<sup>1</sup>                                    |
-| `:use-ssl?`            | bool         | false              | **Deprecated:** an outdated version of `:ssl?`                                   |
-| `:ssl-validation`      | mixed        | nil                | How (and if) to validate SSL certificates<sup>1</sup>                           |
-| `:ssl-context`         | SSLContext   | nil                | An custom instance of `SSLContext` class to wrap a socket<sup>1</sup>           |
-| `:unix-socket?`        | bool         | false              | Whether to connect to a Unix domain socket<sup>2</sup>                          |
-| `:unix-socket-path`    | string       | null               | A custom path to Unix domain socket<sup>2</sup>                                 |
+| `:ssl?`                | bool         | false              | Whether to use an SSL connection<sup>2</sup>                                    |
+| `:use-ssl?`            | bool         | false              | **Deprecated:** an outdated version of `:ssl?`                                  |
+| `:ssl-validation`      | mixed        | nil                | How (and if) to validate SSL certificates<sup>2</sup>                           |
+| `:ssl-context`         | SSLContext   | nil                | An custom instance of `SSLContext` class to wrap a socket<sup>2</sup>           |
+| `:unix-socket?`        | bool         | false              | Whether to connect to a Unix domain socket<sup>3</sup>                          |
+| `:unix-socket-path`    | string       | null               | A custom path to Unix domain socket<sup>3</sup>                                 |
 | `:so-keep-alive?`      | bool         | true               | Socket KeepAlive value                                                          |
 | `:so-tcp-no-delay?`    | bool         | true               | Socket TcpNoDelay value                                                         |
 | `:so-timeout`          | integer      | 15.000             | Socket timeout value, in ms                                                     |
@@ -111,8 +112,9 @@ rest have predefined values.
 | `:protocol-version`    | integer      | 196608             | Postgres protocol version                                                       |
 | `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section) |
 
-1. See the [SSL Setup](/docs/ssl.md) section.
-2. See the [Unix Domain Socket](/docs/unix-socket.md) section.
+1. See the [URI Connection String](/docs/connection-uri.md) section.
+2. See the [SSL Setup](/docs/ssl.md) section.
+3. See the [Unix Domain Socket](/docs/unix-socket.md) section.
 
 ### Parameter notes
 
