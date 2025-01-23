@@ -1,6 +1,11 @@
 # Errors and Exceptions
 
-PG2 introduces two kinds of exceptions: `PGError` and `PGErrorResponse`.
+PG2 introduces 3 kinds of exceptions: `PGIOException`, `PGError` and `PGErrorResponse`.
+All of these Exception types inherit from `PGBaseError`.
+
+**A `PGIOException`** usually occurs based on connection-related issues, for
+example being unable to connect to the server, or being unable to read/write to
+the connection.
 
 **A `PGError` exception** usually happens on the client side due to wrong values
 or encode/decode errors. Below, the exception pops up because PG2 cannot encode
