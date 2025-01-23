@@ -1,6 +1,6 @@
 package org.pg.error;
 
-public final class PGError extends RuntimeException {
+public final class PGError extends PGBaseError {
 
     public PGError (final String message) {
         super(message);
@@ -11,11 +11,11 @@ public final class PGError extends RuntimeException {
     }
 
     public PGError (final Throwable e, final String message) {
-        super(message, e);
+        super(e, message);
     }
 
     public PGError (final Throwable e, final String template, final Object... args) {
-        super(String.format(template, args), e);
+        super(e, String.format(template, args));
     }
 
     public static PGError error(final String template, final Object args) {
