@@ -3,9 +3,6 @@
   - switch to ssl by default?
   - ssl 3rd-party tests
 
- -> AuthenticationSASLFinal[serverFinalMessage=e=Wrong password]
- fix this case
-
 - geom types: json, edn
 - geom types: toString -> toSQL
 

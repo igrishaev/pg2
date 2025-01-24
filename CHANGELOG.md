@@ -1,7 +1,7 @@
 
 ## 0.1.32-SNAPSHOT
 
-- ?
+- handle the case: AuthenticationSASLFinal[serverFinalMessage=e=...]
 
 ## 0.1.31
 

@@ -111,6 +111,22 @@ public final class ScramSha256 {
             String serverFirstMessage
     ) {}
 
+    /*
+    Like getField below but requires a default value, and doesn't throw an error.
+     */
+    public static String getField(final Map<String, String> keyval, final String key, final String notFound) {
+        final String val = keyval.get(key);
+        if (val == null) {
+            return notFound;
+        }
+        else {
+            return val;
+        }
+    }
+
+    /*
+    Either get a parsed field, or throw an error saying it's missing.
+     */
     public static String getField (final Map<String, String> keyval, final String key) {
         final String val = keyval.get(key);
         if (val == null) {
@@ -179,6 +195,17 @@ public final class ScramSha256 {
 
     public static Step4 step4_serverFinalMessage (final String serverFinalMessage) {
         final Map<String, String> keyval = parseMessage(serverFinalMessage);
+        /*
+        When the password is incorrect, most databases respond with ErrorResponse.
+        But supabase.com reports about it in the server final message. Handle this
+        case by looking for the "e" field, and throw an error, if found.
+         */
+        final String error = getField(keyval, "e", null);
+        if (error != null) {
+            throw new PGError("Scram SHA256 server final message error response, error: %s, message: %s",
+                    error, serverFinalMessage
+            );
+        }
         final String verifier = getField(keyval, "v");
         final byte[] ServerSignature2 = HashTool.base64decode(verifier.getBytes(StandardCharsets.UTF_8));
         return new Step4(ServerSignature2, serverFinalMessage);
