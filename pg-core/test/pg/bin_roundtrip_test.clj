@@ -64,7 +64,8 @@
                   (should= val1 val2))))
 
 (defspec round-trip-float8
-  (prop/for-all [val1 (gen/fmap #(float (.floatValue %)) (gen/double* {:NaN? false}))]
+  (prop/for-all [val1 (gen/fmap (fn [^Double d] (float (.floatValue d)))
+                                (gen/double* {:NaN? false}))]
                 (let [val2 (pg/decode-bin (pg/encode-bin val1) oid/float4)]
                   (should= val1 val2))))
 
@@ -86,4 +87,4 @@
 (defspec round-trip-bytea
   (prop/for-all [val1 (gen/not-empty gen/bytes)]
                 (let [val2 (pg/decode-bin (pg/encode-bin val1) oid/bytea)]
-                  (Arrays/equals val1 val2))))
+                  (Arrays/equals ^bytes val1 ^bytes val2))))

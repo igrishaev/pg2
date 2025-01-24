@@ -8,7 +8,7 @@
 
 (def bigdecimal
   (gen/fmap (fn [[a b]]
-              (BigDecimal. (biginteger a) b))
+              (BigDecimal. (biginteger a) ^long b))
             (gen/tuple gen/size-bounded-bigint gen/nat)))
 
 (defn vector-2d
