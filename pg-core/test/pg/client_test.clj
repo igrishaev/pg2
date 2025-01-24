@@ -1762,7 +1762,7 @@ drop table %1$s;
 (deftest test-client-pass-date-timestamptz
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [date
-          (new Date 85 11 31 23 59 59)
+          (Date/from (Instant/parse "1985-12-31T23:59:59+03:00"))
 
           res
           (pg/execute conn "select $1::timestamptz as obj" {:params [date]})
@@ -1778,7 +1778,7 @@ drop table %1$s;
 
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [date
-          (new Date 85 11 31 23 59 59)
+          (Date/from (Instant/parse "1985-12-31T23:59:59Z"))
 
           res
           (pg/execute conn "select EXTRACT('year' from $1::date) as year" {:params [date]})]
