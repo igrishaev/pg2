@@ -93,6 +93,11 @@
 ;;
 
 (defprotocol IConnectable
+  "
+  A set of actions that can be applied to any kind
+  of a data source: a Clojure map, a Config object,
+  a Connection or a Pool instance.
+  "
 
   (id [this]
     "Get a unique ID of a data source.")
@@ -101,14 +106,16 @@
     "True if the source has been closed.")
 
   (clone [this]
-    "Create a new instance of this data source")
+    "Create a new instance of this data source.")
 
   (close [this]
     "Close a data source")
 
-  (-borrow-connection [this])
+  (-borrow-connection [this]
+    "Obtain a connection from a source. Don't call it directly.")
 
-  (-return-connection [this conn]))
+  (-return-connection [this conn]
+    "Return a connection to a source. Don't call it directly."))
 
 
 (extend-protocol IConnectable
@@ -189,10 +196,11 @@
 (defmacro with-connection
   "
   Perform a block of code while the `bind` symbol is bound
-  to a `Connection` object. If the src is a config map,
-  the connection gets closed. When the src is a pool,
-  the connection gets borrowed and returned afterwards.
-  For existing connection, nothing is happening at the end.
+  to a `Connection` object. If the `src` is a config map,
+  the connection gets closed afterwards. When the `src` is
+  a pool, the connection gets borrowed and returned to the
+  pool without closing. For a connection, nothing happens
+  when exiting the macro.
   "
   [[bind src] & body]
   `(let [src#
@@ -229,7 +237,8 @@
 
 (defmacro with-lock
   "
-  Perform a block of code while the connection is locked.
+  Perform a block of code while the connection is locked
+  (no other threads can interfere).
   "
   [[conn] & body]
   `(with-open [_# (.getLock ~conn)]
@@ -238,7 +247,7 @@
 
 (defn idle?
   "
-  True if the connection is in the idle state.
+  True if the connection is in the IDLE state.
   "
   ^Boolean [^Connection conn]
   (.isIdle conn))
@@ -246,7 +255,7 @@
 
 (defn in-transaction?
   "
-  True if the connection is in transaction at the moment.
+  True if the connection is in TRANSACTION at the moment.
   "
   ^Boolean [^Connection conn]
   (.isTransaction conn))
@@ -288,7 +297,7 @@
 
 (defn created-at
   "
-  Get the creation time as Unix timestamp (ms).
+  Get the connection creation time as a Unix timestamp (ms).
   "
   ^Long [^Connection conn]
   (.getCreatedAt conn))
@@ -302,6 +311,7 @@
   (.closeStatement conn statement))
 
 
+;; TODO
 (defn ssl?
   "
   True if the connection is encrypted with SSL.
@@ -403,7 +413,7 @@
   due to a non-optimized SQL. The `ms-timeout` is amount of milliseconds
   in which the cancel request will be sent.
   "
-  [[conn ms-timeout] & body]
+  [[^Connection conn ms-timeout] & body]
   (let [init
         (if ms-timeout
           `(new CancelTimer ~conn ~ms-timeout)
@@ -647,93 +657,6 @@
   (.setTxReadOnly conn))
 
 
-(defmacro ^:deprecated with-tx
-  "
-  **DEPRECATED**: use `with-transaction` below.
-  ---------------------------------------------
-
-  Wrap a block of code into a transaction, namely:
-
-  - run BEGIN before executing the code;
-  - capture all possible exceptions;
-  - should an exception was caught, ROLLBACK...
-  - and re-throw it;
-  - if no exception was caught, COMMIT.
-
-  Accepts a map of the following options:
-
-  - isolation-level: a keyword/string to set the isolation level;
-  - read-only?: to set the transaction read only;
-  - rollback?: to ROLLBACK a transaction even if it was successful.
-
-  Nested transactions are consumed by the most outer transaction.
-  For example, you have two nested `with-tx` blocks:
-
-  (with-tx [...]          ;; 1
-    (do-this ...)
-    (with-tx [...]        ;; 2
-      (do-that ...)))
-
-  In this case, only the first block will produce `BEGIN` and `COMMIT`
-  commands. The second block will expand into the body only:
-
-  (pg/begin ...)
-    (do-this ...)
-    (do-that ...)
-  (pg/commit ...)
-
-  "
-  {:arglists '([[conn] & body]
-               [[conn {:keys [isolation-level
-                              read-only?
-                              rollback?]}] & body])}
-  [[conn opts] & body]
-
-  (let [CONN
-        (with-meta (gensym "CONN")
-          {:tag `Connection})
-
-        OPTS
-        (gensym "OPTS")]
-
-    `(if (in-transaction? ~conn)
-
-       (do ~@body)
-
-       (let [~CONN ~conn
-             ~OPTS ~opts
-
-             iso-level#
-             ~(if opts
-                `(or (some-> ~OPTS :isolation-level ->tx-level)
-                     TxLevel/NONE)
-                `TxLevel/NONE)
-
-             read-only?#
-             ~(if opts
-                `(boolean (:read-only? ~OPTS))
-                `false)
-
-             rollback?#
-             ~(if opts
-                `(boolean (:rollback? ~OPTS))
-                `false)]
-
-         (with-lock [~CONN]
-
-           (.begin ~CONN iso-level# read-only?#)
-
-           (try
-             (let [result# (do ~@body)]
-               (if rollback?#
-                 (.rollback ~CONN)
-                 (.commit ~CONN))
-               result#)
-             (catch Throwable e#
-               (.rollback ~CONN)
-               (throw e#))))))))
-
-
 (defmacro with-transaction
   "
   Obtain a connection from a source and perform a block of code
@@ -746,7 +669,7 @@
   - if no exception was caught, COMMIT.
 
   Arguments:
-  - `tx` is a symbol a transactional connection is bound to;
+  - `tx` is a symbol which a transactional connection is bound to;
   - `src` is a data source (a Clojure map, a Pool, a Connection).
 
   The third argument is an optional map of parameters:
@@ -820,6 +743,16 @@
                  (throw e#)))))))))
 
 
+(defmacro ^:deprecated with-tx
+  "
+  **DEPRECATED**: use `with-transaction` below.
+  ---------------------------------------------
+  "
+  [[conn opts] & body]
+  `(with-transaction [_# ~conn ~opts]
+     ~@body))
+
+
 (defn connection?
   "
   True of the passed option is a Connection instance.
@@ -848,7 +781,7 @@
 
 (defn listen
   "
-  Subscribe the connection to a given channel.
+  Subscribe a connection to a given channel.
   "
   [^Connection conn ^String channel]
   (.listen conn channel))
@@ -856,7 +789,7 @@
 
 (defn unlisten
   "
-  Unsubscribe the connection from a given channel.
+  Unsubscribe a connection from a given channel.
   "
   [^Connection conn ^String channel]
   (.unlisten conn channel))
@@ -864,7 +797,7 @@
 
 (defn notify
   "
-  Send a text message to the given channel.
+  Send a text message to a given channel.
   "
   [src ^String channel ^String message]
   (with-conn [conn src]
@@ -874,7 +807,7 @@
 (defn poll-notifications
   "
   Perform an empty query so that pending notifications
-  are sent to the client. Doesn't guarantee though they
+  get flushed to the client. Doesn't guarantee though they
   will be sent for sure due to their async nature. The
   result is a number of notifications got and processed.
   "
@@ -897,7 +830,6 @@
 ;;
 ;; Encode/decode
 ;;
-
 
 (defn ->codec-params ^CodecParams [^Map opt]
 
@@ -1013,6 +945,7 @@
 ;; SSL
 ;;
 
+;; TODO
 (defn is-ssl?
   "
   True if the Connection is SSL-encrypted.
