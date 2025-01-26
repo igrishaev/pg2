@@ -31,7 +31,7 @@ public final class Pool implements AutoCloseable {
     }
 
     @SuppressWarnings("unused")
-    public Pool clone(final Pool other) {
+    public static Pool clone(final Pool other) {
         return Pool.create(other.getConfig());
     }
 

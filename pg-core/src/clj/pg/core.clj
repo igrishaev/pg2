@@ -6,9 +6,7 @@
    [clojure.string :as str]
    [pg.common :refer [error!]]
    [pg.execute-params :refer [->execute-params]]
-   [pg.fold :as fold]
    [pg.config :refer [->config]]
-   [pg.oid :as oid]
    [pg.ssl #_(load a reader tag)] )
   (:import
    clojure.lang.IDeref
