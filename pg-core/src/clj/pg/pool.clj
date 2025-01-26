@@ -16,6 +16,7 @@
   are closed; Connections that are in a transaction are rolled back.
   "
   (:require
+   [pg.config :refer [->config]]
    [pg.core :as pg])
   (:import
    java.io.Writer
@@ -46,7 +47,9 @@
   Run a new Pool from a config map.
   "
   (^Pool [^Map opt]
-   (Pool/create (pg/->config opt)))
+   (-> opt
+       (->config)
+       (Pool/create)))
 
   (^Pool [^String host ^Integer port ^String user ^String password ^String database]
    (Pool/create host port user password database)))
@@ -144,11 +147,6 @@
   "
   ^Boolean [^Pool pool]
   (.isClosed pool))
-
-
-(defmethod print-method Pool
-  [^Pool pool ^Writer writer]
-  (.write writer (.toString pool)))
 
 
 (defn replenish-connections

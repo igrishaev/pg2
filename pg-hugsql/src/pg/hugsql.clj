@@ -72,7 +72,7 @@
               (merge opt)
               (assoc :params params))]
 
-      (pg/on-connection [conn db]
+      (pg/with-conn [conn db]
         (pg/execute conn sql opt-full))))
 
   (query [this db sqlvec options]

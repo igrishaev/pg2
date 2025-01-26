@@ -4,8 +4,10 @@
   "
   (:require
    [clojure.string :as str]
-   [pg.connection-uri :as connection-uri]
+   [pg.common :refer [error!]]
+   [pg.execute-params :refer [->execute-params]]
    [pg.fold :as fold]
+   [pg.config :refer [->config]]
    [pg.oid :as oid]
    [pg.ssl #_(load a reader tag)] )
   (:import
@@ -54,15 +56,6 @@
 (def ^CopyFormat COPY_FORMAT_TAB CopyFormat/TAB)
 
 
-(defn ->kebab
-  "
-  Turn a string column name into into  a kebab-case
-  formatted keyword.
-  "
-  ^Keyword [^String column]
-  (-> column (str/replace #"_" "-") keyword))
-
-
 ;;
 ;; Errors
 ;;
@@ -77,418 +70,151 @@
   (ex-data e))
 
 
-(defn error! [template & args]
-  (throw (new PGError (apply format template args))))
-
-
 ;;
-;; Config builders
+;; Connect
 ;;
-
-(defn ->SSLValidation
-  "
-  Coerce a Clojure value to SSLValidation enum.
-  "
-  ^SSLValidation [x]
-  (case x
-    (nil false off none no "none" "off" "no" :none :off :no)
-    SSLValidation/NONE
-
-    (default :default "default")
-    SSLValidation/DEFAULT
-
-    (error! "unknown ssl validation value: %s" x)))
-
-(defn ->execute-params
-  "
-  Make an instance of ExecuteParams from a Clojure map.
-  "
-  ^ExecuteParams [^Map opt]
-
-  (let [{:keys [^List params
-                oids
-
-                ;; portal
-                max-rows
-
-                ;; keys
-                kebab-keys?
-                fn-key
-
-                ;; streams
-                output-stream
-                input-stream
-
-                ;; fold/reduce
-                as
-                first
-                first? ;; for backward compatibility
-                map
-                index-by
-                group-by
-                kv
-                java
-                run
-                column
-                columns
-                table
-                to-edn
-                to-json
-                reduce
-                into
-
-                ;; format
-                binary-encode?
-                binary-decode?
-
-                ;; copy csv
-                csv-null
-                csv-sep
-                csv-end
-
-                ;; copy general
-                copy-buf-size
-                ^CopyFormat copy-format
-                copy-csv?
-                copy-bin?
-                copy-tab?
-                copy-in-rows
-                copy-in-maps
-                copy-in-keys]}
-        opt]
-
-    (cond-> (ExecuteParams/builder)
-
-      params
-      (.params params)
-
-      oids
-      (.OIDs oids)
-
-      max-rows
-      (.maxRows max-rows)
-
-      fn-key
-      (.fnKeyTransform fn-key)
-
-      output-stream
-      (.outputStream output-stream)
-
-      input-stream
-      (.inputStream input-stream)
-
-      kebab-keys?
-      (.fnKeyTransform ->kebab)
-
-      ;;
-      ;; reducers
-      ;;
-      as
-      (.reducer as)
-
-      (or first first?)
-      (.reducer fold/first)
-
-      map
-      (.reducer (fold/map map))
-
-      index-by
-      (.reducer (fold/index-by index-by))
-
-      group-by
-      (.reducer (fold/group-by group-by))
-
-      kv
-      (.reducer (fold/kv (clojure.core/first kv) (second kv)))
-
-      run
-      (.reducer (fold/run run))
-
-      column
-      (.reducer (fold/column column))
-
-      columns
-      (.reducer (fold/columns columns))
-
-      table
-      (.reducer (fold/table))
-
-      java
-      (.reducer fold/java)
-
-      to-edn
-      (.reducer (fold/to-edn to-edn))
-
-      to-json
-      (.reducer (fold/to-json to-json))
-
-      reduce
-      (.reducer (fold/reduce (clojure.core/first reduce)
-                             (second reduce)))
-
-      into
-      (.reducer (fold/into (clojure.core/first into)
-                           (second into)))
-
-      ;; end reducers
-
-      (some? binary-encode?)
-      (.binaryEncode binary-encode?)
-
-      (some? binary-decode?)
-      (.binaryDecode binary-decode?)
-
-      csv-null
-      (.CSVNull csv-null)
-
-      csv-sep
-      (.CSVCellSep csv-sep)
-
-      csv-end
-      (.CSVLineSep csv-end)
-
-      oids
-      (.OIDs oids)
-
-      copy-csv?
-      (.setCSV)
-
-      copy-bin?
-      (.setBin)
-
-      copy-tab?
-      (.setBin)
-
-      copy-format
-      (.copyFormat copy-format)
-
-      copy-buf-size
-      (.copyBufSize copy-buf-size)
-
-      copy-in-rows
-      (.copyInRows copy-in-rows)
-
-      copy-in-maps
-      (.copyInMaps copy-in-maps)
-
-      copy-in-keys
-      (.copyInKeys copy-in-keys)
-
-      :finally
-      (.build))))
-
-(defn ->config
-  "
-  Turn a Clojure map into an instance of `Config` via `Config.Builder`.
-  First, try to parse the `connection-uri` URI string, if passed.
-  Then merge it with other parameters. Finally, build a `Config`
-  instance.
-  "
-  ^Config [params]
-
-  (let [{:keys [connection-uri
-                pg-params]}
-        params
-
-        uri-params
-        (some-> connection-uri connection-uri/parse)
-
-        {uri-pg-params :pg-params}
-        uri-params
-
-        pg-params
-        (merge uri-pg-params pg-params)
-
-        params
-        (merge uri-params params)
-
-        {:keys [;; general
-                user
-                database
-                host
-                port
-                password
-
-                ;; Next.JDBC
-                dbname
-
-                ;; enc/dec format
-                binary-encode?
-                binary-decode?
-
-                ;; copy in/out
-                in-stream-buf-size
-                out-stream-buf-size
-
-                ;; handlers
-                fn-notification
-                fn-protocol-version
-                fn-notice
-
-                ;; ssl
-                use-ssl? ;; deprecated
-                ssl?
-                ssl-context
-                ssl-validation
-
-                ;; unix domain socket
-                unix-socket?
-                unix-socket-path
-
-                ;; socket
-                so-keep-alive?
-                so-tcp-no-delay?
-                so-timeout
-                so-recv-buf-size
-                so-send-buf-size
-
-                ;; logging
-                log-level
-
-                ;; json
-                ^ObjectMapper object-mapper
-
-                ;; read only
-                read-only?
-
-                ;; misc
-                cancel-timeout-ms
-                protocol-version
-
-                ;; pool
-                pool-min-size
-                pool-max-size
-                pool-expire-threshold-ms
-                pool-borrow-conn-timeout-ms
-
-                ;; types
-                type-map
-                enums
-
-                with-pgvector?]}
-        params
-
-        DB
-        (or database dbname)]
-
-    (cond-> (new Config$Builder user DB)
-
-      password
-      (.password password)
-
-      host
-      (.host host)
-
-      port
-      (.port port)
-
-      protocol-version
-      (.protocolVersion protocol-version)
-
-      (seq pg-params)
-      (.pgParams pg-params)
-
-      (some? binary-encode?)
-      (.binaryEncode binary-encode?)
-
-      (some? binary-decode?)
-      (.binaryDecode binary-decode?)
-
-      in-stream-buf-size
-      (.inStreamBufSize in-stream-buf-size)
-
-      out-stream-buf-size
-      (.outStreamBufSize out-stream-buf-size)
-
-      (some? use-ssl?)
-      (.useSSL use-ssl?)
-
-      (some? ssl?)
-      (.useSSL ssl?)
-
-      ssl-validation
-      (.sslValidation (->SSLValidation ssl-validation))
-
-      ssl-context
-      (.sslContext ssl-context)
-
-      fn-notification
-      (.fnNotification fn-notification)
-
-      fn-protocol-version
-      (.fnProtocolVersion fn-protocol-version)
-
-      fn-notice
-      (.fnNotice fn-notice)
-
-      (some? so-keep-alive?)
-      (.SOKeepAlive so-keep-alive?)
-
-      (some? so-tcp-no-delay?)
-      (.SOTCPnoDelay so-tcp-no-delay?)
-
-      so-timeout
-      (.SOTimeout so-timeout)
-
-      so-recv-buf-size
-      (.SOReceiveBufSize so-recv-buf-size)
-
-      so-send-buf-size
-      (.SOSendBufSize so-send-buf-size)
-
-      (some? unix-socket?)
-      (.useUnixSocket unix-socket?)
-
-      unix-socket-path
-      (.unixSocketPath unix-socket-path)
-
-      object-mapper
-      (.objectMapper object-mapper)
-
-      cancel-timeout-ms
-      (.cancelTimeoutMs cancel-timeout-ms)
-
-      read-only?
-      (.readOnly)
-
-      pool-min-size
-      (.poolMinSize pool-min-size)
-
-      pool-max-size
-      (.poolMaxSize pool-max-size)
-
-      pool-expire-threshold-ms
-      (.poolExpireThresholdMs pool-expire-threshold-ms)
-
-      pool-borrow-conn-timeout-ms
-      (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)
-
-      type-map
-      (.typeMap type-map)
-
-      enums
-      (.enums enums)
-
-      with-pgvector?
-      (.usePGVector)
-
-      :finally
-      (.build))))
 
 (defn connect
-
   "
   Connect to the database. Given a Clojure config map,
   establish a TCP connection with the server and run
   the authentication pipeline. Returns an instance of
   the Connection class.
   "
-
   (^Connection [config]
-   (Connection/connect (->config config)))
+   (-> config
+       (->config)
+       (Connection/connect)))
 
   (^Connection [^String host ^Integer port ^String user ^String password ^String database]
    (Connection/connect host port user password database)))
+
+
+;;
+;; Connectable source abstraction
+;;
+
+(defprotocol IConnectable
+
+  (id [this]
+    "Get a unique ID of a data source.")
+
+  (closed? [this]
+    "True if the source has been closed.")
+
+  (clone [this]
+    "Create a new instance of this data source")
+
+  (close [this]
+    "Close a data source")
+
+  (-borrow-connection [this])
+
+  (-return-connection [this conn]))
+
+
+(extend-protocol IConnectable
+
+  Connection
+
+  (id ^UUID [this]
+    (.getId this))
+
+  (closed? [this]
+    (.isClosed this))
+
+  (clone [this]
+    (Connection/clone this))
+
+  (close [this]
+    (.close this))
+
+  (-borrow-connection [^Connection this]
+    this)
+
+  (-return-connection [this ^Connection conn]
+    nil)
+
+  Pool
+
+  (id ^UUID [this]
+    (.getId this))
+
+  (closed? [this]
+    (.isClosed this))
+
+  #_
+  (clone [this]
+    (Pool/clone this))
+
+  (close [this]
+    (.close this))
+
+  (-borrow-connection [this]
+    (.borrowConnection this))
+
+  (-return-connection [this ^Connection conn]
+    (.returnConnection this conn))
+
+  IPersistentMap
+
+  (-borrow-connection [this]
+    (connect this))
+
+  (-return-connection [this ^Connection conn]
+    (close conn))
+
+  Config
+
+  (-borrow-connection [this]
+    (Connection/connect this))
+
+  (-return-connection [this ^Connection conn]
+    (close conn))
+
+  Object
+
+  (-borrow-connection [this]
+    (error! "Unsupported connection source: %s" this))
+
+  (-return-connection [this ^Connection conn]
+    (error! "Unsupported connection source: %s" this))
+
+  nil
+
+  (-borrow-connection [this]
+    (error! "Connection source cannot be null"))
+
+  (-return-connection [this ^Connection conn]
+    (error! "Connection source cannot be null")))
+
+
+(defmacro with-connection
+  "
+  Perform a block of code while the `bind` symbol is bound
+  to a `Connection` object. If the src is a config map,
+  the connection gets closed. When the src is a pool,
+  the connection gets borrowed and returned afterwards.
+  For existing connection, nothing is happening at the end.
+  "
+  [[bind src] & body]
+  `(let [src#
+         ~src
+         ~(with-meta bind {:tag `Connection})
+         (-borrow-connection src#)]
+     (try
+       ~@body
+       (finally
+         (-return-connection src# ~bind)))))
+
+
+(defmacro with-conn
+  "
+  Just a shorter version of `with-connection`.
+  "
+  [[bind src] & body]
+  `(with-connection [~bind ~src]
+     ~@body))
 
 
 (let [-mapping
@@ -504,7 +230,11 @@
     (get -mapping (.getTxStatus conn))))
 
 
-(defmacro with-lock [[conn] & body]
+(defmacro with-lock
+  "
+  Perform a block of code while the connection is locked.
+  "
+  [[conn] & body]
   `(with-open [_# (.getLock ~conn)]
      ~@body))
 
@@ -551,14 +281,6 @@
   (.getParams conn))
 
 
-(defn id
-  "
-  Get a unique ID of the connection.
-  "
-  ^UUID [^Connection conn]
-  (.getId conn))
-
-
 (defn pid
   "
   Get PID of the connection on the server.
@@ -581,14 +303,6 @@
   "
   [^Connection conn ^PreparedStatement stmt]
   (.closeStatement conn stmt))
-
-
-(defn close
-  "
-  Close the connection to the database.
-  "
-  [^Connection conn]
-  (.close conn))
 
 
 (defn ssl?
@@ -653,11 +367,11 @@
   The way the result is processed heavily depends on the options.
   "
 
-  ([^Connection conn ^PreparedStatement stmt]
-   (.executeStatement conn stmt ExecuteParams/INSTANCE))
+  ([^Connection conn ^PreparedStatement statement]
+   (.executeStatement conn statement ExecuteParams/INSTANCE))
 
-  ([^Connection conn ^PreparedStatement stmt ^Map opt]
-   (.executeStatement conn stmt (->execute-params opt))))
+  ([^Connection conn ^PreparedStatement statement ^Map opt]
+   (.executeStatement conn statement (->execute-params opt))))
 
 
 (defn execute
@@ -675,11 +389,13 @@
   - process the result of the fly.
   "
 
-  ([^Connection conn ^String sql]
-   (.execute conn sql ExecuteParams/INSTANCE))
+  ([src ^String sql]
+   (with-conn [conn src]
+     (.execute conn sql ExecuteParams/INSTANCE)))
 
-  ([^Connection conn ^String sql ^Map opt]
-   (.execute conn sql (->execute-params opt))))
+  ([src ^String sql ^Map opt]
+   (with-conn [conn src]
+     (.execute conn sql (->execute-params opt)))))
 
 
 (defmacro with-timeout
@@ -721,37 +437,6 @@
            (close-statement ~CONN ~bind))))))
 
 
-(defmacro with-connection
-  "
-  Execute the body while the `bind` symbol is bound to the
-  new Connection instance. The connection gets closed when
-  exiting the macro.
-  "
-  [[bind config] & body]
-  `(let [~bind (connect ~config)]
-     (try
-       ~@body
-       (finally
-         (close ~bind)))))
-
-
-(defmacro with-conn
-  "
-  Just a shorter version of `with-connection`.
-  "
-  [[bind config] & body]
-  `(with-connection [~bind ~config]
-     ~@body))
-
-
-(defn closed?
-  "
-  True if the connection has been closed.
-  "
-  [^Connection conn]
-  (.isClosed conn))
-
-
 (defn query
 
   "
@@ -759,19 +444,13 @@
   gets sent back in text mode always by the server.
   "
 
-  ([^Connection conn ^String sql]
-   (.query conn sql ExecuteParams/INSTANCE))
+  ([src ^String sql]
+   (with-conn [conn src]
+     (.query conn sql ExecuteParams/INSTANCE)))
 
-  ([^Connection conn ^String sql ^Map opt]
-   (.query conn sql (->execute-params opt))))
-
-
-(defn clone
-  "
-  Create a new Connection from a configuration of the given connection.
-  "
-  ^Connection [^Connection conn]
-  (Connection/clone conn))
+  ([src ^String sql ^Map opt]
+   (with-conn [conn src]
+     (.query conn sql (->execute-params opt)))))
 
 
 (defn cancel-request
@@ -804,19 +483,20 @@
 
   Return the number of rows read from the server.
   "
-  ([^Connection conn ^String sql ^OutputStream out]
-   (copy-out conn sql out nil))
+  ([src ^String sql ^OutputStream out]
+   (with-conn [conn src]
+     (copy-out conn sql out nil)))
 
-  ([^Connection conn ^String sql ^OutputStream out ^Map opt]
-   (.copy conn
-          sql
-          (-> opt
-              (assoc :output-stream out)
-              (->execute-params)))))
+  ([src ^String sql ^OutputStream out ^Map opt]
+   (with-conn [conn src]
+     (.copy conn
+            sql
+            (-> opt
+                (assoc :output-stream out)
+                (->execute-params))))))
 
 
 (defn copy-in
-
   "
   Transfer the data from the client to the server using
   COPY protocol. The SQL expression must be something liek this:
@@ -831,39 +511,37 @@
 
   Return the number of rows processed by the server.
   "
+  ([src ^String sql ^InputStream in]
+   (copy-in src sql in nil))
 
-  ([^Connection conn ^String sql ^InputStream in]
-   (copy-in conn sql in nil))
-
-  ([^Connection conn ^String sql ^InputStream in ^Map opt]
-   (.copy conn
-          sql
-          (-> opt
-              (assoc :input-stream in)
-              (->execute-params)))))
+  ([src ^String sql ^InputStream in ^Map opt]
+   (with-conn [conn src]
+     (.copy conn
+            sql
+            (-> opt
+                (assoc :input-stream in)
+                (->execute-params))))))
 
 
 (defn copy-in-rows
-
   "
   Like `copy-in` but accepts not an input stream but a list
   of rows. Each row must be a list of values. The list might be
   lazy. Return a number of rows processed.
   "
+  ([src ^String sql ^List rows]
+   (copy-in-rows src sql rows nil))
 
-  ([^Connection conn ^String sql ^List rows]
-   (copy-in-rows conn sql rows nil))
-
-  ([^Connection conn ^String sql ^List rows ^Map opt]
-   (.copy conn
-          sql
-          (-> opt
-              (assoc :copy-in-rows rows)
-              (->execute-params)))))
+  ([src ^String sql ^List rows ^Map opt]
+   (with-conn [conn src]
+     (.copy conn
+            sql
+            (-> opt
+                (assoc :copy-in-rows rows)
+                (->execute-params))))))
 
 
 (defn copy-in-maps
-
   "
   Like `copy-in` but accepts a list of Clojure maps.
 
@@ -874,17 +552,17 @@
 
   Return the number of rows processed by the server.
   "
+  ([src ^String sql ^List maps ^List keys]
+   (copy-in-maps src sql maps keys nil))
 
-  ([^Connection conn ^String sql ^List maps ^List keys]
-   (copy-in-maps conn sql maps keys nil))
-
-  ([^Connection conn ^String sql ^List maps ^List keys ^Map opt]
-   (.copy conn
-          sql
-          (-> opt
-              (assoc :copy-in-maps maps
-                     :copy-in-keys keys)
-              (->execute-params)))))
+  ([src ^String sql ^List maps ^List keys ^Map opt]
+   (with-conn [conn src]
+     (.copy conn
+            sql
+            (-> opt
+                (assoc :copy-in-maps maps
+                       :copy-in-keys keys)
+                (->execute-params))))))
 
 
 ;;
@@ -1054,6 +732,92 @@
                (throw e#))))))))
 
 
+(defmacro with-transaction
+  "
+  Obtain a connection from a source and perform a block of code
+  wrapping the connection with a transaction, namely:
+
+  - run BEGIN before the code block;
+  - capture all possible exceptions;
+  - should an exception was caught, ROLLBACK...
+  - and re-throw it;
+  - if no exception was caught, COMMIT.
+
+  Arguments:
+  - `tx` is a symbol a transactional connection is bound to;
+  - `src` is a data source (a Clojure map, a Pool, a Connection).
+
+  The third argument is an optional map of parameters:
+
+  - `isolation-level`: a keyword/string to set the isolation level;
+  - `read-only?`: to set the transaction read only;
+  - `rollback?`: to ROLLBACK a transaction even if it was successful.
+
+  Nested transactions are consumed by the most outer transaction.
+  For example, you have two nested `with-transaction` blocks:
+
+  (with-transaction [tx1 {...}]          ;; 1
+    (do-this ...)
+    (with-transaction [tx2 tx1]          ;; 2
+      (do-that ...)))
+
+  In this case, only the first block will produce `BEGIN` and `COMMIT`
+  commands. The second block will expand into the body only:
+
+  (pg/begin ...)
+    (do-this ...)
+    (do-that ...)
+  (pg/commit ...)
+
+  "
+  {:arglists '([[tx src] & body]
+               [[tx src {:keys [isolation-level
+                                read-only?
+                                rollback?]}] & body])}
+  [[tx src opts] & body]
+
+  (let [OPTS
+        (gensym "OPTS")]
+
+    `(with-conn [~tx ~src]
+
+       (if (in-transaction? ~tx)
+
+         (do ~@body)
+
+         (let [~OPTS ~opts
+
+               iso-level#
+               ~(if opts
+                  `(or (some-> ~OPTS :isolation-level ->tx-level)
+                       TxLevel/NONE)
+                  `TxLevel/NONE)
+
+               read-only?#
+               ~(if opts
+                  `(boolean (:read-only? ~OPTS))
+                  `false)
+
+               rollback?#
+               ~(if opts
+                  `(boolean (:rollback? ~OPTS))
+                  `false)]
+
+           (with-lock [~tx]
+
+             (.begin ~tx iso-level# read-only?#)
+
+             (try
+               (let [result# (do ~@body)]
+                 (if rollback?#
+                   (.rollback ~tx)
+                   (.commit ~tx))
+                 result#)
+               (catch Throwable e#
+                 (.rollback ~tx)
+                 (throw e#)))))))))
+
+
 (defn connection?
   "
   True of the passed option is a Connection instance.
@@ -1062,9 +826,18 @@
   (instance? Connection x))
 
 
+;;
+;; Prints
+;;
+
 (defmethod print-method Connection
   [^Connection conn ^Writer writer]
   (.write writer (.toString conn)))
+
+
+(defmethod print-method Pool
+  [^Pool pool ^Writer writer]
+  (.write writer (.toString pool)))
 
 
 ;;
@@ -1091,8 +864,9 @@
   "
   Send a text message to the given channel.
   "
-  [^Connection conn ^String channel ^String message]
-  (.notify conn channel message))
+  [src ^String channel ^String message]
+  (with-conn [conn src]
+    (.notify conn channel message)))
 
 
 (defn poll-notifications
@@ -1233,90 +1007,13 @@
      (.encodeTxt processor obj (->codec-params opt)))))
 
 
+;;
+;; SSL
+;;
+
 (defn is-ssl?
   "
   True if the Connection is SSL-encrypted.
   "
   ^Boolean [^Connection conn]
   (.isSSL conn))
-
-
-;;
-;; Connectable source abstraction
-;;
-
-(defprotocol IConnectable
-
-  (-borrow-connection [this])
-
-  (-return-connection [this conn]))
-
-
-(extend-protocol IConnectable
-
-  Connection
-
-  (-borrow-connection [^Connection this]
-    this)
-
-  (-return-connection [this ^Connection conn]
-    nil)
-
-  Pool
-
-  (-borrow-connection [this]
-    (.borrowConnection this))
-
-  (-return-connection [this ^Connection conn]
-    (.returnConnection this conn))
-
-  IPersistentMap
-
-  (-borrow-connection [this]
-    (connect this))
-
-  (-return-connection [this ^Connection conn]
-    (close conn))
-
-  Config
-
-  (-borrow-connection [this]
-    (Connection/connect this))
-
-  (-return-connection [this ^Connection conn]
-    (close conn))
-
-  Object
-
-  (-borrow-connection [this]
-    (error! "Unsupported connection source: %s" this))
-
-  (-return-connection [this ^Connection conn]
-    (error! "Unsupported connection source: %s" this))
-
-  nil
-
-  (-borrow-connection [this]
-    (error! "Connection source cannot be null"))
-
-  (-return-connection [this ^Connection conn]
-    (error! "Connection source cannot be null")))
-
-
-(defmacro on-connection
-  "
-  Perform a block of code while the `bind` symbol is bound
-  to a `Connection` object. If the source is a config map,
-  the connection gets closed. When the source is a pool,
-  the connection gets borrowed and returned afterwards.
-  For existing connection, nothing is happening at the end.
-  "
-  [[bind source] & body]
-  `(let [source#
-         ~source
-         ~(with-meta bind {:tag `Connection})
-         (-borrow-connection source#)]
-     (try
-       ~@body
-       (finally
-         (-return-connection source# ~bind)))))

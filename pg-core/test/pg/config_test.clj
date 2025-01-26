@@ -2,6 +2,7 @@
   (:import org.pg.Config)
   (:require
    [clojure.test :refer [deftest is testing]]
+   [pg.config :as config]
    [pg.connection-uri :as uri]
    [pg.core :as pg]))
 
@@ -35,7 +36,7 @@
    (options->map options FIELDS_MIN))
 
   ([options fields]
-   (-> options pg/->config (record->map fields))))
+   (-> options config/->config (record->map fields))))
 
 (deftest test-config-minimal
   (is (= {:user "testuser",

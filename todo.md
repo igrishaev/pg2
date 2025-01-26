@@ -1,4 +1,12 @@
 
+- common API protocol
+  - function accept src
+  - better with-transaction macro
+  - deprecate with-tx?
+  - deprecate pool?
+  - check docstrings
+  - add tests
+
 - ssl:
   - switch to ssl by default?
   - ssl 3rd-party tests
@@ -8,10 +16,10 @@
 
 - user & database default values?
 
+- linting (kondo + clfjmt)
+
 - prep stmt: track pid, conn-id
 - prep stmt: check if belongs?
-
-- common API protocol?
 
 use PG* env vars
 
