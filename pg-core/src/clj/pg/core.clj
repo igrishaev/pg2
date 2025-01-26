@@ -143,7 +143,6 @@
   (closed? [this]
     (.isClosed this))
 
-  #_
   (clone [this]
     (Pool/clone this))
 
@@ -299,10 +298,10 @@
 
 (defn close-statement
   "
-  Close the prepared statement.
+  Close a prepared statement.
   "
-  [^Connection conn ^PreparedStatement stmt]
-  (.closeStatement conn stmt))
+  [^Connection conn ^PreparedStatement statement]
+  (.closeStatement conn statement))
 
 
 (defn ssl?
@@ -331,7 +330,6 @@
 
 
 (defn prepare
-
   "
   Get a new prepared statement from a raw SQL string.
   The SQL might have parameters. There is an third
@@ -340,8 +338,10 @@
 
   The function returns an instance of the `PreparedStatement`
   class bound to the current connection.
-  "
 
+  Must be called against a Connection object since prepared
+  statements cannot be shared across multiple connections.
+  "
   (^PreparedStatement
    [^Connection conn ^String sql]
    (.prepare conn sql ExecuteParams/INSTANCE))
@@ -361,12 +361,10 @@
 
 
 (defn execute-statement
-
   "
-  Execute the given prepared statement and get the result.
-  The way the result is processed heavily depends on the options.
+  Execute a given prepared statement and return the result.
+  The way the result is processed heavily depends on options.
   "
-
   ([^Connection conn ^PreparedStatement statement]
    (.executeStatement conn statement ExecuteParams/INSTANCE))
 
@@ -375,9 +373,11 @@
 
 
 (defn execute
-
   "
-  Execute a SQL expression and return the result.
+  Execute a SQL expression and return a result. Arguments:
+  - `src` is a data source (a Connection, a Pool, a map);
+  - `sql` is a SQL string expression;
+  - `opt` is a map of options.
 
   This function is a series of steps:
   - prepare a statement;
@@ -388,7 +388,6 @@
   - close the statement;
   - process the result of the fly.
   "
-
   ([src ^String sql]
    (with-conn [conn src]
      (.execute conn sql ExecuteParams/INSTANCE)))
@@ -438,12 +437,14 @@
 
 
 (defn query
-
   "
   Run a SQL expression WITH NO parameters. The result
-  gets sent back in text mode always by the server.
+  is always sent back in text mode (binary mode doesn't
+  work with the QUERY API). Arguments:
+  - `src` is a data source (a Connection, a Pool, a map);
+  - `sql` is a SQL string without parameters (e.g. $1, etc);
+  - `opt` is a map of options.
   "
-
   ([src ^String sql]
    (with-conn [conn src]
      (.query conn sql ExecuteParams/INSTANCE)))
@@ -648,8 +649,11 @@
   (.setTxReadOnly conn))
 
 
-(defmacro with-tx
+(defmacro ^:deprecated with-tx
   "
+  **DEPRECATED**: use `with-transaction` below.
+  ---------------------------------------------
+
   Wrap a block of code into a transaction, namely:
 
   - run BEGIN before executing the code;
@@ -1017,3 +1021,8 @@
   "
   ^Boolean [^Connection conn]
   (.isSSL conn))
+
+
+;;
+;; Pool?
+;;
