@@ -405,7 +405,7 @@
   (if url
     (do
       (log/infof "File: %s" (.getFile url))
-      (log/infof sql))
+      (log/info sql))
     (log/infof "The file is missing")))
 
 
