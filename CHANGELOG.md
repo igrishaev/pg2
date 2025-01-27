@@ -1,5 +1,9 @@
 
-## 0.1.32-SNAPSHOT
+## 0.1.33-SNAPSHOT
+
+- ?
+
+## 0.1.32
 
 - handle the case: AuthenticationSASLFinal[serverFinalMessage=e=...]
 - #42 fix log info(f) formatting @jarppe
