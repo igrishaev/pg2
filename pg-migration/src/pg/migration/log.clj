@@ -6,3 +6,6 @@
 
 (defmacro infof [template & args]
   `(println (format ~template ~@args)))
+
+(defmacro info [& args]
+  `(println ~@args))
