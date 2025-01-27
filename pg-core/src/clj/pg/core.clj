@@ -602,7 +602,13 @@
     TxLevel/READ_COMMITTED
 
     (:read-uncommitted "READ UNCOMMITTED")
-    TxLevel/READ_UNCOMMITTED))
+    TxLevel/READ_UNCOMMITTED
+
+    (nil :none "NONE")
+    TxLevel/NONE
+
+    ;; else
+    (error! "wrong transaction isolation level: %s" level)))
 
 
 (defn begin
@@ -657,6 +663,12 @@
   (.setTxReadOnly conn))
 
 
+(def TX_DEFAULTS
+  {:isolation-level nil
+   :read-only? false
+   :rollback? false})
+
+
 (defmacro with-transaction
   "
   Obtain a connection from a source and perform a block of code
@@ -701,52 +713,38 @@
                                 rollback?]}] & body])}
   [[tx src opts] & body]
 
-  (let [OPTS
-        (gensym "OPTS")]
+  `(with-conn [~tx ~src]
+     (if (in-transaction? ~tx)
+       (do ~@body)
+       (let [opts#
+             ~(if opts
+                `(merge TX_DEFAULTS ~opts)
+                `TX_DEFAULTS)
 
-    `(with-conn [~tx ~src]
+             {iso-level# :isolation-level
+              read-only?# :read-only?
+              rollback?# :rollback?}
+             opts#]
 
-       (if (in-transaction? ~tx)
-
-         (do ~@body)
-
-         (let [~OPTS ~opts
-
-               iso-level#
-               ~(if opts
-                  `(or (some-> ~OPTS :isolation-level ->tx-level)
-                       TxLevel/NONE)
-                  `TxLevel/NONE)
-
-               read-only?#
-               ~(if opts
-                  `(boolean (:read-only? ~OPTS))
-                  `false)
-
-               rollback?#
-               ~(if opts
-                  `(boolean (:rollback? ~OPTS))
-                  `false)]
-
-           (with-lock [~tx]
-
-             (.begin ~tx iso-level# read-only?#)
-
-             (try
-               (let [result# (do ~@body)]
-                 (if rollback?#
-                   (.rollback ~tx)
-                   (.commit ~tx))
-                 result#)
-               (catch Throwable e#
+         (with-lock [~tx]
+           (begin ~tx iso-level# read-only?#)
+           (try
+             (let [result# (do ~@body)]
+               (if rollback?#
                  (.rollback ~tx)
-                 (throw e#)))))))))
+                 (.commit ~tx))
+               result#)
+             (catch Throwable e#
+               (.rollback ~tx)
+               (throw e#))))))))
 
 
 (defmacro ^:deprecated with-tx
   "
   **DEPRECATED**: use `with-transaction` below.
   ---------------------------------------------
+  Acts like `with-transaction` but accepts a connection,
+  not a data source. Thus, no a binding symbol required.
   "
   [[conn opts] & body]
   `(with-transaction [_# ~conn ~opts]

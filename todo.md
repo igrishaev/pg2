@@ -1,8 +1,5 @@
 
 - common API protocol
-  - function accept src
-  - better with-transaction macro
-  - deprecate with-tx?
   - deprecate pool?
   - check docstrings
   - add tests

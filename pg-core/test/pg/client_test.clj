@@ -4285,6 +4285,24 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (is (= [{:num 1}] res))))))
 
 
+(deftest test-data-source
+
+  (let [res1
+        (pg/query *CONFIG-TXT* "select 1 as num")
+
+        res2
+        (pg/execute *CONFIG-TXT* "select 1 as num")]
+
+    (is (= [{:num 1}] res1))
+    (is (= [{:num 1}] res2))
+
+    (pg/with-transaction [tx *CONFIG-TXT* {:read-only? true
+                                           :rollback? true
+                                           :isolation-level :serializable}]
+      (is (pg/connection? tx))
+      (pg/query tx "select 1 as num"))))
+
+
 #_
 (deftest test-hstore-bin
   (pg/with-conn [conn *CONFIG-BIN*]
