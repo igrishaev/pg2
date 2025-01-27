@@ -3,6 +3,8 @@
   - deprecate pool?
   - check docstrings
   - add tests
+  - TODO for ssl function
+  - `-id`, `-close`, etc methods?
 
 - ssl:
   - switch to ssl by default?

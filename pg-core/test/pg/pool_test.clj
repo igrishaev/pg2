@@ -430,3 +430,16 @@
 
     (is (= {:free 2, :used 0}
            (pool/stats pool)))))
+
+
+(deftest test-pool-pg-namespace
+  (pg/with-pool [pool *CONFIG*]
+    (pg/with-connection [conn pool]
+      (let [res (pg/execute conn "select 1 as one")]
+        (is (= [{:one 1}] res))))))
+
+
+(deftest test-pool-as-source
+  (with-open [pool (pg/pool *CONFIG*)]
+    (let [res (pg/execute pool "select 1 as one")]
+      (is (= [{:one 1}] res)))))

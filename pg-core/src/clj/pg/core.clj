@@ -955,3 +955,33 @@
 ;;
 ;; Pool?
 ;;
+
+(defn pool?
+  "
+  True if a value is a Pool instance.
+  "
+  [x]
+  (instance? Pool x))
+
+
+(defn pool
+  "
+  Run a new Pool from a config map.
+  "
+  (^Pool [^Map opt]
+   (-> opt
+       (->config)
+       (Pool/create)))
+
+  (^Pool [^String host ^Integer port ^String user ^String password ^String database]
+   (Pool/create host port user password database)))
+
+
+(defmacro with-pool
+  "
+  Execute the body while the `bind` symbol is bound
+  to a new Pool instance. Close the pool afterwards.
+  "
+  [[bind config] & body]
+  `(with-open [~bind (pool ~config)]
+     ~@body))

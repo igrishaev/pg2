@@ -1,13 +1,16 @@
 (ns pg.common
+  "
+  Things needed across many namespaces.
+  "
   (:import
    org.pg.error.PGError))
 
 (set! *warn-on-reflection* true)
 
 
-(defn error!
+(defmacro error!
   ([message]
-   (throw (new PGError message)))
+   `(throw (new PGError ~message)))
 
   ([template & args]
-   (throw (new PGError (apply format template args)))))
+   `(throw (new PGError (format ~template ~@args)))))
