@@ -87,22 +87,6 @@
     "Return a connection to a source. Don't call it directly."))
 
 
-(defn connect
-  "
-  Connect to the database. Given a Clojure config map
-  or a URI string, establish a TCP connection with the
-  server and run the authentication pipeline. Returns
-  an instance of the Connection class.
-  "
-  (^Connection [src]
-   (-> src
-       (-to-config)
-       (Connection/connect)))
-
-  (^Connection [^String host ^Integer port ^String user ^String password ^String database]
-   (Connection/connect host port user password database)))
-
-
 (defmacro unsupported! [src]
   `(error! "Unsupported data source: %s" ~src))
 
@@ -173,7 +157,7 @@
     (->config {:connection-uri this}))
 
   (-borrow-connection [this]
-    (connect this))
+    (-> this -to-config Connection/connect))
 
   (-return-connection [this conn]
     (-close conn))
@@ -196,7 +180,7 @@
     (->config this))
 
   (-borrow-connection [this]
-    (connect this))
+    (-> this -to-config Connection/connect))
 
   (-return-connection [this conn]
     (-close conn))
@@ -274,6 +258,20 @@
 ;;
 ;; Connection
 ;;
+
+(defn connect
+  "
+  Connect to the database. Given a Clojure config map
+  or a URI string, establish a TCP connection with the
+  server and run the authentication pipeline. Returns
+  an instance of the Connection class.
+  "
+  (^Connection [src]
+   (-borrow-connection src))
+
+  (^Connection [^String host ^Integer port ^String user ^String password ^String database]
+   (Connection/connect host port user password database)))
+
 
 (defmacro with-connection
   "
