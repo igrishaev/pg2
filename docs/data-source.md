@@ -21,7 +21,7 @@ Now you can pass a map directly to `query`:
 (pg/query config "select 42")
 ~~~
 
-Under the hood, the library will open a new connection from this map, perform a
+Under the hood, the library opens a new connection from this map, perform a
 query and close the connection afterwards. Of course, opening a closing a
 connection on each query is much slower that reusing the same one, especially in
 a loop. But it gives you more freedom, and sometimes this is also fine in tests.
@@ -37,18 +37,33 @@ connection is returned to the pool, meaning it's now available for others.
 (pg/query pool "select 42")
 ~~~
 
+See the [Connection Pool](/docs/pool.md) section for more details about a
+connection pool.
+
+You can pass a URI string as well:
+
+~~~clojure
+(def URI "postgresql://test:test@127.0.0.1:5432/test?ssl=false")
+
+(pg/query URI "select 1")
+~~~
+
+See the [URI Connection String](/docs/connection-uri.md) section to know more
+about a URI connection string.
+
 # Supported Sources
 
 At the moment of writing this, the following objects may act as a source:
 
-| Class                         | On borrow logic               | On return logic           |
+| type                          | Borrowing logic               | Returning logic           |
 |-------------------------------|-------------------------------|---------------------------|
 | `org.pg.Connection`           | Return itself                 | Nothing (keep it open)    |
 | `org.pg.Pool`                 | Borrow one from a pool (lock) | Return to a pool (unlock) |
-| `clojure.lang.IPersistentMap` | Open a connection             | Close the connection      |
-| `org.pg.Config`               | Open a connection             | Close the connection      |
+| `clojure.lang.IPersistentMap` | Connect using a Clojure map   | Close the connection      |
+| `java.lang.String`            | Connect using a URI           | Close the connection      |
+| `org.pg.Config`               | Connect using a Config object | Close the connection      |
 
-# Naming
+# Naming Rules
 
 Some `pg.core` functions accept any data source, but some are bound to the
 `Connection` object. For example, `query`, `execute`, `copy`, etc accept a
@@ -56,7 +71,7 @@ source, but `close-statement` needs a connection because prepared statements are
 defined per connection. There is a naming rule for that:
 
 - if the first argument is called `src`, the function accepts a data source (a
-  connection, a pool, a clojure map);
+  connection, a pool, a Clojure map, a URI string);
 - if the first argument is called `conn`, it accepts a connection only. Most
   likely you need to pass a certain connection, for example the one you used for
   a prepared statement or to process notifications.

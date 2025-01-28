@@ -55,27 +55,7 @@
 
 
 ;;
-;; Connect
-;;
-
-(defn connect
-  "
-  Connect to the database. Given a Clojure config map,
-  establish a TCP connection with the server and run
-  the authentication pipeline. Returns an instance of
-  the Connection class.
-  "
-  (^Connection [config]
-   (-> config
-       (->config)
-       (Connection/connect)))
-
-  (^Connection [^String host ^Integer port ^String user ^String password ^String database]
-   (Connection/connect host port user password database)))
-
-
-;;
-;; Connectable source abstraction
+;; Data source abstraction
 ;;
 
 (defprotocol ISource
@@ -85,7 +65,7 @@
   a Connection or a Pool instance.
   "
 
-  (-id [this]
+  (-id ^UUID [this]
     "Get a unique ID of a data source.")
 
   (-closed? [this]
@@ -97,11 +77,30 @@
   (-close [this]
     "Close a data source")
 
+  (-to-config ^Config [this]
+    "Turn this object into a Config instance.")
+
   (-borrow-connection [this]
     "Obtain a connection from a source. Don't call it directly.")
 
   (-return-connection [this conn]
     "Return a connection to a source. Don't call it directly."))
+
+
+(defn connect
+  "
+  Connect to the database. Given a Clojure config map
+  or a URI string, establish a TCP connection with the
+  server and run the authentication pipeline. Returns
+  an instance of the Connection class.
+  "
+  (^Connection [src]
+   (-> src
+       (-to-config)
+       (Connection/connect)))
+
+  (^Connection [^String host ^Integer port ^String user ^String password ^String database]
+   (Connection/connect host port user password database)))
 
 
 (defmacro unsupported! [src]
@@ -124,15 +123,18 @@
   (-close [this]
     (.close this))
 
-  (-borrow-connection [^Connection this]
+  (-to-config [this]
+    (.getConfig this))
+
+  (-borrow-connection [this]
     this)
 
-  (-return-connection [this ^Connection conn]
+  (-return-connection [this conn]
     nil)
 
   Pool
 
-  (-id ^UUID [this]
+  (-id [this]
     (.getId this))
 
   (-closed? [this]
@@ -144,15 +146,18 @@
   (-close [this]
     (.close this))
 
+  (-to-config [this]
+    (.getConfig this))
+
   (-borrow-connection [this]
     (.borrowConnection this))
 
-  (-return-connection [this ^Connection conn]
+  (-return-connection [this conn]
     (.returnConnection this conn))
 
-  IPersistentMap
+  String
 
-  (-id ^UUID [this]
+  (-id [this]
     nil)
 
   (-closed? [this]
@@ -163,16 +168,19 @@
 
   (-close [this]
     nil)
+
+  (-to-config [this]
+    (->config {:connection-uri this}))
 
   (-borrow-connection [this]
     (connect this))
 
-  (-return-connection [this ^Connection conn]
+  (-return-connection [this conn]
     (-close conn))
 
-  Config
+  IPersistentMap
 
-  (-id ^UUID [this]
+  (-id [this]
     nil)
 
   (-closed? [this]
@@ -184,10 +192,36 @@
   (-close [this]
     nil)
 
+  (-to-config [this]
+    (->config this))
+
+  (-borrow-connection [this]
+    (connect this))
+
+  (-return-connection [this conn]
+    (-close conn))
+
+  Config
+
+  (-id [this]
+    nil)
+
+  (-closed? [this]
+    false)
+
+  (-clone [this]
+    this)
+
+  (-close [this]
+    nil)
+
+  (-to-config [this]
+    this)
+
   (-borrow-connection [this]
     (Connection/connect this))
 
-  (-return-connection [this ^Connection conn]
+  (-return-connection [this conn]
     (-close conn))
 
   Object
@@ -207,7 +241,10 @@
   (-borrow-connection [this]
     (unsupported! this))
 
-  (-return-connection [this ^Connection conn]
+  (-to-config [this]
+    (unsupported! this))
+
+  (-return-connection [this conn]
     (unsupported! this))
 
   nil
@@ -224,12 +261,19 @@
   (-close [this]
     (unsupported! this))
 
+  (-to-config [this]
+    (unsupported! this))
+
   (-borrow-connection [this]
     (unsupported! this))
 
-  (-return-connection [this ^Connection conn]
+  (-return-connection [this conn]
     (unsupported! this)))
 
+
+;;
+;; Connection
+;;
 
 (defmacro with-connection
   "
@@ -1018,11 +1062,11 @@
 
 (defn pool
   "
-  Run a new Pool from a config map.
+  Run a new Pool from a config map or a URI.
   "
-  (^Pool [^Map opt]
-   (-> opt
-       (->config)
+  (^Pool [src]
+   (-> src
+       (-to-config)
        (Pool/create)))
 
   (^Pool [^String host ^Integer port ^String user ^String password ^String database]

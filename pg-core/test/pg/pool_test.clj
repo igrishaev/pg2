@@ -8,12 +8,23 @@
    [pg.pool :as pool]))
 
 
+(def USER "test")
+(def PASS "test")
+(def HOST "127.0.0.1")
+(def PORT 10130)
+(def DATABASE "test")
+
+
 (def ^:dynamic *CONFIG*
-  {:host "127.0.0.1"
-   :port 10130
-   :user "test"
-   :password "test"
-   :database "test"})
+  {:host HOST
+   :port PORT
+   :user USER
+   :password PASS
+   :database DATABASE})
+
+
+(def URI
+  (format "postgresql://%s:%s@%s:%s/%s" USER PASS HOST PORT DATABASE))
 
 
 (deftest test-pool-it-works
@@ -440,6 +451,15 @@
 
 
 (deftest test-pool-as-source
+
   (with-open [pool (pg/pool *CONFIG*)]
     (let [res (pg/execute pool "select 1 as one")]
+      (is (= [{:one 1}] res))))
+
+  (with-open [pool (pg/pool URI)]
+    (let [res (pg/execute pool "select 1 as one")]
+      (is (= [{:one 1}] res))))
+
+  (pg/with-pool [pool URI]
+    (let [res (pg/query pool "select 1 as one")]
       (is (= [{:one 1}] res)))))

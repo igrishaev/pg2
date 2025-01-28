@@ -2,6 +2,7 @@
 - common API protocol
   - check docstrings
   - update/add docs
+  - connect/pool URI
 
 - connect
   - from map
