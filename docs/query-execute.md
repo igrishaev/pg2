@@ -48,6 +48,10 @@ query like these two below or similar:
 `format`, or other functions that operate on strings. You will regret it one
 day. Use execute with parameters instead.**
 
+The `query` function accepts not a connection only but anything that implements
+the `ISource` protocol. For details, please check out the [Data Source
+Abstraction](/docs/data-source.md) section.
+
 ## Execute
 
 The `execute` function acts like `query` but has the following peculiarities:
@@ -118,6 +122,9 @@ ids.
 Both `query` and `execute` functions accept various options that affect data
 processing. Find their description in the next section.
 
-**UPD:** in a recent relese, the `execute` function caches prepared statements.
-See the [Prepared Statement Cache](/docs/prepared-statement-cache.md) section for
-more info.
+Just like `query`, the `execute` function accepts anything that implements the
+`ISource` protocol. See the [Data Source Abstraction](/docs/data-source.md)
+section for details.
+
+The `execute` function silently caches prepared statements. See the [Prepared
+Statement Cache](/docs/prepared-statement-cache.md) section for more info.

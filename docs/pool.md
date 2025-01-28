@@ -35,10 +35,12 @@ Here is how you use the pool:
    :password "test"
    :database "test"})
 
-(pool/with-pool [pool config]
-  (pool/with-connection [conn pool]
+(pg/with-pool [pool config]
+  (pg/with-connection [conn pool]
     (pg/execute conn "select 1 as one")))
 ~~~
+
+In the latest version of PG2, it might be even simpler: TODO
 
 The `pool/with-pool` macro creates a pool object from the `config` map and binds
 it to the `pool` symbol. Once you exit the macro, the pool gets closed.
