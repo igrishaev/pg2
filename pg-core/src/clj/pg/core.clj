@@ -92,23 +92,23 @@
 ;; Connectable source abstraction
 ;;
 
-(defprotocol IConnectable
+(defprotocol ISource
   "
   A set of actions that can be applied to any kind
   of a data source: a Clojure map, a Config object,
   a Connection or a Pool instance.
   "
 
-  (id [this]
+  (-id [this]
     "Get a unique ID of a data source.")
 
-  (closed? [this]
+  (-closed? [this]
     "True if the source has been closed.")
 
-  (clone [this]
+  (-clone [this]
     "Create a new instance of this data source.")
 
-  (close [this]
+  (-close [this]
     "Close a data source")
 
   (-borrow-connection [this]
@@ -118,20 +118,24 @@
     "Return a connection to a source. Don't call it directly."))
 
 
-(extend-protocol IConnectable
+(defmacro unsupported! [src]
+  `(error! "Unsupported data source: %s" ~src))
+
+
+(extend-protocol ISource
 
   Connection
 
-  (id ^UUID [this]
+  (-id ^UUID [this]
     (.getId this))
 
-  (closed? [this]
+  (-closed? [this]
     (.isClosed this))
 
-  (clone [this]
+  (-clone [this]
     (Connection/clone this))
 
-  (close [this]
+  (-close [this]
     (.close this))
 
   (-borrow-connection [^Connection this]
@@ -142,16 +146,16 @@
 
   Pool
 
-  (id ^UUID [this]
+  (-id ^UUID [this]
     (.getId this))
 
-  (closed? [this]
+  (-closed? [this]
     (.isClosed this))
 
-  (clone [this]
+  (-clone [this]
     (Pool/clone this))
 
-  (close [this]
+  (-close [this]
     (.close this))
 
   (-borrow-connection [this]
@@ -162,35 +166,83 @@
 
   IPersistentMap
 
+  (-id ^UUID [this]
+    nil)
+
+  (-closed? [this]
+    false)
+
+  (-clone [this]
+    this)
+
+  (-close [this]
+    nil)
+
   (-borrow-connection [this]
     (connect this))
 
   (-return-connection [this ^Connection conn]
-    (close conn))
+    (-close conn))
 
   Config
+
+  (-id ^UUID [this]
+    nil)
+
+  (-closed? [this]
+    false)
+
+  (-clone [this]
+    this)
+
+  (-close [this]
+    nil)
 
   (-borrow-connection [this]
     (Connection/connect this))
 
   (-return-connection [this ^Connection conn]
-    (close conn))
+    (-close conn))
 
   Object
 
+  (-id [this]
+    (unsupported! this))
+
+  (-closed? [this]
+    (unsupported! this))
+
+  (-clone [this]
+    (unsupported! this))
+
+  (-close [this]
+    (unsupported! this))
+
   (-borrow-connection [this]
-    (error! "Unsupported connection source: %s" this))
+    (unsupported! this))
 
   (-return-connection [this ^Connection conn]
-    (error! "Unsupported connection source: %s" this))
+    (unsupported! this))
 
   nil
 
+  (-id [this]
+    (unsupported! this))
+
+  (-closed? [this]
+    (unsupported! this))
+
+  (-clone [this]
+    (unsupported! this))
+
+  (-close [this]
+    (unsupported! this))
+
   (-borrow-connection [this]
-    (error! "Connection source cannot be null"))
+    (unsupported! this))
 
   (-return-connection [this ^Connection conn]
-    (error! "Connection source cannot be null")))
+    (unsupported! this)))
 
 
 (defmacro with-connection
@@ -285,6 +337,42 @@
   "
   ^Map [^Connection conn]
   (.getParams conn))
+
+
+(defn ^UUID id
+  "
+  Get a unique ID of this source (a Connection or a Pool).
+  "
+  [src]
+  (-id src))
+
+
+(defn close
+  "
+  Close a data source. Closing a Connection terminates
+  a session on the server side. Closing a Pool object
+  terminates all open connections.
+  "
+  [src]
+  (-close src))
+
+
+(defn closed?
+  "
+  Whether the data source was closed. A closed source
+  cannot be reused again.
+  "
+  [src]
+  (-closed? src))
+
+
+(defn clone
+  "
+  Produce another instance of a source with the same
+  configuration.
+  "
+  [src]
+  (-clone src))
 
 
 (defn pid

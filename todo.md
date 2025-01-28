@@ -5,10 +5,16 @@
   - add tests
   - TODO for ssl function
   - `-id`, `-close`, etc methods?
+  - deprecated section (core/pool)
 
 - ssl:
   - switch to ssl by default?
   - ssl 3rd-party tests
+
+- connect
+  - from string
+  - from URL/URI
+  - from File?
 
 - geom types: json, edn
 - geom types: toString -> toSQL
