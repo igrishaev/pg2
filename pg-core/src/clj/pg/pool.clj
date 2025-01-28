@@ -26,6 +26,52 @@
    org.pg.Pool))
 
 
+(defn used-count
+  "
+  Return the current number of busy connections.
+  "
+  ^Integer [^Pool pool]
+  (.usedCount pool))
+
+
+(defn free-count
+  "
+  Return the current number of free connections.
+  "
+  ^Integer [^Pool pool]
+  (.freeCount pool))
+
+
+(defn stats
+  "
+  Return both free and used connection amount as a map.
+  "
+  [^Pool pool]
+  {:free (free-count pool)
+   :used (used-count pool)})
+
+
+(defn replenish-connections
+  "
+  Forcibly run a task that determines how many new
+  free connections should be created, and creates them.
+  The number is calculated as follows:
+
+  gap = min-size - size(free-conns) - size(used-conns)
+
+  When gap is > 0, the corresponding number of free connections
+  is created.
+
+  Blocks the pool.
+  "
+  [^Pool pool]
+  (.replenishConnections pool))
+
+
+;;
+;; DEPRECATED
+;;
+
 (defn ^:deprecated id
   "
   Deprecated! Use `pg.core/id`.
@@ -57,23 +103,6 @@
   [^Pool pool]
   (pg/close pool))
 
-
-(defn used-count
-  "
-  Return the current number of busy connections.
-  "
-  ^Integer [^Pool pool]
-  (.usedCount pool))
-
-
-(defn free-count
-  "
-  Return the current number of free connections.
-  "
-  ^Integer [^Pool pool]
-  (.freeCount pool))
-
-
 (defmacro ^:deprecated with-pool
   "
   Deprecated! Use `pg.core/with-pool`.
@@ -98,35 +127,9 @@
   `(pg/with-conn ~@args))
 
 
-(defn stats
-  "
-  Return both free and used connection amount as a map.
-  "
-  [^Pool pool]
-  {:free (free-count pool)
-   :used (used-count pool)})
-
-
 (defn ^:deprecated closed?
   "
   Deprecated! Use `pg.core/closed?`
   "
   [^Pool pool]
   (pg/closed? pool))
-
-
-(defn replenish-connections
-  "
-  Forcibly run a task that determines how many new
-  free connections should be created, and creates them.
-  The number is calculated as follows:
-
-  gap = min-size - size(free-conns) - size(used-conns)
-
-  When gap is > 0, the corresponding number of free connections
-  is created.
-
-  Blocks the pool.
-  "
-  [^Pool pool]
-  (.replenishConnections pool))

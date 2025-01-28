@@ -55,20 +55,6 @@
 
 
 ;;
-;; Errors
-;;
-
-(defn ^:deprecated get-error-fields
-  "
-  Get a map of error fields from an instance of
-  `PGErrorResponse`. **Deprecated**, use `ex-data`
-  instead.
-  "
-  [^PGErrorResponse e]
-  (ex-data e))
-
-
-;;
 ;; Connect
 ;;
 
@@ -397,15 +383,6 @@
   "
   [^Connection conn ^PreparedStatement statement]
   (.closeStatement conn statement))
-
-
-;; TODO
-(defn ssl?
-  "
-  True if the connection is encrypted with SSL.
-  "
-  ^Boolean [^Connection conn]
-  (.isSSL conn))
 
 
 ;;
@@ -827,18 +804,6 @@
                (throw e#))))))))
 
 
-(defmacro ^:deprecated with-tx
-  "
-  **DEPRECATED**: use `with-transaction` below.
-  ---------------------------------------------
-  Acts like `with-transaction` but accepts a connection,
-  not a data source. Thus, no a binding symbol required.
-  "
-  [[conn opts] & body]
-  `(with-transaction [_# ~conn ~opts]
-     ~@body))
-
-
 (defn connection?
   "
   True of the passed option is a Connection instance.
@@ -1031,7 +996,6 @@
 ;; SSL
 ;;
 
-;; TODO
 (defn is-ssl?
   "
   True if the Connection is SSL-encrypted.
@@ -1072,4 +1036,30 @@
   "
   [[bind config] & body]
   `(with-open [~bind (pool ~config)]
+     ~@body))
+
+
+;;
+;; DEPRECATED
+;;
+
+(defn ^:deprecated get-error-fields
+  "
+  Get a map of error fields from an instance of
+  `PGErrorResponse`. **Deprecated**, use `ex-data`
+  instead.
+  "
+  [^PGErrorResponse e]
+  (ex-data e))
+
+
+(defmacro ^:deprecated with-tx
+  "
+  **DEPRECATED**: use `with-transaction` below.
+  ---------------------------------------------
+  Acts like `with-transaction` but accepts a connection,
+  not a data source. Thus, no a binding symbol required.
+  "
+  [[conn opts] & body]
+  `(with-transaction [_# ~conn ~opts]
      ~@body))

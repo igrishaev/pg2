@@ -1,11 +1,7 @@
 
 - common API protocol
-  - deprecate pool?
   - check docstrings
-  - add tests
-  - TODO for ssl function
-  - `-id`, `-close`, etc methods?
-  - deprecated section (core/pool)
+  - update/add docs
 
 - ssl:
   - switch to ssl by default?
