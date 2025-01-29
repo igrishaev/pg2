@@ -35,12 +35,30 @@ Here is how you use the pool:
    :password "test"
    :database "test"})
 
-(pool/with-pool [pool config]
-  (pool/with-connection [conn pool]
+(pg/with-pool [pool config]
+  (pg/with-connection [conn pool]
     (pg/execute conn "select 1 as one")))
 ~~~
 
-The `pool/with-pool` macro creates a pool object from the `config` map and binds
+In the latest version of PG2, it might be even simpler: just pass the `Pool`
+object into the `execute` function:
+
+~~~clojure
+(pg/with-pool [pool config]
+  (pg/execute pool "select 1 as one"))
+~~~
+
+You can also pass a URI string when spawning a pool:
+
+~~~clojure
+(def URI
+  "postgresql://test:query123@127.0.0.1:5432/test?ssl=false")
+
+(pg/with-pool [pool URI]
+  (pg/execute pool "select 1 as one"))
+~~~
+
+The `pg/with-pool` macro creates a pool object from the `config` map and binds
 it to the `pool` symbol. Once you exit the macro, the pool gets closed.
 
 The `with-pool` macro can be easily replaced with the `with-open` macro and the
@@ -48,13 +66,13 @@ The `with-pool` macro can be easily replaced with the `with-open` macro and the
 `.close` method of an opened object, which closes the pool.
 
 ~~~clojure
-(with-open [pool (pool/pool config)]
-  (pool/with-conn [conn pool]
+(with-open [pool (pg/pool config)]
+  (pg/with-conn [conn pool]
     (pg/execute conn "select 1 as one")))
 ~~~
 
-Having a pool object, use it with the `pool/with-connection` macro (there is a
-shorter version `pool/with-conn` as well). This macro borrows a connection from
+Having a pool object, use it with the `pg/with-connection` macro (there is a
+shorter version `pg/with-conn` as well). This macro borrows a connection from
 the pool and binds it to the `conn` symbol. Now you pass the connection to
 `pg/execute`, `pg/query` and so on. By exiting the `with-connection` macro, the
 connection is returned to the pool.
@@ -103,12 +121,12 @@ timeout bangs. Should there still haven't been any free connections during the
 The `stats` function returns info about free and used connections:
 
 ~~~clojure
-(pool/with-pool [pool config]
+(pg/with-pool [pool config]
 
   (pool/stats pool)
   ;; {:free 1 :used 0}
 
-  (pool/with-connection [conn pool]
+  (pg/with-connection [conn pool]
     (pool/stats pool)
     ;; {:free 0 :used 1}
   ))
@@ -128,7 +146,7 @@ when it's wrapped into a component (see [Component][component] and
 The `pool` function creates a pool:
 
 ~~~clojure
-(def POOL (pool/pool config))
+(def POOL (pg/pool config))
 ~~~
 
 The `used-count` and `free-count` functions return total numbers of busy and
@@ -145,26 +163,26 @@ free connections, respectively:
 The `pool?` predicate ensures it's a `Pool` instance indeed:
 
 ~~~clojure
-(pool/pool? POOL)
+(pg/pool? POOL)
 ;; true
 ~~~
 
 ## Closing
 
-The `close` method shuts down a pool instance. On shutdown, first, all the free
-connections get closed. Then the pool closes busy connections that were
+The `close` function shuts down a pool instance. On shutdown, first, all the
+free connections get closed. Then the pool closes busy connections that were
 borrowed. This might lead to failures in other threads, so it's worth waiting
 until the pool has zero busy connections.
 
 ~~~clojure
-(pool/close POOL)
+(pg/close POOL)
 ;; nil
 ~~~
 
 The `closed?` predicate ensures the pool has already been closed:
 
 ~~~clojure
-(pool/closed? POOL)
+(pg/closed? POOL)
 ;; true
 ~~~
 

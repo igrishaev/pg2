@@ -1,5 +1,8 @@
 (ns pg.connection-uri
   "
+  A namespace to parse a connection URI string into
+  a map of config fields.
+
   Links:
   - https://jdbc.postgresql.org/documentation/use/
   "
@@ -27,7 +30,14 @@
       (error! "cannot parse long value: %s, reason: %s"
         line (ex-message e)))))
 
-(defn parse-ref [^String line]
+(defn parse-ref
+  "
+  Resolve a Clojure object by a fully qualified string
+  pointing on it (like 'org.acme.util/my-handerl').
+  Throw an error should a string is not qualified or
+  point to a missing object.
+  "
+  [^String line]
   (try
     (-> line
         symbol
@@ -69,7 +79,7 @@
 (defn parse
   "
   Parse a string URI into a map of Config options.
-  See `pg.core/->config`.
+  See `pg.config/->config`.
   "
   [^String connection-uri]
   (let [connection-uri

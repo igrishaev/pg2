@@ -15,7 +15,7 @@ public final class Pool implements AutoCloseable {
     private boolean isClosed = false;
     private final static System.Logger logger = System.getLogger(Pool.class.getCanonicalName());
     private final TryLock lock = new TryLock();
-    
+
     @Override
     public boolean equals (Object other) {
         return other instanceof Pool && id.equals(((Pool) other).id);
@@ -24,6 +24,15 @@ public final class Pool implements AutoCloseable {
     @Override
     public int hashCode () {
         return this.id.hashCode();
+    }
+
+    public Config getConfig () {
+        return config;
+    }
+
+    @SuppressWarnings("unused")
+    public static Pool clone(final Pool other) {
+        return Pool.create(other.getConfig());
     }
 
     public void replenishConnections() {

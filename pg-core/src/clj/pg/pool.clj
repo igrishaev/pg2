@@ -16,6 +16,7 @@
   are closed; Connections that are in a transaction are rolled back.
   "
   (:require
+   [pg.config :refer [->config]]
    [pg.core :as pg])
   (:import
    java.io.Writer
@@ -23,42 +24,6 @@
    java.util.UUID
    org.pg.Connection
    org.pg.Pool))
-
-
-(defn id
-  "
-  Get a unique ID of the pool.
-  "
-  ^UUID [^Pool pool]
-  (.getId pool))
-
-
-(defn pool?
-  "
-  True if a value is a Pool instance.
-  "
-  [x]
-  (instance? Pool x))
-
-
-(defn pool
-  "
-  Run a new Pool from a config map.
-  "
-  (^Pool [^Map opt]
-   (Pool/create (pg/->config opt)))
-
-  (^Pool [^String host ^Integer port ^String user ^String password ^String database]
-   (Pool/create host port user password database)))
-
-
-(defn close
-  "
-  Close the pool by terminating all the connections,
-  both free and used.
-  "
-  [^Pool pool]
-  (.close pool))
 
 
 (defn used-count
@@ -77,58 +42,6 @@
   (.freeCount pool))
 
 
-(defmacro with-pool
-  "
-  Execute the body while the `bind` symbol is bound
-  to a new Pool instance. Close the pool afterwards.
-  "
-  [[bind config] & body]
-  `(with-open [~bind (pool ~config)]
-     ~@body))
-
-
-(defn borrow-connection
-  "
-  Borrow a connection from a pool.
-  "
-  ^Connection [^Pool pool]
-  (.borrowConnection pool))
-
-
-(defmacro with-connection
-  "
-  Execute the body while the `bind` symbol is bound
-  to a borrowed Connection instance. The connection
-  is marked is busy and won't be available for other
-  consumers. Return the connection to the pool when
-  exiting the macro.
-
-  When no connections available, throw an exception.
-  "
-  [[bind pool] & body]
-  (let [POOL
-        (with-meta (gensym "POOL")
-          {:tag `Pool})]
-    `(let [~POOL
-           ~pool
-
-           ~(with-meta bind {:tag `Connection})
-           (.borrowConnection ~POOL)]
-       (try
-         ~@body
-         (finally
-           (.returnConnection ~POOL ~bind))))))
-
-
-(defmacro with-conn
-  "
-  Just a shorter version of `with-connection`.
-  "
-  [[bind pool] & body]
-  `(with-connection [~bind ~pool]
-     ~@body))
-
-
 (defn stats
   "
   Return both free and used connection amount as a map.
@@ -136,19 +49,6 @@
   [^Pool pool]
   {:free (free-count pool)
    :used (used-count pool)})
-
-
-(defn closed?
-  "
-  True if the pool has been closed before.
-  "
-  ^Boolean [^Pool pool]
-  (.isClosed pool))
-
-
-(defmethod print-method Pool
-  [^Pool pool ^Writer writer]
-  (.write writer (.toString pool)))
 
 
 (defn replenish-connections
@@ -166,3 +66,70 @@
   "
   [^Pool pool]
   (.replenishConnections pool))
+
+
+;;
+;; THE ABYSS OF DEPRECATED
+;;
+
+(defn ^:deprecated id
+  "
+  Deprecated! Use `pg.core/id`.
+  "
+  [^Pool pool]
+  (pg/id pool))
+
+
+(defn ^:deprecated pool?
+  "
+  Deprecated! Use `pg.core/pool?`.
+  "
+  [x]
+  (pg/pool? x))
+
+
+(defn ^:deprecated pool
+  "
+  Deprecated! Use `pg.core/pool`.
+  "
+  ^Pool [& args]
+  (apply pg/pool args))
+
+
+(defn ^:deprecated close
+  "
+  Deprecated! Use `pg.core/close`.
+  "
+  [^Pool pool]
+  (pg/close pool))
+
+(defmacro ^:deprecated with-pool
+  "
+  Deprecated! Use `pg.core/with-pool`.
+  "
+  [& args]
+  `(pg/with-pool ~@args))
+
+
+(defmacro ^:deprecated with-connection
+  "
+  Deprecated! Use `pg.core/with-connection`.
+  "
+  [& args]
+  `(pg/with-connection ~@args))
+
+
+(defmacro ^:deprecated with-conn
+  "
+  Deprecated! Use `pg.core/with-conn`.
+  "
+  [& args]
+  `(pg/with-conn ~@args))
+
+
+(defn ^:deprecated closed?
+  "
+  Deprecated! Use `pg.core/closed?`
+  "
+  [^Pool pool]
+  (pg/closed? pool))

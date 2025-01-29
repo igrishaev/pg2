@@ -1,4 +1,10 @@
 
+- user & database default values?
+
+- linting (kondo + clfjmt)
+
+- use PG* env vars
+
 - ssl:
   - switch to ssl by default?
   - ssl 3rd-party tests
@@ -6,14 +12,8 @@
 - geom types: json, edn
 - geom types: toString -> toSQL
 
-- user & database default values?
-
 - prep stmt: track pid, conn-id
 - prep stmt: check if belongs?
-
-- common API protocol?
-
-use PG* env vars
 
 .~/.pgpass
 https://www.postgresql.org/docs/current/libpq-pgpass.html

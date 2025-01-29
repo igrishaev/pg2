@@ -50,7 +50,7 @@
 
    (let [[sql]
          (format sql-map honey)]
-     (pg/on-connection [conn src]
+     (pg/with-conn [conn src]
        (pg/query conn sql opt)))))
 
 
@@ -73,7 +73,7 @@
               (map first)
               (str/join "; "))]
 
-     (pg/on-connection [conn src]
+     (pg/with-conn [conn src]
        (pg/query conn sql opt)))))
 
 
@@ -98,7 +98,7 @@
   ([src sql-map {:as opt :keys [honey]}]
    (let [[sql & params]
          (format sql-map honey)]
-     (pg/on-connection [conn src]
+     (pg/with-conn [conn src]
        (pg/execute conn
                    sql
                    (assoc opt :params params))))))
@@ -125,7 +125,7 @@
   ([src sql-map {:as opt :keys [honey]}]
    (let [[sql & params]
          (format sql-map honey)]
-     (pg/on-connection [conn src]
+     (pg/with-conn [conn src]
        (pg/prepare conn
                    sql
                    (assoc opt :params params))))))

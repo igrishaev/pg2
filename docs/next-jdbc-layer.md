@@ -58,7 +58,7 @@ A brief example with a connection pool and a couple of futures. Each future
 borrows a connection from a pool, and returns it afterwards.
 
 ~~~clojure
-(pool/with-pool [pool config]
+(pg/with-pool [pool config]
   (let [f1
         (future
           (jdbc/on-connection [conn1 pool]

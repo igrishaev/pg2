@@ -12,6 +12,7 @@
    org.pg.Pool)
   (:require
    [clojure.set :as set]
+   [pg.common :refer [error!]]
    [pg.core :as pg]
    [pg.pool :as pool]))
 
@@ -27,12 +28,12 @@
   to use as there is a chance to leave the connection not
   closed. Consider `pg/on-connection` instead.
   "
-  ^Connection [source]
-  (pg/-borrow-connection source))
+  ^Connection [src]
+  (pg/connect src))
 
 
 (defmacro on-connection [[bind source] & body]
-  `(pg/on-connection [~bind ~source]
+  `(pg/with-connection [~bind ~source]
      ~@body))
 
 
@@ -46,7 +47,7 @@
     pg/execute-statement
 
     :else
-    (pg/error! "Wrong execute expression: %s" expr)))
+    (error! "Wrong execute expression: %s" expr)))
 
 
 (defn execute!
@@ -68,7 +69,7 @@
          fn-execute
          (->fn-execute expr)]
 
-     (pg/on-connection [conn source]
+     (pg/with-conn [conn source]
        (fn-execute conn
                    expr
                    (-> opt-defaults
@@ -90,7 +91,7 @@
          fn-execute
          (->fn-execute expr)]
 
-     (pg/on-connection [conn source]
+     (pg/with-conn [conn source]
        (fn-execute conn
                    expr
                    (-> opt-defaults
@@ -123,7 +124,7 @@
 
   ([source sql-vec opt]
    (let [[sql & params] sql-vec]
-     (pg/on-connection [conn source]
+     (pg/with-conn [conn source]
        (pg/prepare conn
                    sql
                    (assoc opt :params params))))))
@@ -134,7 +135,7 @@
   Performs batch execution on the server side (TBD).
   "
   [conn sql opts]
-  (pg/error! "execute-batch! is not imiplemented"))
+  (error! "execute-batch! is not imiplemented"))
 
 
 (defn remap-tx-opts [jdbc-opt]
@@ -163,7 +164,7 @@
   Return the result of the body block.
   "
   [[bind source opts] & body]
-  `(pg/on-connection [~bind ~source]
+  `(pg/with-conn [~bind ~source]
      (pg/with-tx [~bind
                   ~@(when opts
                       `[(remap-tx-opts ~opts)])]

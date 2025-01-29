@@ -344,8 +344,10 @@ from
 
 (deftest test-client-with-tx-check
   (pg/with-connection [conn *CONFIG-TXT*]
-    (pg/with-tx [conn]
-      (is (pg/connection? conn)))))
+    (pg/with-transaction [tx conn]
+      (is (pg/connection? tx))
+      (is (pg/connection? conn))
+      (is (= tx conn)))))
 
 
 (deftest test-client-with-transaction-ok
@@ -4283,6 +4285,47 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (pg/with-conn [conn {:connection-uri uri}]
       (let [res (pg/query conn "select 1 as num")]
         (is (= [{:num 1}] res))))))
+
+
+(deftest test-data-source-map
+
+  (let [res1
+        (pg/query *CONFIG-TXT* "select 1 as num")
+
+        res2
+        (pg/execute *CONFIG-TXT* "select 1 as num")]
+
+    (is (= [{:num 1}] res1))
+    (is (= [{:num 1}] res2))
+
+    (pg/with-transaction [tx *CONFIG-TXT* {:read-only? true
+                                           :rollback? true
+                                           :isolation-level :serializable}]
+      (is (pg/connection? tx))
+      (pg/query tx "select 1 as num"))))
+
+
+(deftest test-data-source-uri
+
+  (let [uri
+        (format "postgresql://test:test@localhost:%s/test?ssl=false" *PORT*)
+
+        res
+        (pg/query uri "select 1 as num")]
+
+    (pg/with-conn [conn uri]
+      (pg/query conn "select 1"))
+
+    (with-open [conn (pg/connect uri)]
+      (pg/query conn "select 1"))
+
+    (is (= [{:num 1}] res))
+
+    (pg/with-transaction [tx uri {:read-only? true
+                                  :rollback? true
+                                  :isolation-level :serializable}]
+      (is (pg/connection? tx))
+      (pg/query tx "select 1 as num"))))
 
 
 #_

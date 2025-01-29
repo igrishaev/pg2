@@ -46,3 +46,6 @@ test:
 snapshot:
 	lein sub with-profile uberjar install
 	lein sub with-profile uberjar deploy
+
+repl: install
+	cd pg-core && make repl

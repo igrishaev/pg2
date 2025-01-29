@@ -60,11 +60,11 @@ create table demo (
 
 
 ;; Try two expressions in a single transaction
-(pg/with-tx [conn]
-  (pg/execute conn
+(pg/with-transaction [tx conn]
+  (pg/execute tx
               "delete from demo where id = $1"
               {:params [3]})
-  (pg/execute conn
+  (pg/execute tx
               "insert into demo (title) values ($1)"
               {:params ["test4"]}))
 ;; {:inserted 1}

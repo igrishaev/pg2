@@ -39,7 +39,7 @@
     (is false)
     (catch Throwable e
       (is true)
-      (is (= "Connection source cannot be null"
+      (is (= "Unsupported data source: null"
              (ex-message e))))))
 
 

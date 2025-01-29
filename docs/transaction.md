@@ -40,21 +40,29 @@ will be available during transaction but won't be stored at the end.
 (pg/rollback conn)
 ~~~
 
-## The macro
+## The Macro
 
-There is a macro what handles `BEGIN`, `COMMIT`, and `ROLLBACK` logic for
-you. The `with-tx` one wraps a block of code. It opens a transaction, executes
-the body and, if there was no an exception, commits it. If there was an
-exception, the macro rolls back the transaction and re-throws it.
+There is a `with-transaction` macro which handles `BEGIN`, `COMMIT`, and
+`ROLLBACK` logic for you. The macro wraps a block of code. It opens a
+transaction, executes the body and, if there weren't exceptions, commits it. If
+there was an exception, the macro rolls back the transaction and re-throws it.
 
-The first argument of the macro is a connection object:
+The macro accepts at least two arguments:
+
+- the first one is a binding symbol, e.g. `conn`, `tx`, etc;
+- the second one is a [Data Source](/docs/data-source.md).
+
+The macro obtains a connection from a source and binds it to the first
+argument. The transaction will occur in this connection only. To perform
+multiple actions within the same transaction, pass this specific connection to
+functions that accept a connection:
 
 ~~~clojure
-(pg/with-tx [conn]
-  (pg/execute conn
+(pg/with-transaction [tx src]
+  (pg/execute tx
               "delete from test1 where name like $1"
               {:params ["Test%"]})
-  (pg/execute conn
+  (pg/execute tx
               "insert into test1 (name) values ($1)"
               {:params ["Test3"]}))
 ~~~
@@ -62,17 +70,19 @@ The first argument of the macro is a connection object:
 The macro expands into something like this:
 
 ~~~clojure
-(pg/begin conn)
-(try
-  (let [result (do <body>)]
-    (pg/commit conn)
-    result)
-  (catch Throwable e
-    (pg/rollback conn)
-    (throw e)))
+(pg/with-conn [tx src]
+  (pg/begin tx)
+  (try
+    (let [result (do <body>)]
+      (pg/commit tx)
+      result)
+    (catch Throwable e
+      (pg/rollback tx)
+      (throw e))))
 ~~~
 
-The macro accepts several optional parameters that affect a transaction, namely:
+The macro accepts an optional map of parameters that affect a transaction,
+namely:
 
 | Name               | Type              | Description                                                                  |
 |--------------------|-------------------|------------------------------------------------------------------------------|
@@ -87,8 +97,8 @@ transaction to be read only. Thus, only `SELECT` queries will work. Running
 `INSERT`, `UPDATE`, or `DELETE` will cause an exception:
 
 ~~~clojure
-(pg/with-tx [conn {:read-only? true}]
-  (pg/execute conn
+(pg/with-transaction [tx conn {:read-only? true}]
+  (pg/execute tx
               "delete from test1 where name like $1"
               {:params ["Test%"]}))
 
@@ -102,8 +112,8 @@ The `:rollback?` parameter, when set to true, rolls back a transaction even if
 it was successful. This is useful for tests:
 
 ~~~clojure
-(pg/with-tx [conn {:rollback? true}]
-  (pg/execute conn
+(pg/with-transaction [tx URI {:rollback? true}]
+  (pg/execute tx
               "delete from test1 where name like $1"
               {:params ["Test%"]}))
 
@@ -113,7 +123,7 @@ it was successful. This is useful for tests:
 ;; statement: ROLLBACK
 ~~~
 
-Above, inside the `with-tx` macro, you'll have all the rows deleted but once you
+Above, inside the `with-transaction` macro, you'll have all the rows deleted but once you
 get back, they will be there again.
 
 ## Isolation Level
@@ -131,11 +141,11 @@ transaction. The table below shows its possible values:
 Usage:
 
 ~~~clojure
-(pg/with-tx [conn {:isolation-level :serializable}]
-  (pg/execute conn
+(pg/with-transaction [tx config {:isolation-level :serializable}]
+  (pg/execute tx
               "delete from test1 where name like $1"
               {:params ["Test%"]})
-  (pg/execute conn
+  (pg/execute tx
               "insert into test1 (name) values ($1)"
               {:params ["Test3"]}))
 
@@ -157,26 +167,27 @@ refer to the [official documentation][transaction-iso] for more information.
 
 ## Nested Transactions
 
-Nested transactions happen when you put one `with-tx` inside another, for
-example:
+Nested transactions happen when you put one `with-transaction` inside another,
+for example:
 
 ~~~clojure
-(with-tx [...]          ;; 1
+(with-transaction [...]          ;; 1
   (do-this ...)
-  (with-tx [...]        ;; 2
+  (with-transaction [...]        ;; 2
     (do-that ...)))
 ~~~
 
 It's not necessary to have them both explicitly; you can easily have two nested
-functions `(do-a)` and `(do-b)` each of them driven with the `with-tx` macro:
+functions `(do-a)` and `(do-b)` each of them driven with the `with-transaction`
+macro:
 
 ~~~clojure
 (defn do-b [...]
-  (with-tx [...]
+  (with-transaction [...]
     (do-something ...)))
 
 (defn do-a [...]
-  (with-tx [...]
+  (with-transaction [...]
     (do-b ...)))
 ~~~
 
@@ -205,14 +216,15 @@ first `COMMIT` closes the transaction leaving a part of `do-a` logic being
 uncovered. Calling the second `COMMIT` won't do anything since there is no an
 active transaction any longer. It will only produce a notice.
 
-Since 0.1.17, PG2 handles this case property. The `with-tx` macro checks if the
+Since 0.1.17, PG2 handles this case property. The `with-transaction` macro checks if the
 connection is in transaction mode by calling the `(pg/in-transaction? ...)`
 function. If it's not, the macro works as before: it wraps a block of code with
 the `BEGIN/COMMIT/ROLLBACK` commands.
 
 But if the connection is already in transaction, the macro skips `BEGIN/COMMIT`
-commands leaving just the body. Thus, having two or more nested `with-tx` macros
-will produce the following sequence of SQL expressions:
+commands leaving just the body. Thus, having two or more nested
+`with-transaction` macros will produce the following sequence of SQL
+expressions:
 
 ~~~sql
 BEGIN  -- from A
@@ -223,4 +235,4 @@ COMMIT -- from A
 ~~~
 
 With this improvement, you don't need to check manually if underlying code has
-its own `with-tx` macro calls.
+its own `with-transaction` macro calls.
