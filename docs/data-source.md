@@ -1,12 +1,12 @@
 # Data Source Abstraction
 
-A recent release of PG2 has introduced something which is called a data
-source. Brifely, it's when a function accepts not a `Connection` instance only
-but rather an object implementing the `org.pg.ISource` protocol. It makes the
-function work with a connection pool or a Clojure map as well.
+A recent release of PG2 introduces something called a data source. Brifely, it's
+when a function accepts not a `Connection` instance only but rather an object
+implementing the `org.pg.ISource` protocol. It makes the function work with a
+connection pool, a Clojure map, or a URI string as well.
 
 For example, before, the `query` function accepted a connection only. You should
-have open a connection first and pass it into the `query` function:
+have opened a connection first and pass it into the `query` function:
 
 ~~~clojure
 (def config {...})
@@ -21,15 +21,15 @@ Now you can pass a map directly to `query`:
 (pg/query config "select 42")
 ~~~
 
-Under the hood, the library opens a new connection from this map, perform a
-query and close the connection afterwards. Of course, opening a closing a
-connection on each query is much slower that reusing the same one, especially in
-a loop. But it gives you more freedom, and sometimes this is also fine in tests.
+Under the hood, the library spawns a new connection from this map, performs a
+query and closes the connection afterwards. Of course, opening and closing a
+connection every time is much slower that reusing the same one, especially in a
+loop. But it gives you more freedom, and sometimes it is fine in tests.
 
 What's important, you can pass a `Pool` instance into the `query` and `execute`
 functions as well. For a pool, the function borrows a connection first, making
-it unavailable consumers in other threads. Once the query is done, the
-connection is returned to the pool, meaning it's now available for others.
+it unavailable for consumers in other threads. Once the query is done, the
+connection is returned to the pool, meaning it's now available for use.
 
 ~~~clojure
 (def pool (pg/pool {...}))
@@ -48,12 +48,11 @@ You can pass a URI string as well:
 (pg/query URI "select 1")
 ~~~
 
-See the [URI Connection String](/docs/connection-uri.md) section to know more
-about a URI connection string.
+See the [URI Connection String](/docs/connection-uri.md) section for details.
 
 # Supported Sources
 
-At the moment of writing this, the following objects may act as a source:
+The following objects may act as a data source:
 
 | type                          | Borrowing logic               | Returning logic           |
 |-------------------------------|-------------------------------|---------------------------|
@@ -65,13 +64,13 @@ At the moment of writing this, the following objects may act as a source:
 
 # Naming Rules
 
-Some `pg.core` functions accept any data source, but some are bound to the
-`Connection` object. For example, `query`, `execute`, `copy`, etc accept a
-source, but `close-statement` needs a connection because prepared statements are
-defined per connection. There is a naming rule for that:
+Some `pg.core` functions accept any data source, but some require a `Connection`
+object only. For example, `query`, `execute`, `copy`, etc accept a source, but
+`close-statement` needs a connection because prepared statements are defined per
+connection. There is a naming rule for that:
 
 - if the first argument is called `src`, the function accepts a data source (a
   connection, a pool, a Clojure map, a URI string);
-- if the first argument is called `conn`, it accepts a connection only. Most
-  likely you need to pass a certain connection, for example the one you used for
-  a prepared statement or to process notifications.
+- if the argument is called `conn`, it accepts a connection only. Most likely
+  you need to pass a certain connection, for example the one you used for a
+  prepared statement or to process notifications.

@@ -49,12 +49,12 @@ there was an exception, the macro rolls back the transaction and re-throws it.
 
 The macro accepts at least two arguments:
 
-- the first one is a binding symbol, e.g. `conn` or `tx`;
+- the first one is a binding symbol, e.g. `conn`, `tx`, etc;
 - the second one is a [Data Source](/docs/data-source.md).
 
 The macro obtains a connection from a source and binds it to the first
 argument. The transaction will occur in this connection only. To perform
-multiple actions within a transaction, pass this specific connection to
+multiple actions within the same transaction, pass this specific connection to
 functions that accept a connection:
 
 ~~~clojure

@@ -1,13 +1,4 @@
 
-- common API protocol
-  - update/add docs
-
-- connect
-  - from map
-  - from string
-  - from URL/URI
-  - from File?
-
 - user & database default values?
 
 - linting (kondo + clfjmt)
@@ -21,11 +12,8 @@
 - geom types: json, edn
 - geom types: toString -> toSQL
 
-
 - prep stmt: track pid, conn-id
 - prep stmt: check if belongs?
-
-
 
 .~/.pgpass
 https://www.postgresql.org/docs/current/libpq-pgpass.html

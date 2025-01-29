@@ -275,7 +275,7 @@
 
 (defn execute-statement
   "
-  Execute a given prepared statement and return the result.
+  Execute a given prepared statement and return a result.
   The way the result is processed heavily depends on options.
   "
   ([^Connection conn ^PreparedStatement statement]
@@ -288,7 +288,7 @@
 (defn execute
   "
   Execute a SQL expression and return a result. Arguments:
-  - `src` is a data source (a Connection, a Pool, a map);
+  - `src` is a data source (a Connection, a Pool, a map, a URI string);
   - `sql` is a SQL string expression;
   - `opt` is a map of options.
 
@@ -354,7 +354,7 @@
   Run a SQL expression WITH NO parameters. The result
   is always sent back in text mode (binary mode doesn't
   work with the QUERY API). Arguments:
-  - `src` is a data source (a Connection, a Pool, a map);
+  - `src` is a data source (a Connection, a Pool, a map, a URI string);
   - `sql` is a SQL string without parameters (e.g. $1, etc);
   - `opt` is a map of options.
   "
@@ -587,7 +587,7 @@
 
   Arguments:
   - `tx` is a symbol which a transactional connection is bound to;
-  - `src` is a data source (a Clojure map, a Pool, a Connection).
+  - `src` is a data source (a map, a Pool, a Connection, a URI string).
 
   The third argument is an optional map of parameters:
 

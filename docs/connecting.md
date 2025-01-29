@@ -35,7 +35,7 @@ acts as a part of a config map:
     ...))
 ~~~
 
-Or just pass a URI without wrapping it into a map:
+Or just pass a URI as is:
 
 ~~~clojure
 (pg/with-conn [conn URI]
