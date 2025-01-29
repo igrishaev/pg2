@@ -24,12 +24,21 @@ might be skipped (the password is an empty string by default). Only the `:user`
 and `:database` fields are required when connecting. See the list of possible
 fields and their values in a table below.
 
-Another way to specify connection parameters is to use a URI string:
+Another way to specify connection parameters is to use a URI string. Below, it
+acts as a part of a config map:
 
 ~~~clojure
 (def URI "postgresql://test:query123@127.0.0.1:5432/test?ssl=false")
 
 (pg/with-conn [conn {:connection-uri URI}]
+  (let [res (pg/query conn "select 1 as num")]
+    ...))
+~~~
+
+Or just pass a URI without wrapping it into a map:
+
+~~~clojure
+(pg/with-conn [conn URI]
   (let [res (pg/query conn "select 1 as num")]
     ...))
 ~~~
