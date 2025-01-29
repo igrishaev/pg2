@@ -28,8 +28,8 @@
   to use as there is a chance to leave the connection not
   closed. Consider `pg/on-connection` instead.
   "
-  ^Connection [source]
-  (pg/-borrow-connection source))
+  ^Connection [src]
+  (pg/connect src))
 
 
 (defmacro on-connection [[bind source] & body]

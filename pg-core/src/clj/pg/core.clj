@@ -6,10 +6,9 @@
    [clojure.string :as str]
    [pg.common :refer [error!]]
    [pg.execute-params :refer [->execute-params]]
-   [pg.config :refer [->config]]
+   [pg.source :as src]
    [pg.ssl #_(load a reader tag)] )
   (:import
-   clojure.lang.IDeref
    clojure.lang.IPersistentMap
    clojure.lang.Keyword
    com.fasterxml.jackson.databind.ObjectMapper
@@ -55,207 +54,6 @@
 
 
 ;;
-;; Data source abstraction
-;;
-
-(defprotocol ISource
-  "
-  A set of actions that can be applied to any kind
-  of a data source: a Clojure map, a Config object,
-  a Connection or a Pool instance.
-  "
-
-  (-id ^UUID [this]
-    "Get a unique ID of a data source.")
-
-  (-closed? [this]
-    "True if the source has been closed.")
-
-  (-clone [this]
-    "Create a new instance of this data source.")
-
-  (-close [this]
-    "Close a data source")
-
-  (-to-config ^Config [this]
-    "Turn this object into a Config instance.")
-
-  (-borrow-connection [this]
-    "Obtain a connection from a source. Don't call it directly.")
-
-  (-return-connection [this conn]
-    "Return a connection to a source. Don't call it directly."))
-
-
-(defmacro unsupported! [src]
-  `(error! "Unsupported data source: %s" ~src))
-
-
-(extend-protocol ISource
-
-  Connection
-
-  (-id ^UUID [this]
-    (.getId this))
-
-  (-closed? [this]
-    (.isClosed this))
-
-  (-clone [this]
-    (Connection/clone this))
-
-  (-close [this]
-    (.close this))
-
-  (-to-config [this]
-    (.getConfig this))
-
-  (-borrow-connection [this]
-    this)
-
-  (-return-connection [this conn]
-    nil)
-
-  Pool
-
-  (-id [this]
-    (.getId this))
-
-  (-closed? [this]
-    (.isClosed this))
-
-  (-clone [this]
-    (Pool/clone this))
-
-  (-close [this]
-    (.close this))
-
-  (-to-config [this]
-    (.getConfig this))
-
-  (-borrow-connection [this]
-    (.borrowConnection this))
-
-  (-return-connection [this conn]
-    (.returnConnection this conn))
-
-  String
-
-  (-id [this]
-    nil)
-
-  (-closed? [this]
-    false)
-
-  (-clone [this]
-    this)
-
-  (-close [this]
-    nil)
-
-  (-to-config [this]
-    (->config {:connection-uri this}))
-
-  (-borrow-connection [this]
-    (-> this -to-config Connection/connect))
-
-  (-return-connection [this conn]
-    (-close conn))
-
-  IPersistentMap
-
-  (-id [this]
-    nil)
-
-  (-closed? [this]
-    false)
-
-  (-clone [this]
-    this)
-
-  (-close [this]
-    nil)
-
-  (-to-config [this]
-    (->config this))
-
-  (-borrow-connection [this]
-    (-> this -to-config Connection/connect))
-
-  (-return-connection [this conn]
-    (-close conn))
-
-  Config
-
-  (-id [this]
-    nil)
-
-  (-closed? [this]
-    false)
-
-  (-clone [this]
-    this)
-
-  (-close [this]
-    nil)
-
-  (-to-config [this]
-    this)
-
-  (-borrow-connection [this]
-    (Connection/connect this))
-
-  (-return-connection [this conn]
-    (-close conn))
-
-  Object
-
-  (-id [this]
-    (unsupported! this))
-
-  (-closed? [this]
-    (unsupported! this))
-
-  (-clone [this]
-    (unsupported! this))
-
-  (-close [this]
-    (unsupported! this))
-
-  (-borrow-connection [this]
-    (unsupported! this))
-
-  (-to-config [this]
-    (unsupported! this))
-
-  (-return-connection [this conn]
-    (unsupported! this))
-
-  nil
-
-  (-id [this]
-    (unsupported! this))
-
-  (-closed? [this]
-    (unsupported! this))
-
-  (-clone [this]
-    (unsupported! this))
-
-  (-close [this]
-    (unsupported! this))
-
-  (-to-config [this]
-    (unsupported! this))
-
-  (-borrow-connection [this]
-    (unsupported! this))
-
-  (-return-connection [this conn]
-    (unsupported! this)))
-
-
-;;
 ;; Connection
 ;;
 
@@ -267,7 +65,7 @@
   an instance of the Connection class.
   "
   (^Connection [src]
-   (-borrow-connection src))
+   (src/-borrow-connection src))
 
   (^Connection [^String host ^Integer port ^String user ^String password ^String database]
    (Connection/connect host port user password database)))
@@ -286,11 +84,11 @@
   `(let [src#
          ~src
          ~(with-meta bind {:tag `Connection})
-         (-borrow-connection src#)]
+         (src/-borrow-connection src#)]
      (try
        ~@body
        (finally
-         (-return-connection src# ~bind)))))
+         (src/-return-connection src# ~bind)))))
 
 
 (defmacro with-conn
@@ -372,7 +170,7 @@
   Get a unique ID of this source (a Connection or a Pool).
   "
   [src]
-  (-id src))
+  (src/-id src))
 
 
 (defn close
@@ -382,7 +180,7 @@
   terminates all open connections.
   "
   [src]
-  (-close src))
+  (src/-close src))
 
 
 (defn closed?
@@ -391,7 +189,7 @@
   cannot be reused again.
   "
   [src]
-  (-closed? src))
+  (src/-closed? src))
 
 
 (defn clone
@@ -400,7 +198,7 @@
   configuration.
   "
   [src]
-  (-clone src))
+  (src/-clone src))
 
 
 (defn pid
@@ -1064,7 +862,7 @@
   "
   (^Pool [src]
    (-> src
-       (-to-config)
+       (src/-to-config)
        (Pool/create)))
 
   (^Pool [^String host ^Integer port ^String user ^String password ^String database]
