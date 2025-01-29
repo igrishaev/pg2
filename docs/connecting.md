@@ -145,12 +145,12 @@ The `:read-only?` connection parameter does two things under the hood:
 1. It appends the `default_transaction_read_only` parameter to the startup
    message set to `on`. Thus, any transaction gets started on `READ ONLY` mode.
 
-2. It prevents the `:read-only?` flag from overriding in the `with-tx`
+2. It prevents the `:read-only?` flag from overriding in the `with-transaction`
    macro. Say, even if the macro is called like this:
 
 ~~~clojure
-(pg/with-tx [conn {:read-only? false}] ;; try to mute the global :read-only? flag
-  (pg/query conn "delete from students"))
+(pg/with-transaction [tx conn {:read-only? false}] ;; try to mute the global :read-only? flag
+  (pg/query tx "delete from students"))
 ~~~
 
 The transaction will be in `READ ONLY` mode anyway.

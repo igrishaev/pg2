@@ -242,7 +242,7 @@ anything about that table.
 The first argument might be a Pool instsance as well:
 
 ~~~clojure
-(pool/with-pool [pool config]
+(pg/with-pool [pool config]
   (let [item1 (get-by-id pool {:table TABLE :id 10})
         item2 (get-by-id pool {:table TABLE :id 11})]
     {:item1 item1
@@ -259,22 +259,26 @@ connection used in the first `get-by-id` before the second `get-by-id` call
 acquires it. As a result, any pipeline that relies on a shared state across two
 subsequent function calls might break.
 
-To ensure the functions share the same connection, use either
-`pg/with-connection` or `pool/with-connection` macros:
+To ensure the functions share the same connection, use the `pg/with-connection`
+macro:
 
 ~~~clojure
-(pool/with-pool [pool config]
-  (pool/with-connection [conn pool]
-    (pg/with-tx [conn]
-      (insert-into-table conn {:table TABLE :title "AAA"})
-      (insert-into-table conn {:table TABLE :title "BBB"}))))
+(pg/with-pool [pool config]
+  (pg/with-connection [conn pool]
+    (insert-into-table conn {:table TABLE :title "AAA"})
+    (insert-into-table conn {:table TABLE :title "BBB"})))
 ~~~
 
 Above, there is 100% guarantee that both `insert-into-table` calls share the
-same `conn` object borrowed from the pool. It is also wrapped into transaction
-which produces the following session:
+same `conn` object borrowed from the pool. You can also use the
+`with-transaction` macro which produces the following session:
 
-~~~sql
+~~~
+(pg/with-pool [pool config]
+  (pg/with-transaction [tx pool]
+    (insert-into-table tx {:table TABLE :title "AAA"})
+    (insert-into-table tx {:table TABLE :title "BBB"})))
+
 BEGIN
 insert into demo123 (title) values ($1);
   parameters: $1 = 'AAA'

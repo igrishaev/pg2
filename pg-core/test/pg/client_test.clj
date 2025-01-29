@@ -344,8 +344,10 @@ from
 
 (deftest test-client-with-tx-check
   (pg/with-connection [conn *CONFIG-TXT*]
-    (pg/with-tx [conn]
-      (is (pg/connection? conn)))))
+    (pg/with-transaction [tx conn]
+      (is (pg/connection? tx))
+      (is (pg/connection? conn))
+      (is (= tx conn)))))
 
 
 (deftest test-client-with-transaction-ok

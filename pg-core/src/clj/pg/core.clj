@@ -880,7 +880,7 @@
 
 
 ;;
-;; DEPRECATED
+;; THE ABYSS OF DEPRECATED
 ;;
 
 (defn ^:deprecated get-error-fields
@@ -895,7 +895,7 @@
 
 (defmacro ^:deprecated with-tx
   "
-  **DEPRECATED**: use `with-transaction` below.
+  **DEPRECATED**: use `with-transaction` above.
   ---------------------------------------------
   Acts like `with-transaction` but accepts a connection,
   not a data source. Thus, no a binding symbol required.

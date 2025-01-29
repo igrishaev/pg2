@@ -447,6 +447,10 @@
   (pg/with-pool [pool *CONFIG*]
     (pg/with-connection [conn pool]
       (let [res (pg/execute conn "select 1 as one")]
+        (is (= [{:one 1}] res)))))
+  (pg/with-pool [pool *CONFIG*]
+    (pg/with-transaction [tx pool]
+      (let [res (pg/execute tx "select 1 as one")]
         (is (= [{:one 1}] res))))))
 
 

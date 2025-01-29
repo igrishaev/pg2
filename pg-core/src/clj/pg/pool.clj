@@ -69,7 +69,7 @@
 
 
 ;;
-;; DEPRECATED
+;; THE ABYSS OF DEPRECATED
 ;;
 
 (defn ^:deprecated id
