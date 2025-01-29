@@ -2,6 +2,7 @@
 ## 0.1.33-SNAPSHOT
 
 - ?
+- #43 Data source abstraction
 
 ## 0.1.32
 
