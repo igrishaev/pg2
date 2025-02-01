@@ -1,6 +1,6 @@
 package org.pg;
 
-import org.pg.error.PGError;
+import org.pg.error.PGErrorIO;
 import org.pg.util.IOTool;
 import org.pg.util.SSLTool;
 import org.pg.util.SocketTool;
@@ -25,6 +25,19 @@ public class PGSocketChannel implements PGIOChannel {
         this.socket = socket;
     }
 
+    private static void setSocketOptions(Socket socket, Config config) {
+        try {
+            socket.setTcpNoDelay(config.SOTCPnoDelay());
+            socket.setSoTimeout(config.SOTimeout());
+            socket.setKeepAlive(config.SOKeepAlive());
+            socket.setReceiveBufferSize(config.SOReceiveBufSize());
+            socket.setSendBufferSize(config.SOSendBufSize());
+        }
+        catch (IOException e) {
+            throw new PGErrorIO(e, "couldn't set socket options");
+        }
+    }
+
     public static PGSocketChannel connect(Config config) {
         final int port = config.port();
         final String host = config.host();
@@ -32,10 +45,10 @@ public class PGSocketChannel implements PGIOChannel {
         try {
              SocketChannel channel = SocketChannel.open(address);
              Socket socket = channel.socket();
-             SocketTool.setSocketOptions(socket, config);
+             setSocketOptions(socket, config);
             return new PGSocketChannel(address, socket);
         } catch (IOException e) {
-            throw new PGError(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
+            throw new PGErrorIO(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
         }
     }
 
