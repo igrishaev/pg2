@@ -1,6 +1,7 @@
 package org.pg.util;
 
 import org.pg.error.PGError;
+import org.pg.Config;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -10,14 +11,6 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 
 public class SocketTool {
-
-    public static void startHandshake(final SSLSocket socket) {
-        try {
-            socket.startHandshake();
-        } catch (IOException e) {
-            throw new PGError(e, "cannot start handshake, cause: %s", e.getMessage());
-        }
-    }
 
     public static SocketChannel open(final SocketAddress address) {
         try {
