@@ -1,6 +1,6 @@
 package org.pg;
 
-import org.pg.error.PGError;
+import org.pg.error.PGErrorIO;
 import org.pg.util.IOTool;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ public class PGDomainSocketChannel implements PGIOChannel {
             final SocketChannel channel = SocketChannel.open(address);
             return new PGDomainSocketChannel(channel);
         } catch (IOException e) {
-            throw new PGError(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
+            throw new PGErrorIO(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
         }
     }
 
