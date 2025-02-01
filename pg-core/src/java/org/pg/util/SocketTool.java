@@ -12,19 +12,6 @@ import java.nio.channels.SocketChannel;
 
 public class SocketTool {
 
-    public static void setSocketOptions(Socket socket, Config config) {
-        try {
-            socket.setTcpNoDelay(config.SOTCPnoDelay());
-            socket.setSoTimeout(config.SOTimeout());
-            socket.setKeepAlive(config.SOKeepAlive());
-            socket.setReceiveBufferSize(config.SOReceiveBufSize());
-            socket.setSendBufferSize(config.SOSendBufSize());
-        }
-        catch (IOException e) {
-            throw new PGError(e, "couldn't set socket options");
-        }
-    }
-
     public static SocketChannel open(final SocketAddress address) {
         try {
             return SocketChannel.open(address);
