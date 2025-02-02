@@ -34,7 +34,6 @@ public record Config(
         int SOSendBufSize,
         int inStreamBufSize,
         int outStreamBufSize,
-        IFn fnNotification,
         IFn fnProtocolVersion,
         IFn fnNotice,
         SSLContext sslContext,
@@ -86,7 +85,6 @@ public record Config(
         int SOSendBufSize = Const.SO_SEND_BUF_SIZE;
         private int inStreamBufSize = Const.IN_STREAM_BUF_SIZE;
         private int outStreamBufSize = Const.OUT_STREAM_BUF_SIZE;
-        private IFn fnNotification;
         private IFn fnProtocolVersion;
         private IFn fnNotice;
         private SSLContext sslContext = null;
@@ -179,15 +177,6 @@ public record Config(
         @SuppressWarnings("unused")
         public Builder binaryEncode(final boolean binaryEncode) {
             this.binaryEncode = binaryEncode;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder fnNotification(final IFn fnNotification) {
-            this.fnNotification = Objects.requireNonNull(
-                    fnNotification,
-                    "Notification function cannot be null"
-            );
             return this;
         }
 
@@ -361,7 +350,6 @@ public record Config(
                     this.SOSendBufSize,
                     this.inStreamBufSize,
                     this.outStreamBufSize,
-                    this.fnNotification,
                     this.fnProtocolVersion,
                     this.fnNotice,
                     this.sslContext,

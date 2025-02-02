@@ -73,7 +73,6 @@
                 out-stream-buf-size
 
                 ;; handlers
-                fn-notification
                 fn-protocol-version
                 fn-notice
 
@@ -163,9 +162,6 @@
 
       ssl-context
       (.sslContext ssl-context)
-
-      fn-notification
-      (.fnNotification fn-notification)
 
       fn-protocol-version
       (.fnProtocolVersion fn-protocol-version)
