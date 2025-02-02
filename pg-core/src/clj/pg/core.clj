@@ -695,15 +695,20 @@
     (.notify conn channel message)))
 
 
-(defn poll-notifications
+(defn notifications?
+  "Returns true when the connection has received notifications that have
+  not yet be used. Drain them with `drain-notifications`.
   "
-  Perform an empty query so that pending notifications
-  get flushed to the client. Doesn't guarantee though they
-  will be sent for sure due to their async nature. The
-  result is a number of notifications got and processed.
+  [^Connection conn]
+  (.hasNotifications conn))
+
+(defn drain-notifications
+  "Fetch and drain all received notifications from the connection. This
+  is a destructive action in that the messages will be removed from
+  the underlying connection.
   "
-  ^Integer [^Connection conn]
-  (.pollNotifications conn))
+  [^Connection conn]
+  (.drainNotifications conn))
 
 
 ;;

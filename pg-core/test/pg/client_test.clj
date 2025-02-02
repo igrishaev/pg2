@@ -755,194 +755,115 @@ from
 
 
 (deftest test-client-listen-notify
+  (pg/with-connection [conn *CONFIG-BIN*]
 
-  (let [capture!
-        (atom [])
+    (let [pid
+          (pg/pid conn)
 
-        fn-notification
-        (fn [msg]
-          (swap! capture! conj msg))
+          channel
+          "!@#$%^&*();\" d'rop \"t'a'ble students--;42"
 
-        config+
-        (assoc *CONFIG-BIN* :fn-notification fn-notification)]
+          res1
+          (pg/listen conn channel)
 
-    (pg/with-connection [conn config+]
+          message
+          "'; \n\t\rdrop table studets--!@#$%^\""
 
-      (let [pid
-            (pg/pid conn)
+          res2
+          (pg/notify conn channel message)
 
-            channel
-            "!@#$%^&*();\" d'rop \"t'a'ble students--;42"
+          res3
+          (pg/unlisten conn channel)
 
-            res1
-            (pg/listen conn channel)
+          res4
+          (pg/notify conn channel "more")]
 
-            message
-            "'; \n\t\rdrop table studets--!@#$%^\""
+      (is (nil? res1))
+      (is (nil? res2))
+      (is (nil? res3))
+      (is (nil? res4))
 
-            res2
-            (pg/notify conn channel message)
+      (is (= true (pg/notifications? conn)))
 
-            res3
-            (pg/unlisten conn channel)
-
-            res4
-            (pg/notify conn channel "more")
-
-            invocations
-            @capture!]
-
-        (is (nil? res1))
-        (is (nil? res2))
-        (is (nil? res3))
-        (is (nil? res4))
-
-        (is (= 1 (count invocations)))
+      (let [messages (pg/drain-notifications conn)]
+        (is (= 1 (count messages)))
 
         (is (= {:msg :NotificationResponse
                 :pid pid
                 :self? true
                 :channel channel
                 :message message}
-               (first invocations)))))))
-
-(deftest test-client-test-poll-updates
-
-  (let [capture!
-        (atom [])
-
-        fn-notification
-        (fn [msg]
-          (swap! capture! conj msg))
-
-        config+
-        (assoc *CONFIG-BIN* :fn-notification fn-notification)
-
-        counter!
-        (atom 0)]
-
-    (pg/with-connection [conn1 config+]
-      (pg/with-connection [conn2 config+]
-
-        (is (zero? (pg/poll-notifications conn2)))
-        (is (zero? (pg/poll-notifications conn1)))
-
-        (pg/listen conn2 "test")
-        (pg/notify conn1 "test" "1")
-        (pg/notify conn1 "test" "2")
-        (pg/notify conn1 "test" "3")
-
-        (while (-> counter! deref (< 3))
-          (let [amount (pg/poll-notifications conn2)]
-            (swap! counter! + amount)))))
-
-    (is (= #{{:channel "test"
-              :msg :NotificationResponse
-              :self? false
-              :message "1"}
-             {:channel "test"
-              :msg :NotificationResponse
-              :self? false
-              :message "2"}
-             {:channel "test"
-              :msg :NotificationResponse
-              :self? false
-              :message "3"}}
-           (->> capture!
-                deref
-                (map (fn [fields]
-                       (dissoc fields :pid)))
-                (set))))))
+               (first messages)))))))
 
 
-(deftest test-client-listen-notify-exception
+(deftest test-client-notify-different-connections
+  (pg/with-connection [conn1 *CONFIG-BIN*]
+    (pg/with-connection [conn2 *CONFIG-BIN*]
+      (is (not (pg/notifications? conn1)))
+      (is (not (pg/notifications? conn2)))
 
-  (let [capture!
-        (atom [])
+      (pg/listen conn2 "test")
+      (pg/notify conn1 "test" "1")
+      (pg/notify conn1 "test" "2")
+      (pg/notify conn1 "test" "3")
 
-        fn-notification
-        (fn [msg]
-          (try
-            (/ 0 0)
-            (swap! capture! conj msg)
-            (catch Throwable e
-              (swap! capture! conj e))))
+      (pg/query conn2 "select 1")
 
-        config+
-        (assoc *CONFIG-TXT* :fn-notification fn-notification)]
+      (is (pg/notifications? conn2))
 
-    (pg/with-connection [conn config+]
-
-      (let [pid
-            (pg/pid conn)
-
-            channel
-            "!@#$%^&*();\" d'rop \"t'a'ble students--;42"
-
-            res1
-            (pg/listen conn channel)
-
-            message
-            "'; \n\t\rdrop table studets--!@#$%^\""
-
-            res2
-            (pg/notify conn channel message)
-
-            res3
-            (pg/unlisten conn channel)
-
-            res4
-            (pg/notify conn channel "more")
-
-            e
-            (-> capture! deref first)]
-
-        (is (nil? res1))
-        (is (nil? res2))
-        (is (nil? res3))
-        (is (nil? res4))
-
-        (is (instance? ArithmeticException e))
-        (is (= "Divide by zero" (ex-message e)))))))
+      (let [pid (pg/pid conn1)
+            notifications (pg/drain-notifications conn2)]
+        (is (= [{:channel "test"
+                 :msg :NotificationResponse
+                 :self? false
+                 :message "1"
+                 :pid pid}
+                {:channel "test"
+                 :msg :NotificationResponse
+                 :self? false
+                 :message "2"
+                 :pid pid}
+                {:channel "test"
+                 :msg :NotificationResponse
+                 :self? false
+                 :message "3"
+                 :pid pid}]
+               notifications))))))
 
 
-(deftest test-client-listen-notify-different-conns
+(deftest test-client-listen-notify-text-conn
+  (pg/with-connection [conn1 *CONFIG-TXT*]
+    (pg/with-connection [conn2 *CONFIG-TXT*]
+      (is (not (pg/notifications? conn1)))
+      (is (not (pg/notifications? conn2)))
 
-  (let [capture!
-        (atom [])
+      (pg/listen conn2 "test")
+      (pg/notify conn1 "test" "1")
+      (pg/notify conn1 "test" "2")
+      (pg/notify conn1 "test" "3")
 
-        fn-notification
-        (fn [msg]
-          (swap! capture! conj msg))
+      (pg/query conn2 "select 1")
 
-        config+
-        (assoc *CONFIG-TXT* :fn-notification fn-notification)]
+      (is (pg/notifications? conn2))
 
-    (pg/with-connection [conn1 *CONFIG-TXT*]
-      (pg/with-connection [conn2 config+]
-
-        (let [pid1 (pg/pid conn1)
-              pid2 (pg/pid conn2)]
-
-          (pg/execute conn2 "listen FOO")
-          (pg/execute conn1 "notify FOO, 'message1'")
-          (pg/execute conn1 "notify FOO, 'message2'")
-
-          (pg/execute conn2 "")
-
-          (is (= (set [{:msg :NotificationResponse
-                        :pid pid1
-                        :self? false
-                        :channel "foo"
-                        :message "message1"}
-
-                       {:msg :NotificationResponse
-                        :pid pid1
-                        :self? false
-                        :channel "foo"
-                        :message "message2"}])
-
-                 (set @capture!))))))))
+      (let [pid (pg/pid conn1)
+            notifications (pg/drain-notifications conn2)]
+        (is (= [{:channel "test"
+                 :msg :NotificationResponse
+                 :self? false
+                 :message "1"
+                 :pid pid}
+                {:channel "test"
+                 :msg :NotificationResponse
+                 :self? false
+                 :message "2"
+                 :pid pid}
+                {:channel "test"
+                 :msg :NotificationResponse
+                 :self? false
+                 :message "3"
+                 :pid pid}]
+               notifications))))))
 
 
 (deftest test-client-broken-query
