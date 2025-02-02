@@ -710,6 +710,15 @@
   [^Connection conn]
   (.drainNotifications conn))
 
+(defn read-available?
+  "Returns true when the connection something to read. Most interactions
+  are request/response, but a some are asynchronous (like notices and
+  notifications). This returns true when there is an asynchronous message
+  waiting to be collected from the server.
+  "
+  [^Connection conn]
+  (.inputIsAvailable conn))
+
 
 ;;
 ;; JSON

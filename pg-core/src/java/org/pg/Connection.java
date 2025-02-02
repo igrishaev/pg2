@@ -1379,4 +1379,12 @@ public final class Connection implements AutoCloseable {
             execute("select pg_notify($1, $2)", params);
         }
     }
+
+    @SuppressWarnings("unused")
+    public boolean inputIsAvailable() {
+        try (TryLock ignored = lock.get()) {
+            return IOTool.available(inStream) > 0;
+        }
+    }
+
 }

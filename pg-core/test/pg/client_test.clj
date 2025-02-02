@@ -803,12 +803,16 @@ from
       (is (not (pg/notifications? conn2)))
 
       (pg/listen conn2 "test")
+      (is (not (pg/read-available? conn2)))
       (pg/notify conn1 "test" "1")
       (pg/notify conn1 "test" "2")
       (pg/notify conn1 "test" "3")
 
+      (is (pg/read-available? conn2))
+
       (pg/query conn2 "select 1")
 
+      (is (not (pg/read-available? conn2)))
       (is (pg/notifications? conn2))
 
       (let [pid (pg/pid conn1)
@@ -828,7 +832,8 @@ from
                  :self? false
                  :message "3"
                  :pid pid}]
-               notifications))))))
+               notifications)))
+      (is (not (pg/notifications? conn2))))))
 
 
 (deftest test-client-listen-notify-text-conn
