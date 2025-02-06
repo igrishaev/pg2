@@ -1,6 +1,6 @@
 package org.pg.util;
 
-import org.pg.error.PGError;
+import org.pg.error.PGErrorIO;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -15,7 +15,7 @@ public class SocketTool {
         try {
             socket.startHandshake();
         } catch (IOException e) {
-            throw new PGError(e, "cannot start handshake, cause: %s", e.getMessage());
+            throw new PGErrorIO(e, "cannot start handshake, cause: %s", e.getMessage());
         }
     }
 
@@ -23,7 +23,7 @@ public class SocketTool {
         try {
             return SocketChannel.open(address);
         } catch (IOException e) {
-            throw new PGError(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
+            throw new PGErrorIO(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
         }
     }
 
@@ -35,7 +35,7 @@ public class SocketTool {
         try {
             return (SSLSocket) sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
         } catch (IOException e) {
-            throw new PGError(e, "cannot open an SSL socket, socket: %s, host: %s, port: %s, cause: %s",
+            throw new PGErrorIO(e, "cannot open an SSL socket, socket: %s, host: %s, port: %s, cause: %s",
                     socket, host, port, e.getMessage());
         }
     }

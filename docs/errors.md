@@ -1,6 +1,8 @@
 # Errors and Exceptions
 
-PG2 introduces two kinds of exceptions: `PGError` and `PGErrorResponse`.
+PG2 introduces 3 kinds of exceptions: `PGError`, `PGErrorResponse`, and
+`PGErrorIO`. `PGError` is the basic one, and both `PGErrorResponse` and
+`PGErrorIO` are inherited from it.
 
 **A `PGError` exception** usually happens on the client side due to wrong values
 or encode/decode errors. Below, the exception pops up because PG2 cannot encode
@@ -20,9 +22,13 @@ an `Object` instance into an integer:
 didn't like what you sent. It might be an syntax issue, wrong parameters, or
 whatever else.
 
-The `ErrorResponse` message carries plenty of fields describing an error, and
-the `PGErrorResponse` class shares them. Namely, the error message renders all
-the fields received from the server:
+**A `PGErrorIO`** exception usually occurs based on connection-related
+issues, for example being unable to connect to the server, or being unable to
+read/write to the connection.
+
+The standard Postgres `ErrorResponse` message carries plenty of fields
+describing an error, and the `PGErrorResponse` class shares them. Namely, the
+error message renders all the fields received from the server:
 
 ~~~clojure
 (pg/execute conn "selekt 1")
