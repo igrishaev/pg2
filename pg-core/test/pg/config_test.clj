@@ -205,7 +205,7 @@
   (is (= {:user "fred",
           :fnNotice clojure.core/println}
          (-> {:connection-uri "postgresql://fred:secret@localhost/test?fn-notice=clojure.core/println"}
-             (options->map [:user :fnNotification])))))
+             (options->map [:user :fnNotice])))))
 
 (deftest test-parse-nested-params
   (is (= {:user "fred",

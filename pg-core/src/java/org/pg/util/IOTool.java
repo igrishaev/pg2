@@ -81,7 +81,7 @@ public final class IOTool {
         try {
             return inputStream.available();
         } catch (IOException e) {
-            throw new PGError(e, "cannot read from the input stream");
+            throw new PGErrorIO(e, "cannot read from the input stream");
         }
     }
 
