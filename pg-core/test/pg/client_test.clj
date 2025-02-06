@@ -785,7 +785,7 @@ from
 
       (is (= true (pg/notifications? conn)))
 
-      (let [messages (pg/drain-notifications conn)]
+      (let [messages (pg/drain-notifications! conn)]
         (is (= 1 (count messages)))
 
         (is (= {:msg :NotificationResponse
@@ -803,20 +803,20 @@ from
       (is (not (pg/notifications? conn2)))
 
       (pg/listen conn2 "test")
-      (is (not (pg/read-available? conn2)))
+      (is (not (pg/notifications? conn2)))
       (pg/notify conn1 "test" "1")
+      (pg/query conn2 "select 1")
       (pg/notify conn1 "test" "2")
       (pg/notify conn1 "test" "3")
 
-      (is (pg/read-available? conn2))
+      (is (pg/notifications? conn2))
 
       (pg/query conn2 "select 1")
 
-      (is (not (pg/read-available? conn2)))
       (is (pg/notifications? conn2))
 
       (let [pid (pg/pid conn1)
-            notifications (pg/drain-notifications conn2)]
+            notifications (pg/drain-notifications! conn2)]
         (is (= [{:channel "test"
                  :msg :NotificationResponse
                  :self? false
@@ -852,7 +852,7 @@ from
       (is (pg/notifications? conn2))
 
       (let [pid (pg/pid conn1)
-            notifications (pg/drain-notifications conn2)]
+            notifications (pg/drain-notifications! conn2)]
         (is (= [{:channel "test"
                  :msg :NotificationResponse
                  :self? false
