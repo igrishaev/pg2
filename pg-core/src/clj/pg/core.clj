@@ -697,28 +697,18 @@
 
 (defn notifications?
   "Returns true when the connection has received notifications that have
-  not yet be used. Drain them with `drain-notifications`.
+  not yet been used. Drain them with `drain-notifications`.
   "
   [^Connection conn]
   (.hasNotifications conn))
 
-(defn drain-notifications
+(defn drain-notifications!
   "Fetch and drain all received notifications from the connection. This
   is a destructive action in that the messages will be removed from
   the underlying connection.
   "
   [^Connection conn]
   (.drainNotifications conn))
-
-(defn read-available?
-  "Returns true when the connection something to read. Most interactions
-  are request/response, but a some are asynchronous (like notices and
-  notifications). This returns true when there is an asynchronous message
-  waiting to be collected from the server.
-  "
-  [^Connection conn]
-  (.inputIsAvailable conn))
-
 
 ;;
 ;; JSON
