@@ -22,7 +22,7 @@ an `Object` instance into an integer:
 didn't like what you sent. It might be an syntax issue, wrong parameters, or
 whatever else.
 
-**A `PGIOException`** exception usually occurs based on connection-related
+**A `PGErrorIO`** exception usually occurs based on connection-related
 issues, for example being unable to connect to the server, or being unable to
 read/write to the connection.
 
