@@ -2,7 +2,7 @@
 ## 0.1.34-SNAPSHOT
 
 - ?
-- #39 Introduce error hierarchy, PGBaseError, PGIOException @jgdavey
+- #39 Introduce error hierarchy and PGErrorIO @jgdavey
 
 ## 0.1.33
 
