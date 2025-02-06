@@ -1,6 +1,6 @@
 package org.pg.util;
 
-import org.pg.error.PGIOException;
+import org.pg.error.PGErrorIO;
 
 import java.io.*;
 import java.net.Socket;
@@ -11,7 +11,7 @@ public final class IOTool {
         try {
             inputStream.close();
         } catch (IOException e) {
-            throw new PGIOException(e, "cannot close input stream, cause: %s", e.getMessage());
+            throw new PGErrorIO(e, "cannot close input stream, cause: %s", e.getMessage());
         }
     }
 
@@ -19,7 +19,7 @@ public final class IOTool {
         try {
             outputStream.close();
         } catch (IOException e) {
-            throw new PGIOException(e, "cannot close output stream, cause: %s", e.getMessage());
+            throw new PGErrorIO(e, "cannot close output stream, cause: %s", e.getMessage());
         }
     }
 
@@ -28,7 +28,7 @@ public final class IOTool {
             inputStream.readNBytes(len);
         }
         catch (IOException e) {
-            throw new PGIOException(e, "Could not skip %s byte(s), cause: %s", len, e.getMessage());
+            throw new PGErrorIO(e, "Could not skip %s byte(s), cause: %s", len, e.getMessage());
         }
     }
 
@@ -37,7 +37,7 @@ public final class IOTool {
             return inputStream.readNBytes(len);
         }
         catch (IOException e) {
-            throw new PGIOException(e, "Could not read %s byte(s), cause: %s", len, e.getMessage());
+            throw new PGErrorIO(e, "Could not read %s byte(s), cause: %s", len, e.getMessage());
         }
     }
 
@@ -48,7 +48,7 @@ public final class IOTool {
         try {
             return inputStream.read(buf);
         } catch (IOException e) {
-            throw new PGIOException(e, "cannot read from the input stream");
+            throw new PGErrorIO(e, "cannot read from the input stream");
         }
     }
 
@@ -61,7 +61,7 @@ public final class IOTool {
         try {
             return inputStream.read(buf, offset, len);
         } catch (IOException e) {
-            throw new PGIOException(e, "cannot read from the input stream");
+            throw new PGErrorIO(e, "cannot read from the input stream");
         }
     }
 
@@ -71,7 +71,7 @@ public final class IOTool {
         try {
             return inputStream.read();
         } catch (IOException e) {
-            throw new PGIOException(e, "cannot read from the input stream");
+            throw new PGErrorIO(e, "cannot read from the input stream");
         }
     }
 
@@ -95,7 +95,7 @@ public final class IOTool {
         try {
             outputStream.write(buf);
         } catch (IOException e) {
-            throw new PGIOException(e, "cannot write a byte array into an output stream");
+            throw new PGErrorIO(e, "cannot write a byte array into an output stream");
         }
     }
 
@@ -103,7 +103,7 @@ public final class IOTool {
         try {
             outputStream.flush();
         } catch (IOException e) {
-            throw new PGIOException(e, "cannot flush an output stream");
+            throw new PGErrorIO(e, "cannot flush an output stream");
         }
     }
 
@@ -116,7 +116,7 @@ public final class IOTool {
         try {
             outputStream.write(buf, offset, len);
         } catch (IOException e) {
-            throw new PGIOException(
+            throw new PGErrorIO(
                     e,
                     "cannot write a byte array into an output stream, offset: %s, len: %s",
                     offset, len
@@ -129,7 +129,7 @@ public final class IOTool {
             return socket.getInputStream();
         }
         catch (IOException e) {
-            throw new PGIOException(
+            throw new PGErrorIO(
                     e,
                     "cannot get an input stream from a socket"
             );
@@ -141,7 +141,7 @@ public final class IOTool {
             return socket.getOutputStream();
         }
         catch (IOException e) {
-            throw new PGIOException(
+            throw new PGErrorIO(
                     e,
                     "cannot get an output stream from a socket"
             );

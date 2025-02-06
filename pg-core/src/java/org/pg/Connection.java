@@ -141,7 +141,7 @@ public final class Connection implements AutoCloseable {
 
     private void setOutputStream(final OutputStream out) {
         final int len = config.outStreamBufSize();
-        outStream = new BufferedOutputStream(out, len);
+        outStream = IOTool.wrapBuf(out, len);
     }
 
     private SocketChannel connectSocket(final SocketAddress address) {

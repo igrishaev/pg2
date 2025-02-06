@@ -10,7 +10,7 @@ import org.pg.util.StrTool;
 
 import java.util.Map;
 
-public final class PGErrorResponse extends PGBaseError implements IExceptionInfo {
+public final class PGErrorResponse extends PGError implements IExceptionInfo {
 
     private final ErrorResponse errorResponse;
     private final String sql;
