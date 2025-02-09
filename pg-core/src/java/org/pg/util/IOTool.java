@@ -75,6 +75,17 @@ public final class IOTool {
         }
     }
 
+    public static int available(
+        final InputStream inputStream
+    ) {
+        try {
+            return inputStream.available();
+        } catch (IOException e) {
+            throw new PGErrorIO(e, "cannot read from the input stream");
+        }
+    }
+
+
     public static BufferedInputStream wrapBuf(final InputStream in, final int size) {
         if (in instanceof BufferedInputStream b) {
             return b;

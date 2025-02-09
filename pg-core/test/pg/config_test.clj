@@ -203,15 +203,9 @@
 
 (deftest test-parse-ref-fields
   (is (= {:user "fred",
-          :fnNotification clojure.core/println}
-         (-> {:connection-uri "postgresql://fred:secret@localhost/test?fn-notification=clojure.core/println"}
-             (options->map [:user :fnNotification]))))
-
-  (is (= {:user "fred",
-          :fnNotification clojure.core/+}
-         (-> {:connection-uri "postgresql://fred:secret@localhost/test?fn-notification=clojure.core/println"
-              :fn-notification clojure.core/+}
-             (options->map [:user :fnNotification])))))
+          :fnNotice clojure.core/println}
+         (-> {:connection-uri "postgresql://fred:secret@localhost/test?fn-notice=clojure.core/println"}
+             (options->map [:user :fnNotice])))))
 
 (deftest test-parse-nested-params
   (is (= {:user "fred",
@@ -225,7 +219,7 @@
 (deftest test-weird-cases
 
   (try
-    (-> {:connection-uri "postgresql://fred:secret@localhost/test?fn-notification=clojure.core/ASDdfg34324"}
+    (-> {:connection-uri "postgresql://fred:secret@localhost/test?fn-notice=clojure.core/ASDdfg34324"}
         (options->map))
     (is false)
     (catch Exception e
@@ -233,7 +227,7 @@
              (ex-message e)))))
 
   (try
-    (-> {:connection-uri "postgresql://fred:secret@localhost/test?fn-notification=ASDdfg34324"}
+    (-> {:connection-uri "postgresql://fred:secret@localhost/test?fn-notice=ASDdfg34324"}
         (options->map))
     (is false)
     (catch Exception e

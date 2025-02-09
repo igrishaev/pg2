@@ -146,7 +146,6 @@
                 ssl-context
                 ;; TODO: ssl certs for ssl context?
 
-                fn-notification
                 fn-protocol-version
                 fn-notice
 
@@ -206,9 +205,6 @@
      (some-> out-stream-buf-size parse-long)
 
      ;; handlers
-
-     :fn-notification
-     (some-> fn-notification parse-ref)
 
      :fn-protocol-version
      (some-> fn-protocol-version parse-ref)
