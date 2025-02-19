@@ -15,7 +15,7 @@ have it installed, try a simple table with the `vector` column:
 
 ~~~clojure
 (def conn
-  (jdbc/get-connection {...}))
+  (pg/connect {...}))
 
 (pg/query conn "create temp table test (id int, items vector)")
 
@@ -42,7 +42,7 @@ flag to the config map as follows:
    :with-pgvector? true})
 
 (def conn
-  (jdbc/get-connection config))
+  (pg/connect config))
 ~~~
 
 Now the strings are parsed into a Clojure vector of `double` values:
