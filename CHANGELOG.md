@@ -1,7 +1,8 @@
 
 ## 0.1.34-SNAPSHOT
 
-- ?
+- #36 Introduce PGIOChannel interface @jgdavey
+- minor refactoring (final, etc) and todos
 - #39 Introduce error hierarchy and PGErrorIO @jgdavey
 
 ## 0.1.33
