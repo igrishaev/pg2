@@ -3,7 +3,6 @@ package org.pg;
 import org.pg.error.PGErrorIO;
 import org.pg.util.IOTool;
 import org.pg.util.SSLTool;
-import org.pg.util.SocketTool;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,15 +16,15 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 
 public class PGSocketChannel implements PGIOChannel {
-    private InetSocketAddress address;
-    private Socket socket;
+    private final InetSocketAddress address;
+    private final Socket socket;
 
-    protected PGSocketChannel(InetSocketAddress address, Socket socket) {
+    protected PGSocketChannel(final InetSocketAddress address, final Socket socket) {
         this.address = address;
         this.socket = socket;
     }
 
-    private static void setSocketOptions(Socket socket, Config config) {
+    private static void setSocketOptions(final Socket socket, final Config config) {
         try {
             socket.setTcpNoDelay(config.SOTCPnoDelay());
             socket.setSoTimeout(config.SOTimeout());
@@ -33,12 +32,12 @@ public class PGSocketChannel implements PGIOChannel {
             socket.setReceiveBufferSize(config.SOReceiveBufSize());
             socket.setSendBufferSize(config.SOSendBufSize());
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             throw new PGErrorIO(e, "couldn't set socket options");
         }
     }
 
-    public static PGSocketChannel connect(Config config) {
+    public static PGSocketChannel connect(final Config config) {
         final int port = config.port();
         final String host = config.host();
         final InetSocketAddress address = new InetSocketAddress(host, port);
@@ -47,7 +46,7 @@ public class PGSocketChannel implements PGIOChannel {
              Socket socket = channel.socket();
              setSocketOptions(socket, config);
             return new PGSocketChannel(address, socket);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
         }
     }
@@ -76,10 +75,10 @@ public class PGSocketChannel implements PGIOChannel {
         socket.close();
     }
 
-    public PGIOChannel upgradeToSSL(SSLContext sslContext) {
-        Integer port = address.getPort();
-        String host = address.getHostName();
-        SSLSocket sslSocket = SSLTool.connect(sslContext, socket, host, port, true);
+    public PGIOChannel upgradeToSSL(final SSLContext sslContext) {
+        final int port = address.getPort();
+        final String host = address.getHostName();
+        final SSLSocket sslSocket = SSLTool.connect(sslContext, socket, host, port, true);
         return new PGSocketChannel(address, sslSocket);
     }
 }

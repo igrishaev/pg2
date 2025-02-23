@@ -10,7 +10,7 @@ public final class IOTool {
     public static void close (final InputStream inputStream) {
         try {
             inputStream.close();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot close input stream, cause: %s", e.getMessage());
         }
     }
@@ -18,7 +18,7 @@ public final class IOTool {
     public static void close (final OutputStream outputStream) {
         try {
             outputStream.close();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot close output stream, cause: %s", e.getMessage());
         }
     }
@@ -27,7 +27,7 @@ public final class IOTool {
         try {
             inputStream.readNBytes(len);
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             throw new PGErrorIO(e, "Could not skip %s byte(s), cause: %s", len, e.getMessage());
         }
     }
@@ -36,7 +36,7 @@ public final class IOTool {
         try {
             return inputStream.readNBytes(len);
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             throw new PGErrorIO(e, "Could not read %s byte(s), cause: %s", len, e.getMessage());
         }
     }
@@ -47,7 +47,7 @@ public final class IOTool {
     ) {
         try {
             return inputStream.read(buf);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot read from the input stream");
         }
     }
@@ -60,7 +60,7 @@ public final class IOTool {
     ) {
         try {
             return inputStream.read(buf, offset, len);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot read from the input stream");
         }
     }
@@ -70,13 +70,13 @@ public final class IOTool {
     ) {
         try {
             return inputStream.read();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot read from the input stream");
         }
     }
 
     public static BufferedInputStream wrapBuf(final InputStream in, final int size) {
-        if (in instanceof BufferedInputStream b) {
+        if (in instanceof final BufferedInputStream b) {
             return b;
         } else {
             return new BufferedInputStream(in, size);
@@ -84,7 +84,7 @@ public final class IOTool {
     }
 
     public static BufferedOutputStream wrapBuf(final OutputStream out, final int size) {
-        if (out instanceof BufferedOutputStream b) {
+        if (out instanceof final BufferedOutputStream b) {
             return b;
         } else {
             return new BufferedOutputStream(out, size);
@@ -94,7 +94,7 @@ public final class IOTool {
     public static void write(final OutputStream outputStream, final byte[] buf) {
         try {
             outputStream.write(buf);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot write a byte array into an output stream");
         }
     }
@@ -102,7 +102,7 @@ public final class IOTool {
     public static void flush(final OutputStream outputStream) {
         try {
             outputStream.flush();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot flush an output stream");
         }
     }
@@ -115,7 +115,7 @@ public final class IOTool {
     ) {
         try {
             outputStream.write(buf, offset, len);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(
                     e,
                     "cannot write a byte array into an output stream, offset: %s, len: %s",
@@ -128,7 +128,7 @@ public final class IOTool {
         try {
             return socket.getInputStream();
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             throw new PGErrorIO(
                     e,
                     "cannot get an input stream from a socket"
@@ -140,7 +140,7 @@ public final class IOTool {
         try {
             return socket.getOutputStream();
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             throw new PGErrorIO(
                     e,
                     "cannot get an output stream from a socket"

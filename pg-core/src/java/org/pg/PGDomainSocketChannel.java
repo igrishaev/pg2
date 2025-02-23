@@ -1,12 +1,10 @@
 package org.pg;
 
 import org.pg.error.PGErrorIO;
-import org.pg.util.IOTool;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
@@ -15,17 +13,17 @@ import java.security.cert.Certificate;
 import javax.net.ssl.SSLContext;
 
 public class PGDomainSocketChannel implements PGIOChannel {
-    private SocketChannel channel;
+    private final SocketChannel channel;
 
-    protected PGDomainSocketChannel(SocketChannel channel) {
+    protected PGDomainSocketChannel(final SocketChannel channel) {
         this.channel = channel;
     }
 
-    public static PGDomainSocketChannel connect(UnixDomainSocketAddress address) {
+    public static PGDomainSocketChannel connect(final UnixDomainSocketAddress address) {
         try {
             final SocketChannel channel = SocketChannel.open(address);
             return new PGDomainSocketChannel(channel);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
         }
     }
@@ -50,7 +48,7 @@ public class PGDomainSocketChannel implements PGIOChannel {
         channel.close();
     }
 
-    public PGIOChannel upgradeToSSL(SSLContext sslContext) {
+    public PGIOChannel upgradeToSSL(final SSLContext sslContext) {
         throw new UnsupportedOperationException("Unable to upgrade domain socket to SSL");
     }
 }
