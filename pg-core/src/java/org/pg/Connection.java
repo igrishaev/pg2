@@ -49,6 +49,7 @@ public final class Connection implements AutoCloseable {
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
     private final Map<String, PreparedStatement> PSCache;
+    private final List<NotificationResponse> notifications;
 
     @Override
     public boolean equals (Object other) {
@@ -67,6 +68,7 @@ public final class Connection implements AutoCloseable {
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
         this.PSCache = new HashMap<>();
+        this.notifications = new LinkedList<>();
     }
 
     public static Connection connect(final Config config, final boolean sendStartup) {
@@ -783,17 +785,22 @@ public final class Connection implements AutoCloseable {
         flush();
         final Result res = new Result(executeParams, sql);
         while (true) {
-            final IServerMessage msg = readMessage(res.hasException());
-            if (Debug.isON) {
-                Debug.debug(" -> %s", msg);
-            }
-            handleMessage(msg, res);
+            final IServerMessage msg = readAndHandle(res);
             if (isEnough(msg, isAuth)) {
                 break;
             }
         }
         res.maybeThrowError();
         return res;
+    }
+
+    private IServerMessage readAndHandle (Result res) {
+        final IServerMessage msg = readMessage(res.hasException());
+        if (Debug.isON) {
+            Debug.debug(" -> %s", msg);
+        }
+        handleMessage(msg, res);
+        return msg;
     }
 
     private void interactStartup () {
@@ -1116,14 +1123,48 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handleNotificationResponse (final NotificationResponse msg, final Result res) {
-        // Sometimes, it's important to know whether a notification
-        // was triggered by the current connection or another.
-        final boolean isSelf = msg.pid() == pid;
-        res.incNotificationCount();
-        handlerCall(
-                config.fnNotification(),
-                msg.toClojure().assoc(KW.self_QMARK, isSelf)
-        );
+        this.notifications.add(msg);
+    }
+
+    @SuppressWarnings("unused")
+    public int checkNotificationCount() {
+        try (TryLock ignored = lock.get()) {
+            final Result res = new Result(ExecuteParams.INSTANCE, "");
+            while (IOTool.available(inStream) > 0) {
+                final IServerMessage msg = readAndHandle(res);
+                if ( msg instanceof NotificationResponse ||
+                     msg instanceof NoticeResponse ||
+                     msg instanceof ParameterStatus ) {
+                    continue;
+                } else {
+                    throw new PGError("Unexpected message: %s", msg);
+                }
+            }
+            res.maybeThrowError();
+
+            return notifications.size();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public boolean hasNotifications() {
+        return this.checkNotificationCount() > 0;
+    }
+
+    @SuppressWarnings("unused")
+    public List<Object> drainNotifications () {
+        try (TryLock ignored = lock.get()) {
+            List<Object> notifications = this.notifications.stream()
+                .map(msg -> {
+                    // Sometimes, it's important to know whether a notification
+                    // was triggered by the current connection or another.
+                    final boolean isSelf = msg.pid() == pid;
+                    return (Object) msg.toClojure().assoc(KW.self_QMARK, isSelf);
+                })
+                .toList();
+            this.notifications.clear();
+            return notifications;
+        }
     }
 
     private void handleNoticeResponse (final NoticeResponse msg) {
@@ -1365,15 +1406,4 @@ public final class Connection implements AutoCloseable {
             execute("select pg_notify($1, $2)", params);
         }
     }
-
-    @SuppressWarnings("unused")
-    public int pollNotifications() {
-        try (TryLock ignored = lock.get()) {
-            final String sql = "";
-            sendQuery(sql);
-            final Result res = interact(sql);
-            return res.getNotificationCount();
-        }
-    }
-
 }
