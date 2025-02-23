@@ -464,6 +464,13 @@ from
                    QUERY_SELECT_JSON))))
 
   #_
+  (with-title "pg random JSON select UNIX socket"
+    (pg/with-connection [conn (assoc pg-config :unix-socket? true)]
+      (quick-bench
+          (pg/execute conn
+                      QUERY_SELECT_JSON))))
+
+  #_
   (with-title "pg insert values in TRANSACTION"
     (pg/with-connection [conn pg-config]
       (pg/with-statement [stmt

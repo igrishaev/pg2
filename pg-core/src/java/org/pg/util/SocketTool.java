@@ -11,18 +11,10 @@ import java.nio.channels.SocketChannel;
 
 public class SocketTool {
 
-    public static void startHandshake(final SSLSocket socket) {
-        try {
-            socket.startHandshake();
-        } catch (IOException e) {
-            throw new PGErrorIO(e, "cannot start handshake, cause: %s", e.getMessage());
-        }
-    }
-
     public static SocketChannel open(final SocketAddress address) {
         try {
             return SocketChannel.open(address);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
         }
     }
@@ -34,11 +26,10 @@ public class SocketTool {
                                  final boolean autoClose) {
         try {
             return (SSLSocket) sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot open an SSL socket, socket: %s, host: %s, port: %s, cause: %s",
                     socket, host, port, e.getMessage());
         }
     }
-
 
 }

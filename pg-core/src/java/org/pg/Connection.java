@@ -16,12 +16,7 @@ import org.pg.processor.IProcessor;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
-import java.net.InetSocketAddress;
-import java.nio.channels.Channels;
-import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -32,7 +27,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.*;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 
 public final class Connection implements AutoCloseable {
@@ -45,7 +39,7 @@ public final class Connection implements AutoCloseable {
     private int pid;
     private int secretKey;
     private TXStatus txStatus;
-    private Socket socket;
+    private PGIOChannel ioChannel;
     private String unixSocketPath;
     private InputStream inStream;
     private OutputStream outStream;
@@ -144,11 +138,9 @@ public final class Connection implements AutoCloseable {
         outStream = IOTool.wrapBuf(out, len);
     }
 
-    private SocketChannel connectSocket(final SocketAddress address) {
-        final SocketChannel channel = SocketTool.open(address);
-        setInputStream(Channels.newInputStream(channel));
-        setOutputStream(Channels.newOutputStream(channel));
-        return channel;
+    private void connectStreams() {
+        setInputStream(ioChannel.getInputStream());
+        setOutputStream(ioChannel.getOutputStream());
     }
 
     public void connectUnixSocket() {
@@ -158,8 +150,8 @@ public final class Connection implements AutoCloseable {
             throw new PGError("unix socket doesn't exist: %s", path);
         }
         this.unixSocketPath = path;
-        final SocketAddress address = UnixDomainSocketAddress.of(path);
-        connectSocket(address);
+        this.ioChannel = PGDomainSocketChannel.connect(UnixDomainSocketAddress.of(path));
+        connectStreams();
     }
 
     private void initTypeMapping() {
@@ -206,19 +198,6 @@ public final class Connection implements AutoCloseable {
             }
         }
 
-    }
-
-    private static void setSocketOptions(final Socket socket, final Config config) {
-        try {
-            socket.setTcpNoDelay(config.SOTCPnoDelay());
-            socket.setSoTimeout(config.SOTimeout());
-            socket.setKeepAlive(config.SOKeepAlive());
-            socket.setReceiveBufferSize(config.SOReceiveBufSize());
-            socket.setSendBufferSize(config.SOSendBufSize());
-        }
-        catch (IOException e) {
-            throw new PGError(e, "couldn't set socket options");
-        }
     }
 
     private int nextInt () {
@@ -356,11 +335,6 @@ public final class Connection implements AutoCloseable {
         };
     }
 
-    private static final String[] SSLProtocols = new String[] {
-            "TLSv1.2",
-            "TLSv1.1",
-            "TLSv1"
-    };
 
     private SSLContext getSSLContext() {
         final SSLContext configContext = config.sslContext();
@@ -377,22 +351,8 @@ public final class Connection implements AutoCloseable {
 
     private void upgradeToSSL() {
         final SSLContext sslContext = getSSLContext();
-        final SSLSocket sslSocket = SocketTool.open(
-                sslContext,
-                socket,
-                config.host(),
-                config.port(),
-                true
-        );
-
-        setInputStream(IOTool.getInputStream(sslSocket));
-        setOutputStream(IOTool.getOutputStream(sslSocket));
-
-        sslSocket.setUseClientMode(true);
-        sslSocket.setEnabledProtocols(SSLProtocols);
-        SocketTool.startHandshake(sslSocket);
-
-        socket = sslSocket;
+        this.ioChannel = ioChannel.upgradeToSSL(sslContext);
+        connectStreams();
         isSSL = true;
     }
 
@@ -405,7 +365,7 @@ public final class Connection implements AutoCloseable {
             try {
                 upgradeToSSL();
             }
-            catch (Throwable e) {
+            catch (final Throwable e) {
                 closeIO();
                 throw new PGError(
                         e,
@@ -428,13 +388,8 @@ public final class Connection implements AutoCloseable {
     }
 
     private void connectInetUnlocked() {
-        final int port = getPort();
-        final String host = getHost();
-        final SocketAddress address = new InetSocketAddress(host, port);
-        final SocketChannel channel = connectSocket(address);
-        // save socket for further SSL upgrade
-        socket = channel.socket();
-        setSocketOptions(socket, config);
+        this.ioChannel = PGSocketChannel.connect(config);
+        connectStreams();
         if (config.useSSL()) {
             preSSLStage();
         }
@@ -772,7 +727,7 @@ public final class Connection implements AutoCloseable {
             sendSync();
             try {
                 return interact(executeParams, sql).getResult();
-            } catch (PGErrorResponse e) {
+            } catch (final PGErrorResponse e) {
                 if (Objects.equals(e.getCode(), ErrCode.PREPARED_STATEMENT_NOT_FOUND)) {
                     if (Debug.isON) {
                         Debug.debug("Prepared statement is missing: %s, error: %s",
@@ -853,45 +808,45 @@ public final class Connection implements AutoCloseable {
 
     private void handleMessage (final IServerMessage msg, final Result res) {
 
-        if (msg instanceof DataRow x) {
+        if (msg instanceof final DataRow x) {
             handleDataRow(x, res);
-        } else if (msg instanceof NotificationResponse x) {
+        } else if (msg instanceof final NotificationResponse x) {
             handleNotificationResponse(x, res);
         } else if (msg instanceof AuthenticationCleartextPassword) {
             handleAuthenticationCleartextPassword();
-        } else if (msg instanceof AuthenticationSASL x) {
+        } else if (msg instanceof final AuthenticationSASL x) {
             handleAuthenticationSASL(x, res);
-        } else if (msg instanceof AuthenticationSASLContinue x) {
+        } else if (msg instanceof final AuthenticationSASLContinue x) {
             handleAuthenticationSASLContinue(x, res);
-        } else if (msg instanceof AuthenticationSASLFinal x) {
+        } else if (msg instanceof final AuthenticationSASLFinal x) {
             handleAuthenticationSASLFinal(x, res);
-        } else if (msg instanceof NoticeResponse x) {
+        } else if (msg instanceof final NoticeResponse x) {
             handleNoticeResponse(x);
-        } else if (msg instanceof ParameterStatus x) {
+        } else if (msg instanceof final ParameterStatus x) {
             handleParameterStatus(x);
-        } else if (msg instanceof RowDescription x) {
+        } else if (msg instanceof final RowDescription x) {
             handleRowDescription(x, res);
-        } else if (msg instanceof ReadyForQuery x) {
+        } else if (msg instanceof final ReadyForQuery x) {
             handleReadyForQuery(x);
-        } else if (msg instanceof PortalSuspended x) {
+        } else if (msg instanceof final PortalSuspended x) {
             handlePortalSuspended(x, res);
-        } else if (msg instanceof AuthenticationMD5Password x) {
+        } else if (msg instanceof final AuthenticationMD5Password x) {
             handleAuthenticationMD5Password(x);
-        } else if (msg instanceof NegotiateProtocolVersion x) {
+        } else if (msg instanceof final NegotiateProtocolVersion x) {
             handleNegotiateProtocolVersion(x);
-        } else if (msg instanceof CommandComplete x) {
+        } else if (msg instanceof final CommandComplete x) {
             handleCommandComplete(x, res);
-        } else if (msg instanceof ErrorResponse x) {
+        } else if (msg instanceof final ErrorResponse x) {
             handleErrorResponse(x, res);
-        } else if (msg instanceof BackendKeyData x) {
+        } else if (msg instanceof final BackendKeyData x) {
             handleBackendKeyData(x);
-        } else if (msg instanceof ParameterDescription x) {
+        } else if (msg instanceof final ParameterDescription x) {
             handleParameterDescription(x, res);
         } else if (msg instanceof ParseComplete) {
             noop();
         } else if (msg instanceof CopyOutResponse) {
             noop();
-        } else if (msg instanceof CopyData x) {
+        } else if (msg instanceof final CopyData x) {
             handleCopyData(x, res);
         } else if (msg instanceof CopyInResponse) {
             handleCopyInResponse(res);
@@ -927,7 +882,7 @@ public final class Connection implements AutoCloseable {
         }
         try {
             return MessageDigest.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new PGError(e,
                     "no such digest algorithm: %s, source: %s",
                     algorithm, signatureAlgorithm
@@ -937,14 +892,14 @@ public final class Connection implements AutoCloseable {
 
     // stolen from jorsol/pgjdbc, file ScramAuthenticator.java
     private byte[] getChannelBindingData() {
-        if (socket instanceof SSLSocket sslSocket) {
-            final Certificate peerCert = SSLTool.getPeerCertificate(sslSocket);
-            if (peerCert instanceof X509Certificate cert) {
+        if (isSSL) {
+            final Certificate peerCert = ioChannel.getPeerCertificate();
+            if (peerCert instanceof final X509Certificate cert) {
                 final String sigAlgName = cert.getSigAlgName();
                 final MessageDigest digest = getDigestAlgorithm(sigAlgName);
                 try {
                     return digest.digest(cert.getEncoded());
-                } catch (CertificateEncodingException e) {
+                } catch (final CertificateEncodingException e) {
                     throw new PGError("cannot get encoded payload of certificate: %s", cert);
                 }
             } else {
@@ -1071,7 +1026,7 @@ public final class Connection implements AutoCloseable {
                     try {
                         line = Copy.encodeRowCSV(rows.next(), executeParams, codecParams);
                     }
-                    catch (Throwable caught) {
+                    catch (final Throwable caught) {
                         e = caught;
                         break;
                     }
@@ -1087,7 +1042,7 @@ public final class Connection implements AutoCloseable {
                     try {
                         buf = Copy.encodeRowBin(rows.next(), executeParams, codecParams);
                     }
-                    catch (Throwable caught) {
+                    catch (final Throwable caught) {
                         e = caught;
                         break;
                     }
@@ -1192,7 +1147,7 @@ public final class Connection implements AutoCloseable {
     private void handleCopyData (final CopyData msg, final Result res) {
         try {
             handleCopyDataUnsafe(msg, res);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             res.setException(e);
         }
     }
@@ -1261,7 +1216,7 @@ public final class Connection implements AutoCloseable {
         try {
             handleDataRowUnsafe(msg, res);
         }
-        catch (Throwable e) {
+        catch (final Throwable e) {
             res.setException(e);
         }
     }

@@ -41,10 +41,6 @@ public final class HexTool {
         };
     }
 
-    public static byte[] parseHex(final String input) {
-        return parseHex(input, 0, input.length());
-    }
-
     public static byte[] parseHex(final String input, final int fromIndex) {
         return parseHex(input, fromIndex, input.length());
     }

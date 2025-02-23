@@ -3,8 +3,6 @@ package org.pg.codec;
 import org.pg.error.PGError;
 import org.pg.util.HexTool;
 
-import java.nio.ByteBuffer;
-
 public class PrimitiveTxt {
 
     public static String encodeBool(final boolean b) {

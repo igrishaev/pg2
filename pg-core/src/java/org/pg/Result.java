@@ -77,7 +77,7 @@ public final class Result {
     private Node current;
     private Throwable exception;
     public ScramSha256.Pipeline scramPipeline;
-    private String sql;
+    private final String sql;
     private int notificationCount;
 
     public static String[] unifyKeys (final String[] oldKeys) {

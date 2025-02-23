@@ -64,10 +64,6 @@ public final class BBTool {
         return new String(buf.array(), pos, len, charset);
     }
 
-    public static Boolean isEnd (final ByteBuffer buf) {
-        return buf.remaining() == 0;
-    }
-
     public static String getRestString (final ByteBuffer buf, Charset charset) {
         return new String(
                 buf.array(),
@@ -82,11 +78,6 @@ public final class BBTool {
         final byte[] bytes = new byte[size];
         buf.get(bytes);
         return bytes;
-    }
-
-    public static String getString(final ByteBuffer buf, final Charset charset) {
-        final int offset = buf.arrayOffset() + buf.position();
-        return new String(buf.array(), offset, buf.limit(), charset);
     }
 
     public static void skip (final ByteBuffer buf, final int offset) {
