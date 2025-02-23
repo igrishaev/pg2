@@ -14,6 +14,7 @@ public final class NumericBin {
 
     private final static int NUMERIC_POS = 0x0000;
     private final static int NUMERIC_NEG = 0x4000;
+    @SuppressWarnings("unused")
     private final static int NUMERIC_NAN = 0xC000;
 
     public static ByteBuffer encode(final BigDecimal value) {
@@ -31,7 +32,7 @@ public final class NumericBin {
         bb.putShort((short) digits.size());
         bb.putShort((short) (digits.size() - fractionGroups - 1));
         bb.putShort((short) (value.signum() == 1 ? NUMERIC_POS : NUMERIC_NEG));
-        bb.putShort((short) (fractionDigits > 0 ? fractionDigits : 0));
+        bb.putShort((short) (Math.max(fractionDigits, 0)));
 
         for (int pos = digits.size() - 1; pos >= 0; pos--) {
             final int valueToWrite = digits.get(pos);
@@ -56,7 +57,6 @@ public final class NumericBin {
 
         BigInteger num = BigInteger.ZERO;
 
-        final short[] shorts = new short[digitsNum];
         for (short i = 0; i < digitsNum; i++) {
             BigInteger base = TEN_THOUSAND.pow((int) digitsNum - i - 1);
             BigInteger digit = BigInteger.valueOf(bb.getShort());

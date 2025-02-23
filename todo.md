@@ -5,6 +5,8 @@
 
 - use PG* env vars
 
+- fix pg.server namespace
+
 - ssl:
   - switch to ssl by default?
   - ssl 3rd-party tests

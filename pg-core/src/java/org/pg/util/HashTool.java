@@ -48,12 +48,6 @@ public final class HashTool {
         return Base64.getEncoder().encode(input);
     }
 
-    public static String base64encode (final String input) {
-        final byte[] bytesIn = input.getBytes(StandardCharsets.UTF_8);
-        final byte[] bytesOut = Base64.getEncoder().encode(bytesIn);
-        return new String(bytesOut, StandardCharsets.UTF_8);
-    }
-
     public static byte[] HmacSha256 (final byte[] secret, final byte[] message) {
         final Mac mac = getMac("HmacSHA256");
         final SecretKeySpec sks = new SecretKeySpec(secret, "HmacSHA256");

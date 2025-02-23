@@ -1,4 +1,5 @@
 (ns pg.server
+  ;; TODO: fix cider-ns-refresh with this ns
   (:import
    org.postgresql.util.PGobject
    java.sql.PreparedStatement

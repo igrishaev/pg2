@@ -353,7 +353,6 @@ public final class Connection implements AutoCloseable {
         final SSLContext sslContext = getSSLContext();
         this.ioChannel = ioChannel.upgradeToSSL(sslContext);
         connectStreams();
-
         isSSL = true;
     }
 
@@ -366,7 +365,7 @@ public final class Connection implements AutoCloseable {
             try {
                 upgradeToSSL();
             }
-            catch (Throwable e) {
+            catch (final Throwable e) {
                 closeIO();
                 throw new PGError(
                         e,
@@ -728,7 +727,7 @@ public final class Connection implements AutoCloseable {
             sendSync();
             try {
                 return interact(executeParams, sql).getResult();
-            } catch (PGErrorResponse e) {
+            } catch (final PGErrorResponse e) {
                 if (Objects.equals(e.getCode(), ErrCode.PREPARED_STATEMENT_NOT_FOUND)) {
                     if (Debug.isON) {
                         Debug.debug("Prepared statement is missing: %s, error: %s",
@@ -809,45 +808,45 @@ public final class Connection implements AutoCloseable {
 
     private void handleMessage (final IServerMessage msg, final Result res) {
 
-        if (msg instanceof DataRow x) {
+        if (msg instanceof final DataRow x) {
             handleDataRow(x, res);
-        } else if (msg instanceof NotificationResponse x) {
+        } else if (msg instanceof final NotificationResponse x) {
             handleNotificationResponse(x, res);
         } else if (msg instanceof AuthenticationCleartextPassword) {
             handleAuthenticationCleartextPassword();
-        } else if (msg instanceof AuthenticationSASL x) {
+        } else if (msg instanceof final AuthenticationSASL x) {
             handleAuthenticationSASL(x, res);
-        } else if (msg instanceof AuthenticationSASLContinue x) {
+        } else if (msg instanceof final AuthenticationSASLContinue x) {
             handleAuthenticationSASLContinue(x, res);
-        } else if (msg instanceof AuthenticationSASLFinal x) {
+        } else if (msg instanceof final AuthenticationSASLFinal x) {
             handleAuthenticationSASLFinal(x, res);
-        } else if (msg instanceof NoticeResponse x) {
+        } else if (msg instanceof final NoticeResponse x) {
             handleNoticeResponse(x);
-        } else if (msg instanceof ParameterStatus x) {
+        } else if (msg instanceof final ParameterStatus x) {
             handleParameterStatus(x);
-        } else if (msg instanceof RowDescription x) {
+        } else if (msg instanceof final RowDescription x) {
             handleRowDescription(x, res);
-        } else if (msg instanceof ReadyForQuery x) {
+        } else if (msg instanceof final ReadyForQuery x) {
             handleReadyForQuery(x);
-        } else if (msg instanceof PortalSuspended x) {
+        } else if (msg instanceof final PortalSuspended x) {
             handlePortalSuspended(x, res);
-        } else if (msg instanceof AuthenticationMD5Password x) {
+        } else if (msg instanceof final AuthenticationMD5Password x) {
             handleAuthenticationMD5Password(x);
-        } else if (msg instanceof NegotiateProtocolVersion x) {
+        } else if (msg instanceof final NegotiateProtocolVersion x) {
             handleNegotiateProtocolVersion(x);
-        } else if (msg instanceof CommandComplete x) {
+        } else if (msg instanceof final CommandComplete x) {
             handleCommandComplete(x, res);
-        } else if (msg instanceof ErrorResponse x) {
+        } else if (msg instanceof final ErrorResponse x) {
             handleErrorResponse(x, res);
-        } else if (msg instanceof BackendKeyData x) {
+        } else if (msg instanceof final BackendKeyData x) {
             handleBackendKeyData(x);
-        } else if (msg instanceof ParameterDescription x) {
+        } else if (msg instanceof final ParameterDescription x) {
             handleParameterDescription(x, res);
         } else if (msg instanceof ParseComplete) {
             noop();
         } else if (msg instanceof CopyOutResponse) {
             noop();
-        } else if (msg instanceof CopyData x) {
+        } else if (msg instanceof final CopyData x) {
             handleCopyData(x, res);
         } else if (msg instanceof CopyInResponse) {
             handleCopyInResponse(res);
@@ -883,7 +882,7 @@ public final class Connection implements AutoCloseable {
         }
         try {
             return MessageDigest.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new PGError(e,
                     "no such digest algorithm: %s, source: %s",
                     algorithm, signatureAlgorithm
@@ -895,12 +894,12 @@ public final class Connection implements AutoCloseable {
     private byte[] getChannelBindingData() {
         if (isSSL) {
             final Certificate peerCert = ioChannel.getPeerCertificate();
-            if (peerCert instanceof X509Certificate cert) {
+            if (peerCert instanceof final X509Certificate cert) {
                 final String sigAlgName = cert.getSigAlgName();
                 final MessageDigest digest = getDigestAlgorithm(sigAlgName);
                 try {
                     return digest.digest(cert.getEncoded());
-                } catch (CertificateEncodingException e) {
+                } catch (final CertificateEncodingException e) {
                     throw new PGError("cannot get encoded payload of certificate: %s", cert);
                 }
             } else {
@@ -1027,7 +1026,7 @@ public final class Connection implements AutoCloseable {
                     try {
                         line = Copy.encodeRowCSV(rows.next(), executeParams, codecParams);
                     }
-                    catch (Throwable caught) {
+                    catch (final Throwable caught) {
                         e = caught;
                         break;
                     }
@@ -1043,7 +1042,7 @@ public final class Connection implements AutoCloseable {
                     try {
                         buf = Copy.encodeRowBin(rows.next(), executeParams, codecParams);
                     }
-                    catch (Throwable caught) {
+                    catch (final Throwable caught) {
                         e = caught;
                         break;
                     }
@@ -1148,7 +1147,7 @@ public final class Connection implements AutoCloseable {
     private void handleCopyData (final CopyData msg, final Result res) {
         try {
             handleCopyDataUnsafe(msg, res);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             res.setException(e);
         }
     }
@@ -1217,7 +1216,7 @@ public final class Connection implements AutoCloseable {
         try {
             handleDataRowUnsafe(msg, res);
         }
-        catch (Throwable e) {
+        catch (final Throwable e) {
             res.setException(e);
         }
     }

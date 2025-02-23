@@ -1,5 +1,7 @@
 package org.pg.codec;
 
+import org.pg.util.BBTool;
+
 import java.nio.ByteBuffer;
 import java.time.*;
 import java.time.temporal.ChronoField;
@@ -59,9 +61,7 @@ public final class DateTimeBin {
     //
     public static ByteBuffer encodeTIME (final Temporal t) {
         final long micros = t.getLong(ChronoField.MICRO_OF_DAY);
-        final ByteBuffer buf = ByteBuffer.allocate(8);
-        buf.putLong(micros);
-        return buf;
+        return BBTool.ofLong(micros);
     }
 
     public static ByteBuffer encodeTIMETZ (final Temporal t) {
@@ -84,18 +84,11 @@ public final class DateTimeBin {
         final long secs = t.getLong(ChronoField.INSTANT_SECONDS) - PG_DIFF.toSeconds();
         final long micros = t.getLong(ChronoField.MICRO_OF_SECOND);
         final long sum = secs * 1_000_000 + micros;
-        final ByteBuffer buf = ByteBuffer.allocate(8);
-        buf.putLong(sum);
-        return buf;
+        return BBTool.ofLong(sum);
     }
 
     public static ByteBuffer encodeTIMESTAMPTZ (final Temporal t) {
-        final long secs = t.getLong(ChronoField.INSTANT_SECONDS) - PG_DIFF.toSeconds();
-        final long micros = t.getLong(ChronoField.MICRO_OF_SECOND);
-        final long sum = secs * 1_000_000 + micros;
-        final ByteBuffer buf = ByteBuffer.allocate(8);
-        buf.putLong(sum);
-        return buf;
+        return encodeTIMESTAMP(t);
     }
 
 }
