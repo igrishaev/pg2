@@ -71,7 +71,7 @@ public final class JSON {
         try {
             return objectMapper.readValue(input, Object.class);
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             return decodeError(e);
         }
     }
@@ -86,7 +86,7 @@ public final class JSON {
         try {
             return objectMapper.readValue(inputStream, Object.class);
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             return decodeError(e);
         }
     }
@@ -101,7 +101,7 @@ public final class JSON {
         try {
             return objectMapper.readValue(reader, Object.class);
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             return decodeError(e);
         }
     }
@@ -120,7 +120,7 @@ public final class JSON {
         final int len = buf.limit() - offset;
         try {
             return objectMapper.readValue(buf.array(), offset, len, Object.class);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             return decodeError(e);
         }
     }
@@ -128,7 +128,7 @@ public final class JSON {
     public static void writeValue (final ObjectMapper objectMapper, final OutputStream outputStream, final Object value) {
         try {
             objectMapper.writeValue(outputStream, value);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             encodeError(e, value);
         }
     }
@@ -140,7 +140,7 @@ public final class JSON {
     public static void writeValue (final ObjectMapper objectMapper, final Writer writer, final Object value) {
         try {
             objectMapper.writeValue(writer, value);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             encodeError(e, value);
         }
     }
@@ -154,7 +154,7 @@ public final class JSON {
     public static String writeValueToString (final ObjectMapper objectMapper, final Object value) {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             encodeError(e, value);
             return ""; // mute "might be null" note
         }

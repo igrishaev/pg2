@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 
 public record Config(
         String user,
@@ -48,7 +49,8 @@ public record Config(
         int poolBorrowConnTimeoutMs,
         Map<String, IProcessor> typeMap,
         boolean useUnixSocket,
-        String unixSocketPath
+        String unixSocketPath,
+        ExecutorService executor
 ) {
 
     public ConnType getConnType() {
@@ -101,6 +103,7 @@ public record Config(
         private final Map<String, IProcessor> typeMap = new HashMap<>();
         private boolean useUnixSocket = false;
         private String unixSocketPath = null;
+        private ExecutorService executor = Const.executor;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -184,19 +187,13 @@ public record Config(
 
         @SuppressWarnings("unused")
         public Builder fnNotification(final IFn fnNotification) {
-            this.fnNotification = Objects.requireNonNull(
-                    fnNotification,
-                    "Notification function cannot be null"
-            );
+            this.fnNotification = fnNotification;
             return this;
         }
 
         @SuppressWarnings("unused")
         public Builder fnNotice(final IFn fnNotice) {
-            this.fnNotice = Objects.requireNonNull(
-                    fnNotice,
-                    "Notice function cannot be null"
-            );
+            this.fnNotice = fnNotice;
             return this;
         }
 
@@ -333,6 +330,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder executor(final ExecutorService executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -375,7 +378,8 @@ public record Config(
                     this.poolBorrowConnTimeoutMs,
                     this.typeMap,
                     this.useUnixSocket,
-                    this.unixSocketPath
+                    this.unixSocketPath,
+                    this.executor
             );
         }
     }
