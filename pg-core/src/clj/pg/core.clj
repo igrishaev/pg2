@@ -695,6 +695,15 @@
     (.notify conn channel message)))
 
 
+(defn notify-json
+  "
+  Send a JSON-encoded message to a given channel.
+  "
+  [src ^String channel data]
+  (with-conn [conn src]
+    (.notifyJSON conn channel data)))
+
+
 (defn poll-notifications
   "
   Perform an empty query so that pending notifications
@@ -704,6 +713,42 @@
   "
   ^Integer [^Connection conn]
   (.pollNotifications conn))
+
+
+(defn has-notifications?
+  "
+  Check if there are any unprocessed notifications
+  stored in a given connection.
+  "
+  [^Connection conn]
+  (.hasNotifications conn))
+
+
+(defn has-notices?
+  "
+  Check if there are any unprocessed notices
+  stored in a given connection.
+  "
+  [^Connection conn]
+  (.hasNotices conn))
+
+
+(defn drain-notifications
+  "
+  Return a vector of notifications (Clojure maps)
+  cleaning the inner storage.
+  "
+  [^Connection conn]
+  (.drainNotifications conn))
+
+
+(defn drain-notices
+  "
+  Return a vector of notices (Clojure maps)
+  cleaning the inner storage.
+  "
+  [^Connection conn]
+  (.drainNotices conn))
 
 
 ;;

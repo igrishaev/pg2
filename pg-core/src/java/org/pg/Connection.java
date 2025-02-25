@@ -50,8 +50,8 @@ public final class Connection implements AutoCloseable {
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
     private final Map<String, PreparedStatement> PSCache;
-    private List<Object> notifications = new ArrayList<>(0);
-    private List<Object> notices = new ArrayList<>(0);
+    private final List<Object> notifications = new ArrayList<>(0);
+    private final List<Object> notices = new ArrayList<>(0);
 
     @Override
     public boolean equals (Object other) {
@@ -1164,7 +1164,7 @@ public final class Connection implements AutoCloseable {
     public IPersistentVector drainNotifications() {
         try (final TryLock ignored = lock.get()) {
             final IPersistentVector result = PersistentVector.create(notifications);
-            notifications = Collections.emptyList();
+            notifications.clear();
             return result;
         }
     }
@@ -1173,7 +1173,7 @@ public final class Connection implements AutoCloseable {
     public IPersistentVector drainNotices() {
         try (final TryLock ignored = lock.get()) {
             final IPersistentVector result = PersistentVector.create(notices);
-            notices = Collections.emptyList();
+            notices.clear();
             return result;
         }
     }

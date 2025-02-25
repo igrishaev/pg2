@@ -806,6 +806,56 @@ from
                 :message message}
                (first invocations)))))))
 
+
+(deftest test-client-notification-store
+  (let [channel "hello_test"]
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/listen conn channel)
+      (pg/notify conn channel "foo")
+      (pg/notify conn channel "bar")
+
+      (is (pg/has-notifications? conn))
+
+      (let [pid
+            (pg/pid conn)
+
+            notifications1
+            (pg/drain-notifications conn)
+
+            _
+            (is (false? (pg/has-notifications? conn)))
+
+            _
+            (pg/notify conn channel "lol")
+
+            notifications2
+            (pg/drain-notifications conn)]
+
+        (is (false? (pg/has-notifications? conn)))
+
+        (is (= [{:channel channel
+                 :msg :NotificationResponse
+                 :self? true
+                 :pid pid
+                 :message "foo"}
+                {:channel channel
+                 :msg :NotificationResponse
+                 :self? true
+                 :pid pid
+                 :message "bar"}]
+               notifications1))
+
+        (is (= [{:channel channel
+                 :msg :NotificationResponse
+                 :self? true
+                 :pid pid
+                 :message "lol"}]
+               notifications2))))))
+
+;; test notices
+;; test executor
+;; test notify-json
+
 (deftest test-client-test-poll-updates
 
   (let [capture!
@@ -852,7 +902,9 @@ from
                 deref
                 (map (fn [fields]
                        (dissoc fields :pid)))
-                (set))))))
+                (set))))
+
+    (is (= 3 @counter!))))
 
 
 (deftest test-client-listen-notify-exception
