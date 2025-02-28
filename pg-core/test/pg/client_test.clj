@@ -1,30 +1,31 @@
 (ns pg.client-test
   (:import
-   java.io.ByteArrayOutputStream
-   java.io.ByteArrayInputStream
-   java.io.File
-   java.io.InputStream
-   java.io.OutputStream
-   java.time.Instant
-   java.time.LocalDate
-   java.time.LocalDateTime
-   java.time.LocalTime
-   java.time.OffsetDateTime
-   java.time.OffsetTime
-   java.util.ArrayList
-   java.util.Date
-   java.util.HashMap
-   java.util.concurrent.ExecutionException
-   org.pg.clojure.RowMap
-   org.pg.error.PGError
-   org.pg.error.PGErrorResponse)
+   (java.io ByteArrayOutputStream
+            ByteArrayInputStream
+            File
+            InputStream
+            OutputStream)
+   (java.time Instant
+              LocalDate
+              LocalDateTime
+              LocalTime
+              OffsetDateTime
+              OffsetTime)
+   (java.util ArrayList
+              Date
+              HashMap)
+   (java.util.concurrent Executors
+                         ExecutionException)
+   (org.pg.clojure RowMap)
+   (org.pg.error PGError
+                 PGErrorResponse))
   (:require
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [com.stuartsierra.component :as component]
-   honey.sql.pg-ops
+   [honey.sql.pg-ops]
    [jsonista.core :as j]
    [less.awful.ssl :as ssl]
    [pg.component :as pgc]
@@ -852,9 +853,83 @@ from
                  :message "lol"}]
                notifications2))))))
 
-;; test notices
-;; test executor
-;; test notify-json
+
+(deftest test-client-notify-json
+  (let [channel "hello_test"]
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/listen conn channel)
+      (pg/notify-json conn channel {:foo 123 :bar [1 2 3]})
+      (pg/notify-json conn channel [nil true false "test"])
+
+      (is (pg/has-notifications? conn))
+
+      (let [notifications
+            (pg/drain-notifications conn)
+
+            processed
+            (->> notifications
+                 (mapv :message)
+                 (mapv json/read-string))]
+
+        (is (= [{:bar [1 2 3] :foo 123}
+                [nil true false "test"]]
+               processed))))))
+
+
+(deftest test-client-notify-with-executor
+  (let [channel "hello_test"
+        capture (atom [])]
+    (with-open [executor (Executors/newFixedThreadPool 1)]
+      (pg/with-connection [conn (assoc *CONFIG-TXT*
+                                       :fn-notification
+                                       (fn [msg]
+                                         (swap! capture conj msg))
+                                       :executor executor)]
+        (pg/listen conn channel)
+
+        (pg/notify conn channel "hello")
+        (pg/notify conn channel "world")
+
+        (Thread/sleep 100)
+
+        (is (not (pg/has-notifications? conn)))
+
+        (is (= ["hello"
+                "world"]
+               (mapv :message @capture)))))))
+
+
+(deftest test-client-notice-store
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (pg/query conn "commit")
+
+    (is (pg/has-notices? conn))
+
+    (let [pid
+          (pg/pid conn)
+
+          notices1
+          (pg/drain-notices conn)
+
+          _
+          (is (false? (pg/has-notices? conn)))
+
+          _
+          (pg/query conn "commit")
+
+          notices2
+          (pg/drain-notices conn)]
+
+      (is (false? (pg/has-notices? conn)))
+
+      (is (= ["there is no transaction in progress"]
+             (mapv :message notices1)))
+
+      (is (= ["there is no transaction in progress"]
+             (mapv :message notices2))))))
+
 
 (deftest test-client-test-poll-updates
 
