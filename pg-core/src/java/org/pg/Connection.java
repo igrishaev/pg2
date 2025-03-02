@@ -9,6 +9,7 @@ import org.pg.codec.CodecParams;
 import org.pg.enums.*;
 import org.pg.error.PGError;
 import org.pg.error.PGErrorResponse;
+import org.pg.json.JSON;
 import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
@@ -49,6 +50,8 @@ public final class Connection implements AutoCloseable {
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
     private final Map<String, PreparedStatement> PSCache;
+    private final List<Object> notifications = new ArrayList<>(0);
+    private final List<Object> notices = new ArrayList<>(0);
 
     @Override
     public boolean equals (Object other) {
@@ -1114,26 +1117,65 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handlerCall (final IFn f, final Object arg) {
-        if (f != null) {
-            Agent.soloExecutor.submit(() -> {
-                f.invoke(arg);
-            });
-        }
+        config.executor().submit(() -> {
+            f.invoke(arg);
+        });
     }
 
     private void handleNotificationResponse (final NotificationResponse msg, final Result res) {
+        res.incNotificationCount();
         // Sometimes, it's important to know whether a notification
         // was triggered by the current connection or another.
         final boolean isSelf = msg.pid() == pid;
-        res.incNotificationCount();
-        handlerCall(
-                config.fnNotification(),
-                msg.toClojure().assoc(KW.self_QMARK, isSelf)
-        );
+        final Object obj = msg.toClojure().assoc(KW.self_QMARK, isSelf);
+        final IFn handler = config.fnNotification();
+        if (handler == null) {
+            notifications.add(obj);
+        } else {
+            handlerCall(handler, obj);
+        }
     }
 
     private void handleNoticeResponse (final NoticeResponse msg) {
-        handlerCall(config.fnNotice(), msg.toClojure());
+        final IFn handler = config.fnNotice();
+        final Object obj = msg.toClojure();
+        if (handler == null) {
+            notices.add(obj);
+        } else {
+            handlerCall(handler, obj);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public boolean hasNotifications() {
+        try (final TryLock ignored = lock.get()) {
+            return !notifications.isEmpty();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public boolean hasNotices() {
+        try (final TryLock ignored = lock.get()) {
+            return !notices.isEmpty();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public IPersistentVector drainNotifications() {
+        try (final TryLock ignored = lock.get()) {
+            final IPersistentVector result = PersistentVector.create(notifications);
+            notifications.clear();
+            return result;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public IPersistentVector drainNotices() {
+        try (final TryLock ignored = lock.get()) {
+            final IPersistentVector result = PersistentVector.create(notices);
+            notices.clear();
+            return result;
+        }
     }
 
     private void handleNegotiateProtocolVersion (final NegotiateProtocolVersion msg) {
@@ -1369,6 +1411,14 @@ public final class Connection implements AutoCloseable {
         try (TryLock ignored = lock.get()) {
             final List<Object> params = List.of(channel, message);
             execute("select pg_notify($1, $2)", params);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public void notifyJSON (final String channel, final Object data) {
+        try (TryLock ignored = lock.get()) {
+            final String payload = JSON.writeValueToString(config.objectMapper(), data);
+            notify(channel, payload);
         }
     }
 

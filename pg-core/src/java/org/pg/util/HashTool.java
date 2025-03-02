@@ -15,7 +15,7 @@ public final class HashTool {
     public static MessageDigest getDigest (final String algorithm) {
         try {
             return MessageDigest.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new PGError(e, "cannot find %s message digest", algorithm);
         }
     }
@@ -23,7 +23,7 @@ public final class HashTool {
     public static Mac getMac (final String algorithm) {
         try {
             return Mac.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new PGError(e, "cannot find %s Mac instance", algorithm);
         }
     }
@@ -53,7 +53,7 @@ public final class HashTool {
         final SecretKeySpec sks = new SecretKeySpec(secret, "HmacSHA256");
         try {
             mac.init(sks);
-        } catch (InvalidKeyException e) {
+        } catch (final InvalidKeyException e) {
             throw new PGError(e, "cannot initiate MAC with a key");
         }
         return mac.doFinal(message);

@@ -10,8 +10,8 @@ public class StrTool {
     public static String truncate(final String text, final int limit) {
         final int len = text.length();
         final int pos = Math.min(len, limit);
-        final boolean is_truncated = pos < len;
-        return text.substring(0, pos) + (is_truncated ? "..." : "");
+        final boolean isTruncated = pos < len;
+        return text.substring(0, pos) + (isTruncated ? "..." : "");
     }
 
     public static String truncate(final String text) {

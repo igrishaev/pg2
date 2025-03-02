@@ -106,6 +106,7 @@
                 ;; misc
                 cancel-timeout-ms
                 protocol-version
+                executor
 
                 ;; pool
                 pool-min-size
@@ -116,7 +117,6 @@
                 ;; types
                 type-map
                 enums
-
                 with-pgvector?]}
         params
 
@@ -223,6 +223,9 @@
 
       with-pgvector?
       (.usePGVector)
+
+      executor
+      (.executor executor)
 
       :finally
       (.build))))
