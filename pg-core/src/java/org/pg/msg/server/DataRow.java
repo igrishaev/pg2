@@ -10,6 +10,10 @@ public record DataRow (
         ByteBuffer buf
 ) implements IServerMessage {
 
+    /*
+    Return a plain int array where [i] is the offset
+    of a data entry and [i + 1] is its length.
+     */
     public int[] ToC() {
         buf.rewind();
         final short size = buf.getShort();

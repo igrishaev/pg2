@@ -103,9 +103,8 @@ public final class Result {
         this(executeParams, null);
     }
 
-    public Result incNotificationCount() {
+    public void incNotificationCount() {
         notificationCount += 1;
-        return this;
     }
 
     public int getNotificationCount() {
