@@ -172,32 +172,38 @@ public final class Connection implements AutoCloseable {
 
         final ExecuteParams executeParams = ExecuteParams.builder()
                 .params(sqlParams)
+                .reducer(new AFn() {
+                    @Override
+                    public Object invoke() {
+                        return null;
+                    }
+                    @Override
+                    public Object invoke(final Object ignored, final Object row) {
+                        RowMap rm = (RowMap) row;
+                        final int oid = (int) rm.get(KW.oid);
+                        final String type = (String) rm.get(KW.type);
+                        final IProcessor iProcessor = sourceMap.get(type);
+                        if (iProcessor != null) {
+                            codecParams.setProcessor(oid, iProcessor);
+                        }
+                        return null;
+                    }
+                    @Override
+                    public Object invoke(final Object ignored) {
+                        return null;
+                    }
+                })
                 .build();
 
-        APersistentVector result = (APersistentVector) execute(
-                "select pg_type.oid, pg_namespace.nspname || '.' || pg_type.typname as type " +
-                        "from pg_type, pg_namespace " +
-                        "where " +
-                        "pg_type.typnamespace = pg_namespace.oid " +
-                        "and pg_namespace.nspname || '.' || pg_type.typname in (" +
+        execute("select pg_type.oid, pg_namespace.nspname || '.' || pg_type.typname as type " +
+                "from pg_type, pg_namespace " +
+                "where " +
+                "pg_type.typnamespace = pg_namespace.oid " +
+                "and pg_namespace.nspname || '.' || pg_type.typname in (" +
                         String.join(", ", qMarks) +
-                        ");",
+                ")",
                 executeParams
         );
-
-        int oid;
-        String type;
-
-        for (final Object x: result) {
-            RowMap rm = (RowMap) x;
-            oid = (int) rm.get(KW.oid);
-            type = (String) rm.get(KW.type);
-            IProcessor iProcessor = sourceMap.get(type);
-            if (iProcessor != null) {
-                codecParams.setProcessor(oid, iProcessor);
-            }
-        }
-
     }
 
     private int nextInt () {
@@ -213,7 +219,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    public UUID getId() {
+    public UUID getId () {
         return id;
     }
 

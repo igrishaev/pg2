@@ -1,10 +1,8 @@
 package org.pg.reducer;
 
 import clojure.lang.AFn;
+import clojure.lang.ITransientVector;
 import clojure.lang.PersistentVector;
-// TODO: use clojure.java.api!
-import clojure.core$persistent_BANG_;
-import clojure.core$conj_BANG_;
 
 public final class Default extends AFn {
 
@@ -17,11 +15,11 @@ public final class Default extends AFn {
 
     @Override
     public Object invoke(final Object acc) {
-        return core$persistent_BANG_.invokeStatic(acc);
+        return ((ITransientVector) acc).persistent();
     }
 
     @Override
     public Object invoke(final Object acc, final Object row) {
-        return core$conj_BANG_.invokeStatic(acc, row);
+        return ((ITransientVector) acc).conj(row);
     }
 }

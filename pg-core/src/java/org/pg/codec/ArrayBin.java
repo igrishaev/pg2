@@ -2,7 +2,7 @@ package org.pg.codec;
 
 import clojure.lang.ITransientCollection;
 import clojure.lang.PersistentVector;
-import clojure.core$get_in;
+import org.pg.clojure.CljAPI;
 import org.pg.error.PGError;
 import org.pg.type.Matrix;
 import org.pg.processor.IProcessor;
@@ -49,7 +49,7 @@ public final class ArrayBin {
 
         for (int i = 0; i < totalCount; i++) {
             Matrix.incPath(dims, path);
-            Object val = core$get_in.invokeStatic(matrix, path);
+            Object val = CljAPI.getIn.invoke(matrix, path);
             if (val == null) {
                 writeInt32(out, -1);
             } else {

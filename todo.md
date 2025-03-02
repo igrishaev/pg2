@@ -60,7 +60,6 @@ config & uri: rename pg-params to params?
 - MERGE result
 - UnparsedTxt, UnparsedBin types?
 - test reduced?
-- refactor Clojure API
 - refactor Datetime enc/dec
 - pg.ring package (move json middleware)
 - ring jdbc session middleware

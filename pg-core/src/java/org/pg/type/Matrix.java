@@ -2,9 +2,9 @@ package org.pg.type;
 
 import clojure.lang.Indexed;
 import clojure.lang.PersistentVector;
+import org.pg.clojure.CljAPI;
 import org.pg.error.PGError;
 
-import clojure.core$assoc_in;
 import clojure.lang.RT;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +13,7 @@ import java.util.List;
 public final class Matrix {
 
     public static Object assocIn(final Object matrix, final int[] path, final Object value) {
-        return core$assoc_in.invokeStatic(matrix, path, value);
+        return CljAPI.assocIn.invoke(matrix, path, value);
     }
 
     public static int[] tail (final int[] array) {
@@ -116,17 +116,4 @@ public final class Matrix {
 
         return matrix;
     }
-
-    public static void main(String... args) {
-//        Object matrix = create(1, 1, 3, 3, 99);
-//        System.out.println(matrix);
-//        System.out.println(Arrays.toString(getDims(matrix)));
-//        System.out.println(getTotalCount(new int[]{1, 2, 3}));
-//        System.out.println(Arrays.toString(initPath(4)));
-        // System.out.println(assocVecIn(PersistentVector.EMPTY, new int[]{0, 0, 0}, 42));
-        // System.out.println(assocVec(PersistentVector.create(1, 2), 2, 42));
-
-
-    }
-
 }

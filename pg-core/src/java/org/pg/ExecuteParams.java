@@ -1,6 +1,7 @@
 package org.pg;
 
 import clojure.lang.IFn;
+import org.pg.clojure.CljAPI;
 import org.pg.enums.CopyFormat;
 import org.pg.enums.OID;
 import org.pg.reducer.*;
@@ -8,9 +9,6 @@ import org.pg.reducer.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
-
-import clojure.core$identity;
-import clojure.core$keyword;
 
 public record ExecuteParams (
         List<Object> params,
@@ -51,7 +49,7 @@ public record ExecuteParams (
         private int[] OIDs = new int[0];
         private IFn reducer = Default.INSTANCE;
         private long maxRows = 0;
-        private IFn fnKeyTransform = new core$keyword();
+        private IFn fnKeyTransform = CljAPI.keyword;
         private OutputStream outputStream = OutputStream.nullOutputStream();
         private InputStream inputStream = InputStream.nullInputStream();
         private boolean binaryEncode = false;
@@ -231,11 +229,5 @@ public record ExecuteParams (
                     copyInKeys
             );
         }
-    }
-
-    public static void main(String[] args) {
-        final IFn id = new core$identity();
-        System.out.println(id.invoke(42));
-        System.out.println(new ExecuteParams.Builder().maxRows(3).build());
     }
 }
