@@ -4,6 +4,8 @@
 - #36 Introduce PGIOChannel interface @jgdavey
 - minor refactoring (final, etc) and todos
 - #39 Introduce error hierarchy and PGErrorIO @jgdavey
+- refactor clojure API calls;
+- slightly boost the Default reducer
 
 ## 0.1.33
 
