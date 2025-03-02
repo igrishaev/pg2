@@ -17,6 +17,9 @@
 - prep stmt: track pid, conn-id
 - prep stmt: check if belongs?
 
+- read all types at startup?
+  - oids -> string/keyword types?
+
 .~/.pgpass
 https://www.postgresql.org/docs/current/libpq-pgpass.html
 
