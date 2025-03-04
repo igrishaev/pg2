@@ -1,6 +1,9 @@
 package org.pg;
 
+import clojure.lang.Agent;
 import org.pg.enums.SSLValidation;
+
+import java.util.concurrent.ExecutorService;
 
 public final class Const {
     public static final int PROTOCOL_VERSION = 196608;
@@ -36,4 +39,5 @@ public final class Const {
     public static final int POOL_SIZE_MAX = 8;
     public static final int POOL_EXPIRE_THRESHOLD_MS = 1000 * 60 * 5;
     public static final int POOL_BORROW_CONN_TIMEOUT_MS = 1000 * 15;
+    public static final ExecutorService executor = Agent.soloExecutor;
 }

@@ -53,6 +53,8 @@ config & uri: rename pg-params to params?
 
 - oid: coerce long to int
 
+- copy in with custom types (pgvector)?
+
 - decode records
 - enable binary by default?
 - oid wrapper?
