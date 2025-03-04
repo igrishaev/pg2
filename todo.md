@@ -45,6 +45,10 @@ config & uri: rename pg-params to params?
 - postgis support
 - json wrapper not needed
 
+- rename Result.Node to Subresult?
+- refactor row locks
+- test citext
+
 - fix pg11
 - add pg17
 
