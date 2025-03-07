@@ -2855,6 +2855,35 @@ drop table %1$s;
     (is (= [{:res 42}] res2))))
 
 
+(deftest test-row-lock-assoc
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (let [rows
+          (pg/query conn "select * from generate_series(0, 3)")
+
+          fut
+          (future
+            (pg/query conn "select pg_sleep(5)"))
+
+          _
+          (Thread/sleep 100)
+
+          t1
+          (System/nanoTime)
+
+          row
+          (-> rows first (assoc :foo 42))
+
+          t2
+          (System/nanoTime)]
+
+      (is (= 1
+             row))
+
+      (is (= 1
+             (- t2 t1))))))
+
+
 (deftest test-copy-out-broken-stream
 
   (pg/with-connection [conn *CONFIG-TXT*]

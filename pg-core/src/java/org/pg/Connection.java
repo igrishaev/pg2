@@ -1250,7 +1250,6 @@ public final class Connection implements AutoCloseable {
         final Map<Object, Short> keysIndex = res.getCurrentKeysIndex();
         final Object[] keys = res.getCurrentKeys();
         final RowMap rowMap = new RowMap(
-                lock,
                 msg,
                 rowDescription,
                 keys,

@@ -10,6 +10,7 @@ import org.pg.util.TryLock;
 import java.nio.ByteBuffer;
 import java.util.*;
 
+// TODO: extend persistent vector too? implement deref?
 public final class RowMap extends APersistentMap {
 
     private int[] ToC = null;
@@ -22,15 +23,14 @@ public final class RowMap extends APersistentMap {
     private final Object[] parsedValues;
     private final boolean[] parsedKeys;
 
-    public RowMap(final TryLock lock,
-                  final DataRow dataRow,
+    public RowMap(final DataRow dataRow,
                   final RowDescription rowDescription,
                   final Object[] keys,
                   final Map<Object, Short> keysIndex,
                   final CodecParams codecParams
     ) {
         final int count = dataRow.count();
-        this.lock = lock;
+        this.lock = new TryLock();
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
         this.keys = keys;
@@ -68,12 +68,11 @@ public final class RowMap extends APersistentMap {
         }
 
         try (TryLock ignored = lock.get()) {
-            return getValueByIndex_unlocked(i);
+            return getValueByIndexUnlocked(i);
         }
     }
 
-
-    private Object getValueByIndex_unlocked (final int i) {
+    private Object getValueByIndexUnlocked(final int i) {
 
         if (ToC == null) {
             ToC = dataRow.ToC();
