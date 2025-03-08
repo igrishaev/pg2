@@ -237,11 +237,6 @@
   (instance? PreparedStatement x))
 
 
-(defmethod print-method PreparedStatement
-  [^PreparedStatement conn ^Writer writer]
-  (.write writer (.toString conn)))
-
-
 (defn prepare
   "
   Get a new prepared statement from a raw SQL string.
@@ -664,6 +659,17 @@
 (defmethod print-method Pool
   [^Pool pool ^Writer writer]
   (.write writer (.toString pool)))
+
+
+(defmethod print-method PreparedStatement
+  [^PreparedStatement conn ^Writer writer]
+  (.write writer (.toString conn)))
+
+
+;; RowMap implements both IPersistentMap and IDeref
+(prefer-method print-method
+               clojure.lang.IPersistentMap
+               clojure.lang.IDeref)
 
 
 ;;

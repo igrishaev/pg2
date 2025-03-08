@@ -8,6 +8,7 @@
 - refactor clojure API calls;
 - slightly boost the Default reducer
 - RowMap: do not share the Connection's TryLock instance
+- RowMap: implement Indexed and IDeref interfaces
 
 ## 0.1.33
 

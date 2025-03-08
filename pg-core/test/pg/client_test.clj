@@ -2163,15 +2163,17 @@ drop table %1$s;
           (pg/query conn "select x from generate_series(0, 3) as gen(x)")
 
           row
-          (first rows)]
+          (first rows)
 
-      #_
-      (is (= 1
-             (str row)))
+          [x y z]
+          row]
 
-      (is (= 1
-             (pr-str row)
-             ))
+      (is (= 0 x))
+      (is (= nil y))
+      (is (= nil z))
+
+      (is (= "{:x 0}" (str row)))
+      (is (= "{:x 0}" (pr-str row)))
 
       (is (= [{:x 0} {:x 1} {:x 2} {:x 3}]
              (mapv deref rows)))
@@ -2189,10 +2191,14 @@ drop table %1$s;
       (is (= ::foo (nth row 99 ::foo)))
 
       (is (= 0 (get row :x)))
+      (is (= 0 (:x row)))
+      (is (= 99 (:y row 99)))
+      (is (= 0 (row :x)))
+      (is (nil? (row :y)))
+      (is (= 99 (row :y 99)))
       (is (nil? (get row :y))))))
 
 
-;; TODO: fix it
 (deftest test-acc-as-edn
 
   (pg/with-connection [conn *CONFIG-TXT*]
