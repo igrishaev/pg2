@@ -1,11 +1,17 @@
 
+- docs
+  - notify & listen
+  - rowmap (deref, nth)
+
 - user & database default values?
+- CodecParams (setParam) make it mutable
+- use PG* env vars
+- fix pg.server namespace
+
+- prep stmt: track pid, conn-id
+- prep stmt: check if belongs?
 
 - linting (kondo + clfjmt)
-
-- use PG* env vars
-
-- fix pg.server namespace
 
 - ssl:
   - switch to ssl by default?
@@ -13,9 +19,6 @@
 
 - geom types: json, edn
 - geom types: toString -> toSQL
-
-- prep stmt: track pid, conn-id
-- prep stmt: check if belongs?
 
 - read all types at startup?
   - oids -> string/keyword types?
@@ -29,7 +32,6 @@ https://www.postgresql.org/docs/current/libpq-pgpass.html
 
 - unix socket local tests
 - ssl services local tests
-- CodecParams (setParam) make it mutable
 
 - connection URI:
   - docs
@@ -47,8 +49,6 @@ config & uri: rename pg-params to params?
 
 - rename Result.Node to Subresult?
 - test citext
-
-- RowMap: implement vector and ideref?
 
 - fix pg11
 - add pg17
