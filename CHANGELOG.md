@@ -7,6 +7,7 @@
 - #45 better notifications and notices processing
 - refactor clojure API calls;
 - slightly boost the Default reducer
+- RowMap: do not share the Connection's TryLock instance
 
 ## 0.1.33
 

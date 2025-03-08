@@ -46,8 +46,9 @@ config & uri: rename pg-params to params?
 - json wrapper not needed
 
 - rename Result.Node to Subresult?
-- refactor row locks
 - test citext
+
+- RowMap: implement vector and ideref?
 
 - fix pg11
 - add pg17
@@ -82,7 +83,6 @@ config & uri: rename pg-params to params?
 - test parallel connection access
 - bulk statement execute
 - pg.jdbc batch
-- refactor locks? on Clojure level
 - async support?
 
 migrations

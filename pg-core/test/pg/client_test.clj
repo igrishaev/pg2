@@ -2856,6 +2856,12 @@ drop table %1$s;
 
 
 (deftest test-row-lock-assoc
+  ;; Ensure that assoc'ing a value to a lazy row doesn't
+  ;; lock the origin connection. Before, the RowMap shared
+  ;; the same lock instance that the Connection has. It
+  ;; lead to locking a connection when the row is being
+  ;; read, and vice versa. Now, each RowMap instance has
+  ;; its own TryLock instance.
   (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [rows
@@ -2863,7 +2869,7 @@ drop table %1$s;
 
           fut
           (future
-            (pg/query conn "select pg_sleep(5)"))
+            (pg/query conn "select pg_sleep(3)"))
 
           _
           (Thread/sleep 100)
@@ -2875,13 +2881,17 @@ drop table %1$s;
           (-> rows first (assoc :foo 42))
 
           t2
-          (System/nanoTime)]
+          (System/nanoTime)
 
-      (is (= 1
+          diff
+          (- t2 t1)]
+
+      @fut
+
+      (is (= {:generate_series 0 :foo 42}
              row))
 
-      (is (= 1
-             (- t2 t1))))))
+      (is (<= 0 diff 500000)))))
 
 
 (deftest test-copy-out-broken-stream
