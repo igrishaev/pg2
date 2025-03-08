@@ -10,10 +10,10 @@ import org.pg.util.TryLock;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-// TODO: extend persistent vector too? implement deref?
-public final class RowMap extends APersistentMap {
+public final class RowMap extends APersistentMap implements Indexed, IDeref {
 
     private int[] ToC = null;
+    private final int count;
     private final TryLock lock;
     private final DataRow dataRow;
     private final RowDescription rowDescription;
@@ -29,7 +29,7 @@ public final class RowMap extends APersistentMap {
                   final Map<Object, Short> keysIndex,
                   final CodecParams codecParams
     ) {
-        final int count = dataRow.count();
+        this.count = dataRow.count();
         this.lock = new TryLock();
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
@@ -42,31 +42,33 @@ public final class RowMap extends APersistentMap {
 
     private IPersistentMap toClojureMap() {
         ITransientMap result = PersistentHashMap.EMPTY.asTransient();
+        short i;
         for (final Map.Entry<Object, Short> mapEntry: keysIndex.entrySet()) {
-            result = result.assoc(mapEntry.getKey(), getValueByIndex(mapEntry.getValue()));
+            i = mapEntry.getValue();
+            result = result.assoc(mapEntry.getKey(), getValueByIndex(i));
         }
         return result.persistent();
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings("unused") // pg.fold
     public Map<Object, Object> toJavaMap() {
         final Map<Object, Object> result = new HashMap<>(keysIndex.size());
+        short i;
         for (final Map.Entry<Object, Short> mapEntry: keysIndex.entrySet()) {
-            result.put(mapEntry.getKey(), getValueByIndex(mapEntry.getValue()));
+            i = mapEntry.getValue();
+            result.put(mapEntry.getKey(), getValueByIndex(i));
         }
         return result;
     }
 
-    public Object getValueByIndex (final int i) {
+    private boolean missesIndex(final int i) {
+        return 0 > i || i >= count;
+    }
 
-        if (i < 0 || i >= parsedKeys.length) {
-            return null;
-        }
-
+    private Object getValueByIndex(final int i) {
         if (parsedKeys[i]) {
             return parsedValues[i];
         }
-
         try (TryLock ignored = lock.get()) {
             return getValueByIndexUnlocked(i);
         }
@@ -110,12 +112,12 @@ public final class RowMap extends APersistentMap {
         return value;
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings("unused") // pg.fold
     public IPersistentVector keys () {
         return PersistentVector.create(keys);
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings("unused") // pg.fold
     public IPersistentCollection vals () {
         ITransientCollection result = PersistentVector.EMPTY.asTransient();
         for (final Object key: keys) {
@@ -175,7 +177,7 @@ public final class RowMap extends APersistentMap {
 
     @Override
     public int count() {
-        return dataRow.count();
+        return count;
     }
 
     @Override
@@ -192,5 +194,26 @@ public final class RowMap extends APersistentMap {
     @SuppressWarnings("rawtypes")
     public Iterator iterator() {
         return toClojureMap().iterator();
+    }
+
+    @Override
+    public Object nth(final int i) {
+        if (missesIndex(i)) {
+            throw new IndexOutOfBoundsException(String.format("the row map misses index %s", i));
+        }
+        return getValueByIndex(i);
+    }
+
+    @Override
+    public Object nth(final int i, final Object notFound) {
+        if (missesIndex(i)) {
+            return notFound;
+        }
+        return getValueByIndex(i);
+    }
+
+    @Override
+    public Object deref() {
+        return toClojureMap();
     }
 }

@@ -2157,6 +2157,42 @@ drop table %1$s;
       (is (= ["1" "5"] res3)))))
 
 
+(deftest test-row-map-methods
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [rows
+          (pg/query conn "select x from generate_series(0, 3) as gen(x)")
+
+          row
+          (first rows)]
+
+      #_
+      (is (= 1
+             (str row)))
+
+      (is (= 1
+             (pr-str row)
+             ))
+
+      (is (= [{:x 0} {:x 1} {:x 2} {:x 3}]
+             (mapv deref rows)))
+
+      (is (= {:x 0} @row))
+      (is (= 0 (nth row 0)))
+
+      (try
+        (nth row 99)
+        (is false)
+        (catch IndexOutOfBoundsException e
+          (is (= "the row map misses index 99"
+                 (ex-message e)))))
+
+      (is (= ::foo (nth row 99 ::foo)))
+
+      (is (= 0 (get row :x)))
+      (is (nil? (get row :y))))))
+
+
+;; TODO: fix it
 (deftest test-acc-as-edn
 
   (pg/with-connection [conn *CONFIG-TXT*]
