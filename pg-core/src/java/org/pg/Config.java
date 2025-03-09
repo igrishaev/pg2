@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 public record Config(
         String user,
@@ -50,7 +50,7 @@ public record Config(
         Map<String, IProcessor> typeMap,
         boolean useUnixSocket,
         String unixSocketPath,
-        ExecutorService executor
+        Executor executor
 ) {
 
     public ConnType getConnType() {
@@ -103,7 +103,7 @@ public record Config(
         private final Map<String, IProcessor> typeMap = new HashMap<>();
         private boolean useUnixSocket = false;
         private String unixSocketPath = null;
-        private ExecutorService executor = Const.executor;
+        private Executor executor = Const.executor;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -330,7 +330,7 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
-        public Builder executor(final ExecutorService executor) {
+        public Builder executor(final Executor executor) {
             this.executor = executor;
             return this;
         }

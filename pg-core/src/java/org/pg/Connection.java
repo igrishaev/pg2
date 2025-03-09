@@ -1117,7 +1117,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handlerCall (final IFn f, final Object arg) {
-        config.executor().submit(() -> {
+        config.executor().execute(() -> {
             f.invoke(arg);
         });
     }
