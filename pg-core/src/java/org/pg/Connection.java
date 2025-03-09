@@ -29,6 +29,7 @@ import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.*;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutorService;
 
 public final class Connection implements AutoCloseable {
 
@@ -45,7 +46,7 @@ public final class Connection implements AutoCloseable {
     private InputStream inStream;
     private OutputStream outStream;
     private final Map<String, String> params;
-    private CodecParams codecParams;
+    private final CodecParams codecParams;
     private boolean isSSL = false;
     private final TryLock lock = new TryLock();
     private boolean isClosed = false;
@@ -64,9 +65,11 @@ public final class Connection implements AutoCloseable {
     }
 
     private Connection(final Config config) {
+        final CodecParams codecParams = CodecParams.create();
+        codecParams.objectMapper(config.objectMapper());
         this.config = config;
         this.params = new HashMap<>();
-        this.codecParams = CodecParams.builder().objectMapper(config.objectMapper()).build();
+        this.codecParams = codecParams;
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
         this.PSCache = new HashMap<>();
@@ -187,7 +190,7 @@ public final class Connection implements AutoCloseable {
                         final String type = (String) rm.get(KW.type);
                         final IProcessor iProcessor = sourceMap.get(type);
                         if (iProcessor != null) {
-                            codecParams.setProcessor(oid, iProcessor);
+                            codecParams.processor(oid, iProcessor);
                         }
                         return null;
                     }
@@ -268,23 +271,11 @@ public final class Connection implements AutoCloseable {
     private void setParam (final String param, final String value) {
         params.put(param, value);
         switch (param) {
-            case "client_encoding" -> {
-                final Charset clientCharset = Charset.forName(value);
-                codecParams = codecParams.withClientCharset(clientCharset);
-            }
-            case "server_encoding" -> {
-                final Charset serverCharset = Charset.forName(value);
-                codecParams = codecParams.withServerCharset(serverCharset);
-            }
-            case "DateStyle" -> codecParams = codecParams.withDateStyle(value);
-            case "TimeZone" -> {
-                final ZoneId timeZone = ZoneId.of(value);
-                codecParams = codecParams.withTimeZoneId(timeZone);
-            }
-            case "integer_datetimes" -> {
-                final boolean integerDatetime = value.equals("on");
-                codecParams = codecParams.withIntegerDatetime(integerDatetime);
-            }
+            case "client_encoding" -> codecParams.clientCharset(Charset.forName(value));
+            case "server_encoding" -> codecParams.serverCharset(Charset.forName(value));
+            case "DateStyle" -> codecParams.dateStyle(value);
+            case "TimeZone" -> codecParams.timeZone(ZoneId.of(value));
+            case "integer_datetimes" -> codecParams.integerDatetime(value.equals("on"));
         }
     }
 
@@ -625,7 +616,8 @@ public final class Connection implements AutoCloseable {
                 continue;
             }
             int oid = OIDs[i];
-            typeProcessor = codecParams.getProcessor(oid);
+            // TODO: oid -> processor mapping into config?
+            typeProcessor = codecParams.processor(oid);
 
             switch (paramsFormat) {
                 case BIN -> {
@@ -988,6 +980,7 @@ public final class Connection implements AutoCloseable {
         final ByteBuffer bbLead = ByteBuffer.allocate(5);
         bbLead.put((byte)'d');
 
+        @SuppressWarnings("resource")
         InputStream inputStream = res.executeParams.inputStream();
 
         Throwable e = null;
@@ -1117,7 +1110,9 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handlerCall (final IFn f, final Object arg) {
-        config.executor().execute(() -> {
+        @SuppressWarnings("resource")
+        final ExecutorService executor = config.executor();
+        executor.submit(() -> {
             f.invoke(arg);
         });
     }
@@ -1201,6 +1196,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handleCopyDataUnsafe (final CopyData msg, final Result res) throws IOException {
+        @SuppressWarnings("resource")
         final OutputStream outputStream = res.executeParams.outputStream();
         final byte[] bytes = msg.buf().array();
         outputStream.write(bytes);

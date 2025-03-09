@@ -34,7 +34,6 @@
    org.pg.PreparedStatement
    org.pg.clojure.RowMap
    org.pg.codec.CodecParams
-   org.pg.codec.CodecParams$Builder
    org.pg.enums.CopyFormat
    org.pg.enums.OID
    org.pg.enums.SSLValidation
@@ -783,38 +782,25 @@
                 ^ObjectMapper object-mapper]}
         opt]
 
-    (if-not (seq opt)
+    (cond-> ^CodecParams (CodecParams/create)
 
-      CodecParams/STANDARD
+      client-charset
+      (.clientCharset (Charset/forName client-charset))
 
-      (cond-> (CodecParams/builder)
+      server-charset
+      (.serverCharset (Charset/forName server-charset))
 
-        client-charset
-        (as-> builder
-            (let [charset (Charset/forName client-charset)]
-              (.clientCharset builder charset)))
+      date-style
+      (.dateStyle date-style)
 
-        server-charset
-        (as-> builder
-            (let [charset (Charset/forName server-charset)]
-              (.serverCharset builder charset)))
+      time-zone-id
+      (.timeZone (ZoneId/of time-zone-id))
 
-        date-style
-        (.dateStyle date-style)
+      (some? integer-datetime?)
+      (.integerDatetime integer-datetime?)
 
-        time-zone-id
-        (as-> builder
-            (let [zone-id (ZoneId/of time-zone-id)]
-              (.timeZone builder zone-id)))
-
-        (some? integer-datetime?)
-        (.integerDatetime integer-datetime?)
-
-        object-mapper
-        (.objectMapper object-mapper)
-
-        :finally
-        (.build)))))
+      object-mapper
+      (.objectMapper object-mapper))))
 
 
 (defn- -get-processor ^IProcessor [oid]

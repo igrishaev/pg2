@@ -1,144 +1,119 @@
 package org.pg.codec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pg.Const;
 import org.pg.json.JSON;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 
-public record CodecParams (
-        Charset clientCharset,
-        Charset serverCharset,
-        ZoneId timeZone,
-        String dateStyle,
-        boolean integerDatetime,
-        ObjectMapper objectMapper,
-        Map<Integer, IProcessor> oidMap
-) {
+public class CodecParams {
 
-    @SuppressWarnings("unused")
-    public static CodecParams STANDARD = new CodecParams.Builder().build();
+    private Charset clientCharset = Const.clientCharset;
+    private Charset serverCharset = Const.serverCharset;
+    private ZoneId timeZone = Const.timeZone;
+    private String dateStyle = Const.dateStyle;
+    private boolean integerDatetime = Const.integerDatetime;
+    private ObjectMapper objectMapper = JSON.defaultMapper;
+    private final Map<Integer, IProcessor> oidProcessorMap = new HashMap<>();
 
-    public void setProcessor(final int oid, final IProcessor processor) {
-        oidMap.put(oid, processor);
+    @Override
+    public String toString() {
+        return String.format("CodecParams[clientCharset=%s, serverCharset=%s, timeZone=%s, dateStyle=%s, integerDatetime=%s, objectMapper=%s, oidMap=%s]",
+                clientCharset,
+                serverCharset,
+                timeZone,
+                dateStyle,
+                integerDatetime,
+                objectMapper,
+                oidProcessorMap
+        );
     }
 
-    public IProcessor getProcessor(final int oid) {
+    public static CodecParams create() {
+        return new CodecParams();
+    }
+
+    public Charset clientCharset() {
+        return clientCharset;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public CodecParams clientCharset(final Charset clientCharset) {
+        this.clientCharset = clientCharset;
+        return this;
+    }
+
+    public Charset serverCharset() {
+        return serverCharset;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public CodecParams serverCharset(final Charset serverCharset) {
+        this.serverCharset = serverCharset;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public ZoneId timeZone() {
+        return timeZone;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public CodecParams timeZone(final ZoneId timeZone) {
+        this.timeZone = timeZone;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public String dateStyle() {
+        return dateStyle;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public CodecParams dateStyle(final String dateStyle) {
+        this.dateStyle = dateStyle;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean integerDatetime() {
+        return integerDatetime;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public CodecParams integerDatetime(final boolean integerDatetime) {
+        this.integerDatetime = integerDatetime;
+        return this;
+    }
+
+    public ObjectMapper objectMapper() {
+        return objectMapper;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public CodecParams objectMapper(final ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+        return this;
+    }
+
+    public void processor(final int oid, final IProcessor processor) {
+        oidProcessorMap.put(oid, processor);
+    }
+
+    public IProcessor processor(final int oid) {
         IProcessor typeProcessor = Processors.getProcessor(oid);
-
         if (typeProcessor == null) {
-            typeProcessor = oidMap.get(oid);
+            typeProcessor = oidProcessorMap.get(oid);
         }
-
         if (typeProcessor == null) {
             typeProcessor = Processors.unsupported;
         }
-
         return typeProcessor;
     }
-
-    public static Builder builder () {
-        return new Builder();
-    }
-
-    public Builder toBuilder () {
-        return new Builder(this);
-    }
-
-    public static CodecParams standard() {
-        return builder().build();
-    }
-
-    public CodecParams withClientCharset(final Charset clientCharset) {
-        return this.toBuilder().clientCharset(clientCharset).build();
-    }
-
-    public CodecParams withServerCharset(final Charset serverCharset) {
-        return this.toBuilder().serverCharset(serverCharset).build();
-    }
-
-    public CodecParams withDateStyle(final String dateStyle) {
-        return this.toBuilder().dateStyle(dateStyle).build();
-    }
-
-    public CodecParams withTimeZoneId(final ZoneId zoneId) {
-        return this.toBuilder().timeZone(zoneId).build();
-    }
-
-    public CodecParams withIntegerDatetime(final boolean integerDatetime) {
-        return this.toBuilder().integerDatetime(integerDatetime).build();
-    }
-
-    public static class Builder {
-
-        private Charset clientCharset = StandardCharsets.UTF_8;
-        private Charset serverCharset = StandardCharsets.UTF_8;
-        private ZoneId timeZone = ZoneOffset.UTC;
-        private String dateStyle = "ISO, DMY";
-        private boolean integerDatetime = true;
-        private ObjectMapper objectMapper = JSON.defaultMapper;
-        private final Map<Integer, IProcessor> oidMapper = new HashMap<>();
-
-        public Builder() {}
-
-        public Builder(final CodecParams codecParams) {
-            this.clientCharset = codecParams.clientCharset;
-            this.serverCharset = codecParams.serverCharset;
-            this.timeZone = codecParams.timeZone;
-            this.dateStyle = codecParams.dateStyle;
-            this.integerDatetime = codecParams.integerDatetime;
-            this.objectMapper = codecParams.objectMapper;
-        }
-
-        public CodecParams build() {
-            return new CodecParams(
-                    this.clientCharset,
-                    this.serverCharset,
-                    this.timeZone,
-                    this.dateStyle,
-                    this.integerDatetime,
-                    this.objectMapper,
-                    this.oidMapper
-            );
-        }
-
-        public Builder clientCharset (final Charset clientCharset) {
-            this.clientCharset = clientCharset;
-            return this;
-        }
-
-        public Builder serverCharset (final Charset serverCharset) {
-            this.serverCharset = serverCharset;
-            return this;
-        }
-
-        public Builder timeZone (final ZoneId timeZone) {
-            this.timeZone = timeZone;
-            return this;
-        }
-
-        public Builder dateStyle (final String dateStyle) {
-            this.dateStyle = dateStyle;
-            return this;
-        }
-
-        public Builder integerDatetime (final boolean integerDatetime) {
-            this.integerDatetime = integerDatetime;
-            return this;
-        }
-
-        public Builder objectMapper (final ObjectMapper objectMapper) {
-            this.objectMapper = objectMapper;
-            return this;
-        }
-
-    }
-
 
 }

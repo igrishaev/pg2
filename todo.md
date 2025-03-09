@@ -4,7 +4,12 @@
   - rowmap (deref, nth)
 
 - user & database default values?
-- CodecParams (setParam) make it mutable
+
+- CodecParams
+  - make it mutable
+  - test toString method
+  - move oid->processor map to config?
+
 - use PG* env vars
 - fix pg.server namespace
 
@@ -102,3 +107,6 @@ migrations
 
 - save notifications into a list?
 - get-notifications function?
+
+
+https://dns.google/dns-query

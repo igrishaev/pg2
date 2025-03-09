@@ -65,7 +65,7 @@ public class Copy {
                 sb.append(executeParams.CSVNull());
             }
             else {
-                processor = codecParams.getProcessor(oid);
+                processor = codecParams.processor(oid);
                 encoded = processor.encodeTxt(item, codecParams);
                 sb.append(executeParams.CSVQuote());
                 sb.append(quoteCSV(encoded));
@@ -100,7 +100,7 @@ public class Copy {
             }
             else {
                 oid = i < OIDLen ? OIDs[i] : OID.defaultOID(item);
-                processor = codecParams.getProcessor(oid);
+                processor = codecParams.processor(oid);
                 final ByteBuffer buf = processor.encodeBin(item, codecParams);
                 totalSize += 4 + buf.array().length;
                 bufs[i] = buf;
@@ -127,7 +127,7 @@ public class Copy {
         System.out.println(encodeRowCSV(
                 List.of(1, 2, 3),
                 ExecuteParams.standard(),
-                CodecParams.standard())
+                CodecParams.create())
         );
 
         final List<Object> row = new ArrayList<>();
@@ -143,7 +143,7 @@ public class Copy {
                     encodeRowBin(
                             row,
                             ExecuteParams.builder().OIDs(OIDs).build(),
-                            CodecParams.standard()
+                            CodecParams.create()
                     ).array())
         );
 

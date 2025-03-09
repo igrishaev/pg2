@@ -3,7 +3,11 @@ package org.pg;
 import clojure.lang.Agent;
 import org.pg.enums.SSLValidation;
 
+import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
+import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 public final class Const {
     public static final int PROTOCOL_VERSION = 196608;
@@ -40,4 +44,9 @@ public final class Const {
     public static final int POOL_EXPIRE_THRESHOLD_MS = 1000 * 60 * 5;
     public static final int POOL_BORROW_CONN_TIMEOUT_MS = 1000 * 15;
     public static final Executor executor = Agent.soloExecutor;
+    public static Charset serverCharset = StandardCharsets.UTF_8;
+    public static Charset clientCharset = StandardCharsets.UTF_8;
+    public static ZoneId timeZone = ZoneOffset.UTC;
+    public static String dateStyle = "ISO, DMY";
+    public static boolean integerDatetime = true;
 }
