@@ -9,6 +9,7 @@
 - slightly boost the Default reducer
 - RowMap: do not share the Connection's TryLock instance
 - RowMap: implement Indexed and IDeref interfaces
+- #50 Use Executor rather than ExecutorService @jgdavey
 
 ## 0.1.33
 
