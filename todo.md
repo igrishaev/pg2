@@ -107,6 +107,3 @@ migrations
 
 - save notifications into a list?
 - get-notifications function?
-
-
-https://dns.google/dns-query
