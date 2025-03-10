@@ -29,7 +29,7 @@ import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.*;
 import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 public final class Connection implements AutoCloseable {
 
@@ -1111,10 +1111,8 @@ public final class Connection implements AutoCloseable {
 
     private void handlerCall (final IFn f, final Object arg) {
         @SuppressWarnings("resource")
-        final ExecutorService executor = config.executor();
-        executor.submit(() -> {
-            f.invoke(arg);
-        });
+        final Executor executor = config.executor();
+        executor.execute(() -> f.invoke(arg));
     }
 
     private void handleNotificationResponse (final NotificationResponse msg, final Result res) {
