@@ -31,7 +31,6 @@ import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.*;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Executor;
 
 public final class Connection implements AutoCloseable {
 
@@ -54,7 +53,6 @@ public final class Connection implements AutoCloseable {
     private final Map<String, PreparedStatement> PSCache;
     private final List<Object> notifications = new ArrayList<>(0);
     private final List<Object> notices = new ArrayList<>(0);
-    private final Map<Integer, PGType> pgTypes = new HashMap<>(600);
 
     @Override
     public boolean equals (Object other) {
@@ -184,7 +182,7 @@ public final class Connection implements AutoCloseable {
                     pg_type.typnamespace = pg_namespace.oid
                 """;
 
-        pgTypes.clear();
+//        pgTypes.clear();
 
         final ExecuteParams executeParams = ExecuteParams.builder().reducer(new AFn() {
             @Override
@@ -199,7 +197,7 @@ public final class Connection implements AutoCloseable {
             public Object invoke(final Object ignored, final Object row) {
                 final RowMap rowMap = (RowMap) row;
                 final int oid = (int) rowMap.get("oid");
-                final PGType PGType = new PGType(
+                final PGType pgType = new PGType(
                         oid,
                         (String) rowMap.get("typname"),
                         (char) rowMap.get("typtype"),
@@ -212,7 +210,7 @@ public final class Connection implements AutoCloseable {
                         (int) rowMap.get("typelem"),
                         (String) rowMap.get("nspname")
                 );
-                pgTypes.put(oid, PGType);
+                codecParams.addPGType(pgType);
                 return null;
             }
         }).fnKeyTransform(new AFn() {

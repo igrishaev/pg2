@@ -5,6 +5,7 @@ import org.pg.Const;
 import org.pg.json.JSON;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
+import org.pg.type.PGType;
 
 import java.nio.charset.Charset;
 import java.time.ZoneId;
@@ -18,32 +19,20 @@ public class CodecParams {
     private String dateStyle = Const.dateStyle;
     private boolean integerDatetime = Const.integerDatetime;
     private ObjectMapper objectMapper = JSON.defaultMapper;
-    private final Map<Integer, IProcessor> oidProcessorMap = new HashMap<>();
+    private final Map<Integer, PGType> pgTypes = new HashMap<>(600);
 
     @Override
     public String toString() {
-        return String.format("CodecParams[clientCharset=%s, serverCharset=%s, timeZone=%s, dateStyle=%s, integerDatetime=%s, objectMapper=%s, oidMap=%s]",
+        return String.format("CodecParams[clientCharset=%s, serverCharset=%s, timeZone=%s, dateStyle=%s, integerDatetime=%s, objectMapper=%s, pgTypes=%s]",
                 clientCharset,
                 serverCharset,
                 timeZone,
                 dateStyle,
                 integerDatetime,
                 objectMapper,
-                oidProcessorMap
+                pgTypes
         );
-//    public IProcessor getProcessor(final int oid) {
-//        IProcessor typeProcessor = Processors.getProcessor(oid);
-//
-//        if (typeProcessor == null) {
-//            typeProcessor = oidMap.get(oid);
-//        }
-//
-//        if (typeProcessor == null) {
-//            typeProcessor = Processors.unsupported;
-//        }
-//
-//        return typeProcessor;
-//    }
+    }
 
     public static CodecParams create() {
         return new CodecParams();
@@ -112,19 +101,19 @@ public class CodecParams {
         return this;
     }
 
-    public void setProcessor(final int oid, final IProcessor processor) {
-        oidProcessorMap.put(oid, processor);
+    public void addPGType(final PGType pgType) {
+        pgTypes.put(pgType.oid(), pgType);
     }
 
-    public IProcessor getProcessor(final int oid) {
-        IProcessor typeProcessor = Processors.getProcessor(oid);
-        if (typeProcessor == null) {
-            typeProcessor = oidProcessorMap.get(oid);
-        }
-        if (typeProcessor == null) {
-            typeProcessor = Processors.unsupported;
-        }
-        return typeProcessor;
-    }
+//    public IProcessor getProcessor(final int oid) {
+//        IProcessor typeProcessor = Processors.getProcessor(oid);
+//        if (typeProcessor == null) {
+//            typeProcessor = oidProcessorMap.get(oid);
+//        }
+//        if (typeProcessor == null) {
+//            typeProcessor = Processors.unsupported;
+//        }
+//        return typeProcessor;
+//    }
 
 }
