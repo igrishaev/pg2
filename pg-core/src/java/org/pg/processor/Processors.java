@@ -21,7 +21,7 @@ public class Processors {
     @SuppressWarnings("unused")
     public static IProcessor sparsevec = new Sparsevec();
 
-    static Map<Integer, IProcessor> oidMap = new HashMap<>();
+    private static final Map<Integer, IProcessor> oidMap = new HashMap<>();
     static {
 
         // numbers
