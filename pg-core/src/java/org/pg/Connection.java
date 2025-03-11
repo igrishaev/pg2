@@ -15,7 +15,7 @@ import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
-import org.pg.type.TypeInfo;
+import org.pg.type.PGType;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
@@ -55,7 +55,7 @@ public final class Connection implements AutoCloseable {
     private final Map<String, PreparedStatement> PSCache;
     private final List<Object> notifications = new ArrayList<>(0);
     private final List<Object> notices = new ArrayList<>(0);
-    private final Map<Integer, TypeInfo> pgTypes = new HashMap<>(600);
+    private final Map<Integer, PGType> pgTypes = new HashMap<>(600);
 
     @Override
     public boolean equals (Object other) {
@@ -88,7 +88,6 @@ public final class Connection implements AutoCloseable {
         if (sendStartup) {
             conn.authenticate();
             conn.readTypes();
-            // conn.initTypeMapping();
         }
         return conn;
     }
@@ -164,59 +163,8 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
-//    private void initTypeMapping() {
-//        final Map<String, IProcessor> sourceMap = config.typeMap();
-//        final int len = sourceMap.size();
-//        if (len == 0) {
-//            return;
-//        }
-//        int i = 0;
-//        String[] qMarks = new String[len];
-//        String[] sqlParams = new String[len];
-//        for (final Map.Entry<String, IProcessor> entry: sourceMap.entrySet()) {
-//            String usertype = entry.getKey();
-//            sqlParams[i] = usertype;
-//            qMarks[i] = "$" + (i + 1);
-//            i++;
-//        }
-//
-//        final ExecuteParams executeParams = ExecuteParams.builder()
-//                .params(sqlParams)
-//                .reducer(new AFn() {
-//                    @Override
-//                    public Object invoke() {
-//                        return null;
-//                    }
-//                    @Override
-//                    public Object invoke(final Object ignored, final Object row) {
-//                        RowMap rm = (RowMap) row;
-//                        final int oid = (int) rm.get(KW.oid);
-//                        final String type = (String) rm.get(KW.type);
-//                        final IProcessor iProcessor = sourceMap.get(type);
-//                        if (iProcessor != null) {
-//                            codecParams.setProcessor(oid, iProcessor);
-//                        }
-//                        return null;
-//                    }
-//                    @Override
-//                    public Object invoke(final Object ignored) {
-//                        return null;
-//                    }
-//                })
-//                .build();
-//
-//        execute("select pg_type.oid, pg_namespace.nspname || '.' || pg_type.typname as type " +
-//                "from pg_type, pg_namespace " +
-//                "where " +
-//                "pg_type.typnamespace = pg_namespace.oid " +
-//                "and pg_namespace.nspname || '.' || pg_type.typname in (" +
-//                        String.join(", ", qMarks) +
-//                ")",
-//                executeParams
-//        );
-//    }
-
-    private void readTypes() {
+    public void readTypes() {
+        // TODO: use binary copy to stdout?
         final String query = """
                 select
                     pg_type.oid,
@@ -252,7 +200,7 @@ public final class Connection implements AutoCloseable {
             public Object invoke(final Object ignored, final Object row) {
                 final RowMap rowMap = (RowMap) row;
                 final int oid = (int) rowMap.get("oid");
-                final TypeInfo typeInfo = new TypeInfo(
+                final PGType PGType = new PGType(
                         oid,
                         (String) rowMap.get("typname"),
                         (char) rowMap.get("typtype"),
@@ -265,7 +213,7 @@ public final class Connection implements AutoCloseable {
                         (int) rowMap.get("typelem"),
                         (String) rowMap.get("nspname")
                 );
-                pgTypes.put(oid, typeInfo);
+                pgTypes.put(oid, PGType);
                 return null;
             }
         }).fnKeyTransform(new AFn() {
@@ -656,21 +604,19 @@ public final class Connection implements AutoCloseable {
         if (processor != null) {
             return processor;
         }
-        final TypeInfo typeInfo = pgTypes.get(oid);
-        if (typeInfo == null) {
+        final PGType pgType = pgTypes.get(oid);
+        if (pgType == null) {
             return Processors.unsupported;
         }
-        if (typeInfo.typinput().equals("vector_in")) {
+        if (pgType.isVector()) {
             return Processors.vector;
-        } else if (typeInfo.typinput().equals("sparsevec_in")) {
+        } else if (pgType.isSparseVector()) {
             return Processors.sparsevec;
-        } else if (typeInfo.typtype() == 'e') {
+        } else if (pgType.isEnum()) {
             return Processors.defaultEnum;
         } else {
             return Processors.unsupported;
         }
-
-
     }
 
     private void sendBind (final String portal,
@@ -705,7 +651,6 @@ public final class Connection implements AutoCloseable {
             }
             int oid = OIDs[i];
             typeProcessor = getProcessor(oid);
-//            typeProcessor = codecParams.getProcessor(oid);
 
             switch (paramsFormat) {
                 case BIN -> {
