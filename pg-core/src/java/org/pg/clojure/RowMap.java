@@ -5,6 +5,7 @@ import org.pg.codec.CodecParams;
 import org.pg.msg.server.DataRow;
 import org.pg.msg.server.RowDescription;
 import org.pg.processor.IProcessor;
+import org.pg.processor.Processors;
 import org.pg.util.TryLock;
 
 import java.nio.ByteBuffer;
@@ -22,6 +23,14 @@ public final class RowMap extends APersistentMap implements Indexed {
     private final CodecParams codecParams;
     private final Object[] parsedValues;
     private final boolean[] parsedKeys;
+
+//    static {
+//        CljAPI.preferMethod.invoke(
+//                CljAPI.printMethod,
+//                clojure.lang.IPersistentMap.class,
+//                clojure.lang.IDeref.class
+//        );
+//    }
 
     public RowMap(final DataRow dataRow,
                   final RowDescription rowDescription,
@@ -93,7 +102,9 @@ public final class RowMap extends APersistentMap implements Indexed {
         final RowDescription.Column col = rowDescription.columns()[i];
         final int oid = col.typeOid();
 
-        final IProcessor typeProcessor = codecParams.getProcessor(oid);
+        final IProcessor typeProcessor = Processors.getProcessor(oid);
+
+//        final IProcessor typeProcessor = codecParams.getProcessor(oid);
 
         final Object value = switch (col.format()) {
             case TXT -> {

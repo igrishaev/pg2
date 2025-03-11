@@ -7,22 +7,24 @@ public final class Main {
 //        final long l = 123123123L;
 //        System.out.println((short) l);
 
-        // String user = System.getenv("USER");
+//         String user = System.getenv("USER");
 
-//        Config config = Config.builder(user, user)
-//                .port(15432)
-//                .host("127.0.0.1")
-//                .password(user)
-//                .binaryEncode(true)
-//                .binaryDecode(true)
-//                .build();
+        String user = "test";
 
-        Config config = Config.builder("test_owner", "test")
-                .port(5432)
-                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
-                .password("")
-                .useSSL(true)
+        Config config = Config.builder(user, user)
+                .port(15432)
+                .host("127.0.0.1")
+                .password(user)
+                .binaryEncode(true)
+                .binaryDecode(true)
                 .build();
+
+//        Config config = Config.builder("test_owner", "test")
+//                .port(5432)
+//                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
+//                .password("")
+//                .useSSL(true)
+//                .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
