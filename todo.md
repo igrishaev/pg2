@@ -6,7 +6,6 @@
 - user & database default values?
 
 - CodecParams
-  - make it mutable
   - test toString method
   - move oid->processor map to config?
 

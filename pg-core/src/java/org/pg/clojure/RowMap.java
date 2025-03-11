@@ -93,7 +93,7 @@ public final class RowMap extends APersistentMap implements Indexed, IDeref {
         final RowDescription.Column col = rowDescription.columns()[i];
         final int oid = col.typeOid();
 
-        final IProcessor typeProcessor = codecParams.processor(oid);
+        final IProcessor typeProcessor = codecParams.getProcessor(oid);
 
         final Object value = switch (col.format()) {
             case TXT -> {

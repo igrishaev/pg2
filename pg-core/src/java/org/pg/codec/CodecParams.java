@@ -101,11 +101,11 @@ public class CodecParams {
         return this;
     }
 
-    public void processor(final int oid, final IProcessor processor) {
+    public void setProcessor(final int oid, final IProcessor processor) {
         oidProcessorMap.put(oid, processor);
     }
 
-    public IProcessor processor(final int oid) {
+    public IProcessor getProcessor(final int oid) {
         IProcessor typeProcessor = Processors.getProcessor(oid);
         if (typeProcessor == null) {
             typeProcessor = oidProcessorMap.get(oid);

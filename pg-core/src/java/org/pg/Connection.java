@@ -190,7 +190,7 @@ public final class Connection implements AutoCloseable {
                         final String type = (String) rm.get(KW.type);
                         final IProcessor iProcessor = sourceMap.get(type);
                         if (iProcessor != null) {
-                            codecParams.processor(oid, iProcessor);
+                            codecParams.setProcessor(oid, iProcessor);
                         }
                         return null;
                     }
@@ -616,8 +616,7 @@ public final class Connection implements AutoCloseable {
                 continue;
             }
             int oid = OIDs[i];
-            // TODO: oid -> processor mapping into config?
-            typeProcessor = codecParams.processor(oid);
+            typeProcessor = codecParams.getProcessor(oid);
 
             switch (paramsFormat) {
                 case BIN -> {
@@ -1110,7 +1109,6 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handlerCall (final IFn f, final Object arg) {
-        @SuppressWarnings("resource")
         final Executor executor = config.executor();
         executor.execute(() -> f.invoke(arg));
     }

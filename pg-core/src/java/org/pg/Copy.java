@@ -65,7 +65,7 @@ public class Copy {
                 sb.append(executeParams.CSVNull());
             }
             else {
-                processor = codecParams.processor(oid);
+                processor = codecParams.getProcessor(oid);
                 encoded = processor.encodeTxt(item, codecParams);
                 sb.append(executeParams.CSVQuote());
                 sb.append(quoteCSV(encoded));
@@ -100,7 +100,7 @@ public class Copy {
             }
             else {
                 oid = i < OIDLen ? OIDs[i] : OID.defaultOID(item);
-                processor = codecParams.processor(oid);
+                processor = codecParams.getProcessor(oid);
                 final ByteBuffer buf = processor.encodeBin(item, codecParams);
                 totalSize += 4 + buf.array().length;
                 bufs[i] = buf;
