@@ -665,6 +665,7 @@
   (.write writer (.toString conn)))
 
 
+;; TODO: drop it!
 ;;
 ;; Listen/notify block
 ;;

@@ -14,6 +14,8 @@ import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.processor.IProcessor;
+import org.pg.processor.Processors;
+import org.pg.type.TypeInfo;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
@@ -52,6 +54,7 @@ public final class Connection implements AutoCloseable {
     private final Map<String, PreparedStatement> PSCache;
     private final List<Object> notifications = new ArrayList<>(0);
     private final List<Object> notices = new ArrayList<>(0);
+    private final Map<Integer, TypeInfo> pgTypes = new HashMap<>(600);
 
     @Override
     public boolean equals (Object other) {
@@ -83,7 +86,8 @@ public final class Connection implements AutoCloseable {
         }
         if (sendStartup) {
             conn.authenticate();
-            conn.initTypeMapping();
+            conn.readTypes();
+            // conn.initTypeMapping();
         }
         return conn;
     }
@@ -159,56 +163,118 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
-    private void initTypeMapping() {
-        final Map<String, IProcessor> sourceMap = config.typeMap();
-        final int len = sourceMap.size();
-        if (len == 0) {
-            return;
-        }
-        int i = 0;
-        String[] qMarks = new String[len];
-        String[] sqlParams = new String[len];
-        for (final Map.Entry<String, IProcessor> entry: sourceMap.entrySet()) {
-            String usertype = entry.getKey();
-            sqlParams[i] = usertype;
-            qMarks[i] = "$" + (i + 1);
-            i++;
-        }
+//    private void initTypeMapping() {
+//        final Map<String, IProcessor> sourceMap = config.typeMap();
+//        final int len = sourceMap.size();
+//        if (len == 0) {
+//            return;
+//        }
+//        int i = 0;
+//        String[] qMarks = new String[len];
+//        String[] sqlParams = new String[len];
+//        for (final Map.Entry<String, IProcessor> entry: sourceMap.entrySet()) {
+//            String usertype = entry.getKey();
+//            sqlParams[i] = usertype;
+//            qMarks[i] = "$" + (i + 1);
+//            i++;
+//        }
+//
+//        final ExecuteParams executeParams = ExecuteParams.builder()
+//                .params(sqlParams)
+//                .reducer(new AFn() {
+//                    @Override
+//                    public Object invoke() {
+//                        return null;
+//                    }
+//                    @Override
+//                    public Object invoke(final Object ignored, final Object row) {
+//                        RowMap rm = (RowMap) row;
+//                        final int oid = (int) rm.get(KW.oid);
+//                        final String type = (String) rm.get(KW.type);
+//                        final IProcessor iProcessor = sourceMap.get(type);
+//                        if (iProcessor != null) {
+//                            codecParams.setProcessor(oid, iProcessor);
+//                        }
+//                        return null;
+//                    }
+//                    @Override
+//                    public Object invoke(final Object ignored) {
+//                        return null;
+//                    }
+//                })
+//                .build();
+//
+//        execute("select pg_type.oid, pg_namespace.nspname || '.' || pg_type.typname as type " +
+//                "from pg_type, pg_namespace " +
+//                "where " +
+//                "pg_type.typnamespace = pg_namespace.oid " +
+//                "and pg_namespace.nspname || '.' || pg_type.typname in (" +
+//                        String.join(", ", qMarks) +
+//                ")",
+//                executeParams
+//        );
+//    }
 
-        final ExecuteParams executeParams = ExecuteParams.builder()
-                .params(sqlParams)
-                .reducer(new AFn() {
-                    @Override
-                    public Object invoke() {
-                        return null;
-                    }
-                    @Override
-                    public Object invoke(final Object ignored, final Object row) {
-                        RowMap rm = (RowMap) row;
-                        final int oid = (int) rm.get(KW.oid);
-                        final String type = (String) rm.get(KW.type);
-                        final IProcessor iProcessor = sourceMap.get(type);
-                        if (iProcessor != null) {
-                            codecParams.setProcessor(oid, iProcessor);
-                        }
-                        return null;
-                    }
-                    @Override
-                    public Object invoke(final Object ignored) {
-                        return null;
-                    }
-                })
-                .build();
+    private void readTypes() {
+        final String query = """
+                select
+                    pg_type.oid,
+                    pg_type.typname,
+                    pg_type.typtype,
+                    pg_type.typinput,
+                    pg_type.typoutput,
+                    pg_type.typreceive,
+                    pg_type.typsend,
+                    pg_type.typarray,
+                    pg_type.typdelim,
+                    pg_type.typelem,
+                    pg_namespace.nspname
+                from
+                    pg_type,
+                    pg_namespace
+                where
+                    pg_type.typnamespace = pg_namespace.oid
+                """;
 
-        execute("select pg_type.oid, pg_namespace.nspname || '.' || pg_type.typname as type " +
-                "from pg_type, pg_namespace " +
-                "where " +
-                "pg_type.typnamespace = pg_namespace.oid " +
-                "and pg_namespace.nspname || '.' || pg_type.typname in (" +
-                        String.join(", ", qMarks) +
-                ")",
-                executeParams
-        );
+        pgTypes.clear();
+
+        final ExecuteParams executeParams = ExecuteParams.builder().reducer(new AFn() {
+            @Override
+            public Object invoke() {
+                return null;
+            }
+            @Override
+            public Object invoke(final Object ignored) {
+                return null;
+            }
+            @Override
+            public Object invoke(final Object ignored, final Object row) {
+                final RowMap rowMap = (RowMap) row;
+                final int oid = (int) rowMap.get("oid");
+                final TypeInfo typeInfo = new TypeInfo(
+                        oid,
+                        (String) rowMap.get("typname"),
+                        (char) rowMap.get("typtype"),
+                        (String) rowMap.get("typinput"),
+                        (String) rowMap.get("typoutput"),
+                        (String) rowMap.get("typreceive"),
+                        (String) rowMap.get("typsend"),
+                        (int) rowMap.get("typarray"),
+                        (char) rowMap.get("typdelim"),
+                        (int) rowMap.get("typelem"),
+                        (String) rowMap.get("nspname")
+                );
+                pgTypes.put(oid, typeInfo);
+                return null;
+            }
+        }).fnKeyTransform(new AFn() {
+            @Override
+            public Object invoke(final Object key) {
+                return key;
+            }
+        }).build();
+
+        query(query, executeParams);
     }
 
     @SuppressWarnings("unused")
@@ -578,6 +644,28 @@ public final class Connection implements AutoCloseable {
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
+    private IProcessor getProcessor (final int oid) {
+        final IProcessor processor = Processors.getProcessor(oid);
+        if (processor != null) {
+            return processor;
+        }
+        final TypeInfo typeInfo = pgTypes.get(oid);
+        if (typeInfo == null) {
+            return Processors.unsupported;
+        }
+        if (typeInfo.typinput().equals("vector_in")) {
+            return Processors.vector;
+        } else if (typeInfo.typinput().equals("sparsevec_in")) {
+            return Processors.sparsevec;
+        } else if (typeInfo.typtype() == 'e') {
+            return Processors.defaultEnum;
+        } else {
+            return Processors.unsupported;
+        }
+
+
+    }
+
     private void sendBind (final String portal,
                            final PreparedStatement stmt,
                            final ExecuteParams executeParams
@@ -609,7 +697,8 @@ public final class Connection implements AutoCloseable {
                 continue;
             }
             int oid = OIDs[i];
-            typeProcessor = codecParams.getProcessor(oid);
+            typeProcessor = getProcessor(oid);
+//            typeProcessor = codecParams.getProcessor(oid);
 
             switch (paramsFormat) {
                 case BIN -> {
@@ -1102,8 +1191,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handlerCall (final IFn f, final Object arg) {
-        final Executor executor = config.executor();
-        executor.execute(() -> f.invoke(arg));
+        config.executor().execute(() -> f.invoke(arg));
     }
 
     private void handleNotificationResponse (final NotificationResponse msg, final Result res) {

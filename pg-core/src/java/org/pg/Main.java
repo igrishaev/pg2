@@ -26,6 +26,13 @@ public final class Main {
 //                .useSSL(true)
 //                .build();
 
+//        Config config = Config.builder("test_owner", "test")
+//                .port(5432)
+//                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
+//                .password("")
+//                .useSSL(true)
+//                .build();
+
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
         // System.out.println(conn.query("select 42 as num"));
