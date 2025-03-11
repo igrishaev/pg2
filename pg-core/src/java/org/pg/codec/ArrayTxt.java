@@ -39,7 +39,7 @@ public final class ArrayTxt {
     }
 
     public static String encode (final Object x, final int oidEl, final CodecParams codecParams) {
-        final IProcessor processor = codecParams.getProcessor(oidEl);
+        final IProcessor processor = null; // codecParams.getProcessor(oidEl);
         Object val;
         if (x instanceof Indexed) {
             final Iterator<?> iterator = RT.iter(x);
@@ -152,7 +152,7 @@ public final class ArrayTxt {
 
     public static Object decode(final String array, final int oidEl, final CodecParams codecParams) {
         final PushbackReader reader = new PushbackReader(new StringReader(array));
-        final IProcessor processor = codecParams.getProcessor(oidEl);
+        final IProcessor processor = null; // codecParams.getProcessor(oidEl);
         final int limit = 16;
         final int[] pathMax = new int[limit];
         final int[] path = new int[limit];

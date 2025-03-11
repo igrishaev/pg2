@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CodecParams {
-
     private Charset clientCharset = Const.clientCharset;
     private Charset serverCharset = Const.serverCharset;
     private ZoneId timeZone = Const.timeZone;
@@ -32,7 +31,19 @@ public class CodecParams {
                 objectMapper,
                 oidProcessorMap
         );
-    }
+//    public IProcessor getProcessor(final int oid) {
+//        IProcessor typeProcessor = Processors.getProcessor(oid);
+//
+//        if (typeProcessor == null) {
+//            typeProcessor = oidMap.get(oid);
+//        }
+//
+//        if (typeProcessor == null) {
+//            typeProcessor = Processors.unsupported;
+//        }
+//
+//        return typeProcessor;
+//    }
 
     public static CodecParams create() {
         return new CodecParams();

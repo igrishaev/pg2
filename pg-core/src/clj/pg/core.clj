@@ -666,6 +666,7 @@
 
 
 ;; RowMap implements both IPersistentMap and IDeref
+;; TODO: drop it!
 (prefer-method print-method
                clojure.lang.IPersistentMap
                clojure.lang.IDeref)
