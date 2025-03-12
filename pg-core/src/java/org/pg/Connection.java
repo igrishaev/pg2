@@ -179,9 +179,9 @@ public final class Connection implements AutoCloseable {
                     pg_namespace
                 where
                     pg_type.typnamespace = pg_namespace.oid
+                    and pg_namespace.nspname != 'pg_catalog'
+                    and pg_namespace.nspname != 'information_schema';
                 """;
-
-//        pgTypes.clear();
 
         final ExecuteParams executeParams = ExecuteParams.builder().reducer(new AFn() {
             @Override

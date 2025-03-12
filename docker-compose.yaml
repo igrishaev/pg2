@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile.11.docker
     command: >
       -E
+      -c log_duration=on
+      -c log_min_duration_statement=0
     hostname: pg11
     ports:
       - "10110:5432"
@@ -20,6 +22,8 @@ services:
       dockerfile: Dockerfile.12.docker
     command: >
       -E
+      -c log_duration=on
+      -c log_min_duration_statement=0
     hostname: pg12
     ports:
       - "10120:5432"
@@ -35,6 +39,8 @@ services:
       dockerfile: Dockerfile.13.docker
     command: >
       -E
+      -c log_duration=on
+      -c log_min_duration_statement=0
     hostname: pg13
     ports:
       - "10130:5432"
@@ -50,6 +56,8 @@ services:
       dockerfile: Dockerfile.14.docker
     command: >
       -E
+      -c log_duration=on
+      -c log_min_duration_statement=0
     hostname: pg14
     ports:
       - "10140:5432"
@@ -65,6 +73,8 @@ services:
       dockerfile: Dockerfile.15.docker
     command: >
       -E
+      -c log_duration=on
+      -c log_min_duration_statement=0
     hostname: pg15
     ports:
       - "10150:5432"
@@ -80,6 +90,8 @@ services:
       dockerfile: Dockerfile.16.docker
     command: >
       -E
+      -c log_duration=on
+      -c log_min_duration_statement=0
     hostname: pg16
     ports:
       - "10160:5432"
