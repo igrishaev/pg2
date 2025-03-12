@@ -19,7 +19,7 @@ public class CodecParams {
     private String dateStyle = Const.dateStyle;
     private boolean integerDatetime = Const.integerDatetime;
     private ObjectMapper objectMapper = JSON.defaultMapper;
-    private final Map<Integer, PGType> pgTypes = new HashMap<>(600);
+    private final Map<Integer, PGType> pgTypes = new HashMap<>(Const.pgTypeMapSize);
 
     @Override
     public String toString() {
