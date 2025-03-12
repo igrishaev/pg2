@@ -1,14 +1,11 @@
 package org.pg;
 
 import clojure.lang.IFn;
-import clojure.lang.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.enums.ConnType;
 import org.pg.enums.SSLValidation;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
-import org.pg.processor.IProcessor;
-import org.pg.processor.Processors;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;
@@ -47,7 +44,6 @@ public record Config(
         int poolMaxSize,
         int poolExpireThresholdMs,
         int poolBorrowConnTimeoutMs,
-        Map<String, IProcessor> typeMap,
         boolean useUnixSocket,
         String unixSocketPath,
         Executor executor
@@ -100,7 +96,6 @@ public record Config(
         private int poolMaxSize = Const.POOL_SIZE_MAX;
         private int poolExpireThresholdMs = Const.POOL_EXPIRE_THRESHOLD_MS;
         private int poolBorrowConnTimeoutMs = Const.POOL_BORROW_CONN_TIMEOUT_MS;
-        private final Map<String, IProcessor> typeMap = new HashMap<>();
         private boolean useUnixSocket = false;
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
@@ -110,42 +105,6 @@ public record Config(
             this.database = Objects.requireNonNull(database, "Database cannot be null");
             this.pgParams.put("client_encoding", Const.CLIENT_ENCODING);
             this.pgParams.put("application_name", Const.APP_NAME);
-        }
-
-        private void addTypeMapEntry(final Object x, final IProcessor processor) {
-            if (x instanceof String s) {
-                typeMap.put(s, processor);
-            } else if (x instanceof Named n) {
-                String schema = n.getNamespace();
-                String type = n.getName();
-                if (schema == null) {
-                    throw new PGError("type %s must have a schema/namespace", x);
-                }
-                String fullType = String.format("%s.%s", schema, type);
-                typeMap.put(fullType, processor);
-            }
-        }
-
-        public Builder enums(final Iterable<?> enumSeq) {
-            for (Object x: enumSeq) {
-                addTypeMapEntry(x, Processors.defaultEnum);
-            }
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder usePGVector() {
-            addTypeMapEntry("public.vector", Processors.vector);
-            addTypeMapEntry("public.sparsevec", Processors.sparsevec);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder typeMap(final Map<?, IProcessor> typeMap) {
-            for (Map.Entry<?, IProcessor> me: typeMap.entrySet()) {
-                addTypeMapEntry(me.getKey(), me.getValue());
-            }
-            return this;
         }
 
         @SuppressWarnings("unused")
@@ -376,7 +335,6 @@ public record Config(
                     this.poolMaxSize,
                     this.poolExpireThresholdMs,
                     this.poolBorrowConnTimeoutMs,
-                    this.typeMap,
                     this.useUnixSocket,
                     this.unixSocketPath,
                     this.executor

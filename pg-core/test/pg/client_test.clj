@@ -566,8 +566,7 @@ from
       (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
       (pg/execute conn (format "create table %s (id integer, foo %s)" table-name type-name)))
 
-    (pg/with-connection [conn (assoc *CONFIG-BIN*
-                                     :type-map {full-type t/enum})]
+    (pg/with-connection [conn *CONFIG-BIN*]
 
       (pg/query conn
                 (format "insert into %s (id, foo) values (1, 'foo'), (1, 'bar'), (1, 'kek')"
@@ -594,7 +593,7 @@ from
       (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
       (pg/execute conn (format "create table %s (id integer, foo %s)" table-name type-name)))
 
-    (pg/with-connection [conn (assoc *CONFIG-BIN* :enums [type-kw])]
+    (pg/with-connection [conn *CONFIG-BIN*]
 
       (pg/query conn
                 (format "insert into %s (id, foo) values (1, 'foo'), (1, 'bar'), (1, 'kek')"
@@ -2176,9 +2175,9 @@ drop table %1$s;
       (is (= "{:x 0}" (pr-str row)))
 
       (is (= [{:x 0} {:x 1} {:x 2} {:x 3}]
-             (mapv deref rows)))
+             rows))
 
-      (is (= {:x 0} @row))
+      (is (= {:x 0} row))
       (is (= 0 (nth row 0)))
 
       (try
@@ -3821,7 +3820,6 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= [{:id 1, :items [1.0 2.0 3.0]}]
              res)))))
 
-;; TODO fix this test
 (deftest test-client-vector-bin-ok
 
   (pg/with-conn [conn *CONFIG-BIN*]
@@ -3834,8 +3832,8 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
   (pg/with-conn [conn *CONFIG-BIN*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
-      (is (= [{:v [0, 3, 0, 0, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0]}]
-             (update-in res [0 :v] vec)))))
+      (is (= [{:v [1.0 2.0 3.0]}]
+             res))))
 
   (pg/with-conn [conn *CONFIG-BIN*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]

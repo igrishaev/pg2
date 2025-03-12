@@ -215,17 +215,6 @@
       pool-borrow-conn-timeout-ms
       (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)
 
-      ;; type-map
-      ;; (.typeMap type-map)
-
-      ;; TODO: remove it!
-      ;; enums
-      ;; (.enums enums)
-
-      ;; TODO: remove it!
-      ;; with-pgvector?
-      ;; (.usePGVector)
-
       executor
       (.executor executor)
 
