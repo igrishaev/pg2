@@ -23,14 +23,14 @@ public class CodecParams {
 
     @Override
     public String toString() {
-        return String.format("CodecParams[clientCharset=%s, serverCharset=%s, timeZone=%s, dateStyle=%s, integerDatetime=%s, objectMapper=%s, pgTypes=%s]",
+        return String.format("CodecParams[clientCharset=%s, serverCharset=%s, timeZone=%s, dateStyle=%s, integerDatetime=%s, objectMapper=%s, pgTypes={%s items}]",
                 clientCharset,
                 serverCharset,
                 timeZone,
                 dateStyle,
                 integerDatetime,
                 objectMapper,
-                pgTypes
+                pgTypes.size()
         );
     }
 
@@ -101,19 +101,30 @@ public class CodecParams {
         return this;
     }
 
-    public void addPGType(final PGType pgType) {
+    public void setPgType(final PGType pgType) {
         pgTypes.put(pgType.oid(), pgType);
     }
 
-//    public IProcessor getProcessor(final int oid) {
-//        IProcessor typeProcessor = Processors.getProcessor(oid);
-//        if (typeProcessor == null) {
-//            typeProcessor = oidProcessorMap.get(oid);
-//        }
-//        if (typeProcessor == null) {
-//            typeProcessor = Processors.unsupported;
-//        }
-//        return typeProcessor;
-//    }
+    public IProcessor getProcessor(final int oid) {
+        final IProcessor processor = Processors.getProcessor(oid);
+        if (processor != null) {
+            return processor;
+        }
+        final PGType pgType = pgTypes.get(oid);
+        if (pgType == null) {
+            return Processors.unsupported;
+        }
+        if (pgType.isVector()) {
+            return Processors.vector;
+        } else if (pgType.isSparseVector()) {
+            return Processors.sparsevec;
+        } else if (pgType.isEnum()) {
+            return Processors.defaultEnum;
+        } else {
+            return Processors.unsupported;
+        }
+    }
+
+
 
 }

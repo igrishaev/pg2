@@ -28,7 +28,7 @@ public final class ArrayBin {
             final int oidEl,
             final CodecParams codecParams
     ) {
-        final IProcessor processor = null; // codecParams.getProcessor(oidEl);
+        final IProcessor processor = codecParams.getProcessor(oidEl);
         final int[] dims = Matrix.getDims(matrix);
         final int dimCount = dims.length;
         final int hasNulls = 1;
@@ -68,7 +68,7 @@ public final class ArrayBin {
         final int dimCount = buf.getInt();
         buf.getInt(); // has nulls (1 or 0)
         final int elOid = buf.getInt();
-        final IProcessor processor = null; // codecParams.getProcessor(elOid);
+        final IProcessor processor = codecParams.getProcessor(elOid);
         final int[] dims = new int[dimCount];
         for (int i = 0; i < dimCount; i++) {
             dims[i] = buf.getInt();
