@@ -14,7 +14,6 @@ import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.processor.IProcessor;
-import org.pg.processor.Processors;
 import org.pg.type.PGType;
 import org.pg.util.*;
 
@@ -210,7 +209,7 @@ public final class Connection implements AutoCloseable {
                         (int) rowMap.get("typelem"),
                         (String) rowMap.get("nspname")
                 );
-                codecParams.addPGType(pgType);
+                codecParams.setPgType(pgType);
                 return null;
             }
         }).fnKeyTransform(new AFn() {
@@ -590,26 +589,6 @@ public final class Connection implements AutoCloseable {
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
-    private IProcessor getProcessor (final int oid) {
-        final IProcessor processor = Processors.getProcessor(oid);
-        if (processor != null) {
-            return processor;
-        }
-        final PGType pgType = pgTypes.get(oid);
-        if (pgType == null) {
-            return Processors.unsupported;
-        }
-        if (pgType.isVector()) {
-            return Processors.vector;
-        } else if (pgType.isSparseVector()) {
-            return Processors.sparsevec;
-        } else if (pgType.isEnum()) {
-            return Processors.defaultEnum;
-        } else {
-            return Processors.unsupported;
-        }
-    }
-
     private void sendBind (final String portal,
                            final PreparedStatement stmt,
                            final ExecuteParams executeParams
@@ -641,7 +620,7 @@ public final class Connection implements AutoCloseable {
                 continue;
             }
             int oid = OIDs[i];
-            typeProcessor = getProcessor(oid);
+            typeProcessor = codecParams.getProcessor(oid);
 
             switch (paramsFormat) {
                 case BIN -> {
