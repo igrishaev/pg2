@@ -23,14 +23,6 @@ public final class RowMap extends APersistentMap implements Indexed {
     private final Object[] parsedValues;
     private final boolean[] parsedKeys;
 
-//    static {
-//        CljAPI.preferMethod.invoke(
-//                CljAPI.printMethod,
-//                clojure.lang.IPersistentMap.class,
-//                clojure.lang.IDeref.class
-//        );
-//    }
-
     public RowMap(final DataRow dataRow,
                   final RowDescription rowDescription,
                   final Object[] keys,
