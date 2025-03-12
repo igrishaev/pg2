@@ -2,6 +2,7 @@ package org.pg.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public final class BBTool {
@@ -52,6 +53,11 @@ public final class BBTool {
         final ByteBuffer buf = ByteBuffer.allocate(1);
         buf.put(value ? (byte)1 : (byte)0);
         return buf;
+    }
+
+    public static String getString (final ByteBuffer bb, final int len) {
+        final int pos = bb.position();
+        return new String(bb.array(), pos, len, StandardCharsets.UTF_8);
     }
 
     public static String getCString (final ByteBuffer buf, final Charset charset) {
