@@ -1,5 +1,9 @@
 package org.pg.type;
 
+import org.pg.util.BBTool;
+
+import java.nio.ByteBuffer;
+
 public record PGType(
         int oid,
         String typname,
@@ -26,10 +30,27 @@ public record PGType(
         return typname.equals("sparsevec") && typinput.equals("sparsevec_in");
     }
 
+    public static PGType fromByteBuffer(final ByteBuffer bb) {
+        int len = 0;
+
+        BBTool.skip(bb, 2);
+
+        // oid
+        len = bb.getInt();
+        final int oid = Integer.parseInt(BBTool.getString(bb, len));
+
+        len = bb.getInt();
+        final String typname = BBTool.getString(bb, len);
+
+
+
+        return null;
+    }
+
     // TODO: from RowMap
 //    final PGType pgType = new PGType(
-//            oid,
-//            (String) rowMap.get("typname"),
+//            oid, --
+//            (String) rowMap.get("typname"), --
 //            (char) rowMap.get("typtype"),
 //            (String) rowMap.get("typinput"),
 //            (String) rowMap.get("typoutput"),

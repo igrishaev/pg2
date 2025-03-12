@@ -162,64 +162,94 @@ public final class Connection implements AutoCloseable {
     public void readTypes() {
         // TODO: use binary copy to stdout?
         final String query = """
-                select
-                    pg_type.oid,
-                    pg_type.typname,
-                    pg_type.typtype,
-                    pg_type.typinput,
-                    pg_type.typoutput,
-                    pg_type.typreceive,
-                    pg_type.typsend,
-                    pg_type.typarray,
-                    pg_type.typdelim,
-                    pg_type.typelem,
-                    pg_namespace.nspname
-                from
-                    pg_type,
-                    pg_namespace
-                where
-                    pg_type.typnamespace = pg_namespace.oid
-                    and pg_namespace.nspname != 'pg_catalog'
-                    and pg_namespace.nspname != 'information_schema';
+                copy (
+                    select
+                        pg_type.oid,
+                        pg_type.typname,
+                        pg_type.typtype,
+                        pg_type.typinput::text,
+                        pg_type.typoutput::text,
+                        pg_type.typreceive::text,
+                        pg_type.typsend::text,
+                        pg_type.typarray,
+                        pg_type.typdelim,
+                        pg_type.typelem,
+                        pg_namespace.nspname
+                    from
+                        pg_type,
+                        pg_namespace
+                    where
+                        pg_type.typnamespace = pg_namespace.oid
+                        and pg_namespace.nspname != 'pg_catalog'
+                        and pg_namespace.nspname != 'information_schema'
+                ) to stdout with (format binary)
                 """;
 
-        final ExecuteParams executeParams = ExecuteParams.builder().reducer(new AFn() {
-            @Override
-            public Object invoke() {
-                return null;
-            }
-            @Override
-            public Object invoke(final Object ignored) {
-                return null;
-            }
-            @Override
-            public Object invoke(final Object ignored, final Object row) {
-                final RowMap rowMap = (RowMap) row;
-                final int oid = (int) rowMap.get("oid");
-                final PGType pgType = new PGType(
-                        oid,
-                        (String) rowMap.get("typname"),
-                        (char) rowMap.get("typtype"),
-                        (String) rowMap.get("typinput"),
-                        (String) rowMap.get("typoutput"),
-                        (String) rowMap.get("typreceive"),
-                        (String) rowMap.get("typsend"),
-                        (int) rowMap.get("typarray"),
-                        (char) rowMap.get("typdelim"),
-                        (int) rowMap.get("typelem"),
-                        (String) rowMap.get("nspname")
-                );
-                codecParams.setPgType(pgType);
-                return null;
-            }
-        }).fnKeyTransform(new AFn() {
-            @Override
-            public Object invoke(final Object key) {
-                return key;
-            }
-        }).build();
+        sendQuery(query);
+        flush();
 
-        query(query, executeParams);
+        IServerMessage msg;
+        PGType pgType;
+        ByteBuffer payload;
+        boolean headerSeen = false;
+
+        while (true) {
+            msg = readMessage(false);
+            if (msg instanceof CopyData copyData) {
+                if (headerSeen) {
+                    pgType = PGType.fromByteBuffer(copyData.buf());
+                    codecParams.setPgType(pgType);
+                } else {
+                    headerSeen = true;
+                    continue;
+                }
+            } else if (msg instanceof CopyOutResponse) {
+            } else if (msg instanceof CopyDone) {
+            } else if (msg instanceof CommandComplete) {
+            } else if (msg instanceof ReadyForQuery) {
+                break;
+            } else {
+                throw new PGError("Unknown message: %s", msg);
+            }
+        }
+
+//        final ExecuteParams executeParams = ExecuteParams.builder().reducer(new AFn() {
+//            @Override
+//            public Object invoke() {
+//                return null;
+//            }
+//            @Override
+//            public Object invoke(final Object ignored) {
+//                return null;
+//            }
+//            @Override
+//            public Object invoke(final Object ignored, final Object row) {
+//                final RowMap rowMap = (RowMap) row;
+//                final int oid = (int) rowMap.get("oid");
+//                final PGType pgType = new PGType(
+//                        oid,
+//                        (String) rowMap.get("typname"),
+//                        (char) rowMap.get("typtype"),
+//                        (String) rowMap.get("typinput"),
+//                        (String) rowMap.get("typoutput"),
+//                        (String) rowMap.get("typreceive"),
+//                        (String) rowMap.get("typsend"),
+//                        (int) rowMap.get("typarray"),
+//                        (char) rowMap.get("typdelim"),
+//                        (int) rowMap.get("typelem"),
+//                        (String) rowMap.get("nspname")
+//                );
+//                codecParams.setPgType(pgType);
+//                return null;
+//            }
+//        }).fnKeyTransform(new AFn() {
+//            @Override
+//            public Object invoke(final Object key) {
+//                return key;
+//            }
+//        }).build();
+//
+//        query(query, executeParams);
     }
 
     @SuppressWarnings("unused")
