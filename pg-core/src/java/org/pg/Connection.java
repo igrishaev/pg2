@@ -159,8 +159,20 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
+    /*
+    Fill-in the current CodecParams instance with postgres types. This data
+    helps to guess how to process custom types shipped by extensions (and
+    enums as well).
+     */
     public void readTypes() {
-        // TODO: use binary copy to stdout?
+        /*
+        Below, we use ::text coercion because it's a special REGPROC
+        type (oid 24). In binary mode, it gets passed as an integer
+        (but as a string in text mode).
+
+        We also exclude predefined types because we know their properties
+        in advance.
+        */
         final String query = """
                 copy (
                     select
@@ -190,66 +202,31 @@ public final class Connection implements AutoCloseable {
 
         IServerMessage msg;
         PGType pgType;
-        ByteBuffer payload;
+        ByteBuffer bb;
         boolean headerSeen = false;
 
         while (true) {
             msg = readMessage(false);
             if (msg instanceof CopyData copyData) {
-                if (headerSeen) {
-                    pgType = PGType.fromByteBuffer(copyData.buf());
-                    codecParams.setPgType(pgType);
-                } else {
+                bb = copyData.buf();
+                if (!headerSeen) {
+                    BBTool.skip(bb, Copy.COPY_BIN_HEADER.length);
                     headerSeen = true;
+                }
+                if (Copy.isTerminator(bb)) {
                     continue;
                 }
+                pgType = PGType.fromCopyBuffer(bb);
+                codecParams.setPgType(pgType);
             } else if (msg instanceof CopyOutResponse) {
             } else if (msg instanceof CopyDone) {
             } else if (msg instanceof CommandComplete) {
             } else if (msg instanceof ReadyForQuery) {
                 break;
             } else {
-                throw new PGError("Unknown message: %s", msg);
+                throw new PGError("Unexpected message in readTypes: %s", msg);
             }
         }
-
-//        final ExecuteParams executeParams = ExecuteParams.builder().reducer(new AFn() {
-//            @Override
-//            public Object invoke() {
-//                return null;
-//            }
-//            @Override
-//            public Object invoke(final Object ignored) {
-//                return null;
-//            }
-//            @Override
-//            public Object invoke(final Object ignored, final Object row) {
-//                final RowMap rowMap = (RowMap) row;
-//                final int oid = (int) rowMap.get("oid");
-//                final PGType pgType = new PGType(
-//                        oid,
-//                        (String) rowMap.get("typname"),
-//                        (char) rowMap.get("typtype"),
-//                        (String) rowMap.get("typinput"),
-//                        (String) rowMap.get("typoutput"),
-//                        (String) rowMap.get("typreceive"),
-//                        (String) rowMap.get("typsend"),
-//                        (int) rowMap.get("typarray"),
-//                        (char) rowMap.get("typdelim"),
-//                        (int) rowMap.get("typelem"),
-//                        (String) rowMap.get("nspname")
-//                );
-//                codecParams.setPgType(pgType);
-//                return null;
-//            }
-//        }).fnKeyTransform(new AFn() {
-//            @Override
-//            public Object invoke(final Object key) {
-//                return key;
-//            }
-//        }).build();
-//
-//        query(query, executeParams);
     }
 
     @SuppressWarnings("unused")

@@ -12,7 +12,7 @@ public final class Main {
         String user = "test";
 
         Config config = Config.builder(user, user)
-                .port(15432)
+                .port(10150)
                 .host("127.0.0.1")
                 .password(user)
                 .binaryEncode(true)
@@ -28,7 +28,7 @@ public final class Main {
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
-        System.out.println(conn.query("select 42 as num"));
+        System.out.println(conn.query("select '[1,2,3]'::vector(3) as v"));
 
 
         //System.out.println(conn.getId());

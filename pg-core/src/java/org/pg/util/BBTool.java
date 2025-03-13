@@ -55,9 +55,15 @@ public final class BBTool {
         return buf;
     }
 
+    /*
+    Having a length of a string, read it from the byte buffer shifting
+    the current position by +len.
+     */
     public static String getString (final ByteBuffer bb, final int len) {
         final int pos = bb.position();
-        return new String(bb.array(), pos, len, StandardCharsets.UTF_8);
+        final String result = new String(bb.array(), pos, len, StandardCharsets.UTF_8);
+        skip(bb, len);
+        return result;
     }
 
     public static String getCString (final ByteBuffer buf, final Charset charset) {
@@ -86,8 +92,11 @@ public final class BBTool {
         return bytes;
     }
 
+    /*
+    Alter the current position in a relative way. Can be negative to
+    rewind, if needed.
+     */
     public static void skip (final ByteBuffer buf, final int offset) {
         buf.position(buf.position() + offset);
     }
-
 }
