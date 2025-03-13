@@ -36,8 +36,8 @@ public record PGType(
         BBTool.skip(bb, 2);
 
         // oid
-        len = bb.getInt();
-        final int oid = Integer.parseInt(BBTool.getString(bb, len));
+        BBTool.skip(bb, 4);
+        final int oid = bb.getInt();
 
         len = bb.getInt();
         final String typname = BBTool.getString(bb, len);
