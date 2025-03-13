@@ -9,10 +9,11 @@
   - test toString method
 
 - ReadTypes
+  - flag to read types?
   - keep type-map
+  - test citext
   - update CodecParams with type-map
   - test custom type-map
-  - flag to read types?
   - oids -> string/keyword types?
   - enable binary by default?
   - decode records
@@ -59,7 +60,6 @@ config & uri: rename pg-params to params?
 - json wrapper not needed
 
 - rename Result.Node to Subresult?
-- test citext
 
 - fix pg11
 - add pg17
