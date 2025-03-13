@@ -30,36 +30,59 @@ public record PGType(
         return typname.equals("sparsevec") && typinput.equals("sparsevec_in");
     }
 
-    public static PGType fromByteBuffer(final ByteBuffer bb) {
-        int len = 0;
+    /*
+    Parse a 'COPY TO' binary row manually and compose an instance of PGType.
+     */
+    public static PGType fromCopyBuffer(final ByteBuffer bb) {
+        int len;
 
         BBTool.skip(bb, 2);
 
-        // oid
         BBTool.skip(bb, 4);
         final int oid = bb.getInt();
 
         len = bb.getInt();
         final String typname = BBTool.getString(bb, len);
 
+        BBTool.skip(bb, 4);
+        final char typtype = (char) bb.get();
 
+        len = bb.getInt();
+        final String typinput = BBTool.getString(bb, len);
 
-        return null;
+        len = bb.getInt();
+        final String typoutput = BBTool.getString(bb, len);
+
+        len = bb.getInt();
+        final String typreceive = BBTool.getString(bb, len);
+
+        len = bb.getInt();
+        final String typsend = BBTool.getString(bb, len);
+
+        BBTool.skip(bb, 4);
+        final int typarray = bb.getInt();
+
+        BBTool.skip(bb, 4);
+        final char typdelim = (char) bb.get();
+
+        BBTool.skip(bb, 4);
+        final int typelem = bb.getInt();
+
+        len = bb.getInt();
+        final String nspname = BBTool.getString(bb, len);
+
+        return new PGType(
+                oid,
+                typname,
+                typtype,
+                typinput,
+                typoutput,
+                typreceive,
+                typsend,
+                typarray,
+                typdelim,
+                typelem,
+                nspname
+        );
     }
-
-    // TODO: from RowMap
-//    final PGType pgType = new PGType(
-//            oid, --
-//            (String) rowMap.get("typname"), --
-//            (char) rowMap.get("typtype"),
-//            (String) rowMap.get("typinput"),
-//            (String) rowMap.get("typoutput"),
-//            (String) rowMap.get("typreceive"),
-//            (String) rowMap.get("typsend"),
-//            (int) rowMap.get("typarray"),
-//            (char) rowMap.get("typdelim"),
-//            (int) rowMap.get("typelem"),
-//            (String) rowMap.get("nspname")
-//    );
-
 }

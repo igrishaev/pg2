@@ -7,7 +7,16 @@
 
 - CodecParams
   - test toString method
-  - move oid->processor map to config?
+
+- ReadTypes
+  - keep type-map
+  - update CodecParams with type-map
+  - test custom type-map
+  - flag to read types?
+  - oids -> string/keyword types?
+  - enable binary by default?
+  - decode records
+  - oids -> types parameter? [:public/vector :foo/bar]
 
 - use PG* env vars
 - fix pg.server namespace
@@ -24,8 +33,6 @@
 - geom types: json, edn
 - geom types: toString -> toSQL
 
-- read all types at startup?
-  - oids -> string/keyword types?
 
 .~/.pgpass
 https://www.postgresql.org/docs/current/libpq-pgpass.html
@@ -64,8 +71,6 @@ config & uri: rename pg-params to params?
 
 - copy in with custom types (pgvector)?
 
-- decode records
-- enable binary by default?
 - oid wrapper?
 - copy in/out tab format
 - conn init sql

@@ -3,6 +3,7 @@ package org.pg;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 import org.pg.processor.IProcessor;
+import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -40,6 +41,16 @@ public class Copy {
             (byte) -1,
             (byte) -1
     };
+
+    /*
+    Check if it's a terminator of binary COPY protocol.
+     */
+    public static boolean isTerminator(final ByteBuffer bb) {
+        final byte[] bytes = bb.array();
+        return bytes.length == 2
+                && bytes[0] == (byte) -1
+                && bytes[1] == (byte) -1;
+    }
 
     public static String quoteCSV (final String line) {
         return line.replace("\"", "\"\"");
