@@ -2,7 +2,7 @@
 release:
 	lein release
 
-docker-up:
+docker-up: docker-down docker-rm
 	docker compose up
 
 docker-down:
@@ -25,6 +25,9 @@ toc-build:
 
 install:
 	lein sub with-profile uberjar install
+
+clean:
+	find . -type d -name target -exec rm -rf {} \;
 
 # https://gist.github.com/achesco/b893fb55b90651cf5f4cc803b78e19fd
 certs-generate:

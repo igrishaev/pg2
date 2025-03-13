@@ -12,7 +12,7 @@ public final class Main {
          String user = "test"; // System.getenv("USER");
 
         Config config = Config.builder(user, user)
-                .port(15432)
+                .port(10150)
                 .host("127.0.0.1")
                 .password(user)
                 .binaryEncode(true)
@@ -35,7 +35,7 @@ public final class Main {
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
-        // System.out.println(conn.query("select 42 as num"));
+        System.out.println(conn.query("select '[1,2,3]'::vector(3) as v"));
         final Object map = RT.first(conn.execute("select 1 a, 2 b, 3 c, 4 d, 5 e, 6 f, 7 g, 8 h, 9 i, 10 j, 11 k, 12 l, 13 m, 14 n, 15 o, 16 p"));
         System.out.println(RT.seq(map));
 

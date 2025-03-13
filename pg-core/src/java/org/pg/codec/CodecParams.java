@@ -12,6 +12,12 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+A storage of data encoding and decoding parameters, e.g. the current
+client charset, client charset, date style and so on. Most of the
+data gets populated by the Connection object during the authorization
+pipeline.
+ */
 public class CodecParams {
     private Charset clientCharset = Const.clientCharset;
     private Charset serverCharset = Const.serverCharset;
@@ -19,18 +25,18 @@ public class CodecParams {
     private String dateStyle = Const.dateStyle;
     private boolean integerDatetime = Const.integerDatetime;
     private ObjectMapper objectMapper = JSON.defaultMapper;
-    private final Map<Integer, PGType> pgTypes = new HashMap<>(Const.pgTypeMapSize);
+    private final Map<Integer, PGType> pgTypes = new HashMap<>();
 
     @Override
     public String toString() {
-        return String.format("CodecParams[clientCharset=%s, serverCharset=%s, timeZone=%s, dateStyle=%s, integerDatetime=%s, objectMapper=%s, pgTypes={%s items}]",
+        return String.format("CodecParams[clientCharset=%s, serverCharset=%s, timeZone=%s, dateStyle=%s, integerDatetime=%s, objectMapper=%s, pgTypes=%s]",
                 clientCharset,
                 serverCharset,
                 timeZone,
                 dateStyle,
                 integerDatetime,
                 objectMapper,
-                pgTypes.size()
+                pgTypes
         );
     }
 
