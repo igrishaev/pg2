@@ -14,7 +14,7 @@ public record Parse (String statement,
 
     @Override
     public String toString() {
-        return String.format("Parse[statement=%s, query=%s, OIDs=%s]",
+        return String.format("Parse[statement=%s, query=%s, objOids=%s]",
                 statement,
                 query,
                 Arrays.toString(OIDs)
@@ -27,7 +27,7 @@ public record Parse (String statement,
 
         if (OIDCount > 0xFFFF) {
             throw new PGError(
-                    "Too many OIDs! OID count: %s, query: %s",
+                    "Too many objOids! OID count: %s, query: %s",
                     OIDCount, query
             );
         }
