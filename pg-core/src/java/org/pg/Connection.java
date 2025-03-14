@@ -218,12 +218,15 @@ public final class Connection implements AutoCloseable {
                 }
                 pgType = PGType.fromCopyBuffer(bb);
                 codecParams.setPgType(pgType);
+                // these messages are expected but just skipped
             } else if (msg instanceof CopyOutResponse) {
             } else if (msg instanceof CopyDone) {
             } else if (msg instanceof CommandComplete) {
             } else if (msg instanceof ReadyForQuery) {
                 break;
             } else {
+                // we didn't take something into account; close and throw
+                close();
                 throw new PGError("Unexpected message in readTypes: %s", msg);
             }
         }
@@ -585,6 +588,14 @@ public final class Connection implements AutoCloseable {
     ) {
         final String statement = generateStatement();
         final int[] OIDs = executeParams.OIDs();
+        final String[] types = executeParams.types();
+
+        for (String type: types) {
+            int oid = codecParams.typeToOid(type);
+        }
+
+        //
+
         final Parse parse = new Parse(statement, sql, OIDs);
         sendMessage(parse);
         sendDescribeStatement(statement);
