@@ -958,7 +958,10 @@ from
         (assoc *CONFIG-BIN* :fn-notification fn-notification)
 
         counter!
-        (atom 0)]
+        (atom 0)
+
+        channel
+        (str (gensym "channel"))]
 
     (pg/with-connection [conn1 config+]
       (pg/with-connection [conn2 config+]
@@ -966,24 +969,24 @@ from
         (is (zero? (pg/poll-notifications conn2)))
         (is (zero? (pg/poll-notifications conn1)))
 
-        (pg/listen conn2 "test")
-        (pg/notify conn1 "test" "1")
-        (pg/notify conn1 "test" "2")
-        (pg/notify conn1 "test" "3")
+        (pg/listen conn2 channel)
+        (pg/notify conn1 channel "1")
+        (pg/notify conn1 channel "2")
+        (pg/notify conn1 channel "3")
 
         (while (-> counter! deref (< 3))
           (let [amount (pg/poll-notifications conn2)]
             (swap! counter! + amount)))))
 
-    (is (= #{{:channel "test"
+    (is (= #{{:channel channel
               :msg :NotificationResponse
               :self? false
               :message "1"}
-             {:channel "test"
+             {:channel channel
               :msg :NotificationResponse
               :self? false
               :message "2"}
-             {:channel "test"
+             {:channel channel
               :msg :NotificationResponse
               :self? false
               :message "3"}}
