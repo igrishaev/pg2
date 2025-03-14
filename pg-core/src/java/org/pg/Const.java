@@ -49,4 +49,6 @@ public final class Const {
     public static ZoneId timeZone = ZoneOffset.UTC;
     public static String dateStyle = "ISO, DMY";
     public static boolean integerDatetime = true;
+    public static int pgTypeMapSize = 16;
+    public static int typeToOIDSize = 16;
 }
