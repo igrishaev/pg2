@@ -1436,7 +1436,7 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public int pollNotifications() {
         try (TryLock ignored = lock.get()) {
-            final String sql = "";
+            final String sql = "-- poll notifications";
             sendQuery(sql);
             final Result res = interact(sql);
             return res.getNotificationCount();
