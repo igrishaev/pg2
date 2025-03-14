@@ -3,6 +3,7 @@ package org.pg;
 import clojure.lang.IFn;
 import clojure.lang.Named;
 import org.pg.clojure.CljAPI;
+import org.pg.codec.CodecParams;
 import org.pg.enums.CopyFormat;
 import org.pg.enums.OID;
 import org.pg.error.PGError;
@@ -15,8 +16,7 @@ import java.util.*;
 
 public record ExecuteParams (
         List<Object> params,
-        int[] OIDs,
-        String[] types,
+        List<Object> objOids,
         IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
@@ -47,11 +47,45 @@ public record ExecuteParams (
         return new Builder().build();
     }
 
+    /*
+    Turn object OIDs of mixed types into an array of integer OIDs.
+    The CodecParams value serves as a source of Postgres types.
+     */
+    public int[] getIntOids (final CodecParams codecParams) {
+        final int len = objOids.size();
+        final int[] result = new int[len];
+        int i = -1;
+        int oidInt;
+        String typeName;
+        String namespace;
+        for (Object objOid: objOids) {
+            i++;
+            if (objOid == null) {
+                result[i] = OID.DEFAULT;
+            } else if (objOid instanceof Number) {
+                result[i] = (int) objOid;
+            } else if (objOid instanceof String s) {
+                oidInt = codecParams.typeToOid(s);
+                result[i] = oidInt;
+            } else if (objOid instanceof Named nm) {
+                namespace = nm.getNamespace();
+                if (namespace == null) {
+                    namespace = "public";
+                }
+                typeName = namespace + "." + nm.getName();
+                oidInt = codecParams.typeToOid(typeName);
+                result[i] = oidInt;
+            } else {
+                throw new PGError("wrong OID: %s", TypeTool.repr(objOid));
+            }
+        }
+        return result;
+    }
+
     public final static class Builder {
 
         private List<Object> params = Collections.emptyList();
-        private int[] OIDs = new int[0];
-        private String[] types = new String[0];
+        private List<Object> objOids = Collections.emptyList();
         private IFn reducer = Default.INSTANCE;
         private long maxRows = 0;
         private IFn fnKeyTransform = CljAPI.keyword;
@@ -120,49 +154,11 @@ public record ExecuteParams (
             return this;
         }
 
-        // OIDs + types in the same array!
-        public Builder OIDs (final List<Integer> OIDs) {
+        public Builder OIDs (final List<Object> OIDs) {
             if (OIDs == null) {
                 return this;
             }
-            final int[] oidArr = new int[OIDs.size()];
-            int i = 0;
-            for (Integer oid: OIDs) {
-                oidArr[i] = oid == null ? OID.DEFAULT : oid;
-                i++;
-            }
-            this.OIDs = oidArr;
-            return this;
-        }
-
-        public Builder types (final List<Object> types) {
-            if (types == null) {
-                return this;
-            }
-            final int len = types.size();
-            final String[] typeArray = new String[len];
-            Object type;
-            String typeName;
-            String namespace;
-            for (int i = 0; i < len; i++) {
-                type = types.get(i);
-                if (type == null) {
-                    typeArray[i] = null;
-                } else if (type instanceof String s) {
-                    typeArray[i] = s;
-                } else if (type instanceof Named nm) {
-                    namespace = nm.getNamespace();
-                    if (namespace == null) {
-                        throw new PGError("the type %s doesn't have a namespace: %s", nm);
-                    } else {
-                        typeName = namespace + "." + nm.getName();
-                        typeArray[i] = typeName;
-                    }
-                } else {
-                    throw new PGError("wrong type: %s", TypeTool.repr(type));
-                }
-            }
-            this.types = typeArray;
+            this.objOids = OIDs;
             return this;
         }
 
@@ -247,8 +243,7 @@ public record ExecuteParams (
         public ExecuteParams build () {
             return new ExecuteParams(
                     params,
-                    OIDs,
-                    types,
+                    objOids,
                     reducer,
                     maxRows,
                     fnKeyTransform,

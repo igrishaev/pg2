@@ -88,7 +88,7 @@ public final class Main {
 
 //        String query = "select $1 as foo";
 //        // "select $1::int as foo, 'test' as string, 42 as num, now() as now"
-//        PreparedStatement ps = conn.prepare(query, ExecuteParams.builder().OIDs(List.of(OID.BOOL)).build());
+//        PreparedStatement ps = conn.prepare(query, ExecuteParams.builder().objOids(List.of(OID.BOOL)).build());
 //        // List<Object> params = List.of(1);
 //        Object res2 = conn.executeStatement(ps, ExecuteParams.builder().params(List.of(true)).build());
 //        conn.closeStatement(ps);

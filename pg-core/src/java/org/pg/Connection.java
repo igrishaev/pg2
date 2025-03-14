@@ -587,16 +587,8 @@ public final class Connection implements AutoCloseable {
             final ExecuteParams executeParams
     ) {
         final String statement = generateStatement();
-        final int[] OIDs = executeParams.OIDs();
-        final String[] types = executeParams.types();
-
-        for (String type: types) {
-            int oid = codecParams.typeToOid(type);
-        }
-
-        //
-
-        final Parse parse = new Parse(statement, sql, OIDs);
+        final int[] intOids = executeParams.getIntOids(codecParams);
+        final Parse parse = new Parse(statement, sql, intOids);
         sendMessage(parse);
         sendDescribeStatement(statement);
         sendFlush();

@@ -21,10 +21,16 @@
   - test citext
   - update CodecParams with type-map
   - test custom type-map
-  - oids -> string/keyword types?
   - enable binary by default?
   - decode records
-  - oids -> types parameter? [:public/vector :foo/bar]
+
+- test oids
+  - (un)known oid int
+  - (un)known oid long
+  - (un)known oid string, keyword, symbol, no namespace
+
+- clojure api
+  - read-types
 
 - use PG* env vars
 - fix pg.server namespace

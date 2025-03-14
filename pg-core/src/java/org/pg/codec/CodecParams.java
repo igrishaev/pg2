@@ -2,7 +2,7 @@ package org.pg.codec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.Const;
-import org.pg.enums.OID;
+import org.pg.error.PGError;
 import org.pg.json.JSON;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
@@ -117,7 +117,12 @@ public class CodecParams {
     }
 
     public int typeToOid(final String pgType) {
-        return typeToOID.getOrDefault(pgType, OID.DEFAULT);
+        final Integer oid = typeToOID.get(pgType);
+        if (oid == null) {
+            throw new PGError("unknown postgres type: %s", pgType);
+        } else {
+            return oid;
+        }
     }
 
     public IProcessor getProcessor(final int oid) {
