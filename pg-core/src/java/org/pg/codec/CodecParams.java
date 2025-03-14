@@ -2,6 +2,7 @@ package org.pg.codec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.Const;
+import org.pg.enums.OID;
 import org.pg.json.JSON;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
@@ -25,7 +26,8 @@ public class CodecParams {
     private String dateStyle = Const.dateStyle;
     private boolean integerDatetime = Const.integerDatetime;
     private ObjectMapper objectMapper = JSON.defaultMapper;
-    private final Map<Integer, PGType> pgTypes = new HashMap<>();
+    private final Map<Integer, PGType> pgTypes = new HashMap<>(Const.pgTypeMapSize);
+    private final Map<String, Integer> typeToOID = new HashMap<>(Const.typeToOIDSize);
 
     @Override
     public String toString() {
@@ -108,7 +110,14 @@ public class CodecParams {
     }
 
     public void setPgType(final PGType pgType) {
-        pgTypes.put(pgType.oid(), pgType);
+        final int oid = pgType.oid();
+        final String typeName = pgType.nspname() + "." + pgType.typname();
+        pgTypes.put(oid, pgType);
+        typeToOID.put(typeName, oid);
+    }
+
+    public int typeToOid(final String pgType) {
+        return typeToOID.getOrDefault(pgType, OID.DEFAULT);
     }
 
     public IProcessor getProcessor(final int oid) {

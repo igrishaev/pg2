@@ -1,10 +1,13 @@
 package org.pg;
 
 import clojure.lang.IFn;
+import clojure.lang.Named;
 import org.pg.clojure.CljAPI;
 import org.pg.enums.CopyFormat;
 import org.pg.enums.OID;
+import org.pg.error.PGError;
 import org.pg.reducer.*;
+import org.pg.util.TypeTool;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,6 +16,7 @@ import java.util.*;
 public record ExecuteParams (
         List<Object> params,
         int[] OIDs,
+        String[] types,
         IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
@@ -47,6 +51,7 @@ public record ExecuteParams (
 
         private List<Object> params = Collections.emptyList();
         private int[] OIDs = new int[0];
+        private String[] types = new String[0];
         private IFn reducer = Default.INSTANCE;
         private long maxRows = 0;
         private IFn fnKeyTransform = CljAPI.keyword;
@@ -115,16 +120,49 @@ public record ExecuteParams (
             return this;
         }
 
+        // OIDs + types in the same array!
         public Builder OIDs (final List<Integer> OIDs) {
-            if (OIDs != null) {
-                final int[] oidArr = new int[OIDs.size()];
-                int i = 0;
-                for (Integer oid: OIDs) {
-                    oidArr[i] = oid == null ? OID.DEFAULT : oid;
-                    i++;
-                }
-                this.OIDs = oidArr;
+            if (OIDs == null) {
+                return this;
             }
+            final int[] oidArr = new int[OIDs.size()];
+            int i = 0;
+            for (Integer oid: OIDs) {
+                oidArr[i] = oid == null ? OID.DEFAULT : oid;
+                i++;
+            }
+            this.OIDs = oidArr;
+            return this;
+        }
+
+        public Builder types (final List<Object> types) {
+            if (types == null) {
+                return this;
+            }
+            final int len = types.size();
+            final String[] typeArray = new String[len];
+            Object type;
+            String typeName;
+            String namespace;
+            for (int i = 0; i < len; i++) {
+                type = types.get(i);
+                if (type == null) {
+                    typeArray[i] = null;
+                } else if (type instanceof String s) {
+                    typeArray[i] = s;
+                } else if (type instanceof Named nm) {
+                    namespace = nm.getNamespace();
+                    if (namespace == null) {
+                        throw new PGError("the type %s doesn't have a namespace: %s", nm);
+                    } else {
+                        typeName = namespace + "." + nm.getName();
+                        typeArray[i] = typeName;
+                    }
+                } else {
+                    throw new PGError("wrong type: %s", TypeTool.repr(type));
+                }
+            }
+            this.types = typeArray;
             return this;
         }
 
@@ -134,6 +172,7 @@ public record ExecuteParams (
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder maxRows (final long maxRows) {
             this.maxRows = maxRows;
             return this;
@@ -209,6 +248,7 @@ public record ExecuteParams (
             return new ExecuteParams(
                     params,
                     OIDs,
+                    types,
                     reducer,
                     maxRows,
                     fnKeyTransform,
