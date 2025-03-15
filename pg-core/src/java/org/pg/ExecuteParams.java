@@ -2,6 +2,7 @@ package org.pg;
 
 import clojure.lang.IFn;
 import clojure.lang.Named;
+import clojure.lang.RT;
 import org.pg.clojure.CljAPI;
 import org.pg.codec.CodecParams;
 import org.pg.enums.CopyFormat;
@@ -63,7 +64,7 @@ public record ExecuteParams (
             if (objOid == null) {
                 result[i] = OID.DEFAULT;
             } else if (objOid instanceof Number) {
-                result[i] = (int) objOid;
+                result[i] = RT.intCast(objOid);
             } else if (objOid instanceof String s) {
                 oidInt = codecParams.typeToOid(s);
                 result[i] = oidInt;
