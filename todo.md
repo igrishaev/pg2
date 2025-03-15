@@ -9,18 +9,16 @@
   - test toString method
 
 - ReadTypes
-  - flag to read types?
-  - keep type-map
+  - flag to read types? default true
   - test citext
+  - enable binary by default?
+
+  - keep type-map
+
   - update CodecParams with type-map
   - test custom type-map
-  - enable binary by default?
-  - decode records
 
-- test oids
-  - (un)known oid int
-  - (un)known oid long
-  - (un)known oid string, keyword, symbol, no namespace
+  - decode records
 
 - clojure api
   - read-types
