@@ -1403,6 +1403,56 @@ from
       (is (= {:foo 999} res)))))
 
 
+(deftest test-custom-oids-ok
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [stmt
+          (pg/prepare conn
+                      "select $1 as p1, $2 as p2, $3 as p3, $4 as p4, $5 as p5, $6 as p6"
+                      {:oids [oid/int4         ;; int constant
+                              23               ;; long constant
+                              "public.vector"  ;; string type
+                              :public/vector   ;; keyword
+                              'public/vector   ;; symbol
+                              :vector          ;; no namespace, public by default
+                              ]})
+          res
+          (pg/execute-statement conn
+                                stmt
+                                {:params [1 2 [1 2 3] [1 2 3] [1 2 3] [1 2 3]]
+                                 :first true})]
+      (is (= {:p1 1
+              :p2 2
+              :p4 [1.0 2.0 3.0]
+              :p3 [1.0 2.0 3.0]
+              :p5 [1.0 2.0 3.0]
+              :p6 [1.0 2.0 3.0]}
+             res)))))
+
+
+;; TODO
+;; test in execute
+;; test in copy
+
+(deftest test-custom-oids-prepare-error
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (try
+      (pg/prepare conn "select $1 as p1" {:oids [true]})
+      (catch PGError e
+        (is (= "wrong OID: type: java.lang.Boolean, value: true"
+               (ex-message e)))))
+
+    (try
+      (pg/prepare conn "select $1 as p1" {:oids ["foo.lol_bar"]})
+      (catch PGError e
+        (is (= "unknown postgres type: foo.lol_bar"
+               (ex-message e)))))
+
+    (testing "connection is still usable"
+      (let [res (pg/execute conn "select 1 as one" {:first true})]
+        (is (= {:one 1} res))))))
+
+
 (deftest test-statement-params-wrong-count
   (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-statement [stmt conn "select $1::integer as foo, $2::integer as bar"]
