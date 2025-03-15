@@ -1403,7 +1403,7 @@ from
       (is (= {:foo 999} res)))))
 
 
-(deftest test-custom-oids-ok
+(deftest test-custom-oids-prepare-ok
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [stmt
           (pg/prepare conn
@@ -1429,12 +1429,83 @@ from
              res)))))
 
 
-;; TODO
-;; test in execute
-;; test in copy
-
-(deftest test-custom-oids-prepare-error
+(deftest test-custom-oids-execute-ok
   (pg/with-connection [conn *CONFIG-TXT*]
+    (let [res
+          (pg/execute conn
+                      "select $1 as p1, $2 as p2, $3 as p3, $4 as p4, $5 as p5, $6 as p6"
+                      {:params [1 2 [1 2 3] [1 2 3] [1 2 3] [1 2 3]]
+                       :oids [oid/int4        ;; int constant
+                              23              ;; long constant
+                              "public.vector" ;; string type
+                              :public/vector  ;; keyword
+                              'public/vector  ;; symbol
+                              :vector         ;; no namespace, public by default
+                              ]
+                       :first true})]
+      (is (= {:p1 1
+              :p2 2
+              :p4 [1.0 2.0 3.0]
+              :p3 [1.0 2.0 3.0]
+              :p5 [1.0 2.0 3.0]
+              :p6 [1.0 2.0 3.0]}
+             res)))))
+
+
+(deftest test-custom-oids-copy-in-ok
+  (testing "csv"
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/query conn "create temp table foo (v vector not null)")
+      (let [rows
+            [[[1 2 3]]
+             [[4 5 6]]]
+
+            res-copy
+            (pg/copy-in-rows conn
+                             "copy foo (v) from STDIN WITH (FORMAT CSV)"
+                             rows
+                             {:oids [:vector]})
+
+            res-query
+            (pg/query conn "select * from foo")]
+
+        (is (= {:copied 2} res-copy))
+
+        (is (= [{:v [1.0 2.0 3.0]} {:v [4.0 5.0 6.0]}]
+               res-query)))))
+
+  (testing "bin"
+    (pg/with-connection [conn *CONFIG-BIN*]
+      (pg/query conn "create temp table foo (v vector not null)")
+      (let [rows
+            [[[1 2 3]]
+             [[4 5 6]]]
+
+            res-copy
+            (pg/copy-in-rows conn
+                             "copy foo (v) from STDIN WITH (FORMAT BINARY)"
+                             rows
+                             {:copy-format pg/COPY_FORMAT_BIN
+                              :oids [:vector]})
+
+            res-query
+            (pg/query conn "select * from foo")]
+
+        (is (= {:copied 2} res-copy))
+
+        (is (= [{:v [1.0 2.0 3.0]} {:v [4.0 5.0 6.0]}]
+               res-query))))))
+
+
+(deftest test-custom-oids-error
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (try
+      (pg/prepare conn "select $1 as p1" {:oids [-999]})
+      (catch PGError e
+        (is (-> e
+                (ex-message)
+                (str/includes? "lookup failed for type")))))
 
     (try
       (pg/prepare conn "select $1 as p1" {:oids [true]})
