@@ -978,6 +978,8 @@ from
           (let [amount (pg/poll-notifications conn2)]
             (swap! counter! + amount)))))
 
+    (Thread/sleep 100) ;; let executor finish
+
     (is (= #{{:channel channel
               :msg :NotificationResponse
               :self? false
