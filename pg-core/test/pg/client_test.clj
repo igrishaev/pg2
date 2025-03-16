@@ -4760,3 +4760,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= 1
              res))))
   )
+
+
+;; test read-pg-types func
+;; test read-pg-types? flag

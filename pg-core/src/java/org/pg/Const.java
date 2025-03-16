@@ -51,4 +51,6 @@ public final class Const {
     public static boolean integerDatetime = true;
     public static int pgTypeMapSize = 16;
     public static int typeToOIDSize = 16;
+    public static boolean readPGTypes = true;
+    public static String password = "";
 }

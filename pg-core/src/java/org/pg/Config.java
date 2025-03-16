@@ -46,7 +46,8 @@ public record Config(
         int poolBorrowConnTimeoutMs,
         boolean useUnixSocket,
         String unixSocketPath,
-        Executor executor
+        Executor executor,
+        boolean readPGTypes
 ) {
 
     public ConnType getConnType() {
@@ -69,7 +70,7 @@ public record Config(
     public final static class Builder {
         private final String user;
         private final String database;
-        private String password = "";
+        private String password = Const.password;
         private int port = Const.PG_PORT;
         private String host = Const.PG_HOST;
         private int protocolVersion = Const.PROTOCOL_VERSION;
@@ -99,6 +100,7 @@ public record Config(
         private boolean useUnixSocket = false;
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
+        private boolean readPGTypes = Const.readPGTypes;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -295,6 +297,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder readPGTypes(final boolean readPGTypes) {
+            this.readPGTypes = readPGTypes;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -337,7 +345,8 @@ public record Config(
                     this.poolBorrowConnTimeoutMs,
                     this.useUnixSocket,
                     this.unixSocketPath,
-                    this.executor
+                    this.executor,
+                    this.readPGTypes
             );
         }
     }
