@@ -647,6 +647,21 @@
 
 
 ;;
+;; Types
+;;
+
+(defn read-pg-types
+  "
+  Query the pg_type table to fetch general information
+  about non-built-in types, e.g. user-defined enums,
+  extensions like pg_vector, hstore, etc. The information
+  is stored in internals maps and used for encoding
+  and decoding data.
+  "
+  [^Connection conn]
+  (.readTypes conn))
+
+;;
 ;; Prints
 ;;
 
@@ -663,9 +678,6 @@
 (defmethod print-method PreparedStatement
   [^PreparedStatement conn ^Writer writer]
   (.write writer (.toString conn)))
-
-
-;; TODO: drop it!
 ;;
 ;; Listen/notify block
 ;;

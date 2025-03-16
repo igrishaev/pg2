@@ -14,7 +14,6 @@
   - enable binary by default?
 
   - keep type-map
-
   - update CodecParams with type-map
   - test custom type-map
 

@@ -83,7 +83,9 @@ public final class Connection implements AutoCloseable {
         }
         if (sendStartup) {
             conn.authenticate();
-            conn.readTypes();
+            if (config.readPGTypes()) {
+                conn.readTypes();
+            }
         }
         return conn;
     }
@@ -225,8 +227,6 @@ public final class Connection implements AutoCloseable {
             } else if (msg instanceof ReadyForQuery) {
                 break;
             } else {
-                // we didn't take something into account; close and throw
-                close();
                 throw new PGError("Unexpected message in readTypes: %s", msg);
             }
         }
