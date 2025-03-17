@@ -1580,6 +1580,20 @@ from
                result))))))
 
 
+(deftest test-custom-enum-array
+  (let [enum-name
+        (symbol (format "enum_%s" (System/nanoTime)))]
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/query conn (format "create type %s as enum ('foo', 'bar', 'baz')" enum-name)))
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (let [result
+            (pg/query conn (format "select '{foo,bar,baz}'::%s[] as arr" enum-name))]
+        (is (= [{:arr ["foo" "bar" "baz"]}]
+               result))))))
+
+
 (deftest test-forcibly-read-types
   (pg/with-connection [conn (assoc *CONFIG-TXT* :read-pg-types? false)]
 
