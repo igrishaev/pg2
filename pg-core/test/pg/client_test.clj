@@ -1524,6 +1524,18 @@ from
         (is (= {:one 1} res))))))
 
 
+(deftest test-forcibly-read-types
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :read-pg-types? false)]
+
+    (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v "[1,2,3]"}] res)))
+
+    (pg/read-pg-types conn)
+
+    (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v [1.0 2.0 3.0]}] res)))))
+
+
 (deftest test-statement-params-wrong-count
   (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-statement [stmt conn "select $1::integer as foo, $2::integer as bar"]
@@ -4760,7 +4772,3 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= 1
              res))))
   )
-
-
-;; test read-pg-types func
-;; test read-pg-types? flag
