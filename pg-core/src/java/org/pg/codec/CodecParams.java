@@ -1,5 +1,6 @@
 package org.pg.codec;
 
+import clojure.lang.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.Const;
 import org.pg.error.PGError;
@@ -7,6 +8,7 @@ import org.pg.json.JSON;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
 import org.pg.type.PGType;
+import org.pg.util.TypeTool;
 
 import java.nio.charset.Charset;
 import java.time.ZoneId;
@@ -26,19 +28,26 @@ public class CodecParams {
     private String dateStyle = Const.dateStyle;
     private boolean integerDatetime = Const.integerDatetime;
     private ObjectMapper objectMapper = JSON.defaultMapper;
-    private final Map<Integer, PGType> pgTypes = new HashMap<>(Const.pgTypeMapSize);
-    private final Map<String, Integer> typeToOID = new HashMap<>(Const.typeToOIDSize);
+    private final Map<Integer, PGType> oidToPGType = new HashMap<>();
+    private final Map<String, Integer> typeToOID = new HashMap<>();
+    private final Map<Integer, IProcessor> oidToProcessor = new HashMap<>();
 
     @Override
     public String toString() {
-        return String.format("CodecParams[clientCharset=%s, serverCharset=%s, timeZone=%s, dateStyle=%s, integerDatetime=%s, objectMapper=%s, pgTypes=%s]",
+        return String.format(
+                "CodecParams[clientCharset=%s, " +
+                        "serverCharset=%s, timeZone=%s, dateStyle=%s, " +
+                        "integerDatetime=%s, objectMapper=%s, " +
+                        "oidToPGType=%s, typeToOID=%s, oidToProcessor=%s]",
                 clientCharset,
                 serverCharset,
                 timeZone,
                 dateStyle,
                 integerDatetime,
                 objectMapper,
-                pgTypes
+                oidToPGType,
+                typeToOID,
+                oidToProcessor
         );
     }
 
@@ -109,11 +118,41 @@ public class CodecParams {
         return this;
     }
 
+    public static String objectToPGType(final Object obj) {
+        String namespace;
+        if (obj instanceof String s) {
+            return s;
+        } else if (obj instanceof Named nm) {
+            namespace = nm.getNamespace();
+            if (namespace == null) {
+                namespace = Const.defaultSchema;
+            }
+            return namespace + "." + nm.getName();
+        } else {
+            throw new PGError("wrong postgres type: %s", TypeTool.repr(obj));
+        }
+    }
+
+    public void setProcessor(final Object pgType, final IProcessor processor) {
+        final String type = objectToPGType(pgType);
+        final Integer oid = typeToOID.get(type);
+        if (oid == null) {
+            throw new PGError("unknown type: %s", TypeTool.repr(pgType));
+        }
+        oidToProcessor.put(oid, processor);
+    }
+
+    public PGType getPgType(final String fullName) {
+        final Integer oid = typeToOID.get(fullName);
+        if (oid == null) return null;
+        return oidToPGType.get(oid);
+    }
+
     public void setPgType(final PGType pgType) {
         final int oid = pgType.oid();
-        final String typeName = pgType.nspname() + "." + pgType.typname();
-        pgTypes.put(oid, pgType);
-        typeToOID.put(typeName, oid);
+        final String fullName = pgType.fullName();
+        oidToPGType.put(oid, pgType);
+        typeToOID.put(fullName, oid);
     }
 
     public int typeToOid(final String pgType) {
@@ -126,20 +165,24 @@ public class CodecParams {
     }
 
     public IProcessor getProcessor(final int oid) {
-        final IProcessor processor = Processors.getProcessor(oid);
-        if (processor != null) {
-            return processor;
-        }
-        final PGType pgType = pgTypes.get(oid);
-        if (pgType == null) {
-            return Processors.unsupported;
-        }
-        if (pgType.isVector()) {
+        // get from a global map with default types
+        IProcessor processor = Processors.getProcessor(oid);
+        if (processor != null) return processor;
+
+        // get from overrides
+        processor = oidToProcessor.get(oid);
+        if (processor != null) return processor;
+
+        // try to guess by fields from pg_type table
+        final PGType pgType = oidToPGType.get(oid);
+        if (pgType == null) return Processors.unsupported;
+
+        if (pgType.isEnum()) {
+            return Processors.defaultEnum;
+        } else if (pgType.isVector()) {
             return Processors.vector;
         } else if (pgType.isSparseVector()) {
             return Processors.sparsevec;
-        } else if (pgType.isEnum()) {
-            return Processors.defaultEnum;
         } else {
             return Processors.unsupported;
         }

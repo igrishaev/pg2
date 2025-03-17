@@ -6,6 +6,7 @@ import org.pg.enums.ConnType;
 import org.pg.enums.SSLValidation;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
+import org.pg.processor.IProcessor;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;
@@ -47,7 +48,8 @@ public record Config(
         boolean useUnixSocket,
         String unixSocketPath,
         Executor executor,
-        boolean readPGTypes
+        boolean readPGTypes,
+        Map<Object, IProcessor> typeMap
 ) {
 
     public ConnType getConnType() {
@@ -77,7 +79,7 @@ public record Config(
         private final Map<String, String> pgParams = new HashMap<>();
         private boolean binaryEncode = Const.BIN_ENCODE;
         private boolean binaryDecode = Const.BIN_DECODE;
-        private boolean useSSL = false;
+        private boolean useSSL = Const.useSSL;
         private boolean SOKeepAlive = Const.SO_KEEP_ALIVE;
         private boolean SOTCPnoDelay = Const.SO_TCP_NO_DELAY;
         private int SOTimeout = Const.SO_TIMEOUT;
@@ -101,6 +103,7 @@ public record Config(
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
         private boolean readPGTypes = Const.readPGTypes;
+        private Map<Object, IProcessor> typeMap;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -303,6 +306,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder typeMap(final Map<Object, IProcessor> typeMap) {
+            this.typeMap = typeMap;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -346,7 +355,8 @@ public record Config(
                     this.useUnixSocket,
                     this.unixSocketPath,
                     this.executor,
-                    this.readPGTypes
+                    this.readPGTypes,
+                    this.typeMap
             );
         }
     }

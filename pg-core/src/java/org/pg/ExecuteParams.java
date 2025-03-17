@@ -71,7 +71,7 @@ public record ExecuteParams (
             } else if (objOid instanceof Named nm) {
                 namespace = nm.getNamespace();
                 if (namespace == null) {
-                    namespace = "public";
+                    namespace = Const.defaultSchema;
                 }
                 typeName = namespace + "." + nm.getName();
                 oidInt = codecParams.typeToOid(typeName);

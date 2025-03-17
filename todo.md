@@ -9,14 +9,15 @@
   - test toString method
 
 - ReadTypes
-  - keep type-map
-  - update CodecParams with type-map
-  - test custom type-map
-
   - test citext
   - enable binary by default?
-
   - decode records
+
+- enum array? (binary mode)
+
+Global static pgType map?
+
+connection phase (none, auth, operate)
 
 - clojure api
   - read-types

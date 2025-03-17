@@ -39,6 +39,16 @@ public final class KW {
     public final static Keyword y2 = Keyword.intern("y2");
     public final static Keyword closed_QMARK = Keyword.intern("closed?");
     public final static Keyword points = Keyword.intern("points");
+    public final static Keyword typname = Keyword.intern("typname");
+    public final static Keyword typtype = Keyword.intern("typtype");
+    public final static Keyword typinput = Keyword.intern("typinput");
+    public final static Keyword typoutput = Keyword.intern("typoutput");
+    public final static Keyword typreceive = Keyword.intern("typreceive");
+    public final static Keyword typsend = Keyword.intern("typsend");
+    public final static Keyword typarray = Keyword.intern("typarray");
+    public final static Keyword typdelim = Keyword.intern("typdelim");
+    public final static Keyword typelem = Keyword.intern("typelem");
+    public final static Keyword nspname = Keyword.intern("nspname");
 
     public static void main(String... args) {
         System.out.println(inserted);
