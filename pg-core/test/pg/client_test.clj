@@ -1524,6 +1524,62 @@ from
         (is (= {:one 1} res))))))
 
 
+(deftest test-custom-type-map-error
+  (let [type-map
+        {:public/foobar t/enum}
+
+        config
+        (assoc *CONFIG-TXT* :type-map type-map)]
+
+    (try
+      (pg/with-connection [conn config])
+      (is false)
+      (catch PGError e
+        (is (= "failed to preprocess postgres types, reason: unknown type: type: clojure.lang.Keyword, value: :public/foobar"
+               (ex-message e)))))
+
+    ;; without reading types, it's ok
+    (pg/with-connection [conn (assoc config :read-pg-types? false)]
+      (is (= 1 1)))))
+
+
+(deftest test-custom-type-map-ok
+  (let [enum-name
+        (symbol (format "enum_%s" (System/nanoTime)))
+
+        processor
+        (reify org.pg.processor.IProcessor
+          (decodeBin [this bb codecParams]
+            ::fake)
+          (decodeTxt [this string codecParams]
+            ::fake))
+
+        type-map
+        {enum-name processor}]
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/query conn (format "create type %s as enum ('foo', 'bar', 'baz')" enum-name)))
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (let [pg-type (pg/get-pg-type conn enum-name)]
+        (is (= {:typtype \e
+                :typoutput "enum_out"
+                :typelem 0
+                :typdelim \,
+                :typname (str enum-name)
+                :typreceive "enum_recv"
+                :nspname "public"
+                :typinput "enum_in"
+                :typsend "enum_send"}
+               (dissoc pg-type :oid :typarray)))))
+
+    (pg/with-connection [conn (assoc *CONFIG-TXT* :type-map type-map)]
+      (let [result
+            (pg/query conn (format "select 'foo'::%s as custom" enum-name))]
+        (is (= [{:custom ::fake}]
+               result))))))
+
+
 (deftest test-forcibly-read-types
   (pg/with-connection [conn (assoc *CONFIG-TXT* :read-pg-types? false)]
 
@@ -1915,6 +1971,7 @@ drop table %1$s;
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select $1 as foo" {:params ["hi"]})]
       (is (= [{:foo "hi"}] res)))))
+
 
 
 (deftest test-client-execute-prep-statement-exists

@@ -1,5 +1,8 @@
 package org.pg.type;
 
+import clojure.lang.IDeref;
+import clojure.lang.PersistentHashMap;
+import org.pg.clojure.KW;
 import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
@@ -16,7 +19,7 @@ public record PGType(
         char typdelim,
         int typelem,
         String nspname
-) {
+) implements IDeref {
 
     public boolean isEnum() {
         return typtype == 'e';
@@ -28,6 +31,13 @@ public record PGType(
 
     public boolean isSparseVector() {
         return typname.equals("sparsevec") && typinput.equals("sparsevec_in");
+    }
+
+    /*
+    Return a full qualified name of the type, e.g. schema.type_name.
+     */
+    public String fullName() {
+        return nspname() + "." + typname();
     }
 
     /*
@@ -83,6 +93,23 @@ public record PGType(
                 typdelim,
                 typelem,
                 nspname
+        );
+    }
+
+    @Override
+    public Object deref() {
+        return PersistentHashMap.create(
+                KW.oid, oid,
+                KW.typname, typname,
+                KW.typtype, typtype,
+                KW.typinput, typinput,
+                KW.typoutput, typoutput,
+                KW.typreceive, typreceive,
+                KW.typsend, typsend,
+                KW.typarray, typarray,
+                KW.typdelim, typdelim,
+                KW.typelem, typelem,
+                KW.nspname, nspname
         );
     }
 }

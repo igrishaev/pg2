@@ -84,7 +84,13 @@ public final class Connection implements AutoCloseable {
         if (sendStartup) {
             conn.authenticate();
             if (config.readPGTypes()) {
-                conn.readTypes();
+                try {
+                    conn.readTypes();
+                    conn.processTypeMap();
+                } catch (Exception e) {
+                    conn.close();
+                    throw new PGError(e, "failed to preprocess postgres types, reason: %s", e.getMessage());
+                }
             }
         }
         return conn;
@@ -161,6 +167,23 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
+    @SuppressWarnings("unused")
+    public PGType getPGTypeByName(final Object type) {
+        final String fullName = CodecParams.objectToPGType(type);
+        return codecParams.getPgType(fullName);
+    }
+
+    /*
+    Override some oids with custom processors, if set.
+     */
+    private void processTypeMap() {
+        final Map<Object, IProcessor> typeMap = config.typeMap();
+        if (typeMap == null) return;
+        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
+            codecParams.setProcessor(me.getKey(), me.getValue());
+        }
+    }
+
     /*
     Fill-in the current CodecParams instance with postgres types. This data
     helps to guess how to process custom types shipped by extensions (and
@@ -176,28 +199,28 @@ public final class Connection implements AutoCloseable {
         in advance.
         */
         final String query = """
-                copy (
-                    select
-                        pg_type.oid,
-                        pg_type.typname,
-                        pg_type.typtype,
-                        pg_type.typinput::text,
-                        pg_type.typoutput::text,
-                        pg_type.typreceive::text,
-                        pg_type.typsend::text,
-                        pg_type.typarray,
-                        pg_type.typdelim,
-                        pg_type.typelem,
-                        pg_namespace.nspname
-                    from
-                        pg_type,
-                        pg_namespace
-                    where
-                        pg_type.typnamespace = pg_namespace.oid
-                        and pg_namespace.nspname != 'pg_catalog'
-                        and pg_namespace.nspname != 'information_schema'
-                ) to stdout with (format binary)
-                """;
+copy (
+    select
+        pg_type.oid,
+        pg_type.typname,
+        pg_type.typtype,
+        pg_type.typinput::text,
+        pg_type.typoutput::text,
+        pg_type.typreceive::text,
+        pg_type.typsend::text,
+        pg_type.typarray,
+        pg_type.typdelim,
+        pg_type.typelem,
+        pg_namespace.nspname
+    from
+        pg_type,
+        pg_namespace
+    where
+        pg_type.typnamespace = pg_namespace.oid
+        and pg_namespace.nspname != 'pg_catalog'
+        and pg_namespace.nspname != 'information_schema'
+) to stdout with (format binary)
+""";
 
         sendQuery(query);
         flush();

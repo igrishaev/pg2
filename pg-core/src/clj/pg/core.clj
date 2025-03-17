@@ -661,6 +661,12 @@
   [^Connection conn]
   (.readTypes conn))
 
+
+(defn get-pg-type [^Connection conn type]
+  (some->> type
+           (.getPGTypeByName conn)
+           (deref)))
+
 ;;
 ;; Prints
 ;;
