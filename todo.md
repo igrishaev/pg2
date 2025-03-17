@@ -9,13 +9,12 @@
   - test toString method
 
 - ReadTypes
-  - flag to read types? default true
-  - test citext
-  - enable binary by default?
-
   - keep type-map
   - update CodecParams with type-map
   - test custom type-map
+
+  - test citext
+  - enable binary by default?
 
   - decode records
 
