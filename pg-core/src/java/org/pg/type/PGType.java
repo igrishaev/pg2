@@ -25,6 +25,10 @@ public record PGType(
         return typtype == 'e';
     }
 
+    public boolean isArray() {
+        return typelem != 0;
+    }
+
     public boolean isVector() {
         return typname.equals("vector") && typinput.equals("vector_in");
     }

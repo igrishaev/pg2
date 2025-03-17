@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.Const;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
+import org.pg.processor.Array;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
 import org.pg.type.PGType;
@@ -176,6 +177,10 @@ public class CodecParams {
         // try to guess by fields from pg_type table
         final PGType pgType = oidToPGType.get(oid);
         if (pgType == null) return Processors.unsupported;
+
+        if (pgType.isArray()) {
+            return new Array(pgType.oid(), pgType.typelem());
+        }
 
         if (pgType.isEnum()) {
             return Processors.defaultEnum;
