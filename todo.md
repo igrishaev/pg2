@@ -15,6 +15,8 @@
 pid-sender?
 pid-receiver?
 
+poll: provide a timer?
+
 - prep stmt: track pid, conn-id
 - prep stmt: check if belongs?
 

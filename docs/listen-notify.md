@@ -259,13 +259,122 @@ Of course, it's better to use logging facilities rather than prints.
 
 ## Sending Notifications
 
-To emit a notification, call the `notify` function as follows:
+To emit a notification, call the `notify` function with a channel name and a
+text payload:
+
+~~~clojure
+(pg/notify conn "user_messages" "Hello!")
+~~~
+
+This function works with not a connection only but with any type of a source: a
+connection pool, a Clojure map, etc. See the [Data Source
+Abstraction](/docs/data-source.md) for more details.
+
+The function `notify-json` does two things at once: it encodes arbitrary data
+into a JSON string using the current `ObjectMapper` instance and sends into the
+given channel:
+
+~~~clojure
+(pg/notify-json conn-B channel-1 {:some [:user "data" {:nested [1 2 3]}]})
+
+;; message print in REPL
+----------
+{:channel test-01,
+ :msg :NotificationResponse,
+ :self? false,
+ :pid 3630,
+ :message {"some":["user","data",{"nested":[1,2,3]}]}}
+----------
+~~~
 
 ## Polling Notifications
 
+Above, we polled notifications from the server by running a dummy query, for
+example:
+
+~~~clojure
+(pg/query conn "select 1")
+;; or
+(pg/query conn "") ;; an empty query
+~~~
+
+It would be better if your SQL statement includes a comment saying you're
+polling notifications. Thus, a DBA who is watching SQL logs won't ask you "what
+a hell are you doing?":
+
+~~~clojure
+(pg/query conn "-- polling notifications")
+~~~
+
+There is a special function `poll-notifications` that behaves better. First, it
+doesn't send any queries at all. Instead, it checks if there is something
+available in an input stream bound to a socket and if yes, reads messages from a
+stream. Second, it returns a number of notifications it has got:
+
+~~~clojure
+(pg/notify conn-B channel-1 "A")
+(pg/notify conn-B channel-1 "B")
+(pg/notify conn-B channel-1 "C")
+
+(pg/poll-notifications conn-A)
+;; 3
+~~~
+
+But it's still **up to you** regarding when and how often to poll notifications
+-- no matter if you send empty queries or call `poll-notifications`. The client
+is passive in that terms meaning it cannot receive notifications from
+nowhere. You must reach the server to get them, actually.
+
+One possible solution is to schedule a timer task that will poll notifications
+every 5 seconds:
+
+~~~clojure
+(def timer (new java.util.Timer "notifications"))
+
+(def task (proxy [java.util.TimerTask] []
+            (run []
+              (pg/poll-notifications conn-A))))
+
+(.scheduleAtFixedRate timer task 0 5000)
+~~~
+
+Run this code and emit some messages into the channel. You'll see prints in REPL
+every five seconds.
+
+Another option is to use the `java.util.concurrent.ScheduledThreadPoolExecutor`
+executor that schedules regular tasks as well:
+
+~~~clojure
+(def executor
+  (new java.util.concurrent.ScheduledThreadPoolExecutor 4))
+
+(.scheduleAtFixedRate executor
+                      (fn []
+                        (pg/poll-notifications conn-A))
+                      5
+                      5
+                      java.util.concurrent.TimeUnit/SECONDS)
+~~~
+
+Since the `Connection` object is thread-save (it uses `ReentrantLock` under the
+hood), it's OK to share the same connection across multiple threads.
+
 ## Unlistening (unsubscribing)
 
-notify
-notify-json
-polling poll-notifications
-unlisten
+To stop listening a certain channel, call the `unlisten` function:
+
+~~~clojure
+(pg/unlisten conn-A channel-1)
+~~~
+
+Once called, the connection `conn-A` won't receive notifications from
+`channel-1` any longer.
+
+## Final Notes
+
+Although I spent much time on implementing `LISTEN` and `NOTIFY` commands in PG2
+and debugging them, I haven't tried them in production. I mean, I have never
+used the builtin pub-sub PostgreSQL framework for business purposes. I cannot
+say for sure if it's worth taking listen/notify to develop a chat or a
+distributed queue. Please google for real use cases, and if you have a good
+example or useful experience, please drop me a line, and I'll share it here.

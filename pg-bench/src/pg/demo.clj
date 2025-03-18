@@ -1420,6 +1420,44 @@ create table demo (
 
   (pg/query conn-A "")
 
+  (pg/notify-json conn-B channel-1 {:some [:user "data" {:nested [1 2 3]}]})
+
+
+
+  (pg/unlisten conn-A channel-1)
+
+  (pg/listen conn-A channel-1)
+
+  (pg/notify conn-B channel-1 "A")
+  (pg/notify conn-B channel-1 "B")
+  (pg/notify conn-B channel-1 "C")
+  (pg/notify conn-B channel-1 "AAAAAAAAAAA")
+
+  (pg/poll-notifications conn-A)
+
+  (def timer (new java.util.Timer "notifications"))
+
+  (def task (proxy [java.util.TimerTask] []
+              (run []
+                (pg/poll-notifications conn-A))))
+
+  (.scheduleAtFixedRate timer task 0 5000)
+
+  (.purge timer)
+
+
+  (def executor (new java.util.concurrent.ScheduledThreadPoolExecutor 4))
+
+  (.scheduleAtFixedRate executor
+                        (fn []
+                          (pg/poll-notifications conn-A))
+                        5
+                        5
+                        java.util.concurrent.TimeUnit/SECONDS)
+
+
+
+
 
 
 
