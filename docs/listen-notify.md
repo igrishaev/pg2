@@ -1,0 +1,271 @@
+# Listen and Notify
+
+[listen]: https://www.postgresql.org/docs/current/sql-listen.html
+[notify]: https://www.postgresql.org/docs/current/sql-notify.html
+[unlisten]: https://www.postgresql.org/docs/current/sql-unlisten.html
+
+PostgreSQL ships a very simple pub-sub messaging system called "Listen and
+Notify". Briefly, a client sends messages to a certain channel, and another
+client listens to that channel and receives these messages. All together,
+clients may organize some sort of a message queue, process asynchronous events,
+notifications, and so on.
+
+Although it sounds promising, the "listen & notify" functionality has
+limitations, namely:
+
+- Notifications are always bound to a certain database. A client connected to a
+  database A cannot notify nor listen to channels from a database B.
+
+- Notifications can carry only text. For arbitrary data, use either JSON or any
+  binary encoding library with base64 post-encoding.
+
+- The size of a message must not exceed 8 Kbytes.
+
+- The most important: when a client starts listening to a channel, he or she
+  won't receive messages sent to the channel **before** they have started to
+  listen. Only messages sent **after** this will be delivered.
+
+- Also important: a client who listens for notifications should regularly poll a
+  database for notifications.
+
+The list above is incomplete, and before you start crafting asynchronous message
+processing on top of Postgres, please refer to the official documentation and
+mailing lists. The following pages describe the pub-sub framework quite well:
+
+- [SQL LISTEN command][listen]
+- [SQL NOTIFY command][notify]
+- [SQL UNLISTEN command][unlisten]
+
+## PG2 implementation
+
+PG2 supports two ways of processing notifications:
+
+- collect them into an internal list without processing, allowing you to get
+  them later and process as you want;
+
+- process them in the background with an executor and a custom function.
+
+Let's consider both in separate chapters.
+
+### Draining Notifications Manually
+
+The first way doesn't require any configuration. Just connect to a database and
+start listening to a certain channel:
+
+~~~clojure
+(def channel-1 "test-01")
+
+(def conn-A (pg/connect config))
+
+(pg/listen conn-A channel-1)
+~~~
+
+Now let's notify this channel from another connection called `conn-B`:
+
+~~~clojure
+(def conn-B (pg/connect config))
+
+(pg/notify conn-B channel-1 "Hello!")
+~~~
+
+To check if `conn-A` has received this notification, pass it into the
+`has-notifications?` function:
+
+~~~clojure
+(pg/has-notifications? conn-A)
+;; false
+~~~
+
+It has not so far because there wasn't any interaction with the server. Let's
+perform a trivial query from `conn-A` so it reaches the server and receives a
+pending notification. Now it has notifications:
+
+~~~clojure
+(pg/query conn-A "select 1 as num")
+
+(pg/has-notifications? conn-A)
+;; true
+~~~
+
+The function `drain-notifications` clears the inner storage and returns a vector
+of notifications. Afterwards, the connection doesn't have these notifications
+any longer:
+
+~~~clojure
+(pg/drain-notifications conn-A)
+
+[{:channel "test-01",
+  :msg :NotificationResponse,
+  :self? false,
+  :pid 3630,
+  :message "Hello!"}]
+
+(pg/has-notifications? conn-A)
+;; false
+~~~
+
+Every notification is a map with the following fields:
+
+| Field      | Meaning                                                                                                                                   | Example                 |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|
+| `:channel` | The name of a channel this notification came from                                                                                         | `"chat_messages"`       |
+| `:msg`     | Type of a message from PG Wire protocol                                                                                                   | `:NotificationResponse` |
+| `:self?`   | True if sender and receiver are the same. Sometimes, it's important to check if a message was triggered by this connection and ignore it. | `true` or `false`       |
+| `:pid`     | The PID number of a connection that produced that message. See `pg.core/pid` function                                                     | 12345                   |
+| `:message` | The payload of a notification as a string.                                                                                                | `"Hello World!"`        |
+
+It's up to you how to process these maps: either you send them somewhere, or use
+any async framework, or emit new notification, or whatever else.
+
+## Processing Notifications Automatically
+
+Draining notifications manually is inconvenient sometimes. There is a way to
+pass a function that will be called with each notification map when it has
+arrived to the client from the server. For this, specify the `:fn-notification`
+function of one argument:
+
+~~~clojure
+(defn notification-handler [notification]
+  (println "----------")
+  (println notification)
+  (println "----------"))
+
+(def conn-A (pg/connect
+             (assoc config
+                    :fn-notification
+                    notification-handler)))
+~~~
+
+Let's go through the pipeline again:
+
+~~~clojure
+(pg/listen conn-A channel-1)
+
+(pg/notify conn-B channel-1 "Hello again!")
+
+(pg/query conn-A "") ;; get pending notifications
+
+;; will be printed in REPL
+----------
+{:channel test-01, :msg :NotificationResponse, :self? false, :pid 3630, :message Hello again!}
+----------
+~~~
+
+The notification was successfully received and printed.
+
+With this approach, you don't need to constantly drain connections: it is held
+by the function you passed.
+
+## Custom Executor and handling Exceptions
+
+An important note about the `:fn-notification` function: it is always called in
+another thread using an `Executor` object. It is never called in the
+connection's thread because otherwise, one can pass a function that either fails
+with an exception or takes too long to execute.
+
+When no a custom Executor object was passed, PG2 uses the built-in
+`clojure.lang.Agent.soloExecutor` one. There is a way to override it with the
+`:executor` parameter in a config:
+
+~~~clojure
+(def executor (Executors/newFixedThreadPool 1))
+
+(def conn (pg/connect (assoc config :executor executor)))
+~~~
+
+If you're using Java 21 and above, consider the new `VirtualThreadPerTask`
+executor that relies on virtual threads:
+
+~~~clojure
+(def executor (Executors/newVirtualThreadPerTaskExecutor))
+
+(def conn (pg/connect (assoc config :executor executor)))
+~~~
+
+You can share the same executor object across many connections.
+
+In the examples above, we don't close executors object that we produced. But
+ideally, one should close them when stopping the program.
+
+Since the `:fn-notification` function is executed in the background, consider
+wrap its logic with try/catch to make it obvious when something goes
+wrong. Without it, it's impossible to say if processing was successful or not. A
+small demo:
+
+~~~clojure
+(defn notification-handler [notification]
+  (let [number (-> notification :message Long/parseLong)]
+    (Thread/sleep ^long (rand-int 100))
+    (println "The answer is" (/ 100 number))))
+
+(def conn-A (pg/connect
+             (assoc config
+                    :fn-notification
+                    notification-handler)))
+
+(pg/listen conn-A channel-1)
+
+(pg/notify conn-B channel-1 "10")
+(pg/notify conn-B channel-1 "25")
+(pg/notify conn-B channel-1 "50")
+(pg/notify conn-B channel-1 "0") ;; will fail
+
+(pg/query conn-A "") ;; fetch notifications
+~~~
+
+The output will be this:
+
+~~~
+The answer is 2
+The answer is 4
+The answer is 10
+~~~
+
+The division error triggered by zero stayed invisible for us. But with
+try/catch, it's much better:
+
+~~~clojure
+(defn wrap-safe [f]
+  (fn wrapped [& args]
+    (try
+      (apply f args)
+      (catch Exception e
+        (println "Error" (ex-message e))))))
+
+...
+
+(def conn-A (pg/connect
+             (assoc config
+                    :fn-notification
+                    (wrap-safe notification-handler))))
+
+...
+
+(pg/notify conn-B channel-1 "0")
+
+(pg/query conn-A "")
+~~~
+
+The output:
+
+~~~clojure
+The answer is 10
+The answer is 4
+The answer is 2
+Error Divide by zero
+~~~
+
+Of course, it's better to use logging facilities rather than prints.
+
+## Sending Notifications
+
+To emit a notification, call the `notify` function as follows:
+
+## Polling Notifications
+
+## Unlistening (unsubscribing)
+
+notify
+notify-json
+polling poll-notifications
+unlisten

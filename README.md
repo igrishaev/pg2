@@ -78,7 +78,7 @@ tests][tests].
 - [SSL Setup](/docs/ssl.md)
 - [Services Tested With](/docs/services.md)
 - Type Mapping
-- Notify/Listen
+- [Listen & Notify](/docs/listen-notify.md)
 - Notices
 - Logging
 - [Errors and Exceptions](/docs/errors.md)

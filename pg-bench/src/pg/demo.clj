@@ -1330,3 +1330,97 @@ create table demo (
      :database "postgres"
      :ssl-context ssl-context ;; mandatory!
      }))
+
+;; listen & notify demo
+
+(comment
+
+  (def conn-A (pg/connect config))
+
+  (def channel-1 "test-01")
+
+  (pg/listen conn-A channel-1)
+
+  ;;
+
+  (def conn-B (pg/connect config))
+
+  (pg/notify conn-B channel-1 "Hello!")
+
+  (pg/has-notifications? conn-A)
+
+  (pg/query conn-A "select 1 as num")
+
+  (pg/drain-notifications conn-A)
+
+  ;;
+
+  (defn notification-handler [notification]
+    (println "----------")
+    (println notification)
+    (println "----------"))
+
+  (def conn-A (pg/connect
+               (assoc config
+                      :fn-notification
+                      notification-handler)))
+
+  (pg/listen conn-A channel-1)
+
+  (pg/notify conn-B channel-1 "Hello again!")
+
+  (pg/query conn-A "")
+
+  ;;
+
+  (defn notification-handler [notification]
+    (let [number (-> notification :message Long/parseLong)]
+      (Thread/sleep ^long (rand-int 100))
+      (println "The answer is" (/ 100 number))))
+
+  (def conn-A (pg/connect
+               (assoc config
+                      :fn-notification
+                      notification-handler)))
+
+  (pg/listen conn-A channel-1)
+
+  (pg/notify conn-B channel-1 "10")
+  (pg/notify conn-B channel-1 "25")
+  (pg/notify conn-B channel-1 "50")
+  (pg/notify conn-B channel-1 "0")
+
+  (pg/query conn-A "")
+
+  ;;
+
+  (defn wrap-safe [f]
+    (fn wrapped [& args]
+      (try
+        (apply f args)
+        (catch Exception e
+          (println "Error" (ex-message e))))))
+
+  (defn notification-handler [notification]
+    (let [number (-> notification :message Long/parseLong)]
+      (Thread/sleep ^long (rand-int 100))
+      (println "The answer is" (/ 100 number))))
+
+  (def conn-A (pg/connect
+               (assoc config
+                      :fn-notification
+                      (wrap-safe notification-handler))))
+
+  (pg/listen conn-A channel-1)
+
+  (pg/notify conn-B channel-1 "10")
+  (pg/notify conn-B channel-1 "25")
+  (pg/notify conn-B channel-1 "50")
+  (pg/notify conn-B channel-1 "0")
+
+  (pg/query conn-A "")
+
+
+
+
+  )
