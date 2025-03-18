@@ -1416,9 +1416,18 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public int pollNotifications() {
         try (TryLock ignored = lock.get()) {
-            final String sql = "";
-            sendQuery(sql);
-            final Result res = interact(sql);
+            final Result res = new Result(ExecuteParams.INSTANCE, "--pollNotifications");
+            while (IOTool.available(inStream) > 0) {
+                final IServerMessage msg = readMessage(res.hasException());
+                if (   msg instanceof NotificationResponse
+                    || msg instanceof NoticeResponse
+                    || msg instanceof ParameterStatus) {
+                    handleMessage(msg, res);
+                } else {
+                    throw new PGError("Unexpected message in pollNotifications: %s", msg);
+                }
+            }
+            res.maybeThrowError();
             return res.getNotificationCount();
         }
     }
