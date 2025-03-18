@@ -11,6 +11,7 @@
 - RowMap: implement Indexed and IDeref interfaces
 - #50 Use Executor rather than ExecutorService @jgdavey
 - Refactor CodecParams class (make it mutable)
+- #49 Update pollNotifications to avoid sending query @jgdavey
 
 ## 0.1.33
 

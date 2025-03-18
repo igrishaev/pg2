@@ -65,9 +65,7 @@ public final class IOTool {
         }
     }
 
-    public static int read (
-            final InputStream inputStream
-    ) {
+    public static int read (final InputStream inputStream) {
         try {
             return inputStream.read();
         } catch (final IOException e) {
@@ -75,13 +73,11 @@ public final class IOTool {
         }
     }
 
-    public static int available(
-        final InputStream inputStream
-    ) {
+    public static int available(final InputStream inputStream) {
         try {
             return inputStream.available();
         } catch (IOException e) {
-            throw new PGErrorIO(e, "cannot read from the input stream");
+            throw new PGErrorIO(e, "input stream is not available");
         }
     }
 
