@@ -2176,9 +2176,9 @@ drop table %1$s;
       (is (= "{:x 0}" (pr-str row)))
 
       (is (= [{:x 0} {:x 1} {:x 2} {:x 3}]
-             (mapv deref rows)))
+             rows))
 
-      (is (= {:x 0} @row))
+      (is (= {:x 0} row))
       (is (= 0 (nth row 0)))
 
       (try

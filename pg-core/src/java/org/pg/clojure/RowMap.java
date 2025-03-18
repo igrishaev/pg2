@@ -10,7 +10,7 @@ import org.pg.util.TryLock;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-public final class RowMap extends APersistentMap implements Indexed, IDeref {
+public final class RowMap extends APersistentMap implements Indexed {
 
     private int[] ToC = null;
     private final int count;
@@ -210,10 +210,5 @@ public final class RowMap extends APersistentMap implements Indexed, IDeref {
             return notFound;
         }
         return getValueByIndex(i);
-    }
-
-    @Override
-    public Object deref() {
-        return toClojureMap();
     }
 }

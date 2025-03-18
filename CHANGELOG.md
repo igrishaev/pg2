@@ -8,7 +8,7 @@
 - refactor clojure API calls;
 - slightly boost the Default reducer
 - RowMap: do not share the Connection's TryLock instance
-- RowMap: implement Indexed and IDeref interfaces
+- RowMap: implement Indexed interface
 - #50 Use Executor rather than ExecutorService @jgdavey
 - Refactor CodecParams class (make it mutable)
 - #49 Update pollNotifications to avoid sending query @jgdavey

@@ -12,6 +12,9 @@
 - use PG* env vars
 - fix pg.server namespace
 
+pid-sender?
+pid-receiver?
+
 - prep stmt: track pid, conn-id
 - prep stmt: check if belongs?
 

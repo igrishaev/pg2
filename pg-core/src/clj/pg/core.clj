@@ -665,12 +665,6 @@
   (.write writer (.toString conn)))
 
 
-;; RowMap implements both IPersistentMap and IDeref
-(prefer-method print-method
-               clojure.lang.IPersistentMap
-               clojure.lang.IDeref)
-
-
 ;;
 ;; Listen/notify block
 ;;
