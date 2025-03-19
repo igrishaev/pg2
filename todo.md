@@ -15,6 +15,8 @@
 pid-sender?
 pid-receiver?
 
+- review URI config parser
+
 poll: provide a timer?
 
 - prep stmt: track pid, conn-id
