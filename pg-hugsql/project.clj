@@ -1,4 +1,4 @@
-(defproject com.github.igrishaev/pg2-hugsql "0.1.34-SNAPSHOT"
+(defproject com.github.igrishaev/pg2-hugsql "0.1.34"
 
   :description
   "HugSQL wrapper for PG2"
