@@ -4,11 +4,11 @@
 [notify]: https://www.postgresql.org/docs/current/sql-notify.html
 [unlisten]: https://www.postgresql.org/docs/current/sql-unlisten.html
 
-PostgreSQL ships a very simple pub-sub messaging system called "Listen and
-Notify". Briefly, a client sends messages to a certain channel, and another
-client listens to that channel and receives these messages. All together,
-clients may organize some sort of a message queue, process asynchronous events,
-notifications, and so on.
+PostgreSQL ships a very simple pub-sub messaging system driven by the `LISTEN`
+and `NOTIFY` commands. Briefly, a client sends messages to a certain channel,
+and another client listens to that channel and receives these messages. All
+together, clients may organize some sort of a message queue, process
+asynchronous events, notifications, and so on.
 
 Although it sounds promising, the "listen & notify" functionality has
 limitations, namely:
@@ -21,15 +21,15 @@ limitations, namely:
 
 - The size of a message must not exceed 8 Kbytes.
 
-- The most important: when a client starts listening to a channel, he or she
-  won't receive messages sent to the channel **before** they have started to
+- **The most important:** when a client starts listening to a channel, he or she
+  **won't receive** messages sent to the channel **before** they have started to
   listen. Only messages sent **after** this will be delivered.
 
-- Also important: a client who listens for notifications should regularly poll a
-  database for notifications.
+- **Also important:** a listening client should regularly poll a database for
+  notifications.
 
 The list above is incomplete, and before you start crafting asynchronous message
-processing on top of Postgres, please refer to the official documentation and
+processing on top of PostgreSQL, please refer to the official documentation and
 mailing lists. The following pages describe the pub-sub framework quite well:
 
 - [SQL LISTEN command][listen]
@@ -40,12 +40,11 @@ mailing lists. The following pages describe the pub-sub framework quite well:
 
 PG2 supports two ways of processing notifications:
 
-- collect them into an internal list without processing, allowing you to get
-  them later and process as you want;
+1. to collect them into an internal storage without processing, and then you
+   drain them and process as you want;
+2. to process them in the background with an executor and a custom function.
 
-- process them in the background with an executor and a custom function.
-
-Let's consider both in separate chapters.
+Let's review both in separate chapters.
 
 ### Draining Notifications Manually
 
@@ -106,23 +105,22 @@ any longer:
 
 Every notification is a map with the following fields:
 
-| Field      | Meaning                                                                                                                                   | Example                 |
-|------------|-------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|
-| `:channel` | The name of a channel this notification came from                                                                                         | `"chat_messages"`       |
-| `:msg`     | Type of a message from PG Wire protocol                                                                                                   | `:NotificationResponse` |
-| `:self?`   | True if sender and receiver are the same. Sometimes, it's important to check if a message was triggered by this connection and ignore it. | `true` or `false`       |
-| `:pid`     | The PID number of a connection that produced that message. See `pg.core/pid` function                                                     | 12345                   |
-| `:message` | The payload of a notification as a string.                                                                                                | `"Hello World!"`        |
+| Field      | Meaning                                                                                                                                              | Example                 |
+|------------|------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|
+| `:channel` | The name of a channel this notification came from                                                                                                    | `"chat_messages"`       |
+| `:msg`     | Type of a message in terms of PG Wire protocol                                                                                                       | `:NotificationResponse` |
+| `:self?`   | True if a sender and a receiver are the same. Sometimes, it's important to check if a message was triggered by the current connection and ignore it. | `true` or `false`       |
+| `:pid`     | The PID number of a connection that produced that message. See `pg.core/pid` function                                                                | 12345                   |
+| `:message` | The payload of a notification as a string.                                                                                                           | `"Hello World!"`        |
 
 It's up to you how to process these maps: either you send them somewhere, or use
-any async framework, or emit new notification, or whatever else.
+any kind async framework, or emit new notification, or whatever else.
 
 ## Processing Notifications Automatically
 
 Draining notifications manually is inconvenient sometimes. There is a way to
-pass a function that will be called with each notification map when it has
-arrived to the client from the server. For this, specify the `:fn-notification`
-function of one argument:
+pass a function called every time a notification arrives from the server. For
+this, specify the `:fn-notification` function of one argument in the config:
 
 ~~~clojure
 (defn notification-handler [notification]
@@ -146,9 +144,9 @@ Let's go through the pipeline again:
 (pg/query conn-A "") ;; get pending notifications
 
 ;; will be printed in REPL
-----------
-{:channel test-01, :msg :NotificationResponse, :self? false, :pid 3630, :message Hello again!}
-----------
+;; ----------
+;; {:channel test-01, :msg :NotificationResponse, :self? false, :pid 3630, :message Hello again!}
+;; ----------
 ~~~
 
 The notification was successfully received and printed.
@@ -158,12 +156,13 @@ by the function you passed.
 
 ## Custom Executor and handling Exceptions
 
-An important note about the `:fn-notification` function: it is always called in
-another thread using an `Executor` object. It is never called in the
+An important note about the `:fn-notification` function: it is always called
+**in another thread** using an `Executor` object. It is never called in the
 connection's thread because otherwise, one can pass a function that either fails
-with an exception or takes too long to execute.
+with an exception or takes too long to execute. Both cases ruin the connection's
+pipeline.
 
-When no a custom Executor object was passed, PG2 uses the built-in
+When no a custom `Executor` object was passed, PG2 uses the builtin
 `clojure.lang.Agent.soloExecutor` one. There is a way to override it with the
 `:executor` parameter in a config:
 
@@ -184,13 +183,12 @@ executor that relies on virtual threads:
 
 You can share the same executor object across many connections.
 
-In the examples above, we don't close executors object that we produced. But
-ideally, one should close them when stopping the program.
+Above, we don't close executors that we produced. But ideally, one should close
+them when stopping the program.
 
 Since the `:fn-notification` function is executed in the background, consider
-wrap its logic with try/catch to make it obvious when something goes
-wrong. Without it, it's impossible to say if processing was successful or not. A
-small demo:
+wrap its logic with try/catch to make exceptions visible. Otherwise, it's
+impossible to say if processing was successful or not. A small demo:
 
 ~~~clojure
 (defn notification-handler [notification]
@@ -221,8 +219,8 @@ The answer is 4
 The answer is 10
 ~~~
 
-The division error triggered by zero stayed invisible for us. But with
-try/catch, it's much better:
+The error triggered by division by zero stayed unseen. But with try/catch, it's
+much better:
 
 ~~~clojure
 (defn wrap-safe [f]
@@ -266,12 +264,12 @@ text payload:
 (pg/notify conn "user_messages" "Hello!")
 ~~~
 
-This function works with not a connection only but with any type of a source: a
+This function accepts not a connection only but any type of a source: a
 connection pool, a Clojure map, etc. See the [Data Source
 Abstraction](/docs/data-source.md) for more details.
 
 The function `notify-json` does two things at once: it encodes arbitrary data
-into a JSON string using the current `ObjectMapper` instance and sends into the
+into a JSON string using the current `ObjectMapper`. Then it sends it into the
 given channel:
 
 ~~~clojure
@@ -298,16 +296,16 @@ example:
 (pg/query conn "") ;; an empty query
 ~~~
 
-It would be better if your SQL statement includes a comment saying you're
-polling notifications. Thus, a DBA who is watching SQL logs won't ask you "what
-a hell are you doing?":
+It's better to unclude a comment into the query saying you're polling
+notifications. Thus, a DBA who is watching SQL logs won't ask you "what a hell
+are you doing?":
 
 ~~~clojure
 (pg/query conn "-- polling notifications")
 ~~~
 
 There is a special function `poll-notifications` that behaves better. First, it
-doesn't send any queries at all. Instead, it checks if there is something
+doesn't send any queries to the server. Instead, it checks if there is something
 available in an input stream bound to a socket and if yes, reads messages from a
 stream. Second, it returns a number of notifications it has got:
 
@@ -320,13 +318,13 @@ stream. Second, it returns a number of notifications it has got:
 ;; 3
 ~~~
 
-But it's still **up to you** regarding when and how often to poll notifications
--- no matter if you send empty queries or call `poll-notifications`. The client
-is passive in that terms meaning it cannot receive notifications from
-nowhere. You must reach the server to get them, actually.
+But it's still **up to you** how often to poll notifications -- no matter if you
+send empty queries or call the `poll-notifications` function. The client is
+passive in that terms meaning it cannot receive notifications from nowhere. You
+must reach the server to get them, actually.
 
-One possible solution is to schedule a timer task that will poll notifications
-every 5 seconds:
+One possible solution is to schedule a timer task that polls notifications every
+5 seconds:
 
 ~~~clojure
 (def timer (new java.util.Timer "notifications"))
@@ -339,10 +337,10 @@ every 5 seconds:
 ~~~
 
 Run this code and emit some messages into the channel. You'll see prints in REPL
-every five seconds.
+appearing every five seconds.
 
 Another option is to use the `java.util.concurrent.ScheduledThreadPoolExecutor`
-executor that schedules regular tasks as well:
+executor that schedules tasks as well:
 
 ~~~clojure
 (def executor
@@ -372,9 +370,9 @@ Once called, the connection `conn-A` won't receive notifications from
 
 ## Final Notes
 
-Although I spent much time on implementing `LISTEN` and `NOTIFY` commands in PG2
-and debugging them, I haven't tried them in production. I mean, I have never
-used the builtin pub-sub PostgreSQL framework for business purposes. I cannot
-say for sure if it's worth taking listen/notify to develop a chat or a
-distributed queue. Please google for real use cases, and if you have a good
-example or useful experience, please drop me a line, and I'll share it here.
+Although I spent much time on implementing `LISTEN` and `NOTIFY` functionality
+in PG2 and debugging, I haven't tried it in production. I have never used the
+builtin pub-sub PostgreSQL framework for business purposes. I cannot say if it's
+worth using listen/notify for a chat or a distributed queue. Please google for
+real use cases, and if you have a good example or useful experience, please drop
+me a line, and I'll share it here.
