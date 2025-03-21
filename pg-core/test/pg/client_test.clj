@@ -1764,6 +1764,16 @@ drop table %1$s;
     (let [res (pg/execute conn "select $1 as foo" {:params ["hi"]})]
       (is (= [{:foo "hi"}] res)))))
 
+
+(deftest test-client-execute-prep-statement-exists
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (pg/query conn "prepare s0 as select 42 as num")
+    (pg/query conn "prepare s1 as select 42 as num")
+    (pg/query conn "prepare s2 as select 42 as num")
+    (testing "doesn't throw an exception any longer"
+      (is (pg/execute conn "select 42 as num")))))
+
+
 (deftest test-client-execute-prep-statement-cache
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [sql
@@ -1803,31 +1813,36 @@ drop table %1$s;
           (is (= 2 (pg/close-cached-statements conn)))
 
           statements5
-          (pg/query conn sql-ps)]
+          (pg/query conn sql-ps)
+
+          cleanup
+          (fn [stmt]
+            (dissoc stmt :name))]
 
       (is (= [{:foo "kek"}] res1))
       (is (= [{:foo "lol"}] res3))
 
       (is (= [{:statement "select $1::text as foo"
-               :name "s1"
                :parameter_types "{text}"}]
-             statements1))
+             (map cleanup statements1)))
+
+      (is (re-matches #"s\d{12}\d+"
+                      (-> statements1
+                          first
+                          :name)))
 
       (is (= [{:statement "select $1::text as foo"
-               :name "s1"
                :parameter_types "{text}"}
               {:statement "select $1::text as baz"
-               :name "s3"
                :parameter_types "{text}"}]
-             statements2))
+             (map cleanup statements2)))
 
       (is (= []
              statements3))
 
       (is (= [{:statement "select $1::text as foo"
-               :name "s6"
                :parameter_types "{text}"}]
-             statements4))
+             (map cleanup statements4)))
 
       (is (= []
              statements5)))))
@@ -2560,13 +2575,16 @@ drop table %1$s;
 
 
 (deftest test-statement-repr
-  (let [repr
-        "<Prepared statement, name: s1, param(s): 1, OIDs: [23], SQL: select $1::int4 as foo>"]
-    (pg/with-connection [conn *CONFIG-TXT*]
-      (pg/with-statement [stmt conn "select $1::int4 as foo"]
-        (is (= repr (str stmt)))
-        (is (= repr (with-out-str
-                      (print stmt))))))))
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (pg/with-statement [stmt conn "select $1::int4 as foo"]
+      (let [printed (with-out-str
+                      (print stmt))
+            toString (str stmt)]
+        (is (= toString printed))
+        (is (str/starts-with? toString
+                              "<Prepared statement, name: s"))
+        (is (str/ends-with? toString
+                            ", param(s): 1, OIDs: [23], SQL: select $1::int4 as foo>"))))))
 
 
 (deftest test-empty-select

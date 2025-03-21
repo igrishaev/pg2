@@ -36,7 +36,6 @@ public final class Connection implements AutoCloseable {
     private final Config config;
     private final UUID id;
     private final long createdAt;
-    private int counter = 0;
 
     private int pid;
     private int secretKey;
@@ -210,12 +209,6 @@ public final class Connection implements AutoCloseable {
                 ")",
                 executeParams
         );
-    }
-
-    private int nextInt () {
-        try (TryLock ignored = lock.get()) {
-            return ++counter;
-        }
     }
 
     @SuppressWarnings("unused")
@@ -426,11 +419,11 @@ public final class Connection implements AutoCloseable {
     }
 
     private String generateStatement () {
-        return String.format("s%d", nextInt());
+        return String.format("s%d", System.nanoTime());
     }
 
     private String generatePortal () {
-        return String.format("p%d", nextInt());
+        return String.format("p%d", System.nanoTime());
     }
 
     private void sendStartupMessage () {
