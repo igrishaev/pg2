@@ -41,9 +41,8 @@ a database and check out what prepared statements are there:
 []
 ~~~
 
-We don't have any. But as soon as we execute a query, its prepared statement
-takes place in the `pg_prepared_statements` view:
-
+We don't have any. But if we `execute` something , a prepared statement will
+take place in the `pg_prepared_statements` view:
 
 ~~~clojure
 (pg/execute conn "select $1::int as num" {:params [1]})
@@ -54,17 +53,19 @@ takes place in the `pg_prepared_statements` view:
   :from_sql false
   :prepare_time ...
   :custom_plans 1
-  :name "s1"
+  :name "s139969173240875"
   :generic_plans 0
   :parameter_types "{integer}"}]
 ~~~
 
-The name of the statement is `s1`. The `from_sql` false value signals it was
-produced using the low level Postgres Wire protocol, but not `PREPARE s1 AS
-SELECT...` SQL query.
+The name of the statement is `s139969173240875`. PG2 uses the `s` prefix for
+prepared statements and `p` for portals. The number `139969173240875` is taken
+from a `(System/nanoTime)` call. The `from_sql` field and its false value
+signals it was produced using the low level Postgres Wire protocol, but not
+`PREPARE s1 AS SELECT...` SQL query.
 
-Now if you execute the same query again, even with another parameter, the
-prepared statement `s1` will be reused:
+Now if you execute the same query again, even with another parameter, this
+prepared statement will be reused:
 
 ~~~clojure
 (pg/execute conn "select $1::int as num" {:params [999]})
@@ -104,12 +105,12 @@ gets removed from the cache and replaced with a new version:
   :from_sql false
   :prepare_time ...
   :custom_plans 1
-  :name "s5"
+  :name "s140141476241250"
   :generic_plans 0
   :parameter_types "{integer}"}]
 ~~~
 
-Pay attention, now it's `s5` but not `s1`.
+Pay attention, the name differs from what we have seen above.
 
 The prepared statement cache uses the origin SQL query as a key. It doens't trim
 it, not it performs any reformatting or cleaning. Should any symbol change (even
@@ -125,14 +126,14 @@ a leading or a traling space), it is condidered as another expression:
   :from_sql false
   :prepare_time ...
   :custom_plans 0
-  :name "s16"
+  :name "s140219337455583"
   :generic_plans 1
   :parameter_types "{}"}
  {:statement "select 1 as number"
   :from_sql false
   :prepare_time ...
   :custom_plans 0
-  :name "s19"
+  :name "s140223610940166"
   :generic_plans 1
   :parameter_types "{}"}]
 ~~~
