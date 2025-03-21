@@ -1,4 +1,10 @@
 
+## 0.1.38-SNAPSHOT
+
+- ?
+- ?
+- ?
+
 ## 0.1.37-SNAPSHOT
 
 - ?
@@ -11,11 +17,9 @@
 - ?
 - ?
 
-## 0.1.35-SNAPSHOT
+## 0.1.35
 
 - #48 Prepared statement doesn't exist
-- ?
-- ?
 
 ## 0.1.34
 
