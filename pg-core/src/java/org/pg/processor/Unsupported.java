@@ -8,6 +8,11 @@ import java.nio.ByteBuffer;
 public class Unsupported extends AProcessor {
 
     @Override
+    public boolean isUnsupported() {
+        return true;
+    }
+
+    @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof String s) {
             return ByteBuffer.wrap(s.getBytes(codecParams.clientCharset()));

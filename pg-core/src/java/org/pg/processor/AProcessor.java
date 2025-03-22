@@ -8,6 +8,10 @@ import java.nio.ByteBuffer;
 
 public abstract class AProcessor implements IProcessor {
 
+    public boolean isUnsupported() {
+        return false;
+    }
+
     public static String txtEncodingError(final Object x) {
         throw new PGError("cannot text-encode: %s", TypeTool.repr(x));
     }

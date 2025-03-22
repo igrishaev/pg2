@@ -14,7 +14,6 @@ import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.processor.IProcessor;
-import org.pg.processor.Unsupported;
 import org.pg.type.PGType;
 import org.pg.util.*;
 
@@ -86,8 +85,7 @@ public final class Connection implements AutoCloseable {
             conn.authenticate();
             if (config.readPGTypes()) {
                 try {
-                    // conn.readTypes();
-                    // conn.processTypeMap(); TODO?
+//                     conn.processTypeMap(); TODO?
                 } catch (Exception e) {
                     conn.close();
                     throw new PGError(e, "failed to preprocess postgres types, reason: %s", e.getMessage());
@@ -185,6 +183,10 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    /*
+    Return a string of comma-separated integer oids,
+    skipping those that are equal to 0.
+     */
     private static String joinOids(final int[] oids) {
         final StringBuilder sb = new StringBuilder();
         boolean firstBeen = false;
@@ -208,7 +210,7 @@ public final class Connection implements AutoCloseable {
     helps to guess how to process custom types shipped by extensions (and
     enums as well).
      */
-    public void readTypes(final int[] oids) {
+    public void readTypesByOIDs(final int[] oids) {
         /*
         Below, we use ::text coercion because it's a special REGPROC
         type (oid 24). In binary mode, it gets passed as an integer
@@ -236,7 +238,7 @@ copy (
         pg_namespace
     where
         pg_type.oid in (""" + joinOids(oids) + """
-        )
+)
         and pg_type.typnamespace = pg_namespace.oid
         and pg_namespace.nspname != 'pg_catalog'
         and pg_namespace.nspname != 'information_schema'
@@ -629,7 +631,7 @@ copy (
         }
     }
 
-    private void foo(final int[] oids1, final int[] oids2) {
+    private void readTypes(final int[] oids1, final int[] oids2) {
         final int len = oids1.length + oids2.length;
         int count = 0;
         final int[] oidsToFetch = new int[len];
@@ -637,9 +639,8 @@ copy (
         IProcessor processor;
         for (int i = 0; i < oids1.length; i++) {
             oid = oids1[i];
-            // TODO: is known type
             processor = codecParams.getProcessor(oid);
-            if (processor instanceof Unsupported) {
+            if (processor.isUnsupported()) {
                 oidsToFetch[i] = oid;
                 count++;
             }
@@ -647,13 +648,13 @@ copy (
         for (int i = 0; i < oids2.length; i++) {
             oid = oids2[i];
             processor = codecParams.getProcessor(oid);
-            if (processor instanceof Unsupported) {
+            if (processor.isUnsupported()) {
                 oidsToFetch[oids1.length + i] = oid;
                 count++;
             }
         }
         if (count > 0) {
-            readTypes(oidsToFetch);
+            readTypesByOIDs(oidsToFetch);
         }
     }
 
@@ -671,7 +672,7 @@ copy (
         final Result res = interact(sql);
         final ParameterDescription paramDesc = res.getParameterDescription();
         final RowDescription rowDescription = res.getRowDescription();
-        foo(rowDescription.typeOids(), paramDesc.OIDs());
+        readTypes(rowDescription.typeOids(), paramDesc.OIDs());
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
