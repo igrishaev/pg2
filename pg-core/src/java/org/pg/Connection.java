@@ -629,9 +629,7 @@ copy (
         }
     }
 
-    private void foo(final RowDescription rd, final ParameterDescription pd) {
-        final int[] oids1 = rd.typeOids();
-        final int[] oids2 = pd.OIDs();
+    private void foo(final int[] oids1, final int[] oids2) {
         final int len = oids1.length + oids2.length;
         int count = 0;
         final int[] oidsToFetch = new int[len];
@@ -639,6 +637,7 @@ copy (
         IProcessor processor;
         for (int i = 0; i < oids1.length; i++) {
             oid = oids1[i];
+            // TODO: is known type
             processor = codecParams.getProcessor(oid);
             if (processor instanceof Unsupported) {
                 oidsToFetch[i] = oid;
@@ -672,7 +671,7 @@ copy (
         final Result res = interact(sql);
         final ParameterDescription paramDesc = res.getParameterDescription();
         final RowDescription rowDescription = res.getRowDescription();
-        foo(rowDescription, paramDesc);
+        foo(rowDescription.typeOids(), paramDesc.OIDs());
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
