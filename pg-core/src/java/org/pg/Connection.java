@@ -14,6 +14,7 @@ import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.processor.IProcessor;
+import org.pg.processor.Unsupported;
 import org.pg.type.PGType;
 import org.pg.util.*;
 
@@ -85,8 +86,8 @@ public final class Connection implements AutoCloseable {
             conn.authenticate();
             if (config.readPGTypes()) {
                 try {
-                    conn.readTypes();
-                    conn.processTypeMap();
+                    // conn.readTypes();
+                    // conn.processTypeMap(); TODO?
                 } catch (Exception e) {
                     conn.close();
                     throw new PGError(e, "failed to preprocess postgres types, reason: %s", e.getMessage());
@@ -184,12 +185,30 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    private static String joinOids(final int[] oids) {
+        final StringBuilder sb = new StringBuilder();
+        boolean firstBeen = false;
+        for (int oid: oids) {
+            if (oid != 0) {
+                if (firstBeen) {
+                    sb.append(',');
+                }
+                sb.append(oid);
+                if (!firstBeen) {
+                    firstBeen = true;
+                }
+            }
+
+        }
+        return sb.toString();
+    }
+
     /*
     Fill-in the current CodecParams instance with postgres types. This data
     helps to guess how to process custom types shipped by extensions (and
     enums as well).
      */
-    public void readTypes() {
+    public void readTypes(final int[] oids) {
         /*
         Below, we use ::text coercion because it's a special REGPROC
         type (oid 24). In binary mode, it gets passed as an integer
@@ -216,7 +235,9 @@ copy (
         pg_type,
         pg_namespace
     where
-        pg_type.typnamespace = pg_namespace.oid
+        pg_type.oid in (""" + joinOids(oids) + """
+        )
+        and pg_type.typnamespace = pg_namespace.oid
         and pg_namespace.nspname != 'pg_catalog'
         and pg_namespace.nspname != 'information_schema'
 ) to stdout with (format binary)
@@ -232,6 +253,9 @@ copy (
 
         while (true) {
             msg = readMessage(false);
+            if (Debug.isON) {
+                Debug.debug(" -> %s", msg);
+            }
             if (msg instanceof CopyData copyData) {
                 bb = copyData.buf();
                 if (!headerSeen) {
@@ -605,6 +629,35 @@ copy (
         }
     }
 
+    private void foo(final RowDescription rd, final ParameterDescription pd) {
+        final int[] oids1 = rd.typeOids();
+        final int[] oids2 = pd.OIDs();
+        final int len = oids1.length + oids2.length;
+        int count = 0;
+        final int[] oidsToFetch = new int[len];
+        int oid;
+        IProcessor processor;
+        for (int i = 0; i < oids1.length; i++) {
+            oid = oids1[i];
+            processor = codecParams.getProcessor(oid);
+            if (processor instanceof Unsupported) {
+                oidsToFetch[i] = oid;
+                count++;
+            }
+        }
+        for (int i = 0; i < oids2.length; i++) {
+            oid = oids2[i];
+            processor = codecParams.getProcessor(oid);
+            if (processor instanceof Unsupported) {
+                oidsToFetch[oids1.length + i] = oid;
+                count++;
+            }
+        }
+        if (count > 0) {
+            readTypes(oidsToFetch);
+        }
+    }
+
     private PreparedStatement prepareUnlocked(
             final String sql,
             final ExecuteParams executeParams
@@ -619,6 +672,7 @@ copy (
         final Result res = interact(sql);
         final ParameterDescription paramDesc = res.getParameterDescription();
         final RowDescription rowDescription = res.getRowDescription();
+        foo(rowDescription, paramDesc);
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
@@ -1269,7 +1323,7 @@ copy (
         setParam(msg.param(), msg.value());
     }
 
-    private static void handleRowDescription (final RowDescription msg, final Result res) {
+    private void handleRowDescription (final RowDescription msg, final Result res) {
         res.handleRowDescription(msg);
     }
 

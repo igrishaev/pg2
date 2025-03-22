@@ -28,7 +28,7 @@ public final class Main {
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
-        System.out.println(conn.query("select '[1,2,3]'::vector(3) as v"));
+        System.out.println(conn.execute("select '[1,2,3]'::vector(3) as v"));
 
 
         //System.out.println(conn.getId());

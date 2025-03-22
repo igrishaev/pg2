@@ -2,7 +2,6 @@ package org.pg.msg.server;
 
 import org.pg.util.BBTool;
 import org.pg.enums.Format;
-import org.pg.enums.OID;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -29,7 +28,15 @@ public record RowDescription (
             int typeOid,
             short typeLen,
             int typeMod,
-            Format format) {
+            Format format
+    ) {}
+
+    public int[] typeOids () {
+        final int[] oids = new int[columns.length];
+        for (int i = 0; i < columns.length; i++) {
+            oids[i] = columns[i].typeOid;
+        }
+        return oids;
     }
 
     public String [] getColumnNames () {

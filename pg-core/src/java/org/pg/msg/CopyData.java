@@ -5,6 +5,7 @@ import org.pg.msg.server.IServerMessage;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 public record CopyData (ByteBuffer buf) implements IClientMessage, IServerMessage {
 
@@ -16,6 +17,11 @@ public record CopyData (ByteBuffer buf) implements IClientMessage, IServerMessag
         result.putInt(4 + size);
         result.put(buf);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("CopyData[buf=%s]", Arrays.toString(buf.array()));
     }
 
     public static CopyData fromByteBuffer(final ByteBuffer buf) {
