@@ -343,6 +343,21 @@ from
       (is (= [{:answer true}] res1)))))
 
 
+(deftest test-client-many-columns-read
+  (let [query
+        (str "select "
+             (str/join ", "
+                  (for [x (range 1 1665)]
+                    (format "%s as f%05d" x x))))]
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (let [row (pg/query conn query {:first? true})]
+        (is (= 1664 (count row)))
+        (is (=    1 (:f00001 row)))
+        (is (=  128 (:f00128 row)))
+        (is (=  256 (:f00256 row)))
+        (is (= 1664 (:f01664 row)))))))
+
+
 (deftest test-client-with-tx-check
   (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-transaction [tx conn]
