@@ -66,7 +66,7 @@ public record ExecuteParams (
             } else if (objOid instanceof Number) {
                 result[i] = RT.intCast(objOid);
             } else if (objOid instanceof String s) {
-                oidInt = codecParams.typeToOid(s);
+                oidInt = codecParams.typeNameToOid(s);
                 result[i] = oidInt;
             } else if (objOid instanceof Named nm) {
                 namespace = nm.getNamespace();
@@ -74,7 +74,7 @@ public record ExecuteParams (
                     namespace = Const.defaultSchema;
                 }
                 typeName = namespace + "." + nm.getName();
-                oidInt = codecParams.typeToOid(typeName);
+                oidInt = codecParams.typeNameToOid(typeName);
                 result[i] = oidInt;
             } else {
                 throw new PGError("wrong OID: %s", TypeTool.repr(objOid));

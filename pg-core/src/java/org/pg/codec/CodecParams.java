@@ -30,8 +30,8 @@ public class CodecParams {
     private boolean integerDatetime = Const.integerDatetime;
     private ObjectMapper objectMapper = JSON.defaultMapper;
     private final Map<Integer, PGType> oidToPGType = new HashMap<>();
-    private final Map<String, Integer> typeToOID = new HashMap<>();
-    private final Map<Integer, IProcessor> oidToProcessor = new HashMap<>();
+    private final Map<String, Integer> typeNameToOid = new HashMap<>();
+//    private final Map<Integer, IProcessor> oidToProcessor = new HashMap<>();
 
     @Override
     public String toString() {
@@ -39,7 +39,7 @@ public class CodecParams {
                 "CodecParams[clientCharset=%s, " +
                         "serverCharset=%s, timeZone=%s, dateStyle=%s, " +
                         "integerDatetime=%s, objectMapper=%s, " +
-                        "oidToPGType=%s, typeToOID=%s, oidToProcessor=%s]",
+                        "oidToPGType=%s, typeNameToOid=%s]",
                 clientCharset,
                 serverCharset,
                 timeZone,
@@ -47,8 +47,8 @@ public class CodecParams {
                 integerDatetime,
                 objectMapper,
                 oidToPGType,
-                typeToOID,
-                oidToProcessor
+                typeNameToOid
+//                oidToProcessor
         );
     }
 
@@ -134,18 +134,20 @@ public class CodecParams {
         }
     }
 
-    public void setProcessor(final Object pgType, final IProcessor processor) {
-        final String type = objectToPGType(pgType);
-        final Integer oid = typeToOID.get(type);
-        if (oid == null) {
-            throw new PGError("unknown type: %s", TypeTool.repr(pgType));
-        }
-        oidToProcessor.put(oid, processor);
-    }
+//    public void setProcessor(final Object pgType, final IProcessor processor) {
+//        final String type = objectToPGType(pgType);
+//        final Integer oid = typeToOID.get(type);
+//        if (oid == null) {
+//            throw new PGError("unknown type: %s", TypeTool.repr(pgType));
+//        }
+//        oidToProcessor.put(oid, processor);
+//    }
 
     public PGType getPgType(final String fullName) {
-        final Integer oid = typeToOID.get(fullName);
-        if (oid == null) return null;
+        final Integer oid = typeNameToOid.get(fullName);
+        if (oid == null) {
+            return null;
+        }
         return oidToPGType.get(oid);
     }
 
@@ -153,30 +155,37 @@ public class CodecParams {
         final int oid = pgType.oid();
         final String fullName = pgType.fullName();
         oidToPGType.put(oid, pgType);
-        typeToOID.put(fullName, oid);
+        typeNameToOid.put(fullName, oid);
     }
 
-    public int typeToOid(final String pgType) {
-        final Integer oid = typeToOID.get(pgType);
-        if (oid == null) {
-            throw new PGError("unknown postgres type: %s", pgType);
-        } else {
-            return oid;
-        }
+    public int typeNameToOid(final String pgType) {
+        return typeNameToOid.get(pgType);
+//        final Integer oid =
+//        if (oid == null) {
+//            throw new PGError("unknown postgres type: %s", pgType);
+//        } else {
+//            return oid;
+//        }
     }
 
     public IProcessor getProcessor(final int oid) {
         // get from a global map with default types
         IProcessor processor = Processors.getProcessor(oid);
-        if (processor != null) return processor;
+        if (processor != null) {
+            return processor;
+        }
 
         // get from overrides
-        processor = oidToProcessor.get(oid);
-        if (processor != null) return processor;
+//        processor = oidToProcessor.get(oid);
+//        if (processor != null) {
+//            return processor;
+//        }
 
         // try to guess by fields from pg_type table
         final PGType pgType = oidToPGType.get(oid);
-        if (pgType == null) return Processors.unsupported;
+        if (pgType == null) {
+            return Processors.unsupported;
+        }
 
         if (pgType.isArray()) {
             return new Array(pgType.oid(), pgType.typelem());
@@ -184,13 +193,14 @@ public class CodecParams {
 
         if (pgType.isEnum()) {
             return Processors.defaultEnum;
-        } else if (pgType.isVector()) {
-            return Processors.vector;
-        } else if (pgType.isSparseVector()) {
-            return Processors.sparsevec;
-        } else {
+        }
+
+        processor = Processors.getCustomProcessor(pgType);
+        if (processor == null) {
             return Processors.unsupported;
         }
+
+        return processor;
     }
 
 

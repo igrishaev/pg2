@@ -83,14 +83,14 @@ public final class Connection implements AutoCloseable {
         }
         if (sendStartup) {
             conn.authenticate();
-            if (config.readPGTypes()) {
-                try {
+//            if (config.readPGTypes()) {
+//                try {
 //                     conn.processTypeMap(); TODO?
-                } catch (Exception e) {
-                    conn.close();
-                    throw new PGError(e, "failed to preprocess postgres types, reason: %s", e.getMessage());
-                }
-            }
+//                } catch (Exception e) {
+//                    conn.close();
+//                    throw new PGError(e, "failed to preprocess postgres types, reason: %s", e.getMessage());
+//                }
+//            }
         }
         return conn;
     }
@@ -175,19 +175,19 @@ public final class Connection implements AutoCloseable {
     /*
     Override some oids with custom processors, if set.
      */
-    private void processTypeMap() {
-        final Map<Object, IProcessor> typeMap = config.typeMap();
-        if (typeMap == null) return;
-        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
-            codecParams.setProcessor(me.getKey(), me.getValue());
-        }
-    }
+//    private void processTypeMap() {
+//        final Map<Object, IProcessor> typeMap = config.typeMap();
+//        if (typeMap == null) return;
+//        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
+//            codecParams.setProcessor(me.getKey(), me.getValue());
+//        }
+//    }
 
     /*
     Return a string of comma-separated integer oids,
     skipping those that are equal to 0.
      */
-    private static String joinOids(final int[] oids) {
+    private static String joinOids(final Set<Integer> oids) {
         final StringBuilder sb = new StringBuilder();
         boolean firstBeen = false;
         for (int oid: oids) {
@@ -210,7 +210,7 @@ public final class Connection implements AutoCloseable {
     helps to guess how to process custom types shipped by extensions (and
     enums as well).
      */
-    public void readTypesByOIDs(final int[] oids) {
+    public void readTypesByOIDs(final Set<Integer> oids) {
         /*
         Below, we use ::text coercion because it's a special REGPROC
         type (oid 24). In binary mode, it gets passed as an integer
@@ -219,6 +219,9 @@ public final class Connection implements AutoCloseable {
         We also exclude predefined types because we know their properties
         in advance.
         */
+        if (oids.isEmpty()) {
+            return;
+        }
         final String query = """
 copy (
     select
@@ -237,11 +240,8 @@ copy (
         pg_type,
         pg_namespace
     where
-        pg_type.oid in (""" + joinOids(oids) + """
-)
+        pg_type.oid in (""" + joinOids(oids) + "+)" + """
         and pg_type.typnamespace = pg_namespace.oid
-        and pg_namespace.nspname != 'pg_catalog'
-        and pg_namespace.nspname != 'information_schema'
 ) to stdout with (format binary)
 """;
 
@@ -631,37 +631,34 @@ copy (
         }
     }
 
-    private void readTypes(final int[] oids1, final int[] oids2) {
-        final int len = oids1.length + oids2.length;
-        int count = 0;
-        final int[] oidsToFetch = new int[len];
-        int oid;
+    private void readTypesAfterStatement(final int[] rowDescOids, final int[] paramDescOids) {
+        final Set<Integer> oids = new HashSet<>();
         IProcessor processor;
-        for (int i = 0; i < oids1.length; i++) {
-            oid = oids1[i];
+        for (int oid: rowDescOids) {
             processor = codecParams.getProcessor(oid);
             if (processor.isUnsupported()) {
-                oidsToFetch[i] = oid;
-                count++;
+                oids.add(oid);
             }
         }
-        for (int i = 0; i < oids2.length; i++) {
-            oid = oids2[i];
+        for (int oid: paramDescOids) {
             processor = codecParams.getProcessor(oid);
             if (processor.isUnsupported()) {
-                oidsToFetch[oids1.length + i] = oid;
-                count++;
+                oids.add(oid);
             }
         }
-        if (count > 0) {
-            readTypesByOIDs(oidsToFetch);
-        }
+        readTypesByOIDs(oids);
+    }
+
+    private void readTypesBeforeStatement(final ExecuteParams executeParams) {
+        
     }
 
     private PreparedStatement prepareUnlocked(
             final String sql,
             final ExecuteParams executeParams
     ) {
+        // TODO: read type name oids; refresh the types
+        readTypesBeforeStatement(executeParams);
         final String statement = generateStatement();
         final int[] intOids = executeParams.getIntOids(codecParams);
         final Parse parse = new Parse(statement, sql, intOids);
@@ -672,7 +669,7 @@ copy (
         final Result res = interact(sql);
         final ParameterDescription paramDesc = res.getParameterDescription();
         final RowDescription rowDescription = res.getRowDescription();
-        readTypes(rowDescription.typeOids(), paramDesc.OIDs());
+        readTypesAfterStatement(rowDescription.typeOids(), paramDesc.OIDs());
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
