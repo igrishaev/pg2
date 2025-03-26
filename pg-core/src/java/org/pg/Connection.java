@@ -14,6 +14,7 @@ import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.processor.IProcessor;
+import org.pg.processor.Unsupported;
 import org.pg.type.PGType;
 import org.pg.util.*;
 
@@ -183,6 +184,21 @@ public final class Connection implements AutoCloseable {
 //        }
 //    }
 
+    private static String joinPairs(final Set<StringPair> pairs) {
+        final StringBuilder sb = new StringBuilder();
+        boolean firstBeen = false;
+        for (StringPair pair: pairs) {
+            if (firstBeen) {
+                sb.append(',');
+            }
+            sb.append(String.format("('%s', '%s')", pair.a(), pair.b()));
+            if (!firstBeen) {
+                firstBeen = true;
+            }
+        }
+        return sb.toString();
+    }
+
     /*
     Return a string of comma-separated integer oids,
     skipping those that are equal to 0.
@@ -203,6 +219,71 @@ public final class Connection implements AutoCloseable {
 
         }
         return sb.toString();
+    }
+
+    public void readTypesByNames(final Set<StringPair> pairs) {
+        if (pairs.isEmpty()) {
+            return;
+        }
+        final String query = """
+copy (
+    select
+        pg_type.oid,
+        pg_type.typname,
+        pg_type.typtype,
+        pg_type.typinput::text,
+        pg_type.typoutput::text,
+        pg_type.typreceive::text,
+        pg_type.typsend::text,
+        pg_type.typarray,
+        pg_type.typdelim,
+        pg_type.typelem,
+        pg_namespace.nspname
+    from
+        pg_type,
+        pg_namespace,
+        (values """ + joinPairs(pairs) + """
+    ) as pairs(nspname, typname)
+    where
+            pg_namespace.nspname = pairs.nspname
+        and pg_type.typname = pairs.typname
+        and pg_type.typnamespace = pg_namespace.oid
+) to stdout with (format binary)
+""";
+        sendQuery(query);
+        flush();
+
+        IServerMessage msg;
+        PGType pgType;
+        ByteBuffer bb;
+        boolean headerSeen = false;
+
+        while (true) {
+            msg = readMessage(false);
+            if (Debug.isON) {
+                Debug.debug(" -> %s", msg);
+            }
+            if (msg instanceof CopyData copyData) {
+                bb = copyData.buf();
+                if (!headerSeen) {
+                    BBTool.skip(bb, Copy.COPY_BIN_HEADER.length);
+                    headerSeen = true;
+                }
+                if (Copy.isTerminator(bb)) {
+                    continue;
+                }
+                pgType = PGType.fromCopyBuffer(bb);
+                codecParams.setPgType(pgType);
+                // these messages are expected but just skipped
+            } else if (msg instanceof CopyOutResponse) {
+            } else if (msg instanceof CopyDone) {
+            } else if (msg instanceof CommandComplete) {
+            } else if (msg instanceof ReadyForQuery) {
+                break;
+            } else {
+                throw new PGError("Unexpected message in readTypes: %s", msg);
+            }
+        }
     }
 
     /*
@@ -240,8 +321,8 @@ copy (
         pg_type,
         pg_namespace
     where
-        pg_type.oid in (""" + joinOids(oids) + "+)" + """
-        and pg_type.typnamespace = pg_namespace.oid
+        pg_type.oid in (""" + joinOids(oids) + ") " + """
+and pg_type.typnamespace = pg_namespace.oid
 ) to stdout with (format binary)
 """;
 
@@ -635,12 +716,18 @@ copy (
         final Set<Integer> oids = new HashSet<>();
         IProcessor processor;
         for (int oid: rowDescOids) {
+            if (oid == 0) {
+                continue;
+            }
             processor = codecParams.getProcessor(oid);
             if (processor.isUnsupported()) {
                 oids.add(oid);
             }
         }
         for (int oid: paramDescOids) {
+            if (oid == 0) {
+                continue;
+            }
             processor = codecParams.getProcessor(oid);
             if (processor.isUnsupported()) {
                 oids.add(oid);
@@ -650,7 +737,40 @@ copy (
     }
 
     private void readTypesBeforeStatement(final ExecuteParams executeParams) {
-        
+        final Set<Integer> oids = new HashSet<>();
+        int oid;
+        IProcessor processor;
+        for (Object objOid: executeParams.objOids()) {
+            if (objOid instanceof Number n) {
+                oid = RT.intCast(n);
+                if (oid == 0) {
+                    continue;
+                }
+                processor = codecParams.getProcessor(oid);
+                if (processor instanceof Unsupported) {
+                    oids.add(oid);
+                }
+            }
+        }
+        readTypesByOIDs(oids);
+
+        final Set<StringPair> pairs = new HashSet<>();
+        String namespace;
+        String name;
+        for (Object objOid: executeParams.objOids()) {
+            if (objOid instanceof Named nm) {
+                namespace = nm.getNamespace();
+                if (namespace == null) {
+                    namespace = Const.defaultSchema;
+                }
+                name = nm.getName();
+                pairs.add(new StringPair(namespace, name));
+            } else if (objOid instanceof String s) {
+                throw new PGError("aaa");
+            }
+
+        }
+        readTypesByNames(pairs);
     }
 
     private PreparedStatement prepareUnlocked(
