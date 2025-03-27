@@ -1,5 +1,11 @@
 package org.pg;
 
+import clojure.lang.Keyword;
+import clojure.lang.PersistentVector;
+import org.pg.enums.OID;
+
+import java.util.List;
+
 public final class Main {
 
     public static void main (final String[] args) {
@@ -28,7 +34,20 @@ public final class Main {
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
-        System.out.println(conn.execute("select '[1,2,3]'::vector(3) as v"));
+//        System.out.println(conn.execute("select '[1,2,3]'::vector(3) as v"));
+
+        ExecuteParams params = ExecuteParams.builder()
+                .params(List.of(
+                        PersistentVector.create(1,2,3),
+                        PersistentVector.create(1,2,3)
+                ))
+                .OIDs(List.of(
+                        "public.vector",
+//                        Keyword.intern("public", "vector"),
+                        Keyword.intern("public", "vector")
+                ))
+                .build();
+        System.out.println(conn.execute("select $1 as v1, $2 as v2", params));
 
 
         //System.out.println(conn.getId());

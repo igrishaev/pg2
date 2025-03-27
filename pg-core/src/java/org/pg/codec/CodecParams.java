@@ -159,13 +159,12 @@ public class CodecParams {
     }
 
     public int typeNameToOid(final String pgType) {
-        return typeNameToOid.get(pgType);
-//        final Integer oid =
-//        if (oid == null) {
-//            throw new PGError("unknown postgres type: %s", pgType);
-//        } else {
-//            return oid;
-//        }
+        final Integer oid = typeNameToOid.get(pgType);
+        if (oid == null) {
+            throw new PGError("unknown postgres type: %s", pgType);
+        } else {
+            return oid;
+        }
     }
 
     public IProcessor getProcessor(final int oid) {

@@ -187,11 +187,15 @@ public final class Connection implements AutoCloseable {
     private static String joinPairs(final Set<StringPair> pairs) {
         final StringBuilder sb = new StringBuilder();
         boolean firstBeen = false;
+        int i = 0;
+        String tag;
         for (StringPair pair: pairs) {
+            i++;
+            tag = String.format("$_ESC%03d_$", i);
             if (firstBeen) {
                 sb.append(',');
             }
-            sb.append(String.format("('%s', '%s')", pair.a(), pair.b()));
+            sb.append(String.format("(%s%s%s, %s%s%s)", tag, pair.a(), tag, tag, pair.b(), tag));
             if (!firstBeen) {
                 firstBeen = true;
             }
@@ -221,7 +225,7 @@ public final class Connection implements AutoCloseable {
         return sb.toString();
     }
 
-    public void readTypesByNames(final Set<StringPair> pairs) {
+    private void readTypesByNames(final Set<StringPair> pairs) {
         if (pairs.isEmpty()) {
             return;
         }
@@ -242,48 +246,15 @@ copy (
     from
         pg_type,
         pg_namespace,
-        (values """ + joinPairs(pairs) + """
-    ) as pairs(nspname, typname)
+        (values\s""" + joinPairs(pairs) + ") " + """
+as pairs(nspname, typname)
     where
             pg_namespace.nspname = pairs.nspname
         and pg_type.typname = pairs.typname
         and pg_type.typnamespace = pg_namespace.oid
 ) to stdout with (format binary)
 """;
-        sendQuery(query);
-        flush();
-
-        IServerMessage msg;
-        PGType pgType;
-        ByteBuffer bb;
-        boolean headerSeen = false;
-
-        while (true) {
-            msg = readMessage(false);
-            if (Debug.isON) {
-                Debug.debug(" -> %s", msg);
-            }
-            if (msg instanceof CopyData copyData) {
-                bb = copyData.buf();
-                if (!headerSeen) {
-                    BBTool.skip(bb, Copy.COPY_BIN_HEADER.length);
-                    headerSeen = true;
-                }
-                if (Copy.isTerminator(bb)) {
-                    continue;
-                }
-                pgType = PGType.fromCopyBuffer(bb);
-                codecParams.setPgType(pgType);
-                // these messages are expected but just skipped
-            } else if (msg instanceof CopyOutResponse) {
-            } else if (msg instanceof CopyDone) {
-            } else if (msg instanceof CommandComplete) {
-            } else if (msg instanceof ReadyForQuery) {
-                break;
-            } else {
-                throw new PGError("Unexpected message in readTypes: %s", msg);
-            }
-        }
+        readTypesResult(query);
     }
 
     /*
@@ -291,7 +262,7 @@ copy (
     helps to guess how to process custom types shipped by extensions (and
     enums as well).
      */
-    public void readTypesByOIDs(final Set<Integer> oids) {
+    private void readTypesByOIDs(final Set<Integer> oids) {
         /*
         Below, we use ::text coercion because it's a special REGPROC
         type (oid 24). In binary mode, it gets passed as an integer
@@ -325,7 +296,10 @@ copy (
 and pg_type.typnamespace = pg_namespace.oid
 ) to stdout with (format binary)
 """;
+        readTypesResult(query);
+    }
 
+    private void readTypesResult(final String query) {
         sendQuery(query);
         flush();
 
@@ -738,7 +712,10 @@ and pg_type.typnamespace = pg_namespace.oid
 
     private void readTypesBeforeStatement(final ExecuteParams executeParams) {
         final Set<Integer> oids = new HashSet<>();
+        final Set<StringPair> pairs = new HashSet<>();
         int oid;
+        String namespace;
+        String name;
         IProcessor processor;
         for (Object objOid: executeParams.objOids()) {
             if (objOid instanceof Number n) {
@@ -750,15 +727,7 @@ and pg_type.typnamespace = pg_namespace.oid
                 if (processor instanceof Unsupported) {
                     oids.add(oid);
                 }
-            }
-        }
-        readTypesByOIDs(oids);
-
-        final Set<StringPair> pairs = new HashSet<>();
-        String namespace;
-        String name;
-        for (Object objOid: executeParams.objOids()) {
-            if (objOid instanceof Named nm) {
+            } else if (objOid instanceof Named nm) {
                 namespace = nm.getNamespace();
                 if (namespace == null) {
                     namespace = Const.defaultSchema;
@@ -766,11 +735,20 @@ and pg_type.typnamespace = pg_namespace.oid
                 name = nm.getName();
                 pairs.add(new StringPair(namespace, name));
             } else if (objOid instanceof String s) {
-                throw new PGError("aaa");
+                final String[] parts = s.split("\\.", 2);
+                if (parts.length != 2) {
+                    throw new PGError("wrong type: %s. Please provide a fully-qualified type like 'schema.name'", s);
+                }
+                namespace = parts[0];
+                name = parts[1];
+                pairs.add(new StringPair(namespace, name));
+            } else {
+                throw new PGError("unknown OID value: %s", TypeTool.repr(objOid));
             }
-
         }
+        readTypesByOIDs(oids);
         readTypesByNames(pairs);
+
     }
 
     private PreparedStatement prepareUnlocked(
