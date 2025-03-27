@@ -54,6 +54,20 @@ public final class Connection implements AutoCloseable {
     private final List<Object> notifications = new ArrayList<>(0);
     private final List<Object> notices = new ArrayList<>(0);
 
+    private static final String typeFields = """
+        pg_type.oid,
+        pg_type.typname,
+        pg_type.typtype,
+        pg_type.typinput::text,
+        pg_type.typoutput::text,
+        pg_type.typreceive::text,
+        pg_type.typsend::text,
+        pg_type.typarray,
+        pg_type.typdelim,
+        pg_type.typelem,
+        pg_namespace.nspname
+""";
+
     @Override
     public boolean equals (Object other) {
         return other instanceof Connection && id.equals(((Connection) other).id);
@@ -232,17 +246,7 @@ public final class Connection implements AutoCloseable {
         final String query = """
 copy (
     select
-        pg_type.oid,
-        pg_type.typname,
-        pg_type.typtype,
-        pg_type.typinput::text,
-        pg_type.typoutput::text,
-        pg_type.typreceive::text,
-        pg_type.typsend::text,
-        pg_type.typarray,
-        pg_type.typdelim,
-        pg_type.typelem,
-        pg_namespace.nspname
+       """ + typeFields + """
     from
         pg_type,
         pg_namespace,
@@ -263,31 +267,14 @@ as pairs(nspname, typname)
     enums as well).
      */
     private void readTypesByOIDs(final Set<Integer> oids) {
-        /*
-        Below, we use ::text coercion because it's a special REGPROC
-        type (oid 24). In binary mode, it gets passed as an integer
-        (but as a string in text mode).
 
-        We also exclude predefined types because we know their properties
-        in advance.
-        */
         if (oids.isEmpty()) {
             return;
         }
         final String query = """
 copy (
     select
-        pg_type.oid,
-        pg_type.typname,
-        pg_type.typtype,
-        pg_type.typinput::text,
-        pg_type.typoutput::text,
-        pg_type.typreceive::text,
-        pg_type.typsend::text,
-        pg_type.typarray,
-        pg_type.typdelim,
-        pg_type.typelem,
-        pg_namespace.nspname
+        """ + typeFields + """
     from
         pg_type,
         pg_namespace
@@ -737,7 +724,7 @@ and pg_type.typnamespace = pg_namespace.oid
             } else if (objOid instanceof String s) {
                 final String[] parts = s.split("\\.", 2);
                 if (parts.length != 2) {
-                    throw new PGError("wrong type: %s. Please provide a fully-qualified type like 'schema.name'", s);
+                    throw new PGError("wrong type: '%s'. Please provide a fully-qualified type like 'schema.name'", s);
                 }
                 namespace = parts[0];
                 name = parts[1];
