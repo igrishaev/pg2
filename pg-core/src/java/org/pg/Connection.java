@@ -675,26 +675,24 @@ and pg_type.typnamespace = pg_namespace.oid
 
     private void readTypesAfterStatement(final int[] rowDescOids, final int[] paramDescOids) {
         final Set<Integer> oids = new HashSet<>();
-        IProcessor processor;
-        for (int oid: rowDescOids) {
-            if (oid == 0) {
-                continue;
-            }
-            processor = codecParams.getProcessor(oid);
-            if (processor.isUnsupported()) {
-                oids.add(oid);
-            }
-        }
-        for (int oid: paramDescOids) {
-            if (oid == 0) {
-                continue;
-            }
-            processor = codecParams.getProcessor(oid);
-            if (processor.isUnsupported()) {
-                oids.add(oid);
-            }
-        }
+        processOids(rowDescOids, oids);
+        processOids(paramDescOids, oids);
         readTypesByOIDs(oids);
+    }
+
+    private void processOids(int[] rowDescOids, Set<Integer> oids) {
+        IProcessor processor;
+        if (rowDescOids != null) {
+            for (int oid: rowDescOids) {
+                if (oid == 0) {
+                    continue;
+                }
+                processor = codecParams.getProcessor(oid);
+                if (processor.isUnsupported()) {
+                    oids.add(oid);
+                }
+            }
+        }
     }
 
     private void readTypesBeforeStatement(final ExecuteParams executeParams) {
@@ -754,7 +752,10 @@ and pg_type.typnamespace = pg_namespace.oid
         final Result res = interact(sql);
         final ParameterDescription paramDesc = res.getParameterDescription();
         final RowDescription rowDescription = res.getRowDescription();
-        readTypesAfterStatement(rowDescription.typeOids(), paramDesc.OIDs());
+        readTypesAfterStatement(
+                rowDescription == null ? null : rowDescription.typeOids(),
+                paramDesc == null ? null : paramDesc.OIDs()
+        );
         return new PreparedStatement(parse, paramDesc, rowDescription);
     }
 
@@ -1378,6 +1379,7 @@ and pg_type.typnamespace = pg_namespace.oid
     @SuppressWarnings("unused")
     public Object copy (final String sql, final ExecuteParams executeParams) {
         try (TryLock ignored = lock.get()) {
+            readTypesBeforeStatement(executeParams);
             sendQuery(sql);
             final Result res = interact(executeParams, sql);
             return res.getResult();

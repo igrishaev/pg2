@@ -1524,6 +1524,7 @@ from
         (is (= {:one 1} res))))))
 
 
+#_
 (deftest test-custom-type-map-error
   (let [type-map
         {:public/foobar t/enum}

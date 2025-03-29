@@ -36,18 +36,23 @@ public final class Main {
         Connection conn = Connection.connect(config);
 //        System.out.println(conn.execute("select '[1,2,3]'::vector(3) as v"));
 
-        ExecuteParams params = ExecuteParams.builder()
-                .params(List.of(
-                        PersistentVector.create(1,2,3),
-                        PersistentVector.create(1,2,3)
-                ))
-                .OIDs(List.of(
-                        "public.vector",
-//                        Keyword.intern("public", "vector"),
-                        Keyword.intern("public", "vector")
-                ))
-                .build();
-        System.out.println(conn.execute("select $1 as v1, $2 as v2", params));
+//        conn.query("create type test01 as enum ('a', 'b', 'c')");
+
+        System.out.println(conn.query("select '{a,b,c}'::test01[] as arr"));
+//        System.out.println(conn.execute("create temp table test (id int, p polygon)"));
+
+//        ExecuteParams params = ExecuteParams.builder()
+//                .params(List.of(
+//                        PersistentVector.create(1,2,3),
+//                        PersistentVector.create(1,2,3)
+//                ))
+//                .OIDs(List.of(
+//                        "public.vector",
+////                        Keyword.intern("public", "vector"),
+//                        Keyword.intern("public", "vector")
+//                ))
+//                .build();
+//        System.out.println(conn.execute("select $1 as v1, $2 as v2", params));
 
 
         //System.out.println(conn.getId());
