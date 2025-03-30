@@ -29,7 +29,11 @@ public record PGType(
         return typelem != 0;
     }
 
-    public String processorKey () {
+    /*
+    A unique string specifying the current Postgres type.
+    Serves as a key to connect a pgType with a custom processor.
+     */
+    public String signature() {
         return String.format("%s/%s", typname, typinput);
     }
 

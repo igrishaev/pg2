@@ -29,7 +29,7 @@ public class Processors {
     }
 
     public static IProcessor getCustomProcessor(final PGType pgType) {
-        return customMap.get(pgType.processorKey());
+        return customMap.get(pgType.signature());
     }
 
     private static final Map<Integer, IProcessor> oidMap = new HashMap<>();

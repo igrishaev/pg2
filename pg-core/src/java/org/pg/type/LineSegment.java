@@ -1,5 +1,6 @@
 package org.pg.type;
 
+import clojure.lang.Keyword;
 import clojure.lang.PersistentVector;
 import org.pg.clojure.KW;
 import org.pg.error.PGError;
@@ -40,11 +41,15 @@ public record LineSegment(Point p1, Point p2) {
         return LineSegment.of(x1, y1, x2, y2);
     }
 
+    public static double getDouble (final Map<?,?> map, final Keyword key) {
+        return NumTool.toDouble(map.get(key));
+    }
+
     public static LineSegment fromMap(final Map<?,?> map) {
-        final double x1 = NumTool.toDouble(map.get(KW.x1));
-        final double y1 = NumTool.toDouble(map.get(KW.y1));
-        final double x2 = NumTool.toDouble(map.get(KW.x2));
-        final double y2 = NumTool.toDouble(map.get(KW.y2));
+        final double x1 = getDouble(map, KW.x1);
+        final double y1 = getDouble(map, KW.y1);
+        final double x2 = getDouble(map, KW.x2);
+        final double y2 = getDouble(map, KW.y2);
         return LineSegment.of(x1, y1, x2, y2);
     }
 

@@ -7,8 +7,12 @@
   - map fields order
 
 - docs
-  - notify & listen
-  - rowmap (deref, nth)
+  - config: -enums -with-pg-vector +read-pg-types?
+  - pg-type: another example (not vector? enum?)
+  - pg-type: change query
+  - new page about types?
+  - rowmap (nth)
+  - notices
 
 - user & database default values?
 
