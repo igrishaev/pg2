@@ -8,9 +8,11 @@
 
 - docs
   - config: -enums -with-pg-vector +read-pg-types?
+  - jdbc: the same options
   - pg-type: another example (not vector? enum?)
   - pg-type: change query
   - new page about types?
+  - read types default = false?
   - rowmap (nth)
   - notices
 
