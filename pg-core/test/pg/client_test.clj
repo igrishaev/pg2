@@ -1535,7 +1535,7 @@ from
       (pg/with-connection [conn config])
       (is false)
       (catch PGError e
-        (is (= "failed to preprocess postgres types, reason: unknown type: type: clojure.lang.Keyword, value: :public/foobar"
+        (is (= "unknown type: type: clojure.lang.Keyword, value: :public/foobar"
                (ex-message e)))))
 
     ;; without reading types, it's ok
