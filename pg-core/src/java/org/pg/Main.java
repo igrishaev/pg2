@@ -17,6 +17,7 @@ public final class Main {
                 .password(user)
                 .binaryEncode(true)
                 .binaryDecode(true)
+                .readPGTypes(true)
                 .build();
 
 //        Config config = Config.builder("test_owner", "test")
@@ -35,7 +36,7 @@ public final class Main {
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
-        System.out.println(conn.query("select '[1,2,3]'::vector(3) as v"));
+        System.out.println(conn.execute("select '12:01:59.123456789+03'::timetz as timetz"));
         final Object map = RT.first(conn.execute("select 1 a, 2 b, 3 c, 4 d, 5 e, 6 f, 7 g, 8 h, 9 i, 10 j, 11 k, 12 l, 13 m, 14 n, 15 o, 16 p"));
         System.out.println(RT.seq(map));
 

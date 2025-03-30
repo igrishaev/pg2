@@ -84,13 +84,8 @@ public final class Connection implements AutoCloseable {
         if (sendStartup) {
             conn.authenticate();
             if (config.readPGTypes()) {
-                try {
-                    conn.readTypes();
-                    conn.processTypeMap();
-                } catch (Exception e) {
-                    conn.close();
-                    throw new PGError(e, "failed to preprocess postgres types, reason: %s", e.getMessage());
-                }
+                conn.readTypes();
+                conn.processTypeMap();
             }
         }
         return conn;
@@ -178,7 +173,9 @@ public final class Connection implements AutoCloseable {
      */
     private void processTypeMap() {
         final Map<Object, IProcessor> typeMap = config.typeMap();
-        if (typeMap == null) return;
+        if (typeMap == null) {
+            return;
+        }
         for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
             codecParams.setProcessor(me.getKey(), me.getValue());
         }
@@ -232,6 +229,9 @@ copy (
 
         while (true) {
             msg = readMessage(false);
+            if (Debug.isON) {
+                Debug.debug(" -> %s", msg);
+            }
             if (msg instanceof CopyData copyData) {
                 bb = copyData.buf();
                 if (!headerSeen) {

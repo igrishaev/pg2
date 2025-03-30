@@ -29,12 +29,8 @@ public record PGType(
         return typelem != 0;
     }
 
-    public boolean isVector() {
-        return typname.equals("vector") && typinput.equals("vector_in");
-    }
-
-    public boolean isSparseVector() {
-        return typname.equals("sparsevec") && typinput.equals("sparsevec_in");
+    public String processorKey () {
+        return String.format("%s/%s", typname, typinput);
     }
 
     /*
