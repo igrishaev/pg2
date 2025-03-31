@@ -129,8 +129,16 @@ And with an alias:
 
 ### Default
 
-Collects unmodified rows into a vector. That's unlikely you'll need that folder
-as it gets applied internally when no other folders were specified.
+Collects unmodified rows into a persistent vector. Each row is an instance of
+the `org.pg.clojure.RowMap` class that mimics a Clojure map. The key feature is,
+it holds an unparsed byte array inside and parses values lazily, meaning only
+when you print a map, or access a certain key, or associate an extra key to it.
+
+That's unlikely you'll need that folder as it gets applied internally when no
+other folders were specified.
+
+For details, check out the following section: [Working With
+Rows](/docs/row-map.md).
 
 ### Dummy
 
