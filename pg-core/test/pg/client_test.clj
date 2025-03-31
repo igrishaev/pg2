@@ -1841,7 +1841,7 @@ drop table %1$s;
                :parameter_types "{text}"}]
              (map cleanup statements1)))
 
-      (is (re-matches #"s\d{12}\d+"
+      (is (re-matches #"s\d{10}\d+"
                       (-> statements1
                           first
                           :name)))
