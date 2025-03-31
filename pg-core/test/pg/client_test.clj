@@ -2229,6 +2229,48 @@ drop table %1$s;
       (is (nil? (get row :y))))))
 
 
+(deftest test-row-map-seq-order
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [rows
+          (pg/execute conn "select 1 a, 2 b, 3 c, 4 d, 5 e, 6 f, 7 g, 8 h, 9 i, 10 j, 11 k, 12 l, 13 m, 14 n, 15 o, 16 p")
+
+          row
+          (first rows)]
+
+      (is (= "{:a 1, :b 2, :c 3, :d 4, :e 5, :f 6, :g 7, :h 8, :i 9, :j 10, :k 11, :l 12, :m 13, :n 14, :o 15, :p 16}"
+             (str row)))
+
+      (is (= [[:a 1] [:b 2] [:c 3] [:d 4] [:e 5] [:f 6] [:g 7] [:h 8]
+              [:i 9] [:j 10] [:k 11] [:l 12] [:m 13] [:n 14] [:o 15] [:p 16]]
+             (seq row)))
+
+      (is (= '(:a :b :c :d :e :f :g :h :i :j :k :l :m :n :o :p)
+             (keys row)))
+
+      (is (= '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
+             (vals row)))
+
+      (is (= [:c 3]
+             (-> row seq next next first)))
+
+      (is (seq? (-> row seq)))
+
+      (is (= {:foo 1}
+             (-> row seq (with-meta {:foo 1}) meta)))
+
+      (is (= 16 (-> row seq count)))
+      (let [seq-next
+            (-> row seq next)]
+        (is (= 15 (-> seq-next count)))
+        (let [seq-next (next seq-next)]
+          (is (= 14 (count seq-next))))))
+
+    (let [[row & _]
+          (pg/execute conn "select")]
+      (is (= {} row))
+      (is (nil? (-> row seq))))))
+
+
 (deftest test-acc-as-edn
 
   (pg/with-connection [conn *CONFIG-TXT*]

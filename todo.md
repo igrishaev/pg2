@@ -1,4 +1,7 @@
 
+- docs:
+  - map fields order
+
 - docs
   - notify & listen
   - rowmap (deref, nth)

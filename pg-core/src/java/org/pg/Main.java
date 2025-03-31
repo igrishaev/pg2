@@ -1,5 +1,7 @@
 package org.pg;
 
+import clojure.lang.RT;
+
 public final class Main {
 
     public static void main (final String[] args) {
@@ -7,27 +9,28 @@ public final class Main {
 //        final long l = 123123123L;
 //        System.out.println((short) l);
 
-        // String user = System.getenv("USER");
+         String user = "test"; // System.getenv("USER");
 
-//        Config config = Config.builder(user, user)
-//                .port(15432)
-//                .host("127.0.0.1")
-//                .password(user)
-//                .binaryEncode(true)
-//                .binaryDecode(true)
-//                .build();
-
-        Config config = Config.builder("test_owner", "test")
-                .port(5432)
-                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
-                .password("")
-                .useSSL(true)
+        Config config = Config.builder(user, user)
+                .port(15432)
+                .host("127.0.0.1")
+                .password(user)
+                .binaryEncode(true)
+                .binaryDecode(true)
                 .build();
+
+//        Config config = Config.builder("test_owner", "test")
+//                .port(5432)
+//                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
+//                .password("")
+//                .useSSL(true)
+//                .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
-        System.out.println(conn.query("select 42 as num"));
-
+        // System.out.println(conn.query("select 42 as num"));
+        final Object map = RT.first(conn.execute("select 1 a, 2 b, 3 c, 4 d, 5 e, 6 f, 7 g, 8 h, 9 i, 10 j, 11 k, 12 l, 13 m, 14 n, 15 o, 16 p"));
+        System.out.println(RT.seq(map));
 
         //System.out.println(conn.getId());
         //System.out.println(conn.getPid());
