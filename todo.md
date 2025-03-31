@@ -1,6 +1,8 @@
 
 - maybe exted multi-methods in Java?
 
+- RowMap: meta support?
+
 - docs:
   - map fields order
 
