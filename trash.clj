@@ -103,3 +103,29 @@ private final Map<UUID, Long> connUsedSince;
 this.connUsedSince = new HashMap<>(config.poolMaxSize());
 connUsedSince.remove(conn.getId());
 connUsedSince.put(conn.getId(), System.currentTimeMillis());
+
+    public static IFn printMethod = Clojure.var("clojure.core", "print-method");
+
+    static {
+        final MultiFn mm = (MultiFn) ((Var) CljAPI.printMethod).deref();
+        mm.addMethod(RowMap.class, new AFn() {
+            @Override
+            public Object invoke(final Object valueObj, final Object writerObj) {
+                final RowMap value = (RowMap) valueObj;
+                final Writer writer = (Writer) writerObj;
+                try {
+                    writer.write(value.toClojureMap().toString());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                return null;
+            }
+        });
+    }
+
+
+    public static IFn require=Clojure.var("clojure.core", "require");
+    static {
+        require.invoke(clojure.lang.Symbol.intern("clojure.pprint"));
+    }
+    public static IFn pp=Clojure.var("clojure.pprint", "pprint");

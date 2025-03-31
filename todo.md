@@ -1,4 +1,6 @@
 
+- maybe exted multi-methods in Java?
+
 - docs:
   - map fields order
 
