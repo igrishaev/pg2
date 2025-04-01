@@ -12,9 +12,9 @@ rows
 ~~~
 
 These maps are not pure Clojure maps but rather special objects that mimic
-Clojure maps. Namely, these are instances of the `org.pg.clojure.RowMap` class
-that implements `APersistentMap` and some other interfaces. But at first glance,
-it's a map indeed: `get`, `assoc`, `dissoc` and other things work as expected:
+them. Namely, these are instances of the `org.pg.clojure.RowMap` class that
+implements `APersistentMap` and some other interfaces. But at first glance, it's
+a map indeed: `get`, `assoc`, `dissoc` and other things work as expected:
 
 ~~~clojure
 (-> rows first map?)
