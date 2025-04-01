@@ -26,7 +26,7 @@
 ## 0.1.36-SNAPSHOT
 
 - add test-client-many-columns-read
-- ?
+- #53 Preserve column order
 - ?
 
 ## 0.1.35
