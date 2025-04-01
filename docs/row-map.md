@@ -1,6 +1,7 @@
 # Working With Rows
 
-When you `query` or `execute` something, by default, you get a vector of maps:
+When you `query` or `execute` something, unless you specified a [custom
+reducer](/docs/folders.md), you get a vector of maps:
 
 ~~~clojure
 (def rows
@@ -11,10 +12,9 @@ rows
 ~~~
 
 These maps are not pure Clojure maps but rather special objects that mimic
-Clojure maps, if fact. Namely, these are instances of the
-`org.pg.clojure.RowMap` class that implements `APersistentMap` and some other
-interfaces. But at first glance, it's a map indeed: get, assoc, dissoc and other
-things work as expected:
+Clojure maps. Namely, these are instances of the `org.pg.clojure.RowMap` class
+that implements `APersistentMap` and some other interfaces. But at first glance,
+it's a map indeed: `get`, `assoc`, `dissoc` and other things work as expected:
 
 ~~~clojure
 (-> rows first map?)
@@ -30,11 +30,11 @@ org.pg.clojure.RowMap
 1
 ~~~
 
-The `RowMap` class is special in that term that it's lazy. Initially, it stores
-only an array of keys and unparsed byte array that came from a Postgres
-server. When you touch a certain key, a corresponding fragment of the array gets
-parsed and cached. When you reach the same key the second time, it's taken from
-a cache without parsing:
+The `RowMap` class is special in terms of laziness. Initially, it stores only an
+array of keys and unparsed byte array that came from a Postgres server. When you
+touch a certain key, a corresponding fragment of the array gets parsed and
+cached. When you reach the same key the second time, it's taken from a cache
+without parsing:
 
 ~~~text
 {
@@ -49,19 +49,18 @@ a cache without parsing:
 ~~~
 
 This feature brings two positive points. First, you don't spend time on parsing
-rows when receiving data from a server. Thus, the throughput is faster, and the
+rows when receiving data from a server. The throughput is faster, and the
 connection is now busy for less time. You borrow a connection, get the data
 without parsing and let other threads use it again.
 
-Second, we often select more fields that is actually needed. For example,
-passing `select * from table` with 20 fields while only two of three columns are
-actually needed. With laziness, all 20 fields stay unparsed until you forcibly
-trigger evaluation.
+Second, we often select more fields that we actually need. For example, querying
+`select *` from a table with 20 fields while only two of three of them are
+needed. With laziness, all 20 fields stay unparsed until you forcibly trigger
+evaluation.
 
-The `RowMap` class stays itself only while you're reading its keys. If you
-`assoc` or `dissoc` a key, it gets transformed into a Clojure map. Thus, adding
-or removing a key triggers a process of parsing all keys and making a fresh
-Clojure map:
+The `RowMap` class stays itself only while you're reading. If you `assoc` or
+`dissoc` a key, it gets transformed into an ordinary Clojure map. Adding or
+removing a key triggers a process of parsing all keys and making a Clojure map:
 
 ~~~clojure
 (-> rows first type)
@@ -71,22 +70,23 @@ org.pg.clojure.RowMap
 clojure.lang.PersistentHashMap
 ~~~
 
-A `RowMap` instance knows the order of keys which gives two features. First, it
-can be used as a vector using `nth` with fast access:
+A `RowMap` instance knows the order of keys, and it gives a couple of
+features. First, it can be passed into the `nth` function like a vector:
 
 ~~~clojure
 (nth row 0) ;; the first column
 (nth row 1) ;; the second column
+(nth row 99) ;; IndexOutOfBoundsException: the row map misses index 99
 ~~~
 
-You can destruct a row map as a vector in `let` binding as follows:
+You can destruct a row map as a vector in `let` binding:
 
 ~~~clojure
 (let [[id email created-at] row]
   ...)
 ~~~
 
-because under the hood, this form expands into something like this:
+Under the hood, it expands into something like this:
 
 ~~~clojure
 (let [id (nth row 0)
@@ -110,10 +110,10 @@ row
 {:a 1, :b 2, :c 3, :d 4, :e 5, :f 6, :g 7, :h 8, :i 9,
  :j 10, :k 11, :l 12, :m 13, :n 14, :o 15, :p 16}
 
-(keys row)
+(keys row) ;; follows the order of columns
 (:a :b :c :d :e :f :g :h :i :j :k :l :m :n :o :p)
 
-(vals row)
+(vals row) ;; the same
 (1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
 ~~~
 
@@ -123,7 +123,7 @@ Whereas pure Clojure maps don't preserve the order or keys:
 (def row
   {:a 1, :b 2, :c 3, ... :n 14, :o 15, :p 16})
 
-(keys row)
+(keys row) ;; different order
 (:o :n :m :e :l :k :g :c :j :h :b :d :f :p :i :a)
 ~~~
 
