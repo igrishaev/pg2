@@ -67,9 +67,10 @@ tests][tests].
 - Common Execute Parameters
 - Type Hints (OIDs)
 - Types & Extensions
-  - [Geometry (line, box, etc)](/docs/geometry.md)
-  - [PGVector](/docs/pgvector.md)
-  - [Custom Type Processors](/docs/processors.md)
+- [Geometry (line, box, etc)](/docs/geometry.md)
+- [PGVector Support](/docs/pgvector.md)
+- [Custom Type Processors](/docs/processors.md)
+- [Working With Rows](/docs/row-map.md)
 - Working with Enums
 - Cloning a Connection
 - Cancelling a Query

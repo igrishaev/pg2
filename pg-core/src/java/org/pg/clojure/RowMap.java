@@ -74,6 +74,47 @@ public final class RowMap extends APersistentMap implements Indexed {
         }
     }
 
+    private MapEntry entryById(final int i) {
+        return new MapEntry(keys[i], getValueByIndex(i));
+    }
+
+    private class EntrySeq extends ASeq {
+        private final int i;
+        public EntrySeq(final int i) {
+            this.i = i;
+        }
+        public EntrySeq(final int i, final IPersistentMap meta) {
+            super(meta);
+            this.i = i;
+        }
+        @Override
+        public Object first() {
+            return RowMap.this.entryById(i);
+        }
+        @Override
+        public ISeq next() {
+            final int iNext = i + 1;
+            if (missesIndex(iNext)) {
+                return null;
+            } else {
+                return new EntrySeq(iNext);
+            }
+        }
+        @Override
+        public Obj withMeta(IPersistentMap meta) {
+            return new EntrySeq(i, meta);
+        }
+    }
+
+    @Override
+    public ISeq seq() {
+        if (count == 0) {
+            return null;
+        } else {
+            return new EntrySeq(0);
+        }
+    }
+
     private Object getValueByIndexUnlocked(final int i) {
 
         if (ToC == null) {
@@ -183,11 +224,6 @@ public final class RowMap extends APersistentMap implements Indexed {
     @Override
     public IPersistentCollection empty() {
         return PersistentHashMap.EMPTY;
-    }
-
-    @Override
-    public ISeq seq() {
-        return toClojureMap().seq();
     }
 
     @Override

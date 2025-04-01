@@ -1,4 +1,11 @@
 
+- maybe exted multi-methods in Java?
+
+- RowMap: meta support?
+
+- docs:
+  - map fields order
+
 - docs
   - notify & listen
   - rowmap (deref, nth)
