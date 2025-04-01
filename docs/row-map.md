@@ -38,9 +38,8 @@ without parsing:
 
 ~~~text
 {
-  _keys ["Ivan" "test@test.com" ...]
-  _payload [....................................]
-            |---name---|-----email-----|...
+  _keys ["name" "email" ...]
+  _payload [<Ivan><test@test.com><...>...]
   _cache {:name "Ivan"}
 }
 
