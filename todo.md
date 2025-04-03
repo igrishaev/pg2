@@ -3,17 +3,16 @@
 
 - RowMap: meta support?
 
-- docs:
-  - map fields order
-
-- docs
+- types
+  - Global static pgType map?
   - config: -enums -with-pg-vector +read-pg-types?
-  - jdbc: the same options
   - pg-type: another example (not vector? enum?)
   - pg-type: change query
   - new page about types?
   - read types default = false?
-  - rowmap (nth)
+
+- docs
+  - jdbc: the same options
   - notices
 
 - user & database default values?
@@ -25,15 +24,6 @@
   - test citext
   - enable binary by default?
   - decode records
-
-- enum array? (binary mode)
-
-Global static pgType map?
-
-connection phase (none, auth, operate)
-
-- clojure api
-  - read-types
 
 - use PG* env vars
 - fix pg.server namespace
