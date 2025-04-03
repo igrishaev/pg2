@@ -168,6 +168,11 @@ public final class Connection implements AutoCloseable {
         return codecParams.getPgType(fullName);
     }
 
+    @SuppressWarnings("unused")
+    public Collection<PGType> getPGTypes() {
+        return codecParams.getPgTypes();
+    }
+
     /*
     Override some oids with custom processors, if set.
      */
@@ -216,6 +221,7 @@ copy (
         pg_type.typnamespace = pg_namespace.oid
         and pg_namespace.nspname != 'pg_catalog'
         and pg_namespace.nspname != 'information_schema'
+        and pg_namespace.nspname != 'pg_toast'
 ) to stdout with (format binary)
 """;
 

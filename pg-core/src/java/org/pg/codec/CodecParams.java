@@ -13,7 +13,9 @@ import org.pg.util.TypeTool;
 
 import java.nio.charset.Charset;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /*
@@ -129,6 +131,9 @@ public class CodecParams {
                 namespace = Const.defaultSchema;
             }
             return namespace + "." + nm.getName();
+            // TODO: check String type too
+            // TODO: common function for OID
+            // TODO: add tests
         } else {
             throw new PGError("wrong postgres type: %s", TypeTool.repr(obj));
         }
@@ -163,6 +168,10 @@ public class CodecParams {
         } else {
             return oid;
         }
+    }
+
+    public Collection<PGType> getPgTypes() {
+        return oidToPGType.values();
     }
 
     public IProcessor getProcessor(final int oid) {

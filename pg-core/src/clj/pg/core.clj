@@ -662,7 +662,23 @@
   (.readTypes conn))
 
 
-(defn get-pg-type [^Connection conn type]
+(defn get-pg-types
+  "
+  Return a vector of maps representing Postgres types
+  read on startup.
+  "
+  [^Connection conn]
+  (->> conn
+       .getPGTypes
+       (mapv deref)))
+
+
+(defn get-pg-type
+  "
+  Get a single Postgres type by its name which can be
+  a keyword, a symbol or a string.
+  "
+  [^Connection conn type]
   (some->> type
            (.getPGTypeByName conn)
            (deref)))

@@ -1,6 +1,7 @@
 package org.pg;
 
 import clojure.lang.RT;
+import org.pg.type.PGType;
 
 public final class Main {
 
@@ -11,32 +12,44 @@ public final class Main {
 
          String user = "test"; // System.getenv("USER");
 
-        Config config = Config.builder(user, user)
-                .port(10150)
-                .host("127.0.0.1")
-                .password(user)
-                .binaryEncode(true)
-                .binaryDecode(true)
-                .readPGTypes(true)
+//        Config config = Config.builder(user, user)
+//                .port(10150)
+//                .host("127.0.0.1")
+//                .password(user)
+//                .binaryEncode(true)
+//                .binaryDecode(true)
+//                .readPGTypes(true)
+//                .build();
+
+//        Config config = Config.builder("test_owner", "test")
+//                .port(5432)
+//                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
+//                .password("")
+//                .useSSL(true)
+//                .build();
+
+//        Config config = Config.builder("test_owner", "test")
+//                .port(5432)
+//                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
+//                .password("")
+//                .useSSL(true)
+//                .build();
+
+        Config config = Config.builder("postgres.hmtrzfggdhnofcaseomq", "postgres")
+                .port(6543)
+                .host("aws-0-eu-central-1.pooler.supabase.com")
+                .password("")
+                .useSSL(true)
                 .build();
-
-//        Config config = Config.builder("test_owner", "test")
-//                .port(5432)
-//                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
-//                .password("")
-//                .useSSL(true)
-//                .build();
-
-//        Config config = Config.builder("test_owner", "test")
-//                .port(5432)
-//                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
-//                .password("")
-//                .useSSL(true)
-//                .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
-        System.out.println(conn.execute("select '12:01:59.123456789+03'::timetz as timetz"));
+//        System.out.println(conn.execute("create type RGB as enum('r', 'g', 'b')"));
+//        System.out.println();
+        for (PGType pgType: conn.getPGTypes()) {
+            System.out.println(pgType);
+        }
+//        System.out.println(conn.execute("select '12:01:59.123456789+03'::timetz as timetz"));
         final Object map = RT.first(conn.execute("select 1 a, 2 b, 3 c, 4 d, 5 e, 6 f, 7 g, 8 h, 9 i, 10 j, 11 k, 12 l, 13 m, 14 n, 15 o, 16 p"));
         System.out.println(RT.seq(map));
 

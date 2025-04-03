@@ -1602,6 +1602,12 @@ from
 
     (pg/read-pg-types conn)
 
+    (is (= #{"public"}
+           (->> conn
+                pg/get-pg-types
+                (map :nspname)
+                (set))))
+
     (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v [1.0 2.0 3.0]}] res)))))
 
