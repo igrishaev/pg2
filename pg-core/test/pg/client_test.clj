@@ -1519,6 +1519,12 @@ from
         (is (= "unknown postgres type: foo.lol_bar"
                (ex-message e)))))
 
+    (try
+      (pg/prepare conn "select $1 as p1" {:oids ["lol_bar"]})
+      (catch PGError e
+        (is (= "unknown postgres type: public.lol_bar"
+               (ex-message e)))))
+
     (testing "connection is still usable"
       (let [res (pg/execute conn "select 1 as one" {:first true})]
         (is (= {:one 1} res))))))
@@ -1561,6 +1567,9 @@ from
       (pg/query conn (format "create type %s as enum ('foo', 'bar', 'baz')" enum-name)))
 
     (pg/with-connection [conn *CONFIG-TXT*]
+
+      (is (nil? (pg/get-pg-type conn "dunno")))
+
       (let [pg-type (pg/get-pg-type conn enum-name)]
         (is (= {:typtype \e
                 :typoutput "enum_out"

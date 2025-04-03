@@ -59,6 +59,7 @@ public record ExecuteParams (
         int oidInt;
         String typeName;
         String namespace;
+        String fullName;
         for (Object objOid: objOids) {
             i++;
             if (objOid == null) {
@@ -66,7 +67,8 @@ public record ExecuteParams (
             } else if (objOid instanceof Number) {
                 result[i] = RT.intCast(objOid);
             } else if (objOid instanceof String s) {
-                oidInt = codecParams.typeToOid(s);
+                fullName = CodecParams.coerceStringType(s);
+                oidInt = codecParams.typeToOid(fullName);
                 result[i] = oidInt;
             } else if (objOid instanceof Named nm) {
                 namespace = nm.getNamespace();

@@ -121,19 +121,25 @@ public class CodecParams {
         return this;
     }
 
+    public static String coerceStringType(final String type) {
+        final String[] parts = type.split("\\.", 2);
+        if (parts.length == 1) {
+            return Const.defaultSchema + "." + type;
+        } else {
+            return type;
+        }
+    }
+
     public static String objectToPGType(final Object obj) {
         String namespace;
         if (obj instanceof String s) {
-            return s;
+            return coerceStringType(s);
         } else if (obj instanceof Named nm) {
             namespace = nm.getNamespace();
             if (namespace == null) {
                 namespace = Const.defaultSchema;
             }
             return namespace + "." + nm.getName();
-            // TODO: check String type too
-            // TODO: common function for OID
-            // TODO: add tests
         } else {
             throw new PGError("wrong postgres type: %s", TypeTool.repr(obj));
         }
