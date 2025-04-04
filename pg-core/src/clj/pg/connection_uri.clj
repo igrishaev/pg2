@@ -168,7 +168,7 @@
                 pool-borrow-conn-timeout-ms
 
                 ;; types
-                with-pgvector
+                read-pg-types
 
                 ;; JDBC camelCase options
                 readOnly
@@ -277,12 +277,10 @@
      :pool-min-size
      (some-> pool-min-size parse-long)
 
-     ;; TODO types
-     ;; :type-map
-     ;; :enums
-
-     :with-pgvector?
-     (some-> with-pgvector parse-bool)
+     ;; types
+     ;; TODO type-map
+     :read-pg-types?
+     (some-> read-pg-types parse-bool)
 
      :pg-params
      (cond-> pg-params

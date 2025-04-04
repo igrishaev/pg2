@@ -66,6 +66,7 @@
             :inStreamBufSize 77
             :outStreamBufSize 45
             :password ""
+            :readPGTypes false
             :poolMinSize 3
             :poolMaxSize 4
             :poolBorrowConnTimeoutMs 449
@@ -90,6 +91,7 @@
                                      "&pool-max-size=4"
                                      "&pool-expire-threshold-ms=3322"
                                      "&pool-borrow-conn-timeout-ms=449"
+                                     "&read-pg-types=off"
                                      "&ssl=1"
                                      "&so-recv-buf-size=999"
                                      "&so-send-buf-size=888"
@@ -103,6 +105,7 @@
                               :SOTCPnoDelay
                               :binaryDecode
                               :binaryEncode
+                              :readPGTypes
                               :cancelTimeoutMs
                               :inStreamBufSize
                               :outStreamBufSize

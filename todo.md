@@ -5,12 +5,7 @@
 
 - read-all-types-3
   - add new page
-  - doc: review config
-  - doc: review URI
-  - review uri code
-  - config params: -enums -with-pg-vector +read-pg-types?
-  - new page about types?
-  - pg-type: another example (not vector? enum?)
+  - doc processors: another example (not vector? enum?)
 
 - types
   - Global static pgType map?
