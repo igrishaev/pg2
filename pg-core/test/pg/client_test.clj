@@ -581,8 +581,7 @@ from
       (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
       (pg/execute conn (format "create table %s (id integer, foo %s)" table-name type-name)))
 
-    (pg/with-connection [conn (assoc *CONFIG-BIN*
-                                     :type-map {full-type t/enum})]
+    (pg/with-connection [conn *CONFIG-BIN*]
 
       (pg/query conn
                 (format "insert into %s (id, foo) values (1, 'foo'), (1, 'bar'), (1, 'kek')"
@@ -609,7 +608,7 @@ from
       (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
       (pg/execute conn (format "create table %s (id integer, foo %s)" table-name type-name)))
 
-    (pg/with-connection [conn (assoc *CONFIG-BIN* :enums [type-kw])]
+    (pg/with-connection [conn *CONFIG-BIN*]
 
       (pg/query conn
                 (format "insert into %s (id, foo) values (1, 'foo'), (1, 'bar'), (1, 'kek')"
@@ -959,7 +958,10 @@ from
         (assoc *CONFIG-BIN* :fn-notification fn-notification)
 
         counter!
-        (atom 0)]
+        (atom 0)
+
+        channel
+        (str (gensym "channel"))]
 
     (pg/with-connection [conn1 config+]
       (pg/with-connection [conn2 config+]
@@ -967,24 +969,26 @@ from
         (is (zero? (pg/poll-notifications conn2)))
         (is (zero? (pg/poll-notifications conn1)))
 
-        (pg/listen conn2 "test")
-        (pg/notify conn1 "test" "1")
-        (pg/notify conn1 "test" "2")
-        (pg/notify conn1 "test" "3")
+        (pg/listen conn2 channel)
+        (pg/notify conn1 channel "1")
+        (pg/notify conn1 channel "2")
+        (pg/notify conn1 channel "3")
 
         (while (-> counter! deref (< 3))
           (let [amount (pg/poll-notifications conn2)]
             (swap! counter! + amount)))))
 
-    (is (= #{{:channel "test"
+    (Thread/sleep 100) ;; let executor finish
+
+    (is (= #{{:channel channel
               :msg :NotificationResponse
               :self? false
               :message "1"}
-             {:channel "test"
+             {:channel channel
               :msg :NotificationResponse
               :self? false
               :message "2"}
-             {:channel "test"
+             {:channel channel
               :msg :NotificationResponse
               :self? false
               :message "3"}}
@@ -1399,6 +1403,224 @@ from
       (is (= {:foo 999} res)))))
 
 
+(deftest test-custom-oids-prepare-ok
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [stmt
+          (pg/prepare conn
+                      "select $1 as p1, $2 as p2, $3 as p3, $4 as p4, $5 as p5, $6 as p6"
+                      {:oids [oid/int4         ;; int constant
+                              23               ;; long constant
+                              "public.vector"  ;; string type
+                              :public/vector   ;; keyword
+                              'public/vector   ;; symbol
+                              :vector          ;; no namespace, public by default
+                              ]})
+          res
+          (pg/execute-statement conn
+                                stmt
+                                {:params [1 2 [1 2 3] [1 2 3] [1 2 3] [1 2 3]]
+                                 :first true})]
+      (is (= {:p1 1
+              :p2 2
+              :p4 [1.0 2.0 3.0]
+              :p3 [1.0 2.0 3.0]
+              :p5 [1.0 2.0 3.0]
+              :p6 [1.0 2.0 3.0]}
+             res)))))
+
+
+(deftest test-custom-oids-execute-ok
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [res
+          (pg/execute conn
+                      "select $1 as p1, $2 as p2, $3 as p3, $4 as p4, $5 as p5, $6 as p6"
+                      {:params [1 2 [1 2 3] [1 2 3] [1 2 3] [1 2 3]]
+                       :oids [oid/int4        ;; int constant
+                              23              ;; long constant
+                              "public.vector" ;; string type
+                              :public/vector  ;; keyword
+                              'public/vector  ;; symbol
+                              :vector         ;; no namespace, public by default
+                              ]
+                       :first true})]
+      (is (= {:p1 1
+              :p2 2
+              :p4 [1.0 2.0 3.0]
+              :p3 [1.0 2.0 3.0]
+              :p5 [1.0 2.0 3.0]
+              :p6 [1.0 2.0 3.0]}
+             res)))))
+
+
+(deftest test-custom-oids-copy-in-ok
+  (testing "csv"
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/query conn "create temp table foo (v vector not null)")
+      (let [rows
+            [[[1 2 3]]
+             [[4 5 6]]]
+
+            res-copy
+            (pg/copy-in-rows conn
+                             "copy foo (v) from STDIN WITH (FORMAT CSV)"
+                             rows
+                             {:oids [:vector]})
+
+            res-query
+            (pg/query conn "select * from foo")]
+
+        (is (= {:copied 2} res-copy))
+
+        (is (= [{:v [1.0 2.0 3.0]} {:v [4.0 5.0 6.0]}]
+               res-query)))))
+
+  (testing "bin"
+    (pg/with-connection [conn *CONFIG-BIN*]
+      (pg/query conn "create temp table foo (v vector not null)")
+      (let [rows
+            [[[1 2 3]]
+             [[4 5 6]]]
+
+            res-copy
+            (pg/copy-in-rows conn
+                             "copy foo (v) from STDIN WITH (FORMAT BINARY)"
+                             rows
+                             {:copy-format pg/COPY_FORMAT_BIN
+                              :oids [:vector]})
+
+            res-query
+            (pg/query conn "select * from foo")]
+
+        (is (= {:copied 2} res-copy))
+
+        (is (= [{:v [1.0 2.0 3.0]} {:v [4.0 5.0 6.0]}]
+               res-query))))))
+
+
+(deftest test-custom-oids-error
+  (pg/with-connection [conn *CONFIG-TXT*]
+
+    (try
+      (pg/prepare conn "select $1 as p1" {:oids [-999]})
+      (catch PGError e
+        (is (-> e
+                (ex-message)
+                (str/includes? "lookup failed for type")))))
+
+    (try
+      (pg/prepare conn "select $1 as p1" {:oids [true]})
+      (catch PGError e
+        (is (= "wrong OID: type: java.lang.Boolean, value: true"
+               (ex-message e)))))
+
+    (try
+      (pg/prepare conn "select $1 as p1" {:oids ["foo.lol_bar"]})
+      (catch PGError e
+        (is (= "unknown postgres type: foo.lol_bar"
+               (ex-message e)))))
+
+    (try
+      (pg/prepare conn "select $1 as p1" {:oids ["lol_bar"]})
+      (catch PGError e
+        (is (= "unknown postgres type: public.lol_bar"
+               (ex-message e)))))
+
+    (testing "connection is still usable"
+      (let [res (pg/execute conn "select 1 as one" {:first true})]
+        (is (= {:one 1} res))))))
+
+
+(deftest test-custom-type-map-error
+  (let [type-map
+        {:public/foobar t/enum}
+
+        config
+        (assoc *CONFIG-TXT* :type-map type-map)]
+
+    (try
+      (pg/with-connection [conn config])
+      (is false)
+      (catch PGError e
+        (is (= "unknown type: type: clojure.lang.Keyword, value: :public/foobar"
+               (ex-message e)))))
+
+    ;; without reading types, it's ok
+    (pg/with-connection [conn (assoc config :read-pg-types? false)]
+      (is (= 1 1)))))
+
+
+(deftest test-custom-type-map-ok
+  (let [enum-name
+        (symbol (format "enum_%s" (System/nanoTime)))
+
+        processor
+        (reify org.pg.processor.IProcessor
+          (decodeBin [this bb codecParams]
+            ::fake)
+          (decodeTxt [this string codecParams]
+            ::fake))
+
+        type-map
+        {enum-name processor}]
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/query conn (format "create type %s as enum ('foo', 'bar', 'baz')" enum-name)))
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+
+      (is (nil? (pg/get-pg-type conn "dunno")))
+
+      (let [pg-type (pg/get-pg-type conn enum-name)]
+        (is (= {:typtype \e
+                :typoutput "enum_out"
+                :typelem 0
+                :typdelim \,
+                :typname (str enum-name)
+                :typreceive "enum_recv"
+                :nspname "public"
+                :typinput "enum_in"
+                :typsend "enum_send"}
+               (dissoc pg-type :oid :typarray)))))
+
+    (pg/with-connection [conn (assoc *CONFIG-TXT* :type-map type-map)]
+      (let [result
+            (pg/query conn (format "select 'foo'::%s as custom" enum-name))]
+        (is (= [{:custom ::fake}]
+               result))))))
+
+
+(deftest test-custom-enum-array
+  (let [enum-name
+        (symbol (format "enum_%s" (System/nanoTime)))]
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (pg/query conn (format "create type %s as enum ('foo', 'bar', 'baz')" enum-name)))
+
+    (pg/with-connection [conn *CONFIG-TXT*]
+      (let [result
+            (pg/query conn (format "select '{foo,bar,baz}'::%s[] as arr" enum-name))]
+        (is (= [{:arr ["foo" "bar" "baz"]}]
+               result))))))
+
+
+(deftest test-forcibly-read-types
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :read-pg-types? false)]
+
+    (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v "[1,2,3]"}] res)))
+
+    (pg/read-pg-types conn)
+
+    (is (= #{"public"}
+           (->> conn
+                pg/get-pg-types
+                (map :nspname)
+                (set))))
+
+    (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
+      (is (= [{:v [1.0 2.0 3.0]}] res)))))
+
+
 (deftest test-statement-params-wrong-count
   (pg/with-connection [conn *CONFIG-TXT*]
     (pg/with-statement [stmt conn "select $1::integer as foo, $2::integer as bar"]
@@ -1778,6 +2000,7 @@ drop table %1$s;
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select $1 as foo" {:params ["hi"]})]
       (is (= [{:foo "hi"}] res)))))
+
 
 
 (deftest test-client-execute-prep-statement-exists
@@ -3870,7 +4093,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 (deftest test-client-vector-txt-ok
 
-  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+  (pg/with-conn [conn *CONFIG-TXT*]
     (pg/query conn "create temp table test (id int, items vector)")
     (pg/execute conn "insert into test values (1, '[1,2,3]')")
     (pg/execute conn "insert into test values (2, '[1,2,3,4,5]')")
@@ -3881,25 +4104,24 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
   (pg/with-conn [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
-      (is (= [{:v "[1,2,3]"}]
+      (is (= [{:v [1.0 2.0 3.0]}]
              res))))
 
-  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+  (pg/with-conn [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v [1.0 2.0 3.0]}]
              res))))
 
-  (pg/with-conn [conn (assoc *CONFIG-TXT* :with-pgvector? true)]
+  (pg/with-conn [conn *CONFIG-TXT*]
     (pg/query conn "create temp table test (id int, items vector(3))")
     (pg/execute conn "insert into test values ($1, $2)" {:params [1 [1 2 3]]})
     (let [res (pg/execute conn "select * from test")]
       (is (= [{:id 1, :items [1.0 2.0 3.0]}]
              res)))))
 
-
 (deftest test-client-vector-bin-ok
 
-  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+  (pg/with-conn [conn *CONFIG-BIN*]
     (pg/query conn "create temp table test (id int, items vector)")
     (pg/execute conn "insert into test values (1, '[1,2,3]')")
     (pg/execute conn "insert into test values (1, '[1,2,3,4,5]')")
@@ -3909,15 +4131,15 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
   (pg/with-conn [conn *CONFIG-BIN*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
-      (is (= [{:v [0, 3, 0, 0, 63, -128, 0, 0, 64, 0, 0, 0, 64, 64, 0, 0]}]
-             (update-in res [0 :v] vec)))))
+      (is (= [{:v [1.0 2.0 3.0]}]
+             res))))
 
-  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+  (pg/with-conn [conn *CONFIG-BIN*]
     (let [res (pg/execute conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v [1.0 2.0 3.0]}]
              res))))
 
-  (pg/with-conn [conn (assoc *CONFIG-BIN* :with-pgvector? true)]
+  (pg/with-conn [conn *CONFIG-BIN*]
     (pg/query conn "create temp table test (id int, items vector(3))")
     (pg/execute conn "insert into test values ($1, $2)" {:params [1 [1 2 3]]})
     (let [res (pg/execute conn "select * from test")]

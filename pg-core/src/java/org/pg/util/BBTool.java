@@ -2,6 +2,7 @@ package org.pg.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public final class BBTool {
@@ -54,6 +55,17 @@ public final class BBTool {
         return buf;
     }
 
+    /*
+    Having a length of a string, read it from the byte buffer shifting
+    the current position by +len.
+     */
+    public static String getString (final ByteBuffer bb, final int len) {
+        final int pos = bb.position();
+        final String result = new String(bb.array(), pos, len, StandardCharsets.UTF_8);
+        skip(bb, len);
+        return result;
+    }
+
     public static String getCString (final ByteBuffer buf, final Charset charset) {
         final int pos = buf.position();
         int len = 0;
@@ -80,8 +92,11 @@ public final class BBTool {
         return bytes;
     }
 
+    /*
+    Alter the current position in a relative way. Can be negative to
+    rewind, if needed.
+     */
     public static void skip (final ByteBuffer buf, final int offset) {
         buf.position(buf.position() + offset);
     }
-
 }

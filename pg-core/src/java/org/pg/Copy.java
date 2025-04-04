@@ -3,6 +3,7 @@ package org.pg;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 import org.pg.processor.IProcessor;
+import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -41,6 +42,15 @@ public class Copy {
             (byte) -1
     };
 
+    /*
+    Check if it's a terminator of binary COPY protocol.
+     */
+    public static boolean isTerminator(final ByteBuffer bb) {
+        final short len = bb.getShort();
+        BBTool.skip(bb, -2);
+        return len == -1;
+    }
+
     public static String quoteCSV (final String line) {
         return line.replace("\"", "\"\"");
     }
@@ -52,15 +62,15 @@ public class Copy {
     ) {
         final StringBuilder sb = new StringBuilder();
         final Iterator<Object> iterator = row.iterator();
-        final int[] OIDs = executeParams.OIDs();
-        final int OIDLen = OIDs.length;
+        final int[] intOids = executeParams.getIntOids(codecParams);
+        final int OIDLen = intOids.length;
         short i = 0;
         int oid;
         String encoded;
         IProcessor processor;
         while (iterator.hasNext()) {
             final Object item = iterator.next();
-            oid = i < OIDLen ? OIDs[i] : OID.defaultOID(item);
+            oid = i < OIDLen ? intOids[i] : OID.defaultOID(item);
             if (item == null) {
                 sb.append(executeParams.CSVNull());
             }
@@ -87,8 +97,8 @@ public class Copy {
     ) {
         final short count = (short) row.size();
         final ByteBuffer[] bufs = new ByteBuffer[count];
-        final int[] OIDs = executeParams.OIDs();
-        final int OIDLen = OIDs.length;
+        final int[] intOids = executeParams.getIntOids(codecParams);
+        final int OIDLen = intOids.length;
         int oid;
         IProcessor processor;
         int totalSize = 2;
@@ -99,7 +109,7 @@ public class Copy {
                 bufs[i] = null;
             }
             else {
-                oid = i < OIDLen ? OIDs[i] : OID.defaultOID(item);
+                oid = i < OIDLen ? intOids[i] : OID.defaultOID(item);
                 processor = codecParams.getProcessor(oid);
                 final ByteBuffer buf = processor.encodeBin(item, codecParams);
                 totalSize += 4 + buf.array().length;
@@ -136,7 +146,7 @@ public class Copy {
         row.add(true);
         row.add(null);
 
-        final List<Integer> OIDs = List.of(OID.INT2, OID.DEFAULT, OID.BOOL);
+        final List<Object> OIDs = List.of(OID.INT2, OID.DEFAULT, OID.BOOL);
 
         System.out.println(
                 Arrays.toString(

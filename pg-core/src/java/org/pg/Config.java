@@ -1,14 +1,12 @@
 package org.pg;
 
 import clojure.lang.IFn;
-import clojure.lang.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.enums.ConnType;
 import org.pg.enums.SSLValidation;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
 import org.pg.processor.IProcessor;
-import org.pg.processor.Processors;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;
@@ -47,10 +45,11 @@ public record Config(
         int poolMaxSize,
         int poolExpireThresholdMs,
         int poolBorrowConnTimeoutMs,
-        Map<String, IProcessor> typeMap,
         boolean useUnixSocket,
         String unixSocketPath,
-        Executor executor
+        Executor executor,
+        boolean readPGTypes,
+        Map<Object, IProcessor> typeMap
 ) {
 
     public ConnType getConnType() {
@@ -73,14 +72,14 @@ public record Config(
     public final static class Builder {
         private final String user;
         private final String database;
-        private String password = "";
+        private String password = Const.password;
         private int port = Const.PG_PORT;
         private String host = Const.PG_HOST;
         private int protocolVersion = Const.PROTOCOL_VERSION;
         private final Map<String, String> pgParams = new HashMap<>();
         private boolean binaryEncode = Const.BIN_ENCODE;
         private boolean binaryDecode = Const.BIN_DECODE;
-        private boolean useSSL = false;
+        private boolean useSSL = Const.useSSL;
         private boolean SOKeepAlive = Const.SO_KEEP_ALIVE;
         private boolean SOTCPnoDelay = Const.SO_TCP_NO_DELAY;
         private int SOTimeout = Const.SO_TIMEOUT;
@@ -100,52 +99,17 @@ public record Config(
         private int poolMaxSize = Const.POOL_SIZE_MAX;
         private int poolExpireThresholdMs = Const.POOL_EXPIRE_THRESHOLD_MS;
         private int poolBorrowConnTimeoutMs = Const.POOL_BORROW_CONN_TIMEOUT_MS;
-        private final Map<String, IProcessor> typeMap = new HashMap<>();
         private boolean useUnixSocket = false;
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
+        private boolean readPGTypes = Const.readPGTypes;
+        private Map<Object, IProcessor> typeMap;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
             this.database = Objects.requireNonNull(database, "Database cannot be null");
             this.pgParams.put("client_encoding", Const.CLIENT_ENCODING);
             this.pgParams.put("application_name", Const.APP_NAME);
-        }
-
-        private void addTypeMapEntry(final Object x, final IProcessor processor) {
-            if (x instanceof String s) {
-                typeMap.put(s, processor);
-            } else if (x instanceof Named n) {
-                String schema = n.getNamespace();
-                String type = n.getName();
-                if (schema == null) {
-                    throw new PGError("type %s must have a schema/namespace", x);
-                }
-                String fullType = String.format("%s.%s", schema, type);
-                typeMap.put(fullType, processor);
-            }
-        }
-
-        public Builder enums(final Iterable<?> enumSeq) {
-            for (Object x: enumSeq) {
-                addTypeMapEntry(x, Processors.defaultEnum);
-            }
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder usePGVector() {
-            addTypeMapEntry("public.vector", Processors.vector);
-            addTypeMapEntry("public.sparsevec", Processors.sparsevec);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder typeMap(final Map<?, IProcessor> typeMap) {
-            for (Map.Entry<?, IProcessor> me: typeMap.entrySet()) {
-                addTypeMapEntry(me.getKey(), me.getValue());
-            }
-            return this;
         }
 
         @SuppressWarnings("unused")
@@ -336,6 +300,18 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder readPGTypes(final boolean readPGTypes) {
+            this.readPGTypes = readPGTypes;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder typeMap(final Map<Object, IProcessor> typeMap) {
+            this.typeMap = typeMap;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -376,10 +352,11 @@ public record Config(
                     this.poolMaxSize,
                     this.poolExpireThresholdMs,
                     this.poolBorrowConnTimeoutMs,
-                    this.typeMap,
                     this.useUnixSocket,
                     this.unixSocketPath,
-                    this.executor
+                    this.executor,
+                    this.readPGTypes,
+                    this.typeMap
             );
         }
     }

@@ -3,6 +3,7 @@ package org.pg.processor;
 import org.pg.enums.OID;
 import org.pg.processor.pgvector.Sparsevec;
 import org.pg.processor.pgvector.Vector;
+import org.pg.type.PGType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +22,17 @@ public class Processors {
     @SuppressWarnings("unused")
     public static IProcessor sparsevec = new Sparsevec();
 
-    static Map<Integer, IProcessor> oidMap = new HashMap<>();
+    private static final Map<String, IProcessor> customMap = new HashMap<>();
+    static {
+        customMap.put("vector/vector_in", vector);
+        customMap.put("sparsevec/sparsevec_in", sparsevec);
+    }
+
+    public static IProcessor getCustomProcessor(final PGType pgType) {
+        return customMap.get(pgType.signature());
+    }
+
+    private static final Map<Integer, IProcessor> oidMap = new HashMap<>();
     static {
 
         // numbers
@@ -39,6 +50,7 @@ public class Processors {
         oidMap.put(OID.NAME, new Text(OID.NAME));
         oidMap.put(OID.BPCHAR, new Text(OID.BPCHAR));
         oidMap.put(OID.CHAR, new Char());
+        oidMap.put(OID.REGPROC, new Text(OID.REGPROC));
 
         // geometry
         oidMap.put(OID.POINT, new Point());
@@ -97,6 +109,7 @@ public class Processors {
         oidMap.put(OID._POLYGON, new Array(OID._POLYGON, OID.POLYGON));
         oidMap.put(OID._PATH, new Array(OID._PATH, OID.PATH));
         oidMap.put(OID._LSEG, new Array(OID._LSEG, OID.LSEG));
+        oidMap.put(OID._REGPROC, new Array(OID._REGPROC, OID.REGPROC));
     }
 
     public static IProcessor getProcessor(final int oid) {

@@ -1,26 +1,24 @@
 package org.pg.type;
 
+import clojure.lang.IPersistentCollection;
 import clojure.lang.PersistentVector;
+import org.pg.clojure.IClojure;
 import org.pg.error.PGError;
+import org.pg.util.GeomTool;
 import org.pg.util.StrTool;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public record Polygon (List<Point> points) {
+public record Polygon (List<Point> points) implements IClojure {
 
     public static Polygon of(List<Point> points) {
         return new Polygon(points);
     }
 
     public static Polygon fromList(Iterable<?> rawPoints) {
-        final List<Point> points = new ArrayList<>();
-        Point point;
-        for (Object x: rawPoints) {
-            point = Point.fromObject(x);
-            points.add(point);
-        }
+        List<Point> points = GeomTool.parsePoints(rawPoints);
         return new Polygon(points);
     }
 
@@ -88,7 +86,7 @@ public record Polygon (List<Point> points) {
                 ")";
     }
 
-    public Object toClojure() {
+    public IPersistentCollection toClojure() {
         return PersistentVector.create(points.stream().map(Point::toClojure).toList());
     }
 }

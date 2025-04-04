@@ -3,18 +3,32 @@
 
 - RowMap: meta support?
 
-- docs:
-  - map fields order
+- read-all-types-3
+  - add new page
+  - doc: review config
+  - doc: review URI
+  - review uri code
+  - config params: -enums -with-pg-vector +read-pg-types?
+  - new page about types?
+  - pg-type: another example (not vector? enum?)
+
+- types
+  - Global static pgType map?
+  - read types default = false?
 
 - docs
-  - notify & listen
-  - rowmap (deref, nth)
+  - jdbc: the same options
+  - notices
 
 - user & database default values?
 
 - CodecParams
   - test toString method
-  - move oid->processor map to config?
+
+- ReadTypes
+  - test citext
+  - enable binary by default?
+  - decode records
 
 - use PG* env vars
 - fix pg.server namespace
@@ -38,8 +52,6 @@ poll: provide a timer?
 - geom types: json, edn
 - geom types: toString -> toSQL
 
-- read all types at startup?
-  - oids -> string/keyword types?
 
 .~/.pgpass
 https://www.postgresql.org/docs/current/libpq-pgpass.html
@@ -66,7 +78,6 @@ config & uri: rename pg-params to params?
 - json wrapper not needed
 
 - rename Result.Node to Subresult?
-- test citext
 
 - fix pg11
 - add pg17
@@ -78,8 +89,6 @@ config & uri: rename pg-params to params?
 
 - copy in with custom types (pgvector)?
 
-- decode records
-- enable binary by default?
 - oid wrapper?
 - copy in/out tab format
 - conn init sql

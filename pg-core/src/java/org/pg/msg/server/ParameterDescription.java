@@ -10,7 +10,7 @@ public record ParameterDescription (
 
     @Override
     public String toString() {
-        return String.format("ParameterDescription[paramCount=%s, OIDs=%s]",
+        return String.format("ParameterDescription[paramCount=%s, objOids=%s]",
                 paramCount,
                 Arrays.toString(OIDs)
         );

@@ -14,6 +14,7 @@ import org.pg.msg.*;
 import org.pg.msg.client.*;
 import org.pg.msg.server.*;
 import org.pg.processor.IProcessor;
+import org.pg.type.PGType;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
@@ -29,7 +30,6 @@ import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.*;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Executor;
 
 public final class Connection implements AutoCloseable {
 
@@ -83,7 +83,10 @@ public final class Connection implements AutoCloseable {
         }
         if (sendStartup) {
             conn.authenticate();
-            conn.initTypeMapping();
+            if (config.readPGTypes()) {
+                conn.readTypes();
+                conn.processTypeMap();
+            }
         }
         return conn;
     }
@@ -159,56 +162,103 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
-    private void initTypeMapping() {
-        final Map<String, IProcessor> sourceMap = config.typeMap();
-        final int len = sourceMap.size();
-        if (len == 0) {
+    @SuppressWarnings("unused")
+    public PGType getPGTypeByName(final Object type) {
+        final String fullName = CodecParams.objectToPGType(type);
+        return codecParams.getPgType(fullName);
+    }
+
+    @SuppressWarnings("unused")
+    public Collection<PGType> getPGTypes() {
+        return codecParams.getPgTypes();
+    }
+
+    /*
+    Override some oids with custom processors, if set.
+     */
+    private void processTypeMap() {
+        final Map<Object, IProcessor> typeMap = config.typeMap();
+        if (typeMap == null) {
             return;
         }
-        int i = 0;
-        String[] qMarks = new String[len];
-        String[] sqlParams = new String[len];
-        for (final Map.Entry<String, IProcessor> entry: sourceMap.entrySet()) {
-            String usertype = entry.getKey();
-            sqlParams[i] = usertype;
-            qMarks[i] = "$" + (i + 1);
-            i++;
+        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
+            codecParams.setProcessor(me.getKey(), me.getValue());
         }
+    }
 
-        final ExecuteParams executeParams = ExecuteParams.builder()
-                .params(sqlParams)
-                .reducer(new AFn() {
-                    @Override
-                    public Object invoke() {
-                        return null;
-                    }
-                    @Override
-                    public Object invoke(final Object ignored, final Object row) {
-                        RowMap rm = (RowMap) row;
-                        final int oid = (int) rm.get(KW.oid);
-                        final String type = (String) rm.get(KW.type);
-                        final IProcessor iProcessor = sourceMap.get(type);
-                        if (iProcessor != null) {
-                            codecParams.setProcessor(oid, iProcessor);
-                        }
-                        return null;
-                    }
-                    @Override
-                    public Object invoke(final Object ignored) {
-                        return null;
-                    }
-                })
-                .build();
+    /*
+    Fill-in the current CodecParams instance with postgres types. This data
+    helps to guess how to process custom types shipped by extensions (and
+    enums as well).
+     */
+    public void readTypes() {
+        /*
+        Below, we use ::text coercion because it's a special REGPROC
+        type (oid 24). In binary mode, it gets passed as an integer
+        (but as a string in text mode).
 
-        execute("select pg_type.oid, pg_namespace.nspname || '.' || pg_type.typname as type " +
-                "from pg_type, pg_namespace " +
-                "where " +
-                "pg_type.typnamespace = pg_namespace.oid " +
-                "and pg_namespace.nspname || '.' || pg_type.typname in (" +
-                        String.join(", ", qMarks) +
-                ")",
-                executeParams
-        );
+        We also exclude predefined types because we know their properties
+        in advance.
+        */
+        final String query = """
+copy (
+    select
+        pg_type.oid,
+        pg_type.typname,
+        pg_type.typtype,
+        pg_type.typinput::text,
+        pg_type.typoutput::text,
+        pg_type.typreceive::text,
+        pg_type.typsend::text,
+        pg_type.typarray,
+        pg_type.typdelim,
+        pg_type.typelem,
+        pg_namespace.nspname
+    from
+        pg_type,
+        pg_namespace
+    where
+        pg_type.typnamespace = pg_namespace.oid
+        and pg_namespace.nspname != 'pg_catalog'
+        and pg_namespace.nspname != 'information_schema'
+        and pg_namespace.nspname != 'pg_toast'
+) to stdout with (format binary)
+""";
+
+        sendQuery(query);
+        flush();
+
+        IServerMessage msg;
+        PGType pgType;
+        ByteBuffer bb;
+        boolean headerSeen = false;
+
+        while (true) {
+            msg = readMessage(false);
+            if (Debug.isON) {
+                Debug.debug(" -> %s", msg);
+            }
+            if (msg instanceof CopyData copyData) {
+                bb = copyData.buf();
+                if (!headerSeen) {
+                    BBTool.skip(bb, Copy.COPY_BIN_HEADER.length);
+                    headerSeen = true;
+                }
+                if (Copy.isTerminator(bb)) {
+                    continue;
+                }
+                pgType = PGType.fromCopyBuffer(bb);
+                codecParams.setPgType(pgType);
+                // these messages are expected but just skipped
+            } else if (msg instanceof CopyOutResponse) {
+            } else if (msg instanceof CopyDone) {
+            } else if (msg instanceof CommandComplete) {
+            } else if (msg instanceof ReadyForQuery) {
+                break;
+            } else {
+                throw new PGError("Unexpected message in readTypes: %s", msg);
+            }
+        }
     }
 
     @SuppressWarnings("unused")
@@ -566,8 +616,8 @@ public final class Connection implements AutoCloseable {
             final ExecuteParams executeParams
     ) {
         final String statement = generateStatement();
-        final int[] OIDs = executeParams.OIDs();
-        final Parse parse = new Parse(statement, sql, OIDs);
+        final int[] intOids = executeParams.getIntOids(codecParams);
+        final Parse parse = new Parse(statement, sql, intOids);
         sendMessage(parse);
         sendDescribeStatement(statement);
         sendFlush();
@@ -1102,8 +1152,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handlerCall (final IFn f, final Object arg) {
-        final Executor executor = config.executor();
-        executor.execute(() -> f.invoke(arg));
+        config.executor().execute(() -> f.invoke(arg));
     }
 
     private void handleNotificationResponse (final NotificationResponse msg, final Result res) {

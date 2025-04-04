@@ -1,10 +1,15 @@
 package org.pg;
 
 import clojure.lang.IFn;
+import clojure.lang.Named;
+import clojure.lang.RT;
 import org.pg.clojure.CljAPI;
+import org.pg.codec.CodecParams;
 import org.pg.enums.CopyFormat;
 import org.pg.enums.OID;
+import org.pg.error.PGError;
 import org.pg.reducer.*;
+import org.pg.util.TypeTool;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,7 +17,7 @@ import java.util.*;
 
 public record ExecuteParams (
         List<Object> params,
-        int[] OIDs,
+        List<Object> objOids,
         IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
@@ -43,10 +48,47 @@ public record ExecuteParams (
         return new Builder().build();
     }
 
+    /*
+    Turn object OIDs of mixed types into an array of integer OIDs.
+    The CodecParams value serves as a source of Postgres types.
+     */
+    public int[] getIntOids (final CodecParams codecParams) {
+        final int len = objOids.size();
+        final int[] result = new int[len];
+        int i = -1;
+        int oidInt;
+        String typeName;
+        String namespace;
+        String fullName;
+        for (Object objOid: objOids) {
+            i++;
+            if (objOid == null) {
+                result[i] = OID.DEFAULT;
+            } else if (objOid instanceof Number) {
+                result[i] = RT.intCast(objOid);
+            } else if (objOid instanceof String s) {
+                fullName = CodecParams.coerceStringType(s);
+                oidInt = codecParams.typeToOid(fullName);
+                result[i] = oidInt;
+            } else if (objOid instanceof Named nm) {
+                namespace = nm.getNamespace();
+                if (namespace == null) {
+                    namespace = Const.defaultSchema;
+                }
+                typeName = namespace + "." + nm.getName();
+                oidInt = codecParams.typeToOid(typeName);
+                result[i] = oidInt;
+            } else {
+                throw new PGError("wrong OID: %s", TypeTool.repr(objOid));
+            }
+        }
+        return result;
+    }
+
     public final static class Builder {
 
         private List<Object> params = Collections.emptyList();
-        private int[] OIDs = new int[0];
+        private List<Object> objOids = Collections.emptyList();
         private IFn reducer = Default.INSTANCE;
         private long maxRows = 0;
         private IFn fnKeyTransform = CljAPI.keyword;
@@ -115,16 +157,11 @@ public record ExecuteParams (
             return this;
         }
 
-        public Builder OIDs (final List<Integer> OIDs) {
-            if (OIDs != null) {
-                final int[] oidArr = new int[OIDs.size()];
-                int i = 0;
-                for (Integer oid: OIDs) {
-                    oidArr[i] = oid == null ? OID.DEFAULT : oid;
-                    i++;
-                }
-                this.OIDs = oidArr;
+        public Builder OIDs (final List<Object> OIDs) {
+            if (OIDs == null) {
+                return this;
             }
+            this.objOids = OIDs;
             return this;
         }
 
@@ -134,6 +171,7 @@ public record ExecuteParams (
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder maxRows (final long maxRows) {
             this.maxRows = maxRows;
             return this;
@@ -208,7 +246,7 @@ public record ExecuteParams (
         public ExecuteParams build () {
             return new ExecuteParams(
                     params,
-                    OIDs,
+                    objOids,
                     reducer,
                     maxRows,
                     fnKeyTransform,

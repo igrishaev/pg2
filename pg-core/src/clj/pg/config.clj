@@ -54,7 +54,7 @@
         params
         (merge uri-params params)
 
-        {:keys [ ;; general
+        {:keys [;; general
                 user
                 database
                 host
@@ -116,8 +116,7 @@
 
                 ;; types
                 type-map
-                enums
-                with-pgvector?]}
+                read-pg-types?]}
         params
 
         DB
@@ -215,17 +214,14 @@
       pool-borrow-conn-timeout-ms
       (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)
 
-      type-map
-      (.typeMap type-map)
-
-      enums
-      (.enums enums)
-
-      with-pgvector?
-      (.usePGVector)
-
       executor
       (.executor executor)
+
+      (some? read-pg-types?)
+      (.readPGTypes read-pg-types?)
+
+      type-map
+      (.typeMap type-map)
 
       :finally
       (.build))))
