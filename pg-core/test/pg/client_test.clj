@@ -4746,7 +4746,48 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
       (is (= [{:id 1, :hs {:bar "2", :foo "1", :test "3"}}
               {:id 2, :hs {:c "test", :a nil}}]
-             res)))))
+             res)))
+
+    (let [weird
+          "foo'''b'ar\r\n\f\t\bsdf--NULL~!@#$%^&*()\"sdf\"\""
+
+          res1
+          (pg/execute conn
+                      "select $1::hstore as hs"
+                      {:params [{:key weird}]})
+
+          res2
+          (pg/execute conn
+                      "select $1::hstore as hs"
+                      {:params [{weird :val}]})]
+
+      (is (= [{:hs {:key weird}}] res1))
+      (is (= [{:hs {(keyword weird) "val"}}] res2)))))
+
+
+(deftest test-hstore-txt
+  (pg/with-conn [conn (assoc *CONFIG-TXT*
+                             :binary-encode? true
+                             :binary-decode? false)]
+
+    (let [weird
+          "foo'''b'ar\r  \n\f\t\bsdf-\\-NULL~!@#$%^&*()\"sdf\"\""
+
+          res1
+          (pg/execute conn
+                      "select $1::hstore as hs"
+                      {:params [{:key weird}]
+                       :first? true})]
+
+      (is (= 1
+             res1))
+
+      )
+
+))
+
+
+
 
 
 #_

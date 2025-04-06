@@ -6,9 +6,7 @@ import org.pg.error.PGError;
 import org.pg.util.BBTool;
 import org.pg.util.TypeTool;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -92,6 +90,93 @@ public class Hstore extends AProcessor {
             } else {
                 val = BBTool.getString(bb, len, codecParams.serverCharset());
             }
+            result = result.assoc(Keyword.intern(key), val);
+        }
+        return result.persistent();
+    }
+
+
+    private static class StringOffset {
+        String text; int off;
+        public StringOffset(final String text) {
+            this.text = text;
+            this.off = 0;
+        }
+        public char read() {
+            return text.charAt(off++);
+        }
+        public void unread() {
+            off--;
+        }
+    }
+
+    private static void ws(final StringOffset so) {
+        char c;
+        while (true) {
+            c = so.read();
+            if (c != ' ') {
+                so.unread();
+                break;
+            }
+        }
+    }
+
+    private static String readStringQuoted(final StringOffset so) {
+        final StringBuilder sb = new StringBuilder();
+        char c;
+        while (true) {
+            c = so.read();
+            if (c == '\\') {
+                c = so.read();
+                if (c == '\\' || c == '"') {
+                    sb.append(c);
+                } else {
+                    throw new PGError("unexpected hstore quoted character: %s", so.text);
+                }
+            } else if (c == '"') {
+                break;
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static String readStringUnquoted(final StringOffset so) {
+        final StringBuilder sb = new StringBuilder();
+        char c;
+        while (true) {
+            c = so.read();
+            if (c == ' ' || c == ',' || c == '=' || c == '>') {
+                so.unread();
+                break;
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static String readString(final StringOffset so) {
+        final char c = so.read();
+        if (c == '"') {
+            return readStringQuoted(so);
+        } else {
+            return readStringUnquoted(so);
+        }
+    }
+
+    @Override
+    public Object decodeTxt(final String text, final CodecParams codecParams) {
+        ITransientMap result = PersistentHashMap.EMPTY.asTransient();
+        final StringOffset so = new StringOffset(text);
+        final String key;
+        final String val;
+        ws(so);
+        while (true) {
+            key = readString(so);
+            arrow();
+            val = readString(so);
             result = result.assoc(Keyword.intern(key), val);
         }
         return result.persistent();
