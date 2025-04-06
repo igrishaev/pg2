@@ -9,18 +9,14 @@ import java.util.Map;
 
 public class Processors {
 
-    @SuppressWarnings("unused")
     public static IProcessor unsupported = new Unsupported();
-
-    @SuppressWarnings("unused")
     public static IProcessor defaultEnum = new Enum();
-
-    @SuppressWarnings("unused")
     public static IProcessor vector = new Vector();
-
-    @SuppressWarnings("unused")
     public static IProcessor sparsevec = new Sparsevec();
+    public static IProcessor hstore = new Hstore();
 
+
+        customMap.put("hstore/hstore_in", hstore);
     private static final Map<Integer, IProcessor> oidMap = new HashMap<>();
     static {
 

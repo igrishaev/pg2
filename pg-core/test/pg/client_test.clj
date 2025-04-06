@@ -4716,13 +4716,36 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 ;;
 
 
-#_
 (deftest test-hstore-bin
   (pg/with-conn [conn *CONFIG-BIN*]
-    (pg/query conn "create extension if not exists hstore")
+
     (let [res
-          (pg/execute conn "select 'foo=>test,ab=>null,c=>42'::hstore;")]
-      (is (= 1
+          (pg/execute conn "select 'foo=>test,ab=>null,c=>42'::hstore as hs;")]
+      (is (= [{:hs {:c "42" :foo "test" :ab nil}}]
+             res)))
+
+    (pg/execute conn "create temp table test (id int, hs hstore)")
+
+    ;; empty key
+    ;; empty val
+    ;; null key
+    ;; null val
+    ;; key: num bool symbol string keyword
+    ;; val: num bool symbol string keyword
+    ;; key: line breaks
+    ;; val: line breaks
+    ;; copy in hstore
+
+    (pg/execute conn
+                "insert into test (id, hs) values ($1, $2), ($3, $4)"
+                {:params [1 {:foo 1 :bar 2 :test "3"}
+                          2 {"a" nil "c" "test"}]})
+
+    (let [res
+          (pg/execute conn "select * from test order by id")]
+
+      (is (= [{:id 1, :hs {:bar "2", :foo "1", :test "3"}}
+              {:id 2, :hs {:c "test", :a nil}}]
              res)))))
 
 

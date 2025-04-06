@@ -25,18 +25,19 @@ public class Hstore extends AProcessor {
         Object keyObj;
         Object valObj;
         String key;
+        String val;
         byte[] buf;
         for (Map.Entry<?, ?> me: map.entrySet()) {
 
             keyObj = me.getKey();
-            if (keyObj instanceof Keyword kw) {
+            if (keyObj == null) {
+                key = "";
+            } else if (keyObj instanceof Keyword kw) {
                 key = kw.toString().substring(1);
-            } else if (keyObj instanceof Symbol sym) {
-                key = sym.toString();
             } else if (keyObj instanceof String s) {
                 key = s;
             } else {
-                throw new PGError("wrong hstore key: %s", TypeTool.repr(keyObj));
+                key = keyObj.toString();
             }
             buf = key.getBytes(charset);
             dos.writeInt(buf.length);
@@ -44,25 +45,32 @@ public class Hstore extends AProcessor {
 
             valObj = me.getValue();
             if (valObj == null) {
-                dos.write(-1);
+                dos.writeInt(-1);
+                continue;
             } else if (valObj instanceof String s) {
-                buf = s.getBytes(charset);
-                dos.writeInt(buf.length);
-                dos.write(buf);
+                val = s;
+            } else if (valObj instanceof Keyword kw) {
+                val = kw.toString().substring(1);
             } else {
-                buf = valObj.toString().getBytes(charset);
-                dos.writeInt(buf.length);
-                dos.write(buf);
+                val = valObj.toString();
             }
+            buf = val.getBytes(charset);
+            dos.writeInt(buf.length);
+            dos.write(buf);
         }
         dos.close();
+        baos.close();
         return ByteBuffer.wrap(baos.toByteArray());
     }
 
     @Override
     public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof Map<?,?> map) {
-            return encodeMapBin(map, codecParams);
+            try {
+                return encodeMapBin(map, codecParams);
+            } catch (IOException e) {
+                throw new PGError(e, "cannot binary encode hstore: %s", TypeTool.repr(x));
+            }
         } else {
             return binEncodingError(x);
         }
@@ -79,7 +87,11 @@ public class Hstore extends AProcessor {
             len = bb.getInt();
             key = BBTool.getString(bb, len, codecParams.serverCharset());
             len = bb.getInt();
-            val = BBTool.getString(bb, len, codecParams.serverCharset());
+            if (len == -1) {
+                val = null;
+            } else {
+                val = BBTool.getString(bb, len, codecParams.serverCharset());
+            }
             result = result.assoc(Keyword.intern(key), val);
         }
         return result.persistent();
