@@ -12,7 +12,7 @@ public class Circle extends AProcessor {
     public static final int oid = OID.CIRCLE;
 
     @Override
-    public ByteBuffer encodeBin(final Object x , final CodecParams codecParams) {
+    public ByteBuffer encodeBin(final Object x, final CodecParams codecParams) {
         if (x instanceof org.pg.type.Circle c) {
             return c.toByteBuffer();
         } else if (x instanceof String s) {

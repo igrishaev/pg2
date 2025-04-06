@@ -60,8 +60,12 @@ public final class BBTool {
     the current position by +len.
      */
     public static String getString (final ByteBuffer bb, final int len) {
+        return getString(bb, len, StandardCharsets.UTF_8);
+    }
+
+    public static String getString (final ByteBuffer bb, final int len, final Charset charset) {
         final int pos = bb.position();
-        final String result = new String(bb.array(), pos, len, StandardCharsets.UTF_8);
+        final String result = new String(bb.array(), pos, len, charset);
         skip(bb, len);
         return result;
     }
