@@ -24,8 +24,8 @@ public final class Main {
                 .port(10150)
                 .host("127.0.0.1")
                 .password(user)
-                .binaryEncode(true)
-                .binaryDecode(true)
+                .binaryEncode(false)
+                .binaryDecode(false)
                 .readPGTypes(true)
                 .build();
 //                    public ByteBuffer encodeBin(Object value, CodecParams codecParams) {

@@ -108,6 +108,9 @@ public class Hstore extends AProcessor {
         public void unread() {
             off--;
         }
+        public boolean hasMore() {
+            return off < text.length();
+        }
     }
 
     private static void ws(final StringOffset so) {
@@ -119,6 +122,13 @@ public class Hstore extends AProcessor {
                 break;
             }
         }
+    }
+
+    private static void arrow(final StringOffset so) {
+        char c;
+        do {
+            c = so.read();
+        } while (c != '>');
     }
 
     private static String readStringQuoted(final StringOffset so) {
@@ -143,18 +153,16 @@ public class Hstore extends AProcessor {
     }
 
     private static String readStringUnquoted(final StringOffset so) {
-        final StringBuilder sb = new StringBuilder();
+        final int start = so.off;
         char c;
         while (true) {
             c = so.read();
             if (c == ' ' || c == ',' || c == '=' || c == '>') {
                 so.unread();
                 break;
-            } else {
-                sb.append(c);
             }
         }
-        return sb.toString();
+        return so.text.substring(start, so.off);
     }
 
     private static String readString(final StringOffset so) {
@@ -170,13 +178,15 @@ public class Hstore extends AProcessor {
     public Object decodeTxt(final String text, final CodecParams codecParams) {
         ITransientMap result = PersistentHashMap.EMPTY.asTransient();
         final StringOffset so = new StringOffset(text);
-        final String key;
-        final String val;
-        ws(so);
-        while (true) {
+        String key;
+        String val;
+        while (so.hasMore()) {
+            ws(so);
             key = readString(so);
-            arrow();
+            arrow(so);
             val = readString(so);
+            ws(so);
+            // TODO: comma
             result = result.assoc(Keyword.intern(key), val);
         }
         return result.persistent();
