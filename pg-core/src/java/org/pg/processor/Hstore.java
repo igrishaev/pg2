@@ -9,10 +9,33 @@ import org.pg.util.TypeTool;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.List;
 import java.util.Map;
 
 public class Hstore extends AProcessor {
+
+    private static String castKey(final Object key) {
+        if (key == null) {
+            return "";
+        } else if (key instanceof Keyword kw) {
+            return kw.toString().substring(1);
+        } else if (key instanceof String s) {
+            return s;
+        } else {
+            return key.toString();
+        }
+    }
+
+    private static String castVal(final Object val) {
+        if (val == null) {
+            return null;
+        } else if (val instanceof String s) {
+            return s;
+        } else if (val instanceof Keyword kw) {
+            return kw.toString().substring(1);
+        } else {
+            return val.toString();
+        }
+    }
 
     private static ByteBuffer encodeMapBin(final Map<?,?> map, final CodecParams codecParams) throws IOException {
         final Charset charset = codecParams.clientCharset();
@@ -20,37 +43,19 @@ public class Hstore extends AProcessor {
         final DataOutputStream dos = new DataOutputStream(baos);
         final int total = map.size();
         dos.writeInt(total);
-        Object keyObj;
-        Object valObj;
         String key;
         String val;
         byte[] buf;
         for (Map.Entry<?, ?> me: map.entrySet()) {
-
-            keyObj = me.getKey();
-            if (keyObj == null) {
-                key = "";
-            } else if (keyObj instanceof Keyword kw) {
-                key = kw.toString().substring(1);
-            } else if (keyObj instanceof String s) {
-                key = s;
-            } else {
-                key = keyObj.toString();
-            }
+            key = castKey(me.getKey());
             buf = key.getBytes(charset);
             dos.writeInt(buf.length);
             dos.write(buf);
-
-            valObj = me.getValue();
-            if (valObj == null) {
+            //
+            val = castVal(me.getValue());
+            if (val == null) {
                 dos.writeInt(-1);
                 continue;
-            } else if (valObj instanceof String s) {
-                val = s;
-            } else if (valObj instanceof Keyword kw) {
-                val = kw.toString().substring(1);
-            } else {
-                val = valObj.toString();
             }
             buf = val.getBytes(charset);
             dos.writeInt(buf.length);
@@ -202,15 +207,48 @@ public class Hstore extends AProcessor {
         return result.persistent();
     }
 
-    private String encodeMapTxt(final Map<?,?> map, final CodecParams codecParams) {
+    private static void sendString(final StringBuilder sb, final CharSequence cs) {
+        if (cs == null) {
+            sb.append("null");
+            return;
+        }
+        char c;
+        sb.append('"');
+        for (int i = 0; i < cs.length(); i++) {
+            c = cs.charAt(i);
+            if (c == '\\' || c == '"') {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        sb.append('"');
+    }
+
+    private String encodeMapTxt(final Map<?,?> map) {
         final StringBuilder sb = new StringBuilder();
+        String key;
+        String val;
+        final int len = map.size();
+        int i = 0;
+        for (Map.Entry<?,?> me: map.entrySet()) {
+            key = castKey(me.getKey());
+            sendString(sb, key);
+            sb.append('=');
+            sb.append('>');
+            val = castVal(me.getValue());
+            sendString(sb, val);
+            i++;
+            if (i < len) {
+                sb.append(',');
+            }
+        }
         return sb.toString();
     }
 
     @Override
     public String encodeTxt(final Object x, final CodecParams codecParams) {
         if (x instanceof Map<?,?> m) {
-            return encodeMapTxt(m, codecParams);
+            return encodeMapTxt(m);
         } else {
             return txtEncodingError(x);
         }
