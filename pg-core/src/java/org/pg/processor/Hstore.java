@@ -9,6 +9,7 @@ import org.pg.util.TypeTool;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Map;
 
 public class Hstore extends AProcessor {
@@ -175,7 +176,6 @@ public class Hstore extends AProcessor {
         }
     }
 
-
     @Override
     public Object decodeTxt(final String text, final CodecParams codecParams) {
         ITransientMap result = PersistentHashMap.EMPTY.asTransient();
@@ -200,6 +200,20 @@ public class Hstore extends AProcessor {
             }
         }
         return result.persistent();
+    }
+
+    private String encodeMapTxt(final Map<?,?> map, final CodecParams codecParams) {
+        final StringBuilder sb = new StringBuilder();
+        return sb.toString();
+    }
+
+    @Override
+    public String encodeTxt(final Object x, final CodecParams codecParams) {
+        if (x instanceof Map<?,?> m) {
+            return encodeMapTxt(m, codecParams);
+        } else {
+            return txtEncodingError(x);
+        }
     }
 
 }
