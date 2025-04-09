@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 public record Parse (String statement,
                      String query,
-                     int[] OIDs)
+                     int[] oids)
         implements IClientMessage {
 
     @Override
@@ -17,13 +17,13 @@ public record Parse (String statement,
         return String.format("Parse[statement=%s, query=%s, objOids=%s]",
                 statement,
                 query,
-                Arrays.toString(OIDs)
+                Arrays.toString(oids)
         );
     }
 
     public ByteBuffer encode(final Charset charset) {
 
-        final int OIDCount = OIDs.length;
+        final int OIDCount = oids.length;
 
         if (OIDCount > 0xFFFF) {
             throw new PGError(
@@ -39,7 +39,7 @@ public record Parse (String statement,
             .addCString(query, charset)
             .addUnsignedShort(OIDCount);
 
-        for (int oid: OIDs) {
+        for (int oid: oids) {
             payload.addInteger(oid);
         }
 

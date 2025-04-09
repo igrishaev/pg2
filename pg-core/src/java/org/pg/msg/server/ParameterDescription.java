@@ -5,14 +5,14 @@ import java.util.Arrays;
 
 public record ParameterDescription (
         int paramCount,
-        int[] OIDs
+        int[] oids
 ) implements IServerMessage {
 
     @Override
     public String toString() {
-        return String.format("ParameterDescription[paramCount=%s, objOids=%s]",
+        return String.format("ParameterDescription[paramCount=%s, oids=%s]",
                 paramCount,
-                Arrays.toString(OIDs)
+                Arrays.toString(oids)
         );
     }
 

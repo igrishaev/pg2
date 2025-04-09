@@ -1,21 +1,16 @@
 package org.pg.codec;
 
-import clojure.lang.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.Const;
-import org.pg.error.PGError;
 import org.pg.json.JSON;
 import org.pg.processor.Array;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
 import org.pg.type.PGType;
-import org.pg.util.TypeTool;
 
 import java.nio.charset.Charset;
 import java.time.ZoneId;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /*
@@ -31,9 +26,7 @@ public class CodecParams {
     private String dateStyle = Const.dateStyle;
     private boolean integerDatetime = Const.integerDatetime;
     private ObjectMapper objectMapper = JSON.defaultMapper;
-    private final Map<Integer, PGType> oidToPGType = new HashMap<>();
-    private final Map<String, Integer> typeNameToOid = new HashMap<>();
-    private final Map<Integer, IProcessor> oidToProcessor = new HashMap<>();
+    private final Map<Integer, IProcessor> oidMap = new HashMap<>();
 
     @Override
     public String toString() {
@@ -41,16 +34,14 @@ public class CodecParams {
                 "CodecParams[clientCharset=%s, " +
                         "serverCharset=%s, timeZone=%s, dateStyle=%s, " +
                         "integerDatetime=%s, objectMapper=%s, " +
-                        "oidToPGType=%s, typeToOID=%s, oidToProcessor=%s]",
+                        "oidMap=%s]",
                 clientCharset,
                 serverCharset,
                 timeZone,
                 dateStyle,
                 integerDatetime,
                 objectMapper,
-                oidToPGType,
-                typeNameToOid,
-                oidToProcessor
+                oidMap
         );
     }
 
@@ -115,103 +106,39 @@ public class CodecParams {
         return objectMapper;
     }
 
-    @SuppressWarnings("UnusedReturnValue")
     public CodecParams objectMapper(final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         return this;
     }
 
-    public static String coerceStringType(final String type) {
-        final String[] parts = type.split("\\.", 2);
-        if (parts.length == 1) {
-            return Const.defaultSchema + "." + type;
-        } else {
-            return type;
-        }
-    }
-
-    public static String objectToPGType(final Object obj) {
-        String namespace;
-        if (obj instanceof String s) {
-            return coerceStringType(s);
-        } else if (obj instanceof Named nm) {
-            namespace = nm.getNamespace();
-            if (namespace == null) {
-                namespace = Const.defaultSchema;
-            }
-            return namespace + "." + nm.getName();
-        } else {
-            throw new PGError("wrong postgres type: %s", TypeTool.repr(obj));
-        }
-    }
-
-    public void setProcessor(final Object pgType, final IProcessor processor) {
-        final String type = objectToPGType(pgType);
-        final Integer oid = typeNameToOid.get(type);
-        if (oid == null) {
-            throw new PGError("unknown type: %s", TypeTool.repr(pgType));
-        }
-        oidToProcessor.put(oid, processor);
-    }
-
-    public PGType getPgType(final String fullName) {
-        final Integer oid = typeNameToOid.get(fullName);
-        if (oid == null) return null;
-        return oidToPGType.get(oid);
-    }
-
     public void setPgType(final PGType pgType) {
         final int oid = pgType.oid();
-        final String fullName = pgType.fullName();
-        oidToPGType.put(oid, pgType);
-        typeNameToOid.put(fullName, oid);
-    }
-
-    public int typeToOid(final String pgType) {
-        final Integer oid = typeNameToOid.get(pgType);
-        if (oid == null) {
-            throw new PGError("unknown postgres type: %s", pgType);
+        final String signature = pgType.signature();
+        if (pgType.isEnum()) {
+            oidMap.put(oid, Processors.defaultEnum);
+        } else if (signature.equals(Const.TYPE_SIG_VECTOR)) {
+            oidMap.put(oid, Processors.vector);
+        } else if (signature.equals(Const.TYPE_SIG_SPARSEVEC)) {
+            oidMap.put(oid, Processors.sparsevec);
+        } else if (pgType.isArray()) {
+            oidMap.put(oid, new Array(oid, pgType.typelem()));
         } else {
-            return oid;
+            oidMap.put(oid, Processors.unsupported);
         }
-    }
-
-    public Collection<PGType> getPgTypes() {
-        return oidToPGType.values();
     }
 
     public IProcessor getProcessor(final int oid) {
-        // get from a global map with default types
+        // get from a global defaults
         IProcessor processor = Processors.getProcessor(oid);
         if (processor != null) {
             return processor;
         }
-
-        // get from overrides
-        processor = oidToProcessor.get(oid);
+        // local session overrides
+        processor = oidMap.get(oid);
         if (processor != null) {
             return processor;
         }
-
-        // try to guess by fields from pg_type table
-        final PGType pgType = oidToPGType.get(oid);
-        if (pgType == null) {
-            return Processors.unsupported;
-        }
-
-        if (pgType.isEnum()) {
-            return Processors.defaultEnum;
-        }
-
-        if (pgType.isArray()) {
-            return new Array(pgType.oid(), pgType.typelem());
-        }
-
-        processor = Processors.getCustomProcessor(pgType);
-        if (processor == null) {
-            return Processors.unsupported;
-        }
-
-        return processor;
+        // give up
+        return Processors.unsupported;
     }
 }

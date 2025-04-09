@@ -15,10 +15,10 @@ public record PreparedStatement (
     @Override
     public String toString() {
         return String.format(
-                "<Prepared statement, name: %s, param(s): %s, OIDs: %s, SQL: %s>",
+                "<Prepared statement, name: %s, param(s): %s, oids: %s, SQL: %s>",
                 parse.statement(),
                 parameterDescription.paramCount(),
-                Arrays.toString(parameterDescription.OIDs()),
+                Arrays.toString(parameterDescription.oids()),
                 parse.query()
         );
     }

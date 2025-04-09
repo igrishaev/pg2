@@ -53,4 +53,8 @@ public final class Const {
     public static String password = "";
     public static String defaultSchema = "public";
     public static boolean useSSL = false;
+    public static String TYPE_SIG_VECTOR = "vector/vector_in";
+    public static String TYPE_SIG_SPARSEVEC = "sparsevec/sparsevec_in";
+    public static String TYPE_SIG_HSTORE = "hstore/hstore_in";
+
 }

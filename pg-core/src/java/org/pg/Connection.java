@@ -85,7 +85,7 @@ public final class Connection implements AutoCloseable {
             conn.authenticate();
             if (config.readPGTypes()) {
                 conn.readTypes();
-                conn.processTypeMap();
+//                conn.processTypeMap();
             }
         }
         return conn;
@@ -162,29 +162,29 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
-    @SuppressWarnings("unused")
-    public PGType getPGTypeByName(final Object type) {
-        final String fullName = CodecParams.objectToPGType(type);
-        return codecParams.getPgType(fullName);
-    }
+//    @SuppressWarnings("unused")
+//    public PGType getPGTypeByName(final Object type) {
+//        final String fullName = CodecParams.objectToPGType(type);
+//        return codecParams.getPgType(fullName);
+//    }
 
-    @SuppressWarnings("unused")
-    public Collection<PGType> getPGTypes() {
-        return codecParams.getPgTypes();
-    }
+//    @SuppressWarnings("unused")
+//    public Collection<PGType> getPGTypes() {
+//        return codecParams.getPgTypes();
+//    }
 
     /*
     Override some oids with custom processors, if set.
      */
-    private void processTypeMap() {
-        final Map<Object, IProcessor> typeMap = config.typeMap();
-        if (typeMap == null) {
-            return;
-        }
-        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
-            codecParams.setProcessor(me.getKey(), me.getValue());
-        }
-    }
+//    private void processTypeMap() {
+//        final Map<Object, IProcessor> typeMap = config.typeMap();
+//        if (typeMap == null) {
+//            return;
+//        }
+//        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
+//            codecParams.setProcessor(me.getKey(), me.getValue());
+//        }
+//    }
 
     /*
     Fill-in the current CodecParams instance with postgres types. This data
@@ -200,6 +200,10 @@ public final class Connection implements AutoCloseable {
         We also exclude predefined types because we know their properties
         in advance.
         */
+
+        // TODO: remove nspname
+        // TODO: remove typoutput, typreceive, typsend
+
         final String query = """
 copy (
     select
@@ -215,13 +219,12 @@ copy (
         pg_type.typelem,
         pg_namespace.nspname
     from
-        pg_type,
-        pg_namespace
+        pg_type
+    join
+        pg_namespace on pg_type.typnamespace = pg_namespace.oid
     where
-        pg_type.typnamespace = pg_namespace.oid
-        and pg_namespace.nspname != 'pg_catalog'
-        and pg_namespace.nspname != 'information_schema'
-        and pg_namespace.nspname != 'pg_toast'
+           pg_type.typname in ('vector', 'sparsevec')
+        or pg_type.typtype = 'e'
 ) to stdout with (format binary)
 """;
 
@@ -615,8 +618,9 @@ copy (
             final String sql,
             final ExecuteParams executeParams
     ) {
+        // TODO int array!!!!
         final String statement = generateStatement();
-        final int[] intOids = executeParams.getIntOids(codecParams);
+        final int[] oids = executeParams.oids();
         final Parse parse = new Parse(statement, sql, intOids);
         sendMessage(parse);
         sendDescribeStatement(statement);
@@ -633,7 +637,7 @@ copy (
                            final ExecuteParams executeParams
     ) {
         final List<Object> params = executeParams.params();
-        final int[] OIDs = stmt.parameterDescription().OIDs();
+        final int[] OIDs = stmt.parameterDescription().oids();
         final int size = params.size();
 
         if (size != OIDs.length) {

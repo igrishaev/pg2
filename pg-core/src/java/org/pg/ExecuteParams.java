@@ -17,7 +17,7 @@ import java.util.*;
 
 public record ExecuteParams (
         List<Object> params,
-        List<Object> objOids,
+        List<Object> oids,
         IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
@@ -49,41 +49,41 @@ public record ExecuteParams (
     }
 
     /*
-    Turn object OIDs of mixed types into an array of integer OIDs.
+    Turn object oids of mixed types into an array of integer oids.
     The CodecParams value serves as a source of Postgres types.
      */
-    public int[] getIntOids (final CodecParams codecParams) {
-        final int len = objOids.size();
-        final int[] result = new int[len];
-        int i = -1;
-        int oidInt;
-        String typeName;
-        String namespace;
-        String fullName;
-        for (Object objOid: objOids) {
-            i++;
-            if (objOid == null) {
-                result[i] = OID.DEFAULT;
-            } else if (objOid instanceof Number) {
-                result[i] = RT.intCast(objOid);
-            } else if (objOid instanceof String s) {
-                fullName = CodecParams.coerceStringType(s);
-                oidInt = codecParams.typeToOid(fullName);
-                result[i] = oidInt;
-            } else if (objOid instanceof Named nm) {
-                namespace = nm.getNamespace();
-                if (namespace == null) {
-                    namespace = Const.defaultSchema;
-                }
-                typeName = namespace + "." + nm.getName();
-                oidInt = codecParams.typeToOid(typeName);
-                result[i] = oidInt;
-            } else {
-                throw new PGError("wrong OID: %s", TypeTool.repr(objOid));
-            }
-        }
-        return result;
-    }
+//    public int[] getIntOids (final CodecParams codecParams) {
+//        final int len = objOids.size();
+//        final int[] result = new int[len];
+//        int i = -1;
+//        int oidInt;
+//        String typeName;
+//        String namespace;
+//        String fullName;
+//        for (Object objOid: objOids) {
+//            i++;
+//            if (objOid == null) {
+//                result[i] = OID.DEFAULT;
+//            } else if (objOid instanceof Number) {
+//                result[i] = RT.intCast(objOid);
+//            } else if (objOid instanceof String s) {
+//                fullName = CodecParams.coerceStringType(s);
+//                oidInt = codecParams.typeToOid(fullName);
+//                result[i] = oidInt;
+//            } else if (objOid instanceof Named nm) {
+//                namespace = nm.getNamespace();
+//                if (namespace == null) {
+//                    namespace = Const.defaultSchema;
+//                }
+//                typeName = namespace + "." + nm.getName();
+//                oidInt = codecParams.typeToOid(typeName);
+//                result[i] = oidInt;
+//            } else {
+//                throw new PGError("wrong OID: %s", TypeTool.repr(objOid));
+//            }
+//        }
+//        return result;
+//    }
 
     public final static class Builder {
 

@@ -21,6 +21,14 @@ public record RowDescription (
         );
     }
 
+    public int[] oids () {
+        final int[] oids = new int[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            oids[i] = columns[i].columnOid;
+        }
+        return oids;
+    }
+
     public record Column (
             int index,
             String name,
