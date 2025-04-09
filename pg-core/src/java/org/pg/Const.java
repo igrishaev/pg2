@@ -56,5 +56,30 @@ public final class Const {
     public static String TYPE_SIG_VECTOR = "vector/vector_in";
     public static String TYPE_SIG_SPARSEVEC = "sparsevec/sparsevec_in";
     public static String TYPE_SIG_HSTORE = "hstore/hstore_in";
+    public static String TYPE_SIG_LTREE = "ltree/ltree_in";
+
+    final static String SQL_COPY_TYPES = """
+copy (
+    select
+        pg_type.oid,
+        pg_type.typname,
+        pg_type.typtype,
+        pg_type.typinput::text,
+        pg_type.typoutput::text,
+        pg_type.typreceive::text,
+        pg_type.typsend::text,
+        pg_type.typarray,
+        pg_type.typdelim,
+        pg_type.typelem,
+        pg_namespace.nspname
+    from
+        pg_type
+    join
+        pg_namespace on pg_type.typnamespace = pg_namespace.oid
+    where
+           pg_type.typname in ('vector', 'sparsevec')
+        or pg_type.typtype = 'e'
+) to stdout with (format binary)
+""";
 
 }

@@ -200,35 +200,8 @@ public final class Connection implements AutoCloseable {
         We also exclude predefined types because we know their properties
         in advance.
         */
-
-        // TODO: remove nspname
-        // TODO: remove typoutput, typreceive, typsend
-
-        final String query = """
-copy (
-    select
-        pg_type.oid,
-        pg_type.typname,
-        pg_type.typtype,
-        pg_type.typinput::text,
-        pg_type.typoutput::text,
-        pg_type.typreceive::text,
-        pg_type.typsend::text,
-        pg_type.typarray,
-        pg_type.typdelim,
-        pg_type.typelem,
-        pg_namespace.nspname
-    from
-        pg_type
-    join
-        pg_namespace on pg_type.typnamespace = pg_namespace.oid
-    where
-           pg_type.typname in ('vector', 'sparsevec')
-        or pg_type.typtype = 'e'
-) to stdout with (format binary)
-""";
-
-        sendQuery(query);
+        // TODO
+        sendQuery(Const.SQL_COPY_TYPES);
         flush();
 
         IServerMessage msg;
@@ -620,8 +593,9 @@ copy (
     ) {
         // TODO int array!!!!
         final String statement = generateStatement();
-        final int[] oids = executeParams.oids();
-        final Parse parse = new Parse(statement, sql, intOids);
+        // TODO !!!
+        final int[] oids = Numbers.int_array(executeParams.oids());
+        final Parse parse = new Parse(statement, sql, oids);
         sendMessage(parse);
         sendDescribeStatement(statement);
         sendFlush();

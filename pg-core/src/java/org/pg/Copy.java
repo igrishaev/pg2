@@ -1,5 +1,6 @@
 package org.pg;
 
+import clojure.lang.Numbers;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 import org.pg.processor.IProcessor;
@@ -56,21 +57,22 @@ public class Copy {
     }
 
     public static String encodeRowCSV (
-            final List<Object> row,
+            final List<Object> row, // TODO: iterable?
             final ExecuteParams executeParams,
             final CodecParams codecParams
     ) {
         final StringBuilder sb = new StringBuilder();
         final Iterator<Object> iterator = row.iterator();
-        final int[] intOids = executeParams.getIntOids(codecParams);
-        final int OIDLen = intOids.length;
+        // TODO
+        final int[] oids = Numbers.int_array(executeParams.oids());
+        final int len = oids.length;
         short i = 0;
         int oid;
         String encoded;
         IProcessor processor;
         while (iterator.hasNext()) {
             final Object item = iterator.next();
-            oid = i < OIDLen ? intOids[i] : OID.defaultOID(item);
+            oid = i < len ? oids[i] : OID.defaultOID(item);
             if (item == null) {
                 sb.append(executeParams.CSVNull());
             }
@@ -97,8 +99,9 @@ public class Copy {
     ) {
         final short count = (short) row.size();
         final ByteBuffer[] bufs = new ByteBuffer[count];
-        final int[] intOids = executeParams.getIntOids(codecParams);
-        final int OIDLen = intOids.length;
+        // TODO
+        final int[] oids = Numbers.int_array(executeParams.oids());
+        final int len = oids.length;
         int oid;
         IProcessor processor;
         int totalSize = 2;
@@ -109,7 +112,7 @@ public class Copy {
                 bufs[i] = null;
             }
             else {
-                oid = i < OIDLen ? intOids[i] : OID.defaultOID(item);
+                oid = i < len ? oids[i] : OID.defaultOID(item);
                 processor = codecParams.getProcessor(oid);
                 final ByteBuffer buf = processor.encodeBin(item, codecParams);
                 totalSize += 4 + buf.array().length;
