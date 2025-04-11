@@ -55,7 +55,11 @@ public final class Main {
 
 //        System.out.println(conn.execute("select '[1,2,3]'::vector(3) as v"));
 
-        System.out.println(conn.resolveType("vector"));
+//        System.out.println(conn.resolveType("vector"));
+
+        // System.out.println(conn.execute("create type color as enum ('R', 'G', 'B')"));
+
+        System.out.println(conn.execute("select '{R,G,B}'::color[] as colors"));
 
 
         //System.out.println(conn.getId());

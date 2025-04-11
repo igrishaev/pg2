@@ -29,6 +29,10 @@ public record PGType(
         return typelem != 0;
     }
 
+    public boolean isElem() {
+        return typarray != 0;
+    }
+
     /*
     A unique string specifying the current Postgres type.
     Serves as a key to connect a pgType with a custom processor.

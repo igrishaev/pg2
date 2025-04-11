@@ -115,6 +115,10 @@ public class CodecParams {
     public void setPgType(final PGType pgType) {
         final int oid = pgType.oid();
         final String signature = pgType.signature();
+        if (pgType.isElem()) {
+            final int oidArr = pgType.typarray();
+            oidMap.put(oidArr, new Array(oidArr, pgType.oid()));
+        }
         if (pgType.isEnum()) {
             oidMap.put(oid, Processors.defaultEnum);
         } else if (signature.equals(Const.TYPE_SIG_VECTOR)) {
