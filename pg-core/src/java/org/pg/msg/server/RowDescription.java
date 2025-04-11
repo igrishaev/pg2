@@ -24,7 +24,7 @@ public record RowDescription (
     public int[] oids () {
         final int[] oids = new int[columnCount];
         for (int i = 0; i < columnCount; i++) {
-            oids[i] = columns[i].columnOid;
+            oids[i] = columns[i].typeOid;
         }
         return oids;
     }
