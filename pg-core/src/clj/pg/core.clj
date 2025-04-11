@@ -9,8 +9,9 @@
    [pg.source :as src]
    [pg.ssl #_(load a reader tag)] )
   (:import
-   clojure.lang.IPersistentMap
-   clojure.lang.Keyword
+   (clojure.lang IPersistentMap
+                 Keyword
+                 Named)
    com.fasterxml.jackson.databind.ObjectMapper
    java.io.InputStream
    java.io.OutputStream
@@ -657,20 +658,20 @@
   either help Postgres with type guessing or to
   override default types.
 
-  The `type` is either a string or a keyword. A
-  string value might be either 'schema.name' or
-  just 'name'. If latter, the schema is set to
-  'public'. When it's a keyword, the namespace,
-  if set, is treated as a schema, for example:
-  `:public/vector` => 'public.vector'.
+  The `type` is either a string or a `Named` object
+  (a keyword or a symbol). Astring value might be
+  either 'schema.name' or just 'name'. If latter,
+  the schema is set to 'public'. When it's `Named`,
+  the namespace, if set, is treated as a schema,
+  for example: `:public/vector` => 'public.vector'.
   "
   [^Connection conn type]
   (cond
     (string? type)
     (.resolveType conn ^String type)
 
-    (keyword? type)
-    (.resolveType conn ^Keyword type)
+    (instance? Named type)
+    (.resolveType conn ^Named type)
 
     :else
     (error! "wrong postgres type: %s" type)))

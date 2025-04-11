@@ -52,6 +52,7 @@ public final class Connection implements AutoCloseable {
     private final Map<String, PreparedStatement> PSCache;
     private final List<Object> notifications = new ArrayList<>(0);
     private final List<Object> notices = new ArrayList<>(0);
+    private final Map<String, Integer> oidCache = new HashMap<>(0);
 
     @Override
     public boolean equals (Object other) {
@@ -116,7 +117,7 @@ public final class Connection implements AutoCloseable {
     }
 
     public void close () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             if (!isClosed) {
                 sendTerminate();
                 flush();
@@ -202,15 +203,15 @@ public final class Connection implements AutoCloseable {
     }
 
     @SuppressWarnings("unused")
-    public int resolveType(final Keyword keyword) {
-        final String namespace = keyword.getNamespace();
+    public int resolveType(final Named nm) {
+        final String namespace = nm.getNamespace();
         String schema;
         if (namespace == null) {
             schema = Const.defaultSchema;
         } else {
             schema = namespace;
         }
-        final String type = keyword.getName();
+        final String type = nm.getName();
         return resolveType(schema, type);
     }
 
@@ -227,8 +228,20 @@ public final class Connection implements AutoCloseable {
         }
         return resolveType(schema, type);
     }
+    
+    private int resolveType(final String schema, final String type) {
+        try (final TryLock ignored = lock.get()) {
+            final String key = schema + '.' + type;
+            Integer oid = oidCache.get(key);
+            if (oid == null) {
+                oid = resolveTypeUncached(schema, type);
+                oidCache.put(key, oid);
+            }
+            return oid;
+        }
+    }
 
-    public int resolveType(final String schema, final String type) {
+    private int resolveTypeUncached(final String schema, final String type) {
         final String query = """
     select pg_type.oid
     from pg_type
@@ -247,7 +260,7 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public int getPid () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return pid;
         }
     }
@@ -262,35 +275,35 @@ public final class Connection implements AutoCloseable {
     }
 
     public Boolean isClosed () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return isClosed;
         }
     }
 
     @SuppressWarnings("unused")
     public TXStatus getTxStatus () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return txStatus;
         }
     }
 
     @SuppressWarnings("unused")
     public boolean isSSL () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return isSSL;
         }
     }
 
     @SuppressWarnings("unused")
     public String getParam (final String param) {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return params.get(param);
         }
     }
 
     @SuppressWarnings("unused")
     public IPersistentMap getParams () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return PersistentHashMap.create(params);
         }
     }
@@ -407,7 +420,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void connectInet() {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             connectInetUnlocked();
         }
     }
@@ -576,7 +589,7 @@ public final class Connection implements AutoCloseable {
     }
 
     public Object query(final String sql, final ExecuteParams executeParams) {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             sendQuery(sql);
             return interact(executeParams, sql).getResult();
         }
@@ -588,9 +601,32 @@ public final class Connection implements AutoCloseable {
     }
 
     public PreparedStatement prepare (final String sql, final ExecuteParams executeParams) {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return prepareUnlocked(sql, executeParams);
         }
+    }
+
+    public int[] intOids(final List<Object> oids) {
+        final int len = oids.size();
+        final int[] result = new int[len];
+        int i = 0;
+        for (Object oid: oids) {
+            if (oid == null) {
+                result[i] = 0;
+            } else if (oid instanceof Integer integer) {
+                result[i] = integer;
+            } else if (oid instanceof Long l) {
+                result[i] = l.intValue();
+            } else if (oid instanceof Named nm) {
+                result[i] = resolveType(nm);
+            } else if (oid instanceof String s) {
+                result[i] = resolveType(s);
+            } else {
+                throw new PGError("unsupported oid: %s", TypeTool.repr(oid));
+            }
+            i++;
+        }
+        return result;
     }
 
     private PreparedStatement prepareUnlocked(
@@ -598,7 +634,7 @@ public final class Connection implements AutoCloseable {
             final ExecuteParams executeParams
     ) {
         final String statement = generateStatement();
-        final int[] oids = executeParams.intOids();
+        final int[] oids = intOids(executeParams.oids());
         final Parse parse = new Parse(statement, sql, oids);
         sendMessage(parse);
         sendDescribeStatement(statement);
@@ -687,7 +723,7 @@ public final class Connection implements AutoCloseable {
             final ExecuteParams executeParams
     ) {
         final String sql = stmt.parse().query();
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             final String portal = generatePortal();
             sendBind(portal, stmt, executeParams);
             sendDescribePortal(portal);
@@ -701,7 +737,7 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public int closeCachedPreparedStatements() {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             final int len = PSCache.size();
             if (len > 0) {
                 for (Map.Entry<String, PreparedStatement>entry: PSCache.entrySet()) {
@@ -792,7 +828,7 @@ public final class Connection implements AutoCloseable {
 
     public void closeStatement (final String statement) {
         final String sql = String.format("--closing statement %s", statement);
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             sendCloseStatement(statement);
             sendFlush();
             sendSync();
@@ -1044,13 +1080,15 @@ public final class Connection implements AutoCloseable {
         final CopyFormat format = executeParams.copyFormat();
         Throwable e = null;
 
+        final int[] oids = intOids(executeParams.oids());
+
         switch (format) {
 
             case CSV:
                 String line;
                 while (rows.hasNext()) {
                     try {
-                        line = Copy.encodeRowCSV(rows.next(), executeParams, codecParams);
+                        line = Copy.encodeRowCSV(rows.next(), executeParams, codecParams, oids);
                     }
                     catch (final Throwable caught) {
                         e = caught;
@@ -1066,7 +1104,7 @@ public final class Connection implements AutoCloseable {
                 ByteBuffer buf;
                 while (rows.hasNext()) {
                     try {
-                        buf = Copy.encodeRowBin(rows.next(), executeParams, codecParams);
+                        buf = Copy.encodeRowBin(rows.next(), executeParams, codecParams, oids);
                     }
                     catch (final Throwable caught) {
                         e = caught;
@@ -1229,7 +1267,7 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public Object copy (final String sql, final ExecuteParams executeParams) {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             sendQuery(sql);
             final Result res = interact(executeParams, sql);
             return res.getResult();
@@ -1344,7 +1382,7 @@ public final class Connection implements AutoCloseable {
         if (readOnlyFinal) {
             query += " READ ONLY";
         }
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             sendQuery(query);
             interact(query);
         }
@@ -1353,7 +1391,7 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public void commit () {
         final String sql = "COMMIT";
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             sendQuery(sql);
             interact(sql);
         }
@@ -1362,7 +1400,7 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public void rollback () {
         final String sql = "ROLLBACK";
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             sendQuery("ROLLBACK");
             interact(sql);
         }
@@ -1370,21 +1408,21 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public boolean isIdle () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return txStatus == TXStatus.IDLE;
         }
     }
 
     @SuppressWarnings("unused")
     public boolean isTxError () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return txStatus == TXStatus.ERROR;
         }
     }
 
     @SuppressWarnings("unused")
     public boolean isTransaction () {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             return txStatus == TXStatus.TRANSACTION;
         }
     }
@@ -1392,7 +1430,7 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public void setTxLevel (final TxLevel level) {
         final String sql = SQLTool.SQLSetTxLevel(level);
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             sendQuery(sql);
             interact(sql);
         }
@@ -1401,7 +1439,7 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public void setTxReadOnly () {
         final String sql = SQLTool.SQLSetTxReadOnly;
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             sendQuery(sql);
             interact(sql);
         }
@@ -1409,21 +1447,21 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public void listen (final String channel) {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             query(String.format("listen %s", SQLTool.quoteChannel(channel)));
         }
     }
 
     @SuppressWarnings("unused")
     public void unlisten (final String channel) {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             query(String.format("unlisten %s", SQLTool.quoteChannel(channel)));
         }
     }
 
     @SuppressWarnings("unused")
     public void notify (final String channel, final String message) {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             final List<Object> params = List.of(channel, message);
             execute("select pg_notify($1, $2)", params);
         }
@@ -1431,7 +1469,7 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public void notifyJSON (final String channel, final Object data) {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             final String payload = JSON.writeValueToString(config.objectMapper(), data);
             notify(channel, payload);
         }
@@ -1439,7 +1477,7 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public int pollNotifications() {
-        try (TryLock ignored = lock.get()) {
+        try (final TryLock ignored = lock.get()) {
             final Result res = new Result(ExecuteParams.INSTANCE, "--pollNotifications");
             while (IOTool.available(inStream) > 0) {
                 final IServerMessage msg = readMessage(res.hasException());

@@ -58,11 +58,11 @@ public class Copy {
     public static String encodeRowCSV (
             final List<Object> row, // TODO: iterable?
             final ExecuteParams executeParams,
-            final CodecParams codecParams
+            final CodecParams codecParams,
+            final int[] oids
     ) {
         final StringBuilder sb = new StringBuilder();
         final Iterator<Object> iterator = row.iterator();
-        final int[] oids = executeParams.intOids();
         final int len = oids.length;
         short i = 0;
         int oid;
@@ -92,12 +92,12 @@ public class Copy {
 
     public static ByteBuffer encodeRowBin (
             final List<Object> row,
-            final ExecuteParams executeParams,
-            final CodecParams codecParams
+            final ExecuteParams ignored,
+            final CodecParams codecParams,
+            final int[] oids
     ) {
         final short count = (short) row.size();
         final ByteBuffer[] bufs = new ByteBuffer[count];
-        final int[] oids = executeParams.intOids();
         final int len = oids.length;
         int oid;
         IProcessor processor;
@@ -135,10 +135,11 @@ public class Copy {
 
     public static void main(final String[] args) {
         System.out.println(encodeRowCSV(
-                List.of(1, 2, 3),
+                List.of(1, "test", true),
                 ExecuteParams.standard(),
-                CodecParams.create())
-        );
+                CodecParams.create(),
+                new int[]{OID.INT2, OID.DEFAULT, OID.BOOL}
+        ));
 
         final List<Object> row = new ArrayList<>();
         row.add(1);
@@ -152,8 +153,9 @@ public class Copy {
                 Arrays.toString(
                     encodeRowBin(
                             row,
-                            ExecuteParams.builder().oids(oids).build(),
-                            CodecParams.create()
+                            ExecuteParams.builder().build(),
+                            CodecParams.create(),
+                            new int[]{OID.INT2, OID.DEFAULT, OID.BOOL}
                     ).array())
         );
 

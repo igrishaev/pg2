@@ -49,7 +49,7 @@
         (is (str/starts-with? (str stmt)
                               "<Prepared statement, name: s"))
         (is (str/ends-with? (str stmt)
-                            ", param(s): 1, OIDs: [20], SQL: SELECT * FROM test003 WHERE id = $1>"))
+                            ", param(s): 1, oids: [20], SQL: SELECT * FROM test003 WHERE id = $1>"))
         (is (= {:name "Juan", :active true, :id 3}
                res)))))
 
@@ -63,7 +63,7 @@
             (pg/execute-statement conn stmt {:params [3]
                                              :first true})]
         (is (str/ends-with? (str stmt)
-                            ", param(s): 1, OIDs: [23], SQL: SELECT * FROM test003 WHERE id = $1>"))
+                            ", param(s): 1, oids: [23], SQL: SELECT * FROM test003 WHERE id = $1>"))
         (is (= {:name "Juan", :active true, :id 3}
                res))))))
 

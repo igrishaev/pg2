@@ -4,7 +4,6 @@ import clojure.lang.IFn;
 import org.pg.clojure.CljAPI;
 import org.pg.enums.CopyFormat;
 import org.pg.reducer.*;
-import org.pg.util.CollTool;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,7 +11,7 @@ import java.util.*;
 
 public record ExecuteParams (
         List<Object> params,
-        List<Integer> oids,
+        List<Object> oids,
         IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
@@ -37,10 +36,6 @@ public record ExecuteParams (
         return new Builder();
     }
 
-    public int[] intOids() {
-        return CollTool.toArray(oids);
-    }
-
     public static ExecuteParams INSTANCE = standard();
 
     public static ExecuteParams standard () {
@@ -50,7 +45,7 @@ public record ExecuteParams (
     public final static class Builder {
 
         private List<Object> params = Collections.emptyList();
-        private List<Integer> oids = Collections.emptyList();
+        private List<Object> oids = Collections.emptyList();
         private IFn reducer = Default.INSTANCE;
         private long maxRows = 0;
         private IFn fnKeyTransform = CljAPI.keyword;
@@ -119,7 +114,7 @@ public record ExecuteParams (
             return this;
         }
 
-        public Builder oids (final List<Integer> oids) {
+        public Builder oids (final List<Object> oids) {
             if (oids == null) {
                 return this;
             }
