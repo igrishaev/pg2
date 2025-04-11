@@ -85,7 +85,6 @@ public final class Connection implements AutoCloseable {
             conn.authenticate();
             if (config.readPGTypes()) {
                 conn.readTypes();
-//                conn.processTypeMap();
             }
         }
         return conn;
@@ -162,45 +161,7 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
-//    @SuppressWarnings("unused")
-//    public PGType getPGTypeByName(final Object type) {
-//        final String fullName = CodecParams.objectToPGType(type);
-//        return codecParams.getPgType(fullName);
-//    }
-
-//    @SuppressWarnings("unused")
-//    public Collection<PGType> getPGTypes() {
-//        return codecParams.getPgTypes();
-//    }
-
-    /*
-    Override some oids with custom processors, if set.
-     */
-//    private void processTypeMap() {
-//        final Map<Object, IProcessor> typeMap = config.typeMap();
-//        if (typeMap == null) {
-//            return;
-//        }
-//        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
-//            codecParams.setProcessor(me.getKey(), me.getValue());
-//        }
-//    }
-
-    /*
-    Fill-in the current CodecParams instance with postgres types. This data
-    helps to guess how to process custom types shipped by extensions (and
-    enums as well).
-     */
     public void readTypes() {
-        /*
-        Below, we use ::text coercion because it's a special REGPROC
-        type (oid 24). In binary mode, it gets passed as an integer
-        (but as a string in text mode).
-
-        We also exclude predefined types because we know their properties
-        in advance.
-        */
-        // TODO
         sendQuery(Const.SQL_COPY_TYPES);
         flush();
 
@@ -226,14 +187,61 @@ public final class Connection implements AutoCloseable {
                 pgType = PGType.fromCopyBuffer(bb);
                 codecParams.setPgType(pgType);
                 // these messages are expected but just skipped
-            } else if (msg instanceof CopyOutResponse) {
-            } else if (msg instanceof CopyDone) {
-            } else if (msg instanceof CommandComplete) {
+            } else if (msg instanceof CopyOutResponse
+                    || msg instanceof CopyDone
+                    || msg instanceof CommandComplete) {
+                if (Debug.isON) {
+                    Debug.debug("skipping message: %s", msg);
+                }
             } else if (msg instanceof ReadyForQuery) {
                 break;
             } else {
                 throw new PGError("Unexpected message in readTypes: %s", msg);
             }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public int resolveType(final Keyword keyword) {
+        final String namespace = keyword.getNamespace();
+        String schema;
+        if (namespace == null) {
+            schema = Const.defaultSchema;
+        } else {
+            schema = namespace;
+        }
+        final String type = keyword.getName();
+        return resolveType(schema, type);
+    }
+
+    public int resolveType(final String schemaDotType) {
+        final String[] parts = schemaDotType.split("\\.", 2);
+        String schema;
+        String type;
+        if (parts.length == 1) {
+            schema = Const.defaultSchema;
+            type = parts[0];
+        } else {
+            schema = parts[0];
+            type = parts[1];
+        }
+        return resolveType(schema, type);
+    }
+
+    public int resolveType(final String schema, final String type) {
+        final String query = """
+    select pg_type.oid
+    from pg_type
+    join pg_namespace on pg_type.typnamespace = pg_namespace.oid
+    where pg_namespace.nspname = $1 and pg_type.typname = $2
+    limit 1
+    """;
+        final List<?> result = (List<?>) execute(query, List.of(schema, type));
+        if (result.isEmpty()) {
+            throw new PGError("cannot resolve type: %s.%s", schema, type);
+        } else {
+            final RowMap row = (RowMap) result.get(0);
+            return (int) row.nth(0);
         }
     }
 
@@ -354,7 +362,6 @@ public final class Connection implements AutoCloseable {
         };
     }
 
-
     private SSLContext getSSLContext() {
         final SSLContext configContext = config.sslContext();
         if (configContext == null) {
@@ -397,7 +404,6 @@ public final class Connection implements AutoCloseable {
             close();
             throw new PGError("the server is configured to not use SSL");
         }
-
     }
 
     private void connectInet() {
@@ -591,10 +597,8 @@ public final class Connection implements AutoCloseable {
             final String sql,
             final ExecuteParams executeParams
     ) {
-        // TODO int array!!!!
         final String statement = generateStatement();
-        // TODO !!!
-        final int[] oids = Numbers.int_array(executeParams.oids());
+        final int[] oids = executeParams.intOids();
         final Parse parse = new Parse(statement, sql, oids);
         sendMessage(parse);
         sendDescribeStatement(statement);

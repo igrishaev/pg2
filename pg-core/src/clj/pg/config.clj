@@ -19,6 +19,7 @@
   "
   ^SSLValidation [x]
   (case x
+
     (nil false off none no "none" "off" "no" :none :off :no)
     SSLValidation/NONE
 
@@ -115,7 +116,6 @@
                 pool-borrow-conn-timeout-ms
 
                 ;; types
-                type-map
                 read-pg-types?]}
         params
 
@@ -219,9 +219,6 @@
 
       (some? read-pg-types?)
       (.readPGTypes read-pg-types?)
-
-      type-map
-      (.typeMap type-map)
 
       :finally
       (.build))))

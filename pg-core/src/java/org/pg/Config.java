@@ -48,8 +48,7 @@ public record Config(
         boolean useUnixSocket,
         String unixSocketPath,
         Executor executor,
-        boolean readPGTypes,
-        Map<Object, IProcessor> typeMap
+        boolean readPGTypes
 ) {
 
     public ConnType getConnType() {
@@ -355,8 +354,7 @@ public record Config(
                     this.useUnixSocket,
                     this.unixSocketPath,
                     this.executor,
-                    this.readPGTypes,
-                    this.typeMap
+                    this.readPGTypes
             );
         }
     }

@@ -22,16 +22,6 @@ public class Processors {
     @SuppressWarnings("unused")
     public static IProcessor sparsevec = new Sparsevec();
 
-    private static final Map<String, IProcessor> customMap = new HashMap<>();
-    static {
-        customMap.put("vector/vector_in", vector);
-        customMap.put("sparsevec/sparsevec_in", sparsevec);
-    }
-
-    public static IProcessor getCustomProcessor(final PGType pgType) {
-        return customMap.get(pgType.signature());
-    }
-
     private static final Map<Integer, IProcessor> oidMap = new HashMap<>();
     static {
 

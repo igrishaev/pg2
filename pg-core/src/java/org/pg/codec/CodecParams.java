@@ -106,6 +106,7 @@ public class CodecParams {
         return objectMapper;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public CodecParams objectMapper(final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         return this;

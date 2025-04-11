@@ -89,7 +89,7 @@
         (.params params)
 
         oids
-        (.OIDs oids)
+        (.oids oids)
 
         max-rows
         (.maxRows max-rows)
@@ -172,9 +172,6 @@
 
         csv-end
         (.CSVLineSep csv-end)
-
-        oids
-        (.OIDs oids)
 
         copy-csv?
         (.setCSV)

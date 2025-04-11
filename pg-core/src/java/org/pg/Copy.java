@@ -1,6 +1,5 @@
 package org.pg;
 
-import clojure.lang.Numbers;
 import org.pg.codec.CodecParams;
 import org.pg.enums.OID;
 import org.pg.processor.IProcessor;
@@ -63,8 +62,7 @@ public class Copy {
     ) {
         final StringBuilder sb = new StringBuilder();
         final Iterator<Object> iterator = row.iterator();
-        // TODO
-        final int[] oids = Numbers.int_array(executeParams.oids());
+        final int[] oids = executeParams.intOids();
         final int len = oids.length;
         short i = 0;
         int oid;
@@ -99,8 +97,7 @@ public class Copy {
     ) {
         final short count = (short) row.size();
         final ByteBuffer[] bufs = new ByteBuffer[count];
-        // TODO
-        final int[] oids = Numbers.int_array(executeParams.oids());
+        final int[] oids = executeParams.intOids();
         final int len = oids.length;
         int oid;
         IProcessor processor;
@@ -149,13 +146,13 @@ public class Copy {
         row.add(true);
         row.add(null);
 
-        final List<Object> OIDs = List.of(OID.INT2, OID.DEFAULT, OID.BOOL);
+        final List<Integer> oids = List.of(OID.INT2, OID.DEFAULT, OID.BOOL);
 
         System.out.println(
                 Arrays.toString(
                     encodeRowBin(
                             row,
-                            ExecuteParams.builder().OIDs(OIDs).build(),
+                            ExecuteParams.builder().oids(oids).build(),
                             CodecParams.create()
                     ).array())
         );

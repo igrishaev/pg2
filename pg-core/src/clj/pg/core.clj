@@ -650,6 +650,34 @@
 ;; Types
 ;;
 
+(defn oid
+  "
+  Get an integer OID number of a Postgres type.
+  These OIDs are mostly used for type hints to
+  either help Postgres with type guessing or to
+  override default types.
+
+  The `type` is either a string or a keyword. A
+  string value might be either 'schema.name' or
+  just 'name'. If latter, the schema is set to
+  'public'. When it's a keyword, the namespace,
+  if set, is treated as a schema, for example:
+  `:public/vector` => 'public.vector'.
+  "
+  [^Connection conn type]
+  (cond
+    (string? type)
+    (.resolveType conn ^String type)
+
+    (keyword? type)
+    (.resolveType conn ^Keyword type)
+
+    :else
+    (error! "wrong postgres type: %s" type)))
+
+;; TODO: remove this
+
+#_
 (defn read-pg-types
   "
   Query the pg_type table to fetch general information
@@ -661,7 +689,7 @@
   [^Connection conn]
   (.readTypes conn))
 
-
+#_
 (defn get-pg-types
   "
   Return a vector of maps representing Postgres types
@@ -673,6 +701,7 @@
        (mapv deref)))
 
 
+#_
 (defn get-pg-type
   "
   Get a single Postgres type by its name which can be
