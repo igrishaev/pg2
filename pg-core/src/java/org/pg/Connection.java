@@ -52,7 +52,6 @@ public final class Connection implements AutoCloseable {
     private final Map<String, PreparedStatement> PSCache;
     private final List<Object> notifications = new ArrayList<>(0);
     private final List<Object> notices = new ArrayList<>(0);
-    private final Map<String, Integer> oidCache = new HashMap<>(0);
 
     @Override
     public boolean equals (Object other) {
@@ -162,11 +161,6 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
-    private void setPgType(final PGType pgType) {
-        oidCache.put(pgType.fullName(), pgType.oid());
-        codecParams.setPgType(pgType);
-    }
-
     public void readTypes() {
         sendQuery(Const.SQL_COPY_TYPES);
         flush();
@@ -191,7 +185,7 @@ public final class Connection implements AutoCloseable {
                     continue;
                 }
                 pgType = PGType.fromCopyBuffer(bb);
-                setPgType(pgType);
+                codecParams.setPgType(pgType);
                 // these messages are expected but just skipped
             } else if (msg instanceof CopyOutResponse
                     || msg instanceof CopyDone
@@ -237,29 +231,11 @@ public final class Connection implements AutoCloseable {
     private int resolveType(final String schema, final String type) {
         try (final TryLock ignored = lock.get()) {
             final String key = PGType.buildFullName(schema, type);
-            Integer oid = oidCache.get(key);
+            Integer oid = codecParams.getOidByType(key);
             if (oid == null) {
-                oid = resolveTypeUncached(schema, type);
-                oidCache.put(key, oid);
+                throw new PGError("unsupported type, schema: %s, name: %s", schema, type);
             }
             return oid;
-        }
-    }
-
-    private int resolveTypeUncached(final String schema, final String type) {
-        final String query = """
-    select pg_type.oid
-    from pg_type
-    join pg_namespace on pg_type.typnamespace = pg_namespace.oid
-    where pg_namespace.nspname = $1 and pg_type.typname = $2
-    limit 1
-    """;
-        final List<?> result = (List<?>) execute(query, List.of(schema, type));
-        if (result.isEmpty()) {
-            throw new PGError("cannot resolve type: %s.%s", schema, type);
-        } else {
-            final RowMap row = (RowMap) result.get(0);
-            return (int) row.nth(0);
         }
     }
 
@@ -487,8 +463,7 @@ public final class Connection implements AutoCloseable {
         sendMessage(msg);
     }
 
-    @SuppressWarnings("unused")
-    private void sendCopyData (final byte[] buf) {
+    private void sendCopyData(final byte[] buf) {
         sendMessage(new CopyData(ByteBuffer.wrap(buf)));
     }
 

@@ -1474,13 +1474,13 @@ from
     (try
       (pg/prepare conn "select $1 as p1" {:oids ["foo.lol_bar"]})
       (catch PGError e
-        (is (= "cannot resolve type: foo.lol_bar"
+        (is (= "unsupported type, schema: foo, name: lol_bar"
                (ex-message e)))))
 
     (try
       (pg/prepare conn "select $1 as p1" {:oids ["lol_bar"]})
       (catch PGError e
-        (is (= "cannot resolve type: public.lol_bar"
+        (is (= "unsupported type, schema: public, name: lol_bar"
                (ex-message e)))))
 
     (testing "connection is still usable"
@@ -1570,13 +1570,6 @@ from
       (is (= [{:v "[1,2,3]"}] res)))
 
     (pg/read-pg-types conn)
-
-    #_
-    (is (= #{"public"}
-           (->> conn
-                pg/get-pg-types
-                (map :nspname)
-                (set))))
 
     (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v [1.0 2.0 3.0]}] res)))))

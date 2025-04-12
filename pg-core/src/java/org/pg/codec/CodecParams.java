@@ -27,6 +27,7 @@ public class CodecParams {
     private boolean integerDatetime = Const.integerDatetime;
     private ObjectMapper objectMapper = JSON.defaultMapper;
     private final Map<Integer, IProcessor> oidMap = new HashMap<>();
+    private final Map<String, Integer> oidCache = new HashMap<>();
 
     @Override
     public String toString() {
@@ -112,7 +113,12 @@ public class CodecParams {
         return this;
     }
 
+    public Integer getOidByType(final String fullType) {
+        return oidCache.get(fullType);
+    }
+
     public void setPgType(final PGType pgType) {
+        oidCache.put(pgType.fullName(), pgType.oid());
         final int oid = pgType.oid();
         final String signature = pgType.signature();
         if (pgType.isElem()) {
@@ -132,6 +138,7 @@ public class CodecParams {
         }
     }
 
+    @SuppressWarnings("unused")
     public boolean isKnownOid(final int oid) {
         return Processors.isKnownOid(oid) || oidMap.containsKey(oid);
     }
