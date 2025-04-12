@@ -117,15 +117,24 @@ public class CodecParams {
         return oidCache.get(fullType);
     }
 
-    public void setPgType(final PGType pgType) {
+    public void setPgType(final PGType pgType, final Map<String, IProcessor> typeMap) {
         oidCache.put(pgType.fullName(), pgType.oid());
+
         final int oid = pgType.oid();
         final String signature = pgType.signature();
+        final String fullName = pgType.fullName();
+
         if (pgType.isElem()) {
             final int oidArr = pgType.typarray();
             oidMap.put(oidArr, new Array(oidArr, pgType.oid()));
         }
-        if (pgType.isEnum()) {
+
+        // TODO it in a separate step
+        // TODO reuse cache!
+        if (typeMap != null && typeMap.containsKey(fullName)) {
+            final IProcessor processor = typeMap.get(fullName);
+            oidMap.put(oid, processor);
+        } else if (pgType.isEnum()) {
             oidMap.put(oid, Processors.defaultEnum);
         } else if (signature.equals(Const.TYPE_SIG_VECTOR)) {
             oidMap.put(oid, Processors.vector);

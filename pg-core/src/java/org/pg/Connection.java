@@ -162,7 +162,37 @@ public final class Connection implements AutoCloseable {
     }
 
     public void readTypes() {
-        sendQuery(Const.SQL_COPY_TYPES);
+
+        String query = Const.SQL_COPY_T;
+        if (config.typeMap() != null) {
+            final StringBuilder sb = new StringBuilder();
+            String key;
+            String schema;
+            String type;
+            String[] parts;
+            sb.append(query);
+            for (Map.Entry<String, IProcessor> me: config.typeMap().entrySet()) {
+                key = me.getKey();
+                parts = key.split("\\.", 2);
+                if (parts.length == 1) {
+                    schema = Const.defaultSchema;
+                    type = parts[0];
+                } else {
+                    schema = parts[0];
+                    type = parts[1];
+                }
+                sb.append("\n        or (typtype = $$");
+                sb.append(schema);
+                sb.append("$$ and nspname = $$");
+                sb.append(type);
+                sb.append("$$)");
+            }
+            query = sb.toString();
+        }
+
+        query = "copy (" + query + "\n) to stdout with (format binary)";
+
+        sendQuery(query);
         flush();
 
         IServerMessage msg;
@@ -185,7 +215,7 @@ public final class Connection implements AutoCloseable {
                     continue;
                 }
                 pgType = PGType.fromCopyBuffer(bb);
-                codecParams.setPgType(pgType);
+                codecParams.setPgType(pgType, config.typeMap());
                 // these messages are expected but just skipped
             } else if (msg instanceof CopyOutResponse
                     || msg instanceof CopyDone

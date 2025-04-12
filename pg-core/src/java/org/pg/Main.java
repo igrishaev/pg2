@@ -1,7 +1,10 @@
 package org.pg;
 
 import clojure.lang.RT;
+import org.pg.processor.Processors;
 import org.pg.type.PGType;
+
+import java.util.Map;
 
 public final class Main {
 
@@ -19,6 +22,7 @@ public final class Main {
                 .binaryEncode(true)
                 .binaryDecode(true)
                 .readPGTypes(true)
+                .typeMap(Map.of("test.foo", Processors.unsupported))
                 .build();
 
 //        Config config = Config.builder("test_owner", "test")
