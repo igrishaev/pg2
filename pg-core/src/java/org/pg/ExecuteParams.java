@@ -12,6 +12,7 @@ import java.util.*;
 public record ExecuteParams (
         List<Object> params,
         List<Object> oids,
+        int[] _oids,
         IFn reducer,
         long maxRows,
         IFn fnKeyTransform,
@@ -40,6 +41,10 @@ public record ExecuteParams (
 
     public static ExecuteParams standard () {
         return new Builder().build();
+    }
+
+    public void setOids(final int[] oids) {
+        System.arraycopy(oids, 0, _oids, 0, oids.length);
     }
 
     public final static class Builder {
@@ -204,6 +209,7 @@ public record ExecuteParams (
             return new ExecuteParams(
                     params,
                     oids,
+                    new int[oids.size()],
                     reducer,
                     maxRows,
                     fnKeyTransform,

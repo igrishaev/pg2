@@ -6,7 +6,6 @@ import org.pg.enums.ConnType;
 import org.pg.enums.SSLValidation;
 import org.pg.error.PGError;
 import org.pg.json.JSON;
-import org.pg.processor.IProcessor;
 
 import javax.net.ssl.SSLContext;
 import java.util.Map;
@@ -47,8 +46,7 @@ public record Config(
         int poolBorrowConnTimeoutMs,
         boolean useUnixSocket,
         String unixSocketPath,
-        Executor executor,
-        boolean readPGTypes
+        Executor executor
 ) {
 
     public ConnType getConnType() {
@@ -101,8 +99,6 @@ public record Config(
         private boolean useUnixSocket = false;
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
-        private boolean readPGTypes = Const.readPGTypes;
-        private Map<Object, IProcessor> typeMap;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -299,18 +295,6 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
-        public Builder readPGTypes(final boolean readPGTypes) {
-            this.readPGTypes = readPGTypes;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
-        public Builder typeMap(final Map<Object, IProcessor> typeMap) {
-            this.typeMap = typeMap;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -353,8 +337,7 @@ public record Config(
                     this.poolBorrowConnTimeoutMs,
                     this.useUnixSocket,
                     this.unixSocketPath,
-                    this.executor,
-                    this.readPGTypes
+                    this.executor
             );
         }
     }

@@ -58,11 +58,11 @@ public class Copy {
     public static String encodeRowCSV (
             final List<Object> row, // TODO: iterable?
             final ExecuteParams executeParams,
-            final CodecParams codecParams,
-            final int[] oids
+            final CodecParams codecParams
     ) {
         final StringBuilder sb = new StringBuilder();
         final Iterator<Object> iterator = row.iterator();
+        final int[] oids = executeParams._oids();
         final int len = oids.length;
         short i = 0;
         int oid;
@@ -92,12 +92,12 @@ public class Copy {
 
     public static ByteBuffer encodeRowBin (
             final List<Object> row,
-            final ExecuteParams ignored,
-            final CodecParams codecParams,
-            final int[] oids
+            final ExecuteParams executeParams,
+            final CodecParams codecParams
     ) {
         final short count = (short) row.size();
         final ByteBuffer[] bufs = new ByteBuffer[count];
+        final int[] oids = executeParams._oids();
         final int len = oids.length;
         int oid;
         IProcessor processor;
@@ -137,8 +137,7 @@ public class Copy {
         System.out.println(encodeRowCSV(
                 List.of(1, "test", true),
                 ExecuteParams.standard(),
-                CodecParams.create(),
-                new int[]{OID.INT2, OID.DEFAULT, OID.BOOL}
+                CodecParams.create()
         ));
 
         final List<Object> row = new ArrayList<>();
@@ -154,8 +153,7 @@ public class Copy {
                     encodeRowBin(
                             row,
                             ExecuteParams.builder().build(),
-                            CodecParams.create(),
-                            new int[]{OID.INT2, OID.DEFAULT, OID.BOOL}
+                            CodecParams.create()
                     ).array())
         );
 

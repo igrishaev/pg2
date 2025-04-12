@@ -1,7 +1,7 @@
 package org.pg;
+import clojure.lang.PersistentVector;
 
-import clojure.lang.RT;
-import org.pg.type.PGType;
+import java.util.List;
 
 public final class Main {
 
@@ -18,7 +18,7 @@ public final class Main {
                 .password(user)
                 .binaryEncode(true)
                 .binaryDecode(true)
-                .readPGTypes(true)
+                // .readPGTypes(true)
                 .build();
 
 //        Config config = Config.builder("test_owner", "test")
@@ -57,9 +57,23 @@ public final class Main {
 
 //        System.out.println(conn.resolveType("vector"));
 
-        // System.out.println(conn.execute("create type color as enum ('R', 'G', 'B')"));
+//         System.out.println(conn.execute("create type color as enum ('R', 'G', 'B')"));
 
-        System.out.println(conn.execute("select '{R,G,B}'::color[] as colors"));
+
+//        conn.query("create table foo(v vector(3))");
+        conn.copy("copy foo (v) from STDIN WITH (FORMAT CSV)",
+                ExecuteParams.builder().copyInRows(
+                        List.of(List.of(PersistentVector.create(1,2,3)))
+                ).oids(List.of(16386)).build()
+
+        );
+
+//        System.out.println(conn.query("select '{R,G,B}'::color[] as colors"));
+//        System.out.println(conn.execute("select '{R,G,B}'::color[] as colors"));
+//        System.out.println(conn.execute("select $1 as v", ExecuteParams.builder().params(
+//                List.of(PersistentVector.create(1,2,3)))
+//                        .oids(List.of(conn.resolveType("vector")))
+//                .build()));
 
 
         //System.out.println(conn.getId());

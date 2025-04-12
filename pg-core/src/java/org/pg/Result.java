@@ -143,6 +143,17 @@ public final class Result {
         return current.rowDescription;
     }
 
+    public int[][] rowOids() {
+        final int[][] result = new int[nodes.size()][];
+        int i = 0;
+        for (Node node: nodes) {
+            if (node.rowDescription != null) {
+                result[i] = node.rowDescription.oids();
+            }
+        }
+        return result;
+    }
+
     public ParameterDescription getParameterDescription () {
         return current.parameterDescription;
     }
