@@ -1,4 +1,7 @@
 
+- setType: fill type cache?
+- copy->execute
+
 - maybe exted multi-methods in Java?
 
 - RowMap: meta support?

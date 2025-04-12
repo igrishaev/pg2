@@ -3,7 +3,6 @@ package org.pg.processor;
 import org.pg.enums.OID;
 import org.pg.processor.pgvector.Sparsevec;
 import org.pg.processor.pgvector.Vector;
-import org.pg.type.PGType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -100,6 +99,10 @@ public class Processors {
         oidMap.put(OID._PATH, new Array(OID._PATH, OID.PATH));
         oidMap.put(OID._LSEG, new Array(OID._LSEG, OID.LSEG));
         oidMap.put(OID._REGPROC, new Array(OID._REGPROC, OID.REGPROC));
+    }
+
+    public static boolean isKnownOid(final int oid) {
+        return oidMap.containsKey(oid);
     }
 
     public static IProcessor getProcessor(final int oid) {

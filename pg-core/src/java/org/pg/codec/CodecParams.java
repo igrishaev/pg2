@@ -132,6 +132,10 @@ public class CodecParams {
         }
     }
 
+    public boolean isKnownOid(final int oid) {
+        return Processors.isKnownOid(oid) || oidMap.containsKey(oid);
+    }
+
     public IProcessor getProcessor(final int oid) {
         // get from a global defaults
         IProcessor processor = Processors.getProcessor(oid);
