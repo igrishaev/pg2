@@ -41,11 +41,15 @@ public record PGType(
         return String.format("%s/%s", typname, typinput);
     }
 
+    public static String buildFullName(final String schema, final String type) {
+        return schema + '.' + type;
+    }
+
     /*
     Return a full qualified name of the type, e.g. schema.type_name.
      */
     public String fullName() {
-        return nspname() + "." + typname();
+        return buildFullName(nspname, typname);
     }
 
     /*

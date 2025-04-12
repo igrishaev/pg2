@@ -1,6 +1,5 @@
 
-- setType: fill type cache?
-- copy->execute
+- no need to read db when resolve a type?
 
 - maybe exted multi-methods in Java?
 

@@ -636,9 +636,6 @@ from
                   "insert into test (id, triple) values ($1, $2)"
                   {:params [1 triple-bin]})
 
-      #_ ;; for debug
-      (pg/query conn "insert into test (id, triple) values (1, '(1,hello,true)')")
-
       (try
         (pg/execute conn
                     "insert into test (id, triple) values ($1, $2)"
@@ -1565,7 +1562,7 @@ from
         (is (= [{:arr ["foo" "bar" "baz"]}]
                result))))))
 
-#_
+
 (deftest test-forcibly-read-types
   (pg/with-connection [conn (assoc *CONFIG-TXT* :read-pg-types? false)]
 
@@ -1574,6 +1571,7 @@ from
 
     (pg/read-pg-types conn)
 
+    #_
     (is (= #{"public"}
            (->> conn
                 pg/get-pg-types

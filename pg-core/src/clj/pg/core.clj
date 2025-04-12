@@ -676,9 +676,7 @@
     :else
     (error! "wrong postgres type: %s" type)))
 
-;; TODO: remove this
 
-#_
 (defn read-pg-types
   "
   Query the pg_type table to fetch general information
@@ -690,28 +688,6 @@
   [^Connection conn]
   (.readTypes conn))
 
-#_
-(defn get-pg-types
-  "
-  Return a vector of maps representing Postgres types
-  read on startup.
-  "
-  [^Connection conn]
-  (->> conn
-       .getPGTypes
-       (mapv deref)))
-
-
-#_
-(defn get-pg-type
-  "
-  Get a single Postgres type by its name which can be
-  a keyword, a symbol or a string.
-  "
-  [^Connection conn type]
-  (some->> type
-           (.getPGTypeByName conn)
-           (deref)))
 
 ;;
 ;; Prints
@@ -730,6 +706,8 @@
 (defmethod print-method PreparedStatement
   [^PreparedStatement conn ^Writer writer]
   (.write writer (.toString conn)))
+
+
 ;;
 ;; Listen/notify block
 ;;

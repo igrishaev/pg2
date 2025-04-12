@@ -162,6 +162,11 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
+    private void setPgType(final PGType pgType) {
+        oidCache.put(pgType.fullName(), pgType.oid());
+        codecParams.setPgType(pgType);
+    }
+
     public void readTypes() {
         sendQuery(Const.SQL_COPY_TYPES);
         flush();
@@ -186,7 +191,7 @@ public final class Connection implements AutoCloseable {
                     continue;
                 }
                 pgType = PGType.fromCopyBuffer(bb);
-                codecParams.setPgType(pgType);
+                setPgType(pgType);
                 // these messages are expected but just skipped
             } else if (msg instanceof CopyOutResponse
                     || msg instanceof CopyDone
@@ -231,7 +236,7 @@ public final class Connection implements AutoCloseable {
     
     private int resolveType(final String schema, final String type) {
         try (final TryLock ignored = lock.get()) {
-            final String key = schema + '.' + type;
+            final String key = PGType.buildFullName(schema, type);
             Integer oid = oidCache.get(key);
             if (oid == null) {
                 oid = resolveTypeUncached(schema, type);
