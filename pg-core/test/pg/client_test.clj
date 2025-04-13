@@ -1551,7 +1551,7 @@ from
     (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v "[1,2,3]"}] res)))
 
-    (pg/read-pg-types conn)
+    (pg/reload-types conn)
 
     (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v [1.0 2.0 3.0]}] res)))))

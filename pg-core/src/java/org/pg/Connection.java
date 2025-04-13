@@ -84,8 +84,7 @@ public final class Connection implements AutoCloseable {
         if (sendStartup) {
             conn.authenticate();
             if (config.readPGTypes()) {
-                conn.readTypes();
-                conn.processTypeMap();
+                conn.reloadTypes();
             }
         }
         return conn;
@@ -169,6 +168,12 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    public void reloadTypes() {
+        codecParams.clearTypes();
+        readTypes();
+        processTypeMap();
+    }
+
     private String prepareReadTypesQuery() {
         String query = Const.SQL_COPY_TYPES;
         if (config.typeMap() != null) {
@@ -194,7 +199,7 @@ public final class Connection implements AutoCloseable {
         return "copy (\n" + query + ") to stdout with (format binary)";
     }
 
-    public void readTypes() {
+    private void readTypes() {
         final String query = prepareReadTypesQuery();
         sendQuery(query);
         flush();

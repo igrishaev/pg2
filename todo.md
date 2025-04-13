@@ -1,4 +1,7 @@
 
+- rename read-pg-types? -> read-types?
+- fix docs
+
 - maybe exted multi-methods in Java?
 
 - RowMap: meta support?

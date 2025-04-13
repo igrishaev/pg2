@@ -115,6 +115,11 @@ public class CodecParams {
         return this;
     }
 
+    public void clearTypes() {
+        oidMap.clear();
+        oidCache.clear();
+    }
+
     public void processTypeMap(final Map<Object, IProcessor> typeMap) {
         String fullName;
         IProcessor processor;
