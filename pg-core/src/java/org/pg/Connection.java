@@ -233,7 +233,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    private int resolveType(final Object typeHint) {
+    public int resolveType(final Object typeHint) {
         try (final TryLock ignored = lock.get()) {
             final String fullName = SQLTool.fullTypeName(typeHint);
             Integer oid = codecParams.getOidByType(fullName);

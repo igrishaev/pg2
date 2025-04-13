@@ -666,15 +666,7 @@
   for example: `:public/vector` => 'public.vector'.
   "
   [^Connection conn type]
-  (cond
-    (string? type)
-    (.resolveType conn ^String type)
-
-    (instance? Named type)
-    (.resolveType conn ^Named type)
-
-    :else
-    (error! "wrong postgres type: %s" type)))
+  (.resolveType conn type))
 
 
 (defn read-pg-types

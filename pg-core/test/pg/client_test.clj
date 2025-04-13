@@ -1468,19 +1468,19 @@ from
     (try
       (pg/prepare conn "select $1 as p1" {:oids [true]})
       (catch PGError e
-        (is (= "unsupported oid: type: java.lang.Boolean, value: true"
+        (is (= "unsupported postgres type, type: java.lang.Boolean, value: true"
                (ex-message e)))))
 
     (try
       (pg/prepare conn "select $1 as p1" {:oids ["foo.lol_bar"]})
       (catch PGError e
-        (is (= "unsupported type, schema: foo, name: lol_bar"
+        (is (= "unsupported postgres type, type: java.lang.String, value: foo.lol_bar"
                (ex-message e)))))
 
     (try
       (pg/prepare conn "select $1 as p1" {:oids ["lol_bar"]})
       (catch PGError e
-        (is (= "unsupported type, schema: public, name: lol_bar"
+        (is (= "unsupported postgres type, type: java.lang.String, value: lol_bar"
                (ex-message e)))))
 
     (testing "connection is still usable"
@@ -1488,7 +1488,6 @@ from
         (is (= {:one 1} res))))))
 
 
-#_
 (deftest test-custom-type-map-error
   (let [type-map
         {:public/foobar t/enum}
@@ -1500,7 +1499,7 @@ from
       (pg/with-connection [conn config])
       (is false)
       (catch PGError e
-        (is (= "unknown type: type: clojure.lang.Keyword, value: :public/foobar"
+        (is (= "unknown postgres type: public.foobar"
                (ex-message e)))))
 
     ;; without reading types, it's ok
