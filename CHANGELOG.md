@@ -19,8 +19,8 @@
 
 ## 0.1.37-SNAPSHOT
 
-- ?
-- ?
+- read Postgres types on startup
+- fix redundant .oid in config
 - ?
 
 ## 0.1.36

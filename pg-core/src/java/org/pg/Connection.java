@@ -163,7 +163,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private void processTypeMap() {
-        final Map<String, IProcessor> typeMap = config.typeMap();
+        final Map<Object, IProcessor> typeMap = config.typeMap();
         if (typeMap != null) {
             codecParams.processTypeMap(typeMap);
         }
@@ -173,12 +173,12 @@ public final class Connection implements AutoCloseable {
         String query = Const.SQL_COPY_TYPES;
         if (config.typeMap() != null) {
             final StringBuilder sb = new StringBuilder();
-            String key;
+            Object key;
             String schema;
             String type;
             String[] parts;
             sb.append(query);
-            for (Map.Entry<String, IProcessor> me: config.typeMap().entrySet()) {
+            for (Map.Entry<Object, IProcessor> me: config.typeMap().entrySet()) {
                 key = me.getKey();
                 parts = SQLTool.splitType(key);
                 schema = parts[0];
@@ -233,39 +233,12 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    @SuppressWarnings("unused")
-    public int resolveType(final Named nm) {
-        final String namespace = nm.getNamespace();
-        String schema;
-        if (namespace == null) {
-            schema = Const.defaultSchema;
-        } else {
-            schema = namespace;
-        }
-        final String type = nm.getName();
-        return resolveType(schema, type);
-    }
-
-    public int resolveType(final String schemaDotType) {
-        final String[] parts = schemaDotType.split("\\.", 2);
-        String schema;
-        String type;
-        if (parts.length == 1) {
-            schema = Const.defaultSchema;
-            type = parts[0];
-        } else {
-            schema = parts[0];
-            type = parts[1];
-        }
-        return resolveType(schema, type);
-    }
-    
-    private int resolveType(final String schema, final String type) {
+    private int resolveType(final Object typeHint) {
         try (final TryLock ignored = lock.get()) {
-            final String key = PGType.buildFullName(schema, type);
-            Integer oid = codecParams.getOidByType(key);
+            final String fullName = SQLTool.fullTypeName(typeHint);
+            Integer oid = codecParams.getOidByType(fullName);
             if (oid == null) {
-                throw new PGError("unsupported type, schema: %s, name: %s", schema, type);
+                throw new PGError("unsupported postgres type, %s", TypeTool.repr(typeHint));
             }
             return oid;
         }
@@ -629,12 +602,8 @@ public final class Connection implements AutoCloseable {
                 result[i] = integer;
             } else if (oid instanceof Long l) {
                 result[i] = l.intValue();
-            } else if (oid instanceof Named nm) {
-                result[i] = resolveType(nm);
-            } else if (oid instanceof String s) {
-                result[i] = resolveType(s);
             } else {
-                throw new PGError("unsupported oid: %s", TypeTool.repr(oid));
+                result[i] = resolveType(oid);
             }
             i++;
         }

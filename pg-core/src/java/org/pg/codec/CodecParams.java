@@ -115,11 +115,11 @@ public class CodecParams {
         return this;
     }
 
-    public void processTypeMap(final Map<String, IProcessor> typeMap) {
+    public void processTypeMap(final Map<Object, IProcessor> typeMap) {
         String fullName;
         IProcessor processor;
         Integer oid;
-        for (Map.Entry<String, IProcessor> me: typeMap.entrySet()) {
+        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
             fullName = SQLTool.fullTypeName(me.getKey());
             processor = me.getValue();
             oid = oidCache.get(fullName);

@@ -48,7 +48,7 @@ public record Config(
         boolean useUnixSocket,
         String unixSocketPath,
         Executor executor,
-        Map <String, IProcessor> typeMap,
+        Map <Object, IProcessor> typeMap,
         boolean readPGTypes
 ) {
 
@@ -102,7 +102,7 @@ public record Config(
         private boolean useUnixSocket = false;
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
-        private Map<String, IProcessor> typeMap;
+        private Map<Object, IProcessor> typeMap;
         private boolean readPGTypes = Const.readPGTypes;
 
         public Builder(final String user, final String database) {
@@ -306,7 +306,7 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
-        public Builder typeMap(final Map<String, IProcessor> typeMap) {
+        public Builder typeMap(final Map<Object, IProcessor> typeMap) {
             this.typeMap = typeMap;
             return this;
         }
