@@ -116,6 +116,7 @@
                 pool-borrow-conn-timeout-ms
 
                 ;; types
+                type-map
                 read-pg-types?]}
         params
 
@@ -219,6 +220,9 @@
 
       (some? read-pg-types?)
       (.readPGTypes read-pg-types?)
+
+      type-map
+      (.typeMap type-map)
 
       :finally
       (.build))))

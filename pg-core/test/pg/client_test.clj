@@ -1508,7 +1508,6 @@ from
       (is (= 1 1)))))
 
 
-#_
 (deftest test-custom-type-map-ok
   (let [enum-name
         (symbol (format "enum_%s" (System/nanoTime)))
@@ -1525,22 +1524,6 @@ from
 
     (pg/with-connection [conn *CONFIG-TXT*]
       (pg/query conn (format "create type %s as enum ('foo', 'bar', 'baz')" enum-name)))
-
-    (pg/with-connection [conn *CONFIG-TXT*]
-
-      (is (nil? (pg/get-pg-type conn "dunno")))
-
-      (let [pg-type (pg/get-pg-type conn enum-name)]
-        (is (= {:typtype \e
-                :typoutput "enum_out"
-                :typelem 0
-                :typdelim \,
-                :typname (str enum-name)
-                :typreceive "enum_recv"
-                :nspname "public"
-                :typinput "enum_in"
-                :typsend "enum_send"}
-               (dissoc pg-type :oid :typarray)))))
 
     (pg/with-connection [conn (assoc *CONFIG-TXT* :type-map type-map)]
       (let [result

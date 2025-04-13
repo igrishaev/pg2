@@ -2,11 +2,13 @@ package org.pg.codec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.Const;
+import org.pg.error.PGError;
 import org.pg.json.JSON;
 import org.pg.processor.Array;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
 import org.pg.type.PGType;
+import org.pg.util.SQLTool;
 
 import java.nio.charset.Charset;
 import java.time.ZoneId;
@@ -113,28 +115,37 @@ public class CodecParams {
         return this;
     }
 
+    public void processTypeMap(final Map<String, IProcessor> typeMap) {
+        String fullName;
+        IProcessor processor;
+        Integer oid;
+        for (Map.Entry<String, IProcessor> me: typeMap.entrySet()) {
+            fullName = SQLTool.fullTypeName(me.getKey());
+            processor = me.getValue();
+            oid = oidCache.get(fullName);
+            if (oid == null) {
+                throw new PGError("unknown postgres type: %s", fullName);
+            }
+            oidMap.put(oid, processor);
+        }
+    }
+
     public Integer getOidByType(final String fullType) {
         return oidCache.get(fullType);
     }
 
-    public void setPgType(final PGType pgType, final Map<String, IProcessor> typeMap) {
+    public void setPgType(final PGType pgType) {
         oidCache.put(pgType.fullName(), pgType.oid());
 
         final int oid = pgType.oid();
         final String signature = pgType.signature();
-        final String fullName = pgType.fullName();
 
         if (pgType.isElem()) {
             final int oidArr = pgType.typarray();
             oidMap.put(oidArr, new Array(oidArr, pgType.oid()));
         }
 
-        // TODO it in a separate step
-        // TODO reuse cache!
-        if (typeMap != null && typeMap.containsKey(fullName)) {
-            final IProcessor processor = typeMap.get(fullName);
-            oidMap.put(oid, processor);
-        } else if (pgType.isEnum()) {
+        if (pgType.isEnum()) {
             oidMap.put(oid, Processors.defaultEnum);
         } else if (signature.equals(Const.TYPE_SIG_VECTOR)) {
             oidMap.put(oid, Processors.vector);

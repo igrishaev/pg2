@@ -1,9 +1,12 @@
 package org.pg;
 
 import clojure.lang.RT;
+import org.pg.codec.CodecParams;
+import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
 import org.pg.type.PGType;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 public final class Main {
@@ -22,7 +25,27 @@ public final class Main {
                 .binaryEncode(true)
                 .binaryDecode(true)
                 .readPGTypes(true)
-                .typeMap(Map.of("test.foo", Processors.unsupported))
+                .typeMap(Map.of("color", new IProcessor() {
+                    @Override
+                    public ByteBuffer encodeBin(Object value, CodecParams codecParams) {
+                        return null;
+                    }
+
+                    @Override
+                    public String encodeTxt(Object value, CodecParams codecParams) {
+                        return "";
+                    }
+
+                    @Override
+                    public Object decodeBin(ByteBuffer bb, CodecParams codecParams) {
+                        return "decodeBin";
+                    }
+
+                    @Override
+                    public Object decodeTxt(String text, CodecParams codecParams) {
+                        return "decodeTxt";
+                    }
+                }))
                 .build();
 
 //        Config config = Config.builder("test_owner", "test")
@@ -63,7 +86,8 @@ public final class Main {
 
         // System.out.println(conn.execute("create type color as enum ('R', 'G', 'B')"));
 
-        System.out.println(conn.execute("select '{R,G,B}'::color[] as colors"));
+//        System.out.println(conn.query("select '{R,G,B}'::color[] as colors"));
+        System.out.println(conn.query("select 'R'::color as color"));
 
 
         //System.out.println(conn.getId());

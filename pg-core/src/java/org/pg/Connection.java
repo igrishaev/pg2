@@ -85,6 +85,7 @@ public final class Connection implements AutoCloseable {
             conn.authenticate();
             if (config.readPGTypes()) {
                 conn.readTypes();
+                conn.processTypeMap();
             }
         }
         return conn;
@@ -161,9 +162,15 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
-    public void readTypes() {
+    private void processTypeMap() {
+        final Map<String, IProcessor> typeMap = config.typeMap();
+        if (typeMap != null) {
+            codecParams.processTypeMap(typeMap);
+        }
+    }
 
-        String query = Const.SQL_COPY_T;
+    private String prepareReadTypesQuery() {
+        String query = Const.SQL_COPY_TYPES;
         if (config.typeMap() != null) {
             final StringBuilder sb = new StringBuilder();
             String key;
@@ -173,33 +180,28 @@ public final class Connection implements AutoCloseable {
             sb.append(query);
             for (Map.Entry<String, IProcessor> me: config.typeMap().entrySet()) {
                 key = me.getKey();
-                parts = key.split("\\.", 2);
-                if (parts.length == 1) {
-                    schema = Const.defaultSchema;
-                    type = parts[0];
-                } else {
-                    schema = parts[0];
-                    type = parts[1];
-                }
-                sb.append("\n        or (typtype = $$");
+                parts = SQLTool.splitType(key);
+                schema = parts[0];
+                type = parts[1];
+                sb.append("    or (typtype = $$");
                 sb.append(schema);
                 sb.append("$$ and nspname = $$");
                 sb.append(type);
-                sb.append("$$)");
+                sb.append("$$)\n");
             }
             query = sb.toString();
         }
+        return "copy (\n" + query + ") to stdout with (format binary)";
+    }
 
-        query = "copy (" + query + "\n) to stdout with (format binary)";
-
+    public void readTypes() {
+        final String query = prepareReadTypesQuery();
         sendQuery(query);
         flush();
-
         IServerMessage msg;
         PGType pgType;
         ByteBuffer bb;
         boolean headerSeen = false;
-
         while (true) {
             msg = readMessage(false);
             if (Debug.isON) {
@@ -215,7 +217,7 @@ public final class Connection implements AutoCloseable {
                     continue;
                 }
                 pgType = PGType.fromCopyBuffer(bb);
-                codecParams.setPgType(pgType, config.typeMap());
+                codecParams.setPgType(pgType);
                 // these messages are expected but just skipped
             } else if (msg instanceof CopyOutResponse
                     || msg instanceof CopyDone

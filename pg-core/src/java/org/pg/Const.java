@@ -4,6 +4,7 @@ import clojure.lang.Agent;
 import org.pg.enums.SSLValidation;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
@@ -55,33 +56,12 @@ public final class Const {
     public static boolean useSSL = false;
     public static String TYPE_SIG_VECTOR = "vector/vector_in";
     public static String TYPE_SIG_SPARSEVEC = "sparsevec/sparsevec_in";
+    @SuppressWarnings("unused")
     public static String TYPE_SIG_HSTORE = "hstore/hstore_in";
+    @SuppressWarnings("unused")
     public static String TYPE_SIG_LTREE = "ltree/ltree_in";
-
-    final static String SQL_COPY_T = """
-    select
-        pg_type.oid,
-        pg_type.typname,
-        pg_type.typtype,
-        pg_type.typinput::text,
-        pg_type.typoutput::text,
-        pg_type.typreceive::text,
-        pg_type.typsend::text,
-        pg_type.typarray,
-        pg_type.typdelim,
-        pg_type.typelem,
-        pg_namespace.nspname
-    from
-        pg_type
-    join
-        pg_namespace on pg_type.typnamespace = pg_namespace.oid
-    where
-           typname in ('vector', 'sparsevec')
-        or typtype = 'e'
-""";
-
+    public static String[] TYPES_TO_READ = new String[]{"vector", "sparsevec"};
     final static String SQL_COPY_TYPES = """
-copy (
     select
         pg_type.oid,
         pg_type.typname,
@@ -99,11 +79,12 @@ copy (
     join
         pg_namespace on pg_type.typnamespace = pg_namespace.oid
     where
-           typname in ('vector', 'sparsevec')
-        or typtype = 'e'
-        or (typtype = $$test$$ and nspname = $$test$$)
-        or (typtype = $$test$$ and nspname = $$test$$)
-) to stdout with (format binary)
+           typname in (""" + String.join(", ",
+            Arrays.stream(TYPES_TO_READ)
+                    .map(type -> String.format("$$%s$$", type))
+                    .toList()) + """
+)
+    or typtype = 'e'
 """;
 
 }
