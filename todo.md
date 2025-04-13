@@ -1,6 +1,7 @@
 
 - rename read-pg-types? -> read-types?
 - fix docs
+- test with neon.tech, supabase, aws
 
 - maybe exted multi-methods in Java?
 
