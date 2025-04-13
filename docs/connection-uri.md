@@ -112,7 +112,7 @@ Before you read, here is a brief description of types and parsing agreements.
 | `pool-max-size`               | long      | Maximum pool connection size                                                                   |
 | `pool-expire-threshold-ms`    | long      | Pool connection expire lifetime                                                                |
 | `pool-borrow-conn-timeout-ms` | long      | How long to wait when borrowing a connection from a pool                                       |
-| `read-pg-types`               | bool      | Whether to [read Postgres types](/docs/read-pg-types.md) after connection has been established |
+| `read-types`                  | bool      | Whether to [read Postgres types](/docs/read-pg-types.md) after connection has been established |
 | `pg-params`                   | nested    | A nested map of Postgres runtime parameters (see below)                                        |
 
 ## JDBC Compatible Parameters

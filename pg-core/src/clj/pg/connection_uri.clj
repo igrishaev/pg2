@@ -168,7 +168,7 @@
                 pool-borrow-conn-timeout-ms
 
                 ;; types
-                read-pg-types
+                read-types
 
                 ;; JDBC camelCase options
                 readOnly
@@ -279,8 +279,8 @@
 
      ;; types
      ;; TODO type-map
-     :read-pg-types?
-     (some-> read-pg-types parse-bool)
+     :read-types?
+     (some-> read-types parse-bool)
 
      :pg-params
      (cond-> pg-params

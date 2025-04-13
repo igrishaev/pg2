@@ -1503,7 +1503,7 @@ from
                (ex-message e)))))
 
     ;; without reading types, it's ok
-    (pg/with-connection [conn (assoc config :read-pg-types? false)]
+    (pg/with-connection [conn (assoc config :read-types? false)]
       (is (= 1 1)))))
 
 
@@ -1546,7 +1546,7 @@ from
 
 
 (deftest test-forcibly-read-types
-  (pg/with-connection [conn (assoc *CONFIG-TXT* :read-pg-types? false)]
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :read-types? false)]
 
     (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
       (is (= [{:v "[1,2,3]"}] res)))

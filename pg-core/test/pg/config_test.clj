@@ -91,7 +91,7 @@
                                      "&pool-max-size=4"
                                      "&pool-expire-threshold-ms=3322"
                                      "&pool-borrow-conn-timeout-ms=449"
-                                     "&read-pg-types=off"
+                                     "&read-types=off"
                                      "&ssl=1"
                                      "&so-recv-buf-size=999"
                                      "&so-send-buf-size=888"

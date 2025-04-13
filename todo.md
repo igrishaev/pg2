@@ -1,19 +1,17 @@
 
-- rename read-pg-types? -> read-types?
-- fix docs
 - test with neon.tech, supabase, aws
+- read-all-types-3
+  - add new page
+  - doc processors: another example (not vector? enum?)
+  - oids and hints
+  - read types default = false?
 
 - maybe exted multi-methods in Java?
 
 - RowMap: meta support?
 
-- read-all-types-3
-  - add new page
-  - doc processors: another example (not vector? enum?)
-
 - types
   - Global static pgType map?
-  - read types default = false?
 
 - docs
   - jdbc: the same options

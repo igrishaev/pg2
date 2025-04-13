@@ -117,7 +117,7 @@
 
                 ;; types
                 type-map
-                read-pg-types?]}
+                read-types?]}
         params
 
         DB
@@ -218,8 +218,8 @@
       executor
       (.executor executor)
 
-      (some? read-pg-types?)
-      (.readPGTypes read-pg-types?)
+      (some? read-types?)
+      (.readPGTypes read-types?)
 
       type-map
       (.typeMap type-map)
