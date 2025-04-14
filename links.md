@@ -21,3 +21,6 @@ https://www.qwertee.io/blog/postgresql-b-tree-index-explained-part-1/#multi-colu
 
 ## Tutorial: More indexes, good and various
 https://pgconf.ru/en/talk/1588274
+
+## 53.64. pg_type
+https://postgrespro.ru/docs/postgresql/15/catalog-pg-type

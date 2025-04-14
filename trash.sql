@@ -41,3 +41,28 @@ copy (
         and pg_namespace.nspname != 'pg_catalog'
         and pg_namespace.nspname != 'information_schema'
 ) to stdout with (format csv)
+
+
+
+
+test=# select * from pg_type where oid = 27571;
+-[ RECORD 1 ]--+-----------------------
+oid            | 27571
+typname        | triple_851965879281416
+typnamespace   | 2200
+typowner       | 10
+typlen         | -1
+typbyval       | f
+typtype        | c
+typcategory    | C
+typispreferred | f
+typisdefined   | t
+typdelim       | ,
+typrelid       | 27569
+
+
+test=# select * from pg_attribute where attrelid = 27569;
+test=# select array_agg(attname), array_agg(atttypid) from pg_attribute where attrelid = 27569;
+-[ RECORD 1 ]---------
+array_agg | {a,b,c}
+array_agg | {23,25,16}

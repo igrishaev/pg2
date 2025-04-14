@@ -1,5 +1,4 @@
 
-- test with neon.tech, supabase, aws
 - read-all-types-3
   - add new page
   - doc processors: another example (not vector? enum?)
