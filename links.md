@@ -15,3 +15,6 @@ https://github.com/PgBulkInsert/PgBulkInsert
 
 ## clj-pgcopy
 https://github.com/jgdavey/clj-pgcopy
+
+## PostgreSQL B-Tree Index Explained - PART 1
+https://www.qwertee.io/blog/postgresql-b-tree-index-explained-part-1/#multi-column-index
