@@ -1,6 +1,12 @@
 
 Links to steal ideas & implementation tricks :)
 
+## F.30. jsquery
+https://postgrespro.ru/docs/enterprise/15/jsquery
+
+## JsQuery: the jsonb query language with GIN indexing support
+http://www.sai.msu.su/~megera/postgres/talks/pgconfeu-2014-jsquery.pdf
+
 ## Geometric Types
 https://www.postgresql.org/docs/current/datatype-geometric.html
 
