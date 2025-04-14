@@ -222,6 +222,9 @@ public final class Connection implements AutoCloseable {
                     continue;
                 }
                 pgType = PGType.fromCopyBuffer(bb);
+                if (Debug.isON) {
+                    Debug.debug(" -> %s\r\n", pgType);
+                }
                 codecParams.setPgType(pgType);
                 // these messages are expected but just skipped
             } else if (msg instanceof CopyOutResponse
