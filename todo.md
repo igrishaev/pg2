@@ -12,6 +12,10 @@
 - types
   - Global static pgType map?
 
+- server-error & exceptons:
+  - collect all
+  - make exception iterable?
+
 - docs
   - jdbc: the same options
   - notices

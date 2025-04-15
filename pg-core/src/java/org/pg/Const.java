@@ -4,7 +4,6 @@ import clojure.lang.Agent;
 import org.pg.enums.SSLValidation;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
@@ -50,7 +49,6 @@ public final class Const {
     public static ZoneId timeZone = ZoneOffset.UTC;
     public static String dateStyle = "ISO, DMY";
     public static boolean integerDatetime = true;
-    public static boolean readPGTypes = true;
     public static String password = "";
     public static String defaultSchema = "public";
     public static boolean useSSL = false;

@@ -172,6 +172,9 @@ public final class Result {
         current.acc = executeParams.reducer().invoke();
     }
 
+    /*
+    Return an array of oids collected across all nodes.
+     */
     public int[][] allOids() {
         final int[][] result = new int[nodes.size()][];
         int i = 0;

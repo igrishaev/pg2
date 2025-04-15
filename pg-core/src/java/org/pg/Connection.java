@@ -165,7 +165,13 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    /*
+    Set the types read from Postgres to the current codecParams
+    instance.
+     */
     private void setTypes(final List<PGType> types1) {
+        // if a type is an array, we collect its element OID
+        // into a common set.
         final Set<Integer> oidsElem = new HashSet<>();
         if (types1 != null) {
             for (PGType type: types1) {
@@ -174,7 +180,9 @@ public final class Connection implements AutoCloseable {
                 }
             }
         }
+        // if element OIDs aren't empty, fetch types again
         final List<PGType> types2 = readTypesOids(oidsElem);
+        // now set both chunks of types
         if (types1 != null) {
             for (PGType type: types1) {
                 codecParams.setPgType(type);
@@ -185,9 +193,13 @@ public final class Connection implements AutoCloseable {
                 codecParams.setPgType(type);
             }
         }
+        // handle a map of custom processors
         processTypeMap();
     }
 
+    /*
+    Read types from Postgres by OIDs and install them.
+     */
     private void setTypesByOids(final Set<Integer> oids) {
         final List<PGType> types = readTypesOids(oids);
         setTypes(types);
@@ -216,6 +228,9 @@ public final class Connection implements AutoCloseable {
         return readTypesProcess(query);
     }
 
+    /*
+    Common logic for reading and parsing binary COPY payload.
+     */
     private List<PGType> readTypesProcess(final String query) {
         sendQuery(query);
         flush();
@@ -274,6 +289,13 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    /*
+    Get an OID integer value of a type by its fuzzy name.
+    It could be a number, or string, or a keyword symbol.
+    When not found the first time, triggers reading such
+    a type from Postgres. When not found the second time,
+    throws an exception.
+     */
     public int resolveType(final Object typeHint) {
         try (final TryLock ignored = lock.get()) {
             final String fullName = SQLTool.fullTypeName(typeHint);
