@@ -129,3 +129,62 @@ connUsedSince.put(conn.getId(), System.currentTimeMillis());
         require.invoke(clojure.lang.Symbol.intern("clojure.pprint"));
     }
     public static IFn pp=Clojure.var("clojure.pprint", "pprint");
+
+
+
+(deftest test-client-custom-type-triple
+
+  (let [typename
+        (str "triple_" (System/nanoTime))
+
+        processor
+        (reify org.pg.processor.IProcessor
+          (decodeBin [this bb codecParams]
+            (let [amount
+                  (.getInt bb)
+
+                  oid
+                  (.getInt bb)
+                  len
+                  (.getInt bb)
+                  a
+                  (.getInt bb)
+
+                  oid
+                  (.getInt bb)
+                  len
+                  (.getInt bb)
+                  buf
+                  (byte-array len)
+                  _
+                  (.get bb buf)
+                  b
+                  (new String buf)
+
+                  oid
+                  (.getInt bb)
+                  len
+                  (.getInt bb)
+                  c
+                  (case (int (.get bb))
+                    0 false
+                    1 true)]
+              {:a a :b b :c c}))
+
+          (decodeTxt [this string codecParams]
+            ::fake))]
+
+    (pg/with-connection [conn *CONFIG-BIN*]
+      (pg/execute conn (format "create type %s as (a integer, b text, c boolean)" typename)))
+
+    (pg/with-connection [conn (assoc *CONFIG-BIN*
+                                     :type-map
+                                     {typename processor})]
+      (let [res1
+            (pg/execute conn (format "select '(1,\"hello,world\",true)'::%s as tuple" typename))]
+        (is (= 1
+               res1))))
+
+    )
+
+  )
