@@ -83,9 +83,9 @@ public final class Connection implements AutoCloseable {
         }
         if (sendStartup) {
             conn.authenticate();
-            if (config.readPGTypes()) {
-                conn.reloadTypes();
-            }
+//            if (config.readPGTypes()) {
+//                conn.reloadTypes();
+//            }
         }
         return conn;
     }
@@ -168,11 +168,11 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-    public void reloadTypes() {
-        codecParams.clearTypes();
-        readTypes();
-        processTypeMap();
-    }
+//    public void reloadTypes() {
+//        codecParams.clearTypes();
+//        readTypes();
+//        processTypeMap();
+//    }
 
     private String prepareReadTypesQuery() {
         String query = Const.SQL_COPY_TYPES;
@@ -199,14 +199,104 @@ public final class Connection implements AutoCloseable {
         return "copy (\n" + query + ") to stdout with (format binary)";
     }
 
-    private void readTypes() {
-        final String query = prepareReadTypesQuery();
+    private void setTypes(final List<PGType> types1) {
+        final Set<Integer> oidsElem = new HashSet<>();
+        if (types1 != null) {
+            for (PGType type: types1) {
+                if (type.isArray()) {
+                    oidsElem.add(type.typelem());
+                }
+            }
+        }
+        final List<PGType> types2 = readTypesOids(oidsElem);
+        if (types1 != null) {
+            for (PGType type: types1) {
+                codecParams.setPgType(type);
+            }
+        }
+        if (types2 != null) {
+            for (PGType type: types2) {
+                codecParams.setPgType(type);
+            }
+        }
+    }
+
+    private void setTypesByOids(final Set<Integer> oids) {
+        final List<PGType> types = readTypesOids(oids);
+        setTypes(types);
+    }
+
+    private List<PGType> readTypesOids(final Set<Integer> oids) {
+        if (oids.isEmpty()) {
+            return null;
+        }
+        final String joined = String.join(", ", oids.stream()
+                .map(Object::toString)
+                .toList());
+        final String query = """
+        copy (
+            select
+                pg_type.oid,
+                pg_type.typname,
+                pg_type.typtype,
+                pg_type.typinput::text,
+                pg_type.typoutput::text,
+                pg_type.typreceive::text,
+                pg_type.typsend::text,
+                pg_type.typarray,
+                pg_type.typdelim,
+                pg_type.typelem,
+                pg_namespace.nspname
+            from
+                pg_type
+            join
+                pg_namespace on pg_type.typnamespace = pg_namespace.oid
+            where
+                pg_type.oid in (""" + joined + """
+        )
+        ) to stdout with (format binary)
+        """;
+        return readTypesProcess(query);
+    }
+
+    private List<PGType> readTypesByName(final String schema, final String type) {
+        final String query = """
+        copy (
+            select
+                pg_type.oid,
+                pg_type.typname,
+                pg_type.typtype,
+                pg_type.typinput::text,
+                pg_type.typoutput::text,
+                pg_type.typreceive::text,
+                pg_type.typsend::text,
+                pg_type.typarray,
+                pg_type.typdelim,
+                pg_type.typelem,
+                pg_namespace.nspname
+            from
+                pg_type
+            join
+                pg_namespace on pg_type.typnamespace = pg_namespace.oid
+            where
+                    pg_namespace.nspname = $$""" + schema + """
+        $$
+                and pg_type.typname = $$""" + type + """
+        $$
+        ) to stdout with (format binary)
+        """;
+        return readTypesProcess(query);
+    }
+
+    private List<PGType> readTypesProcess(final String query) {
         sendQuery(query);
         flush();
         IServerMessage msg;
         PGType pgType;
         ByteBuffer bb;
         boolean headerSeen = false;
+        final List<PGType> result = new ArrayList<>();
+        ErrorResponse errorResponse = null;
         while (true) {
             msg = readMessage(false);
             if (Debug.isON) {
@@ -225,8 +315,7 @@ public final class Connection implements AutoCloseable {
                 if (Debug.isON) {
                     Debug.debug(" -> %s\r\n", pgType);
                 }
-                codecParams.setPgType(pgType);
-                // these messages are expected but just skipped
+                result.add(pgType);
             } else if (msg instanceof CopyOutResponse
                     || msg instanceof CopyDone
                     || msg instanceof CommandComplete) {
@@ -235,10 +324,16 @@ public final class Connection implements AutoCloseable {
                 }
             } else if (msg instanceof ReadyForQuery) {
                 break;
+            } else if (msg instanceof ErrorResponse e) {
+                errorResponse = e;
             } else {
                 throw new PGError("Unexpected message in readTypes: %s", msg);
             }
         }
+        if (errorResponse != null) {
+            throw new PGErrorResponse(errorResponse);
+        }
+        return result;
     }
 
     public int resolveType(final Object typeHint) {
@@ -246,7 +341,13 @@ public final class Connection implements AutoCloseable {
             final String fullName = SQLTool.fullTypeName(typeHint);
             Integer oid = codecParams.getOidByType(fullName);
             if (oid == null) {
-                throw new PGError("unsupported postgres type, %s", TypeTool.repr(typeHint));
+                final String[] parts = SQLTool.splitType(typeHint);
+                final List<PGType> types = readTypesByName(parts[0], parts[1]);
+                setTypes(types);
+                oid = codecParams.getOidByType(fullName);
+                if (oid == null) {
+                    throw new PGError("unsupported postgres type, %s", TypeTool.repr(typeHint));
+                }
             }
             return oid;
         }
@@ -584,7 +685,11 @@ public final class Connection implements AutoCloseable {
     public Object query(final String sql, final ExecuteParams executeParams) {
         try (final TryLock ignored = lock.get()) {
             sendQuery(sql);
-            return interact(executeParams, sql).getResult();
+            final Result result = interact(executeParams, sql);
+            final Set<Integer> oidsUnknown = unsupportedOids(result.allOids());
+            setTypesByOids(oidsUnknown);
+            return result.getResult();
+
         }
     }
 
@@ -597,6 +702,26 @@ public final class Connection implements AutoCloseable {
         try (final TryLock ignored = lock.get()) {
             return prepareUnlocked(sql, executeParams);
         }
+    }
+
+    public Set<Integer> unsupportedOids(final int[]... oidsArray) {
+        final Set<Integer> oidsAll = new HashSet<>();
+        for (int[] oids: oidsArray) {
+            if (oids == null) {
+                continue;
+            }
+            for (int oid: oids) {
+                oidsAll.add(oid);
+            }
+        }
+        oidsAll.remove(OID.DEFAULT);
+        final Set<Integer> oidsFetch = new HashSet<>();
+        for (int oid: oidsAll) {
+            if (!codecParams.isKnownOid(oid)) {
+                oidsFetch.add(oid);
+            }
+        }
+        return oidsFetch;
     }
 
     public int[] intOids(final List<Object> oids) {
@@ -624,15 +749,22 @@ public final class Connection implements AutoCloseable {
     ) {
         final String statement = generateStatement();
         final int[] oids = intOids(executeParams.oids());
+        setTypesByOids(unsupportedOids(oids));
         final Parse parse = new Parse(statement, sql, oids);
         sendMessage(parse);
         sendDescribeStatement(statement);
         sendFlush();
         sendSync();
         final Result res = interact(sql);
-        final ParameterDescription paramDesc = res.getParameterDescription();
+        final ParameterDescription parameterDescription = res.getParameterDescription();
         final RowDescription rowDescription = res.getRowDescription();
-        return new PreparedStatement(parse, paramDesc, rowDescription);
+
+        final int[] oidsRD = rowDescription == null ? null : rowDescription.oids();
+        final int[] oidsPD = parameterDescription == null ? null : parameterDescription.oids();
+        final Set<Integer> oidsUnknown = unsupportedOids(oidsRD, oidsPD);
+        setTypesByOids(oidsUnknown);
+
+        return new PreparedStatement(parse, parameterDescription, rowDescription);
     }
 
     private void sendBind (final String portal,
@@ -1257,6 +1389,7 @@ public final class Connection implements AutoCloseable {
     @SuppressWarnings("unused")
     public Object copy (final String sql, final ExecuteParams executeParams) {
         try (final TryLock ignored = lock.get()) {
+            setTypesByOids(unsupportedOids(intOids(executeParams.oids())));
             sendQuery(sql);
             final Result res = interact(executeParams, sql);
             return res.getResult();

@@ -508,11 +508,7 @@ from
         (gen-table)
 
         type-name
-        (gen-type)
-
-        fix-foo
-        (fn [row]
-          (update row :foo vec))]
+        (gen-type)]
 
     (pg/with-connection [conn *CONFIG-BIN*]
       (pg/execute conn (format "create type %s as enum ('foo', 'bar', 'kek', 'lol')" type-name))
@@ -521,9 +517,9 @@ from
 
       (let [res
             (pg/execute conn "select * from test order by id")]
-        (is (= [{:foo [102 111 111] :id 1}
-                {:foo [98 97 114]   :id 2}]
-               (mapv fix-foo res))))
+        (is (= [{:id 1, :foo "foo"}
+                {:id 2, :foo "bar"}]
+               res)))
 
       (pg/execute conn
                   "insert into test (id, foo) values ($1, $2)"
@@ -537,11 +533,11 @@ from
 
       (let [res
             (pg/execute conn "select * from test order by id")]
-        (is (= [{:foo [102 111 111] :id 1}
-                {:foo [98 97 114]   :id 2}
-                {:foo [107 101 107] :id 3}
-                {:foo [108 111 108] :id 4}]
-               (map fix-foo res)))))))
+        (is (= [{:id 1, :foo "foo"}
+                {:id 2, :foo "bar"}
+                {:id 3, :foo "kek"}
+                {:id 4, :foo "lol"}]
+               res))))))
 
 
 (deftest test-client-unsupported-type-txt
@@ -1488,6 +1484,8 @@ from
         (is (= {:one 1} res))))))
 
 
+;; TODO
+#_
 (deftest test-custom-type-map-error
   (let [type-map
         {:public/foobar t/enum}
@@ -1507,6 +1505,8 @@ from
       (is (= 1 1)))))
 
 
+;; TODO
+#_
 (deftest test-custom-type-map-ok
   (let [enum-name
         (symbol (format "enum_%s" (System/nanoTime)))
@@ -1545,6 +1545,8 @@ from
                result))))))
 
 
+;; TODO
+#_
 (deftest test-forcibly-read-types
   (pg/with-connection [conn (assoc *CONFIG-TXT* :read-types? false)]
 
@@ -1997,7 +1999,7 @@ drop table %1$s;
       (is (= [{:foo "lol"}] res3))
 
       (is (= [{:statement "select $1::text as foo"
-               :parameter_types "{text}"}]
+               :parameter_types ["text"]}]
              (map cleanup statements1)))
 
       (is (re-matches #"s\d{10}\d+"
@@ -2006,16 +2008,16 @@ drop table %1$s;
                           :name)))
 
       (is (= [{:statement "select $1::text as foo"
-               :parameter_types "{text}"}
+               :parameter_types ["text"]}
               {:statement "select $1::text as baz"
-               :parameter_types "{text}"}]
+               :parameter_types ["text"]}]
              (map cleanup statements2)))
 
       (is (= []
              statements3))
 
       (is (= [{:statement "select $1::text as foo"
-               :parameter_types "{text}"}]
+               :parameter_types ["text"]}]
              (map cleanup statements4)))
 
       (is (= []

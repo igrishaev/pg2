@@ -651,6 +651,8 @@
 ;; Types
 ;;
 
+;; TODO
+
 (defn oid
   "
   Get an integer OID number of a Postgres type.
@@ -668,7 +670,7 @@
   [^Connection conn type]
   (.resolveType conn type))
 
-
+;; TODO
 (defn reload-types
   "
   Query the pg_type table to fetch general information

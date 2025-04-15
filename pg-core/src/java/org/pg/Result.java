@@ -172,6 +172,17 @@ public final class Result {
         current.acc = executeParams.reducer().invoke();
     }
 
+    public int[][] allOids() {
+        final int[][] result = new int[nodes.size()][];
+        int i = 0;
+        for (Node node: nodes) {
+            result[i++] = node.rowDescription == null
+                    ? null
+                    : node.rowDescription.oids();
+        }
+        return result;
+    }
+
     public void handleCommandComplete (final CommandComplete msg) {
         current.commandComplete = msg;
         addNode();
