@@ -131,7 +131,6 @@ rest have predefined values.
 | `:cancel-timeout-ms`   | integer                 | 5.000              | Default value for the `with-timeout` macro, in ms                                              |
 | `:protocol-version`    | integer                 | 196608             | Postgres protocol version                                                                      |
 | `:object-mapper`       | ObjectMapper            | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section)                |
-| `:read-types?`         | boolean                 | true               | Whether to [read Postgres types](/docs/read-pg-types.md) after connection has been established |
 | `:type-map`            | Map<Object, IProcessor> | null               | A map of [custom type processors](/docs/processors.md)                                         |
 
 ### Parameter notes

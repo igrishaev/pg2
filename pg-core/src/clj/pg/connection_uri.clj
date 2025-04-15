@@ -167,9 +167,6 @@
                 pool-expire-threshold-ms
                 pool-borrow-conn-timeout-ms
 
-                ;; types
-                read-types
-
                 ;; JDBC camelCase options
                 readOnly
                 connectTimeout
@@ -279,8 +276,6 @@
 
      ;; types
      ;; TODO type-map
-     :read-types?
-     (some-> read-types parse-bool)
 
      :pg-params
      (cond-> pg-params

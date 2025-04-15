@@ -26,7 +26,6 @@ public final class Main {
                 .password(user)
                 .binaryEncode(true)
                 .binaryDecode(true)
-                .readPGTypes(true)
 //                .typeMap(Map.of("color", new IProcessor() {
 //                    @Override
 //                    public ByteBuffer encodeBin(Object value, CodecParams codecParams) {
@@ -90,7 +89,7 @@ public final class Main {
 
 //         System.out.println(conn.execute("select '{R,G,B}'::color[] as colors"));
 
-        System.out.println(conn.prepare("select $1 as colors", ExecuteParams.builder()
+        System.out.println(conn.execute("select $1 as colors", ExecuteParams.builder()
                 .oids(List.of("_color"))
                 .params(List.of(PersistentVector.create("R", "G", "B")))
                 .build()));

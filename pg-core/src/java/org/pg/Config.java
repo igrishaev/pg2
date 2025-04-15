@@ -48,8 +48,7 @@ public record Config(
         boolean useUnixSocket,
         String unixSocketPath,
         Executor executor,
-        Map <Object, IProcessor> typeMap,
-        boolean readPGTypes
+        Map <Object, IProcessor> typeMap
 ) {
 
     public ConnType getConnType() {
@@ -103,7 +102,6 @@ public record Config(
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
         private Map<Object, IProcessor> typeMap;
-        private boolean readPGTypes = Const.readPGTypes;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -300,12 +298,6 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
-        public Builder readPGTypes(final boolean readPGTypes) {
-            this.readPGTypes = readPGTypes;
-            return this;
-        }
-
-        @SuppressWarnings("unused")
         public Builder typeMap(final Map<Object, IProcessor> typeMap) {
             this.typeMap = typeMap;
             return this;
@@ -355,8 +347,7 @@ public record Config(
                     this.useUnixSocket,
                     this.unixSocketPath,
                     this.executor,
-                    this.typeMap,
-                    this.readPGTypes
+                    this.typeMap
             );
         }
     }

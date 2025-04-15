@@ -116,8 +116,7 @@
                 pool-borrow-conn-timeout-ms
 
                 ;; types
-                type-map
-                read-types?]}
+                type-map]}
         params
 
         DB
@@ -217,9 +216,6 @@
 
       executor
       (.executor executor)
-
-      (some? read-types?)
-      (.readPGTypes read-types?)
 
       type-map
       (.typeMap type-map)

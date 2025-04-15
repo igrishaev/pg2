@@ -115,7 +115,8 @@ public class CodecParams {
         return this;
     }
 
-    public void clearTypes() {
+    @SuppressWarnings("unused")
+    public void clearTypeCache() {
         oidMap.clear();
         oidCache.clear();
     }

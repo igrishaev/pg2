@@ -83,9 +83,6 @@ public final class Connection implements AutoCloseable {
         }
         if (sendStartup) {
             conn.authenticate();
-//            if (config.readPGTypes()) {
-//                conn.reloadTypes();
-//            }
         }
         return conn;
     }
@@ -168,37 +165,6 @@ public final class Connection implements AutoCloseable {
         }
     }
 
-//    public void reloadTypes() {
-//        codecParams.clearTypes();
-//        readTypes();
-//        processTypeMap();
-//    }
-
-    private String prepareReadTypesQuery() {
-        String query = Const.SQL_COPY_TYPES;
-        if (config.typeMap() != null) {
-            final StringBuilder sb = new StringBuilder();
-            Object key;
-            String schema;
-            String type;
-            String[] parts;
-            sb.append(query);
-            for (Map.Entry<Object, IProcessor> me: config.typeMap().entrySet()) {
-                key = me.getKey();
-                parts = SQLTool.splitType(key);
-                schema = parts[0];
-                type = parts[1];
-                sb.append("    or (typtype = $$");
-                sb.append(schema);
-                sb.append("$$ and nspname = $$");
-                sb.append(type);
-                sb.append("$$)\n");
-            }
-            query = sb.toString();
-        }
-        return "copy (\n" + query + ") to stdout with (format binary)";
-    }
-
     private void setTypes(final List<PGType> types1) {
         final Set<Integer> oidsElem = new HashSet<>();
         if (types1 != null) {
@@ -219,6 +185,7 @@ public final class Connection implements AutoCloseable {
                 codecParams.setPgType(type);
             }
         }
+        processTypeMap();
     }
 
     private void setTypesByOids(final Set<Integer> oids) {
@@ -233,58 +200,19 @@ public final class Connection implements AutoCloseable {
         final String joined = String.join(", ", oids.stream()
                 .map(Object::toString)
                 .toList());
-        final String query = """
-        copy (
-            select
-                pg_type.oid,
-                pg_type.typname,
-                pg_type.typtype,
-                pg_type.typinput::text,
-                pg_type.typoutput::text,
-                pg_type.typreceive::text,
-                pg_type.typsend::text,
-                pg_type.typarray,
-                pg_type.typdelim,
-                pg_type.typelem,
-                pg_namespace.nspname
-            from
-                pg_type
-            join
-                pg_namespace on pg_type.typnamespace = pg_namespace.oid
-            where
-                pg_type.oid in (""" + joined + """
-        )
-        ) to stdout with (format binary)
-        """;
+        final String query = Const.SQL_TYPE_COMMON.replace(
+                Const.SQL_WHERE_TAG,
+                "pg_type.oid in (" + joined + ")"
+        );
         return readTypesProcess(query);
     }
 
     private List<PGType> readTypesByName(final String schema, final String type) {
-        final String query = """
-        copy (
-            select
-                pg_type.oid,
-                pg_type.typname,
-                pg_type.typtype,
-                pg_type.typinput::text,
-                pg_type.typoutput::text,
-                pg_type.typreceive::text,
-                pg_type.typsend::text,
-                pg_type.typarray,
-                pg_type.typdelim,
-                pg_type.typelem,
-                pg_namespace.nspname
-            from
-                pg_type
-            join
-                pg_namespace on pg_type.typnamespace = pg_namespace.oid
-            where
-                    pg_namespace.nspname = $$""" + schema + """
-        $$
-                and pg_type.typname = $$""" + type + """
-        $$
-        ) to stdout with (format binary)
-        """;
+        final String query = Const.SQL_TYPE_COMMON.replace(
+                Const.SQL_WHERE_TAG,
+                "pg_namespace.nspname = $$" + schema
+                        + "$$ and pg_type.typname = $$" + type + "$$"
+        );
         return readTypesProcess(query);
     }
 
@@ -320,7 +248,7 @@ public final class Connection implements AutoCloseable {
                     || msg instanceof CopyDone
                     || msg instanceof CommandComplete) {
                 if (Debug.isON) {
-                    Debug.debug("skipping message: %s", msg);
+                    Debug.debug(" -> skipping message: %s", msg);
                 }
             } else if (msg instanceof ReadyForQuery) {
                 break;
@@ -334,6 +262,16 @@ public final class Connection implements AutoCloseable {
             throw new PGErrorResponse(errorResponse);
         }
         return result;
+    }
+
+    @SuppressWarnings("unused")
+    public void clearTypeCache() {
+        try (TryLock ignored = lock.get()) {
+            codecParams.clearTypeCache();
+            if (Debug.isON) {
+                Debug.debug("type cache has been reset");
+            }
+        }
     }
 
     public int resolveType(final Object typeHint) {

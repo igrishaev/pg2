@@ -69,7 +69,7 @@ tests][tests].
 - Types & Extensions
 - [Geometry (line, box, etc)](/docs/geometry.md)
 - [PGVector Support](/docs/pgvector.md)
-- [Reading Custom Types](/docs/read-pg-types.md)
+- [Reading Postgres Types In Runtime](/docs/read-pg-types.md)
 - [Custom Type Processors](/docs/processors.md)
 - [Working With Rows](/docs/row-map.md)
 - Working with Enums

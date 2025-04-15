@@ -60,31 +60,30 @@ public final class Const {
     public static String TYPE_SIG_HSTORE = "hstore/hstore_in";
     @SuppressWarnings("unused")
     public static String TYPE_SIG_LTREE = "ltree/ltree_in";
-    public static String[] TYPES_TO_READ = new String[]{"vector", "sparsevec"};
-    final static String SQL_COPY_TYPES = """
-    select
-        pg_type.oid,
-        pg_type.typname,
-        pg_type.typtype,
-        pg_type.typinput::text,
-        pg_type.typoutput::text,
-        pg_type.typreceive::text,
-        pg_type.typsend::text,
-        pg_type.typarray,
-        pg_type.typdelim,
-        pg_type.typelem,
-        pg_namespace.nspname
-    from
-        pg_type
-    join
-        pg_namespace on pg_type.typnamespace = pg_namespace.oid
-    where
-           typname in (""" + String.join(", ",
-            Arrays.stream(TYPES_TO_READ)
-                    .map(type -> String.format("$$%s$$", type))
-                    .toList()) + """
-)
-    or typtype = 'e'
-""";
-
+    public static String SQL_WHERE_TAG = "{{ WHERE }}";
+    public static String SQL_TYPE_COMMON = """
+        
+        copy (
+            select
+                pg_type.oid,
+                pg_type.typname,
+                pg_type.typtype,
+                pg_type.typinput::text,
+                pg_type.typoutput::text,
+                pg_type.typreceive::text,
+                pg_type.typsend::text,
+                pg_type.typarray,
+                pg_type.typdelim,
+                pg_type.typelem,
+                pg_namespace.nspname
+            from
+                pg_type
+            join
+                pg_namespace on pg_type.typnamespace = pg_namespace.oid
+            where
+               \s""" + SQL_WHERE_TAG + """
+        
+        ) to stdout
+            with (format binary)
+        """;
 }

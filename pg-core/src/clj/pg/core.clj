@@ -651,8 +651,6 @@
 ;; Types
 ;;
 
-;; TODO
-
 (defn oid
   "
   Get an integer OID number of a Postgres type.
@@ -670,17 +668,13 @@
   [^Connection conn type]
   (.resolveType conn type))
 
-;; TODO
-(defn reload-types
+
+(defn clear-type-cache
   "
-  Query the pg_type table to fetch general information
-  about non-built-in types, e.g. user-defined enums,
-  extensions like pg_vector, hstore, etc. The information
-  is stored in internals maps and used for encoding
-  and decoding data. Clears inner caches before reading.
+  Drop internal caches related to Postgres types.
   "
   [^Connection conn]
-  (.reloadTypes conn))
+  (.clearTypeCache conn))
 
 
 ;;

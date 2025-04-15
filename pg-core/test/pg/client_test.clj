@@ -1484,29 +1484,29 @@ from
         (is (= {:one 1} res))))))
 
 
-;; TODO
-#_
 (deftest test-custom-type-map-error
   (let [type-map
         {:public/foobar t/enum}
 
         config
-        (assoc *CONFIG-TXT* :type-map type-map)]
+        (assoc *CONFIG-TXT* :type-map type-map)
 
-    (try
-      (pg/with-connection [conn config])
-      (is false)
-      (catch PGError e
-        (is (= "unknown postgres type: public.foobar"
-               (ex-message e)))))
+        enum-name
+        (symbol (format "enum_%s" (System/nanoTime)))]
 
-    ;; without reading types, it's ok
-    (pg/with-connection [conn (assoc config :read-types? false)]
-      (is (= 1 1)))))
+    (pg/with-connection [conn config]
+      (try
+        (pg/query conn "select")
+        (is false)
+        (catch PGError e
+          (is (= "unknown postgres type: public.foobar"
+                 (ex-message e))))))
+
+    (testing "withoug making queries, it's file"
+      (pg/with-connection [conn config]
+        (is true)))))
 
 
-;; TODO
-#_
 (deftest test-custom-type-map-ok
   (let [enum-name
         (symbol (format "enum_%s" (System/nanoTime)))
@@ -1528,6 +1528,13 @@ from
       (let [result
             (pg/query conn (format "select 'foo'::%s as custom" enum-name))]
         (is (= [{:custom ::fake}]
+               result)))
+
+      (pg/clear-type-cache conn)
+
+      (let [result
+            (pg/query conn (format "select 'foo'::%s as custom" enum-name))]
+        (is (= [{:custom ::fake}]
                result))))))
 
 
@@ -1543,20 +1550,6 @@ from
             (pg/query conn (format "select '{foo,bar,baz}'::%s[] as arr" enum-name))]
         (is (= [{:arr ["foo" "bar" "baz"]}]
                result))))))
-
-
-;; TODO
-#_
-(deftest test-forcibly-read-types
-  (pg/with-connection [conn (assoc *CONFIG-TXT* :read-types? false)]
-
-    (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
-      (is (= [{:v "[1,2,3]"}] res)))
-
-    (pg/reload-types conn)
-
-    (let [res (pg/query conn "select '[1,2,3]'::vector(3) as v")]
-      (is (= [{:v [1.0 2.0 3.0]}] res)))))
 
 
 (deftest test-statement-params-wrong-count
