@@ -36,7 +36,7 @@ It **supports java.time.** classes. The ordinary JDBC clients still use
 `Timestamp` class for dates, which is horrible. In PG2, all the `java.time.*`
 classes are supported for reading and writing.
 
-...And plenty of other features.
+And plenty of other features.
 
 ## Documentation
 
@@ -68,7 +68,7 @@ tests][tests].
 - [Migrations](/docs/migrations.md)
 - [Unix Domain Sockets](/docs/unix-socket.md)
 - Common Execute Parameters
-- Type Hints (OIDs)
+- [Type Hints (OIDs)](/docs/oids-hints.md)
 - [Type Mapping](/docs/type-mapping.md)
 - [Geometry (line, box, etc)](/docs/geometry.md)
 - [PGVector Support](/docs/pgvector.md)
