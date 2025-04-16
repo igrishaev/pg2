@@ -1,12 +1,11 @@
-TODO
-
 # PGVector Support
 
 [pgvector]: https://github.com/pgvector/pgvector
 
 Pgvector is a [well known extension][pgvector] for PostgreSQL. It provides a
-fast and robust vector type which is quite useful for heavy
-computations. Pgvector also provides a sparse version of a vector to save space.
+fast and robust `vector` type which is quite useful for heavy
+computations. Pgvector also provides a sparse version of a vector to save disk
+space.
 
 This section covers how to use types provided by the extension with PG2.
 
@@ -23,31 +22,10 @@ have it installed, try a simple table with the `vector` column:
 
 (pg/execute conn "insert into test values (1, '[1,2,3]')")
 (pg/execute conn "insert into test values (2, '[1,2,3,4,5]')")
-
-(pg/execute conn "select * from test order by id")
-
-;; [{:id 1, :items "[1,2,3]"} {:id 2, :items "[1,2,3,4,5]"}]
 ~~~
 
-It works, but we got the result unparsed: the `:items` field in each row is a
-string. This is because, to take a custom type into account when encoding and
-decoding data, you need to specify something. Namely, pass the `:with-pgvector?`
-flag to the config map as follows:
-
-~~~clojure
-(def config
-  {:host "127.0.0.1"
-   :port 5432
-   :user "test"
-   :password "test"
-   :database "test"
-   :with-pgvector? true})
-
-(def conn
-  (pg/connect config))
-~~~
-
-Now the strings are parsed into a Clojure vector of `double` values:
+Now select from this table, and there will be Clojure vectors of `double`
+values:
 
 ~~~clojure
 (pg/execute conn "select * from test order by id")
@@ -59,7 +37,8 @@ Now the strings are parsed into a Clojure vector of `double` values:
 To insert a vector, pass it as a Clojure vector as well:
 
 ~~~clojure
-(pg/execute conn "insert into test values ($1, $2)"
+(pg/execute conn
+            "insert into test values ($1, $2)"
             {:params [3 [1 2 3 4 5]]})
 ~~~
 
@@ -204,66 +183,3 @@ create table ... (id int, items sparsevec(5))
 ~~~
 
 The `sparsevec` type supports both binary and text Postgres wire protocol.
-
-## Custom Schemas
-
-The text above assumes you have the `pgvector` extension installed globally
-meaning it is hosted in the `public` schema. Sometimes though, extensions are
-setup per schema. For example only a schema named `sales` has access to the
-`pgvector` extension but nobody else.
-
-If it's your case and you installed `pgvector` into a certain schema, the
-standard `:with-pgvector?` flag won't work. By default, PG2 scans the `pg_types`
-table for the `public.vector` and `public.sparsevec` types. Since the schema
-name is not `public` but `sales`, you need to specify it by passing a special
-option called `:type-map`. It's a map where keys are fully qualified type names
-(either a keyword or a string), and values are predefined instances of the
-`IProcessor` interface:
-
-~~~clojure
-(def config
-  {:host "127.0.0.1"
-   :port 5432
-   :user "test"
-   :password "test"
-   :database "test"
-   :type-map {"sales.vector" t/vector
-              "sales.sparsevec" t/sparsevec}})
-~~~
-
-You can rely on keywords as well:
-
-~~~clojure
-(def config
-  {:host "127.0.0.1"
-   :port 5432
-   :user "test"
-   :password "test"
-   :database "test"
-   :type-map {:sales/vector t/vector
-              :sales/sparsevec t/sparsevec}})
-~~~
-
-The `t` alias references the `pg.type` namespace.
-
-Now if you install the extension into the `statistics` schema as well, add it
-into the map:
-
-~~~clojure
-(def config
-  {:host "127.0.0.1"
-   :port 5432
-   :user "test"
-   :password "test"
-   :database "test"
-   :type-map {:sales/vector t/vector
-              :sales/sparsevec t/sparsevec
-              :statistics/vector t/vector
-              :statistics/sparsevec t/sparsevec}})
-~~~
-
-Should you make a mistake in a fully qualified type name, it will be ignored,
-and you'll get value from the database unparsed. The actual value depends on the
-binary encoding and decoding options of a connection. By default, it uses text
-protocol so you'll get a string like "[1, 2, 3]". For binary encoding and
-decoding, you'll get a byte array that holds raw Postgres payload.
