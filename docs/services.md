@@ -3,7 +3,7 @@
 This section brings real configuration samples for various services. Everyone is
 welcome to share their settings for AWS, Azure, etc.
 
-## AWS RDS
+## AWS RDS (Postgres Native)
 
 When reaching an RDS database from an internal resource (EC2, Lambda, etc),
 there is no need to specify SSL. But if you want to reach the database from the
@@ -35,6 +35,12 @@ Now that you have done it, connect to the database as follows:
 ~~~
 
 When reaching the database from EC2 or Lambda, you can skip the `:ssl?` flag.
+
+## AWS Aurora (Postgres compatible)
+
+The same as above. Make you database publicly available and setup a
+corresponding security group to allow incoming TCP traffic on port 5432. The
+config map is similar to shown above.
 
 [neon.tech]: https://neon.tech/
 
