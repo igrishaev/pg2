@@ -17,12 +17,11 @@
 - ?
 - ?
 
-## 0.1.37-SNAPSHOT
+## 0.1.37
 
 - read Postgres types on startup
 - fix redundant .oid in config
 - type-map support removed
-- ?
 
 ## 0.1.36
 
