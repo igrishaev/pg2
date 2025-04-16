@@ -1,9 +1,8 @@
 
 - read-all-types-3
-  - add new page
-  - doc processors: another example (not vector? enum?)
-  - oids and hints
-  - read types default = false?
+  - doc: oids
+  - remove doc: processors
+  - remove type-map
 
 - maybe exted multi-methods in Java?
 
