@@ -1,6 +1,6 @@
 # Type Mapping
 
-PG2 provides the following type bridge between Postgres and Java/Clojure.
+PG2 provides the following bridge between Postgres and Clojure realms.
 
 ## Builtin Types
 
@@ -71,12 +71,12 @@ For details, read the [Arrays Support](/docs/arrays.md) section.
 
 The table below renders **only a small subset** of supported arrays:
 
-| Postgres     | Reading                  | Writing                  |
-|--------------|--------------------------|--------------------------|
-| _int2        | Vector of short          | List of short/int/double |
-| _uuid        | Vector of UUID           | List of UUID             |
-| _timestamptz | Vector of OffsetDateTime | List of OffsetDateTime   |
-| ...          |                          |                          |
+| Postgres           | Reading                  | Writing                  |
+|--------------------|--------------------------|--------------------------|
+| _int2              | Vector of short          | List of short/int/double |
+| _uuid              | Vector of UUID           | List of UUID             |
+| _timestamptz       | Vector of OffsetDateTime | List of OffsetDateTime   |
+| ... (many of them) |                          |                          |
 
 ## Extensions
 
@@ -92,7 +92,7 @@ See [PGVector Support](/docs/pgvector.md).
 ## Enums
 
 In Postgres, any enum type created in runtime gets its own id. That causes some
-problmes becase, although it's nothing but text, its id differs from the
+problems because, although it's nothing but text, its id differs from the
 standard `text` type.
 
 Each enum creates two types, in fact. The first one is an enum itself, and the
