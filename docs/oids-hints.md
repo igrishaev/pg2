@@ -21,8 +21,8 @@ it: hey, this parameter must be this but not that. It could be done either on
 SQL level by adding an explicit type cast: `... $1::int`. Another option is to
 pass a list of OIDs.
 
-For built-in types, use constants from the `pg.oid` namespace. These constants
-are taken from Postgres source code:
+For built-in types, use constants declared in the `pg.oid` namespace. These are
+taken from Postgres source code:
 
 ~~~clojure
 (ns pg.oid
@@ -36,8 +36,8 @@ are taken from Postgres source code:
 ...
 ~~~
 
-But if you want to reference a type from an extension or an enum, you cannot
-know its OID. Thus, specify either a string or a `clojure.lang.Named` instance
+But if you want to reference a type from an extension or which is a enum, you
+don't know its OID. Specify either a string or a `clojure.lang.Named` instance
 (either a keyword or a symbol):
 
 ~~~clojure
@@ -48,7 +48,7 @@ know its OID. Thus, specify either a string or a `clojure.lang.Named` instance
 
 Above, both type hints are specified without a schema. The default schema is
 "public". Under the hood, they are transferred into "public.vector". To specify
-a schema explicitly, for string, use a dot notation. For a keyword, provide a
+a schema explicitly, use a dot notation for a string. For a keyword, provide a
 namespace:
 
 ~~~clojure
@@ -99,7 +99,7 @@ Another way to reference a non-standard type is to fetch its OID using the
 You can save this OID into a local variable and pass it into the `:oids` list.
 
 The following example shows how to `COPY` rows where one of the columns is of
-the `vector` type:
+the `vector` type (see the [PGVector Support](/docs/pgvector.md) section):
 
 ~~~clojure
 (pg/query conn "create temp table foo (id int, v vector)")
@@ -117,13 +117,14 @@ the `vector` type:
                    {:oids [0, oid-vector]}))
 ~~~
 
-This exact case would work without passing `:oids` explicitly because by
-default, PG2 doesn't know that vectors `[1 2 3]` and `[4 5 6]` should be encoded
-as vectors from the `pg_vector` extension. But with an explicit oid, it does.
+This exact case would not work without passing `:oids` explicitly. By default,
+PG2 doesn't know that vectors `[1 2 3]` and `[4 5 6]` should be encoded as
+`vector` values from the `pg_vector` extension. But with an explicit oid, it
+does.
 
 OID values like 0, null, and `pg.oid/default` serve like placeholders and are
 skipped. Above, there is no need to specify a type hint for the `id` column as
-Postgres can figure it out. Thus, it's just 0.
+Postgres has no problems with it. Thus, it's just 0.
 
 Explicit OIDs are rarely used; most likely you will never need them. But
-sometimes they might help a lot.
+sometimes they help a lot.
