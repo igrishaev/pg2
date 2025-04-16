@@ -25,6 +25,9 @@ It **supports JSON** out from the box: There is no need to extend any protocols
 and so on. Read and write json(b) with ease as Clojure data! Also, JSON reading
 and writing as *really fast*, again: 2-3 times faster than in Next.JDBC.
 
+It **supports pg_vector** and some other useful extension out from the box. No
+need to install plugins, or extend multimethods, and so on.
+
 It **supports COPY operations**: you can easily COPY OUT a table into a
 stream. You can COPY IN a set of rows without CSV-encoding them because it's
 held by the library. It also supports binary COPY format, which is faster.
@@ -66,7 +69,7 @@ tests][tests].
 - [Unix Domain Sockets](/docs/unix-socket.md)
 - Common Execute Parameters
 - Type Hints (OIDs)
-- Types & Extensions
+- [Type Mapping](/docs/type-mapping.md)
 - [Geometry (line, box, etc)](/docs/geometry.md)
 - [PGVector Support](/docs/pgvector.md)
 - [Reading Postgres Types In Runtime](/docs/read-pg-types.md)
@@ -79,7 +82,6 @@ tests][tests].
 - COPY FROM/TO
 - [SSL Setup](/docs/ssl.md)
 - [Services Tested With](/docs/services.md)
-- Type Mapping
 - [Listen & Notify](/docs/listen-notify.md)
 - Notices
 - Logging

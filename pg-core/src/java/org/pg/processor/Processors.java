@@ -38,8 +38,8 @@ public class Processors {
         oidMap.put(OID.TEXT, new Text(OID.TEXT));
         oidMap.put(OID.NAME, new Text(OID.NAME));
         oidMap.put(OID.BPCHAR, new Text(OID.BPCHAR));
-        oidMap.put(OID.CHAR, new Char());
         oidMap.put(OID.REGPROC, new Text(OID.REGPROC));
+        oidMap.put(OID.CHAR, new Char());
 
         // geometry
         oidMap.put(OID.POINT, new Point());
@@ -56,6 +56,7 @@ public class Processors {
         oidMap.put(OID.JSONB, new Jsonb());
         oidMap.put(OID.BYTEA, new Bytea());
         oidMap.put(OID.BOOL, new Bool());
+        oidMap.put(OID.BIT, new Bit());
 
         // date & time
         oidMap.put(OID.TIMESTAMPTZ, new Timestamptz());
@@ -63,9 +64,6 @@ public class Processors {
         oidMap.put(OID.DATE, new Date());
         oidMap.put(OID.TIME, new Time());
         oidMap.put(OID.TIMETZ, new Timetz());
-
-        // misc
-        oidMap.put(OID.BIT, new Bit());
 
         // arrays
         oidMap.put(OID._INT2, new Array(OID._INT2, OID.INT2));
