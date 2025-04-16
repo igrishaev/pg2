@@ -113,10 +113,7 @@
                 pool-min-size
                 pool-max-size
                 pool-expire-threshold-ms
-                pool-borrow-conn-timeout-ms
-
-                ;; types
-                type-map]}
+                pool-borrow-conn-timeout-ms]}
         params
 
         DB
@@ -216,9 +213,6 @@
 
       executor
       (.executor executor)
-
-      type-map
-      (.typeMap type-map)
 
       :finally
       (.build))))

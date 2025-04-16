@@ -1484,60 +1484,6 @@ from
         (is (= {:one 1} res))))))
 
 
-(deftest test-custom-type-map-error
-  (let [type-map
-        {:public/foobar t/enum}
-
-        config
-        (assoc *CONFIG-TXT* :type-map type-map)
-
-        enum-name
-        (symbol (format "enum_%s" (System/nanoTime)))]
-
-    (pg/with-connection [conn config]
-      (try
-        (pg/query conn "select")
-        (is false)
-        (catch PGError e
-          (is (= "unknown postgres type: public.foobar"
-                 (ex-message e))))))
-
-    (testing "withoug making queries, it's file"
-      (pg/with-connection [conn config]
-        (is true)))))
-
-
-(deftest test-custom-type-map-ok
-  (let [enum-name
-        (symbol (format "enum_%s" (System/nanoTime)))
-
-        processor
-        (reify org.pg.processor.IProcessor
-          (decodeBin [this bb codecParams]
-            ::fake)
-          (decodeTxt [this string codecParams]
-            ::fake))
-
-        type-map
-        {enum-name processor}]
-
-    (pg/with-connection [conn *CONFIG-TXT*]
-      (pg/query conn (format "create type %s as enum ('foo', 'bar', 'baz')" enum-name)))
-
-    (pg/with-connection [conn (assoc *CONFIG-TXT* :type-map type-map)]
-      (let [result
-            (pg/query conn (format "select 'foo'::%s as custom" enum-name))]
-        (is (= [{:custom ::fake}]
-               result)))
-
-      (pg/clear-type-cache conn)
-
-      (let [result
-            (pg/query conn (format "select 'foo'::%s as custom" enum-name))]
-        (is (= [{:custom ::fake}]
-               result))))))
-
-
 (deftest test-custom-enum-array
   (let [enum-name
         (symbol (format "enum_%s" (System/nanoTime)))]

@@ -1,8 +1,6 @@
 
 - read-all-types-3
   - doc: oids
-  - remove doc: processors
-  - remove type-map
 
 - maybe exted multi-methods in Java?
 

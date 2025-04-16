@@ -274,9 +274,6 @@
      :pool-min-size
      (some-> pool-min-size parse-long)
 
-     ;; types
-     ;; TODO type-map
-
      :pg-params
      (cond-> pg-params
        ApplicationName

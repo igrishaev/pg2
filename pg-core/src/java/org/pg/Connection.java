@@ -158,13 +158,6 @@ public final class Connection implements AutoCloseable {
         connectStreams();
     }
 
-    private void processTypeMap() {
-        final Map<Object, IProcessor> typeMap = config.typeMap();
-        if (typeMap != null) {
-            codecParams.processTypeMap(typeMap);
-        }
-    }
-
     /*
     Set the types read from Postgres to the current codecParams
     instance.
@@ -193,8 +186,6 @@ public final class Connection implements AutoCloseable {
                 codecParams.setPgType(type);
             }
         }
-        // handle a map of custom processors
-        processTypeMap();
     }
 
     /*
