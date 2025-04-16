@@ -1,4 +1,4 @@
-(defproject _ "0.1.37"
+(defproject _ "0.1.38-SNAPSHOT"
 
   :url
   "https://github.com/igrishaev/pg2"
