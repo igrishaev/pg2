@@ -157,6 +157,8 @@ public class CodecParams {
             oidMap.put(oid, Processors.vector);
         } else if (signature.equals(Const.TYPE_SIG_SPARSEVEC)) {
             oidMap.put(oid, Processors.sparsevec);
+        } else if (signature.equals(Const.TYPE_SIG_HSTORE)) {
+            oidMap.put(oid, Processors.hstore);
         } else if (pgType.isArray()) {
             oidMap.put(oid, new Array(oid, pgType.typelem()));
         } else {

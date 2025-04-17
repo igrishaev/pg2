@@ -1,6 +1,7 @@
 package org.pg;
 
 import clojure.lang.PersistentHashMap;
+import clojure.lang.PersistentVector;
 import clojure.lang.RT;
 import org.pg.codec.CodecParams;
 import org.pg.processor.IProcessor;
@@ -24,29 +25,8 @@ public final class Main {
                 .port(10150)
                 .host("127.0.0.1")
                 .password(user)
-                .binaryEncode(false)
-                .binaryDecode(false)
-                .readPGTypes(true)
-                .build();
-//                    public ByteBuffer encodeBin(Object value, CodecParams codecParams) {
-//                        return null;
-//                    }
-//
-//                    @Override
-//                    public String encodeTxt(Object value, CodecParams codecParams) {
-//                        return "";
-//                    }
-//
-//                    @Override
-//                    public Object decodeBin(ByteBuffer bb, CodecParams codecParams) {
-//                        return "decodeBin";
-//                    }
-//
-//                    @Override
-//                    public Object decodeTxt(String text, CodecParams codecParams) {
-//                        return "decodeTxt";
-//                    }
-//                }))
+                .binaryEncode(true)
+                .binaryDecode(true)
                 .build();
 
 //        Config config = Config.builder("test_owner", "test")

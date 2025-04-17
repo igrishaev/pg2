@@ -15,8 +15,6 @@ public class Processors {
     public static IProcessor sparsevec = new Sparsevec();
     public static IProcessor hstore = new Hstore();
 
-
-        customMap.put("hstore/hstore_in", hstore);
     private static final Map<Integer, IProcessor> oidMap = new HashMap<>();
     static {
 
