@@ -55,11 +55,11 @@ public class Hstore extends AProcessor {
             val = castVal(me.getValue());
             if (val == null) {
                 dos.writeInt(-1);
-                continue;
+            } else {
+                buf = val.getBytes(charset);
+                dos.writeInt(buf.length);
+                dos.write(buf);
             }
-            buf = val.getBytes(charset);
-            dos.writeInt(buf.length);
-            dos.write(buf);
         }
         dos.close();
         baos.close();
@@ -82,7 +82,7 @@ public class Hstore extends AProcessor {
     @Override
     public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
         final int total = bb.getInt();
-        ITransientMap result = PersistentHashMap.EMPTY.asTransient();
+        ITransientMap result = org.pg.type.Hstore.EMPTY.asTransient();
         String key;
         String val;
         int len;

@@ -59,7 +59,11 @@ public final class Main {
 //        }
 
 //        System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
-        System.out.println(conn.execute("select $1::hstore as hs;", ExecuteParams.builder().params(List.of(PersistentHashMap.create("abc", 42, null, null))).build()));
+        System.out.println(conn.execute(
+                "select $1::hstore as hs;",
+                ExecuteParams.builder()
+                        .params(List.of(PersistentHashMap.create("abc", 42, null, null, "test", true)))
+                        .build()));
 //        System.out.println(conn.execute("select '12:01:59.123456789+03'::timetz as timetz"));
 //        final Object map = RT.first(conn.execute("select 1 a, 2 b, 3 c, 4 d, 5 e, 6 f, 7 g, 8 h, 9 i, 10 j, 11 k, 12 l, 13 m, 14 n, 15 o, 16 p"));
 //        System.out.println(RT.seq(map));
@@ -72,10 +76,10 @@ public final class Main {
 
 //         System.out.println(conn.execute("select '{R,G,B}'::color[] as colors"));
 
-        System.out.println(conn.execute("select $1 as colors", ExecuteParams.builder()
-                .oids(List.of("_color"))
-                .params(List.of(PersistentVector.create("R", "G", "B")))
-                .build()));
+//        System.out.println(conn.execute("select $1 as colors", ExecuteParams.builder()
+//                .oids(List.of("_color"))
+//                .params(List.of(PersistentVector.create("R", "G", "B")))
+//                .build()));
 //        System.out.println(conn.query("select 'R'::color as color"));
 
 

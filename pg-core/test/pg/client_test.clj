@@ -4710,13 +4710,7 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (pg/query tx "select 1 as num"))))
 
 
-
-;;
-;; Future tests
-;;
-
-
-(deftest test-hstore-bin
+(deftest test-hstore-bin-ok
   (pg/with-conn [conn *CONFIG-BIN*]
 
     (let [res
@@ -4726,15 +4720,31 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
     (pg/execute conn "create temp table test (id int, hs hstore)")
 
-    ;; empty key
-    ;; empty val
-    ;; null key
-    ;; null val
-    ;; key: num bool symbol string keyword
-    ;; val: num bool symbol string keyword
-    ;; key: line breaks
-    ;; val: line breaks
-    ;; copy in hstore
+    (doseq [[hs-in hs-out]
+
+            [[{} {}]
+             [nil nil]
+
+             [{nil 1 "" 2 "test" 3}
+              {(keyword "") "1", :test "3"}]
+
+             [{"foo" nil "bar" "" :baz 3}
+              {:baz "3", :bar "", :foo nil}]
+
+             [{1 "test" 'hey 2 :foo :bar}
+              {:1 "test" :hey "2" :foo "bar"}]
+
+             [{:foo true :bar 'test :test/baz :lol/kek false "test"}
+              {:foo "true" :bar "test" :test/baz "lol/kek" :false "test"}]
+
+             [{(keyword "abc\r\ndef") "foo\r\nbar"}
+              {(keyword "abc\r\ndef") "foo\r\nbar"}]]]
+
+      (let [result
+            (pg/execute conn
+                        "select $1 as hs"
+                        {:first? true :params [hs-in] :oids [:hstore]})]
+        (is (= {:hs hs-out} result))))
 
     (pg/execute conn
                 "insert into test (id, hs) values ($1, $2), ($3, $4)"
@@ -4765,30 +4775,78 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= [{:hs {(keyword weird) "val"}}] res2)))))
 
 
-(deftest test-hstore-txt
-  (pg/with-conn [conn (assoc *CONFIG-TXT*
-                             :binary-encode? true
-                             :binary-decode? false)]
+(deftest test-hstore-txt-ok
+  (pg/with-conn [conn *CONFIG-TXT*]
+
+    (let [res
+          (pg/execute conn "select 'foo=>test,ab=>null,c=>42'::hstore as hs;")]
+      (is (= [{:hs {:c "42" :foo "test" :ab nil}}]
+             res)))
+
+    (pg/execute conn "create temp table test (id int, hs hstore)")
+
+    (doseq [[hs-in hs-out]
+
+            [[{} {}]
+             [nil nil]
+
+             [{nil 1 "" 2 "test" 3}
+              {(keyword "") "1", :test "3"}]
+
+             [{"foo" nil "bar" "" :baz 3}
+              {:baz "3", :bar "", :foo nil}]
+
+             [{1 "test" 'hey 2 :foo :bar}
+              {:1 "test" :hey "2" :foo "bar"}]
+
+             [{:foo true :bar 'test :test/baz :lol/kek false "test"}
+              {:foo "true" :bar "test" :test/baz "lol/kek" :false "test"}]
+
+             [{(keyword "abc\r\ndef") "foo\r\nbar"}
+              {(keyword "abc\r\ndef") "foo\r\nbar"}]]]
+
+      (testing (format "case: %s" hs-in)
+        (let [result
+              (pg/execute conn
+                          "select $1 as hs"
+                          {:first? true :params [hs-in] :oids [:hstore]})]
+          (is (= {:hs hs-out} result)))))
+
+    (pg/execute conn
+                "insert into test (id, hs) values ($1, $2), ($3, $4)"
+                {:params [1 {:foo 1 :bar 2 :test "3"}
+                          2 {"a" nil "c" "test"}]})
+
+    (let [res
+          (pg/execute conn "select * from test order by id")]
+
+      (is (= [{:id 1, :hs {:bar "2", :foo "1", :test "3"}}
+              {:id 2, :hs {:c "test", :a nil}}]
+             res)))
 
     (let [weird
-          "foo'''b'ar\r  \n\f\t\bsdf-\\-NULL~!@#$%^&*()\"sdf\"\""
+          "foo'''b'ar\r\n\f\t\bsdf--NULL~!@#$%^&*()\"sdf\"\""
 
           res1
           (pg/execute conn
                       "select $1::hstore as hs"
-                      {:params [{:key weird}]
-                       :first? true})]
+                      {:params [{:key weird}]})
 
-      (is (= 1
-             res1))
+          res2
+          (pg/execute conn
+                      "select $1::hstore as hs"
+                      {:params [{weird :val}]})]
 
-      )
-
-))
-
-
+      (is (= [{:hs {:key weird}}] res1))
+      (is (= [{:hs {(keyword weird) "val"}}] res2)))))
 
 
+;; hstore copy
+
+
+;;
+;; Future tests
+;;
 
 #_
 (deftest test-gis-geometry-txt
