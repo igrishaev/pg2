@@ -82,7 +82,7 @@ public class Hstore extends AProcessor {
     @Override
     public Object decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
         final int total = bb.getInt();
-        ITransientMap result = org.pg.type.Hstore.EMPTY.asTransient();
+        ITransientMap result = PersistentHashMap.EMPTY.asTransient();
         String key;
         String val;
         int len;
@@ -166,6 +166,9 @@ public class Hstore extends AProcessor {
             final int start = off;
             char c;
             while (true) {
+                if (!hasMore()) {
+                    break;
+                }
                 c = read();
                 if (c == ' ' || c == ',' || c == '=' || c == '>') {
                     unread();
@@ -197,7 +200,11 @@ public class Hstore extends AProcessor {
             p.readExact('=');
             p.readExact('>');
             p.ws();
-            val = p.readString();
+            if (p.hasMore()) {
+                val = p.readString();
+            } else {
+                val = null;
+            }
             p.ws();
             result = result.assoc(Keyword.intern(key), val);
             if (p.hasMore()) {
@@ -252,6 +259,24 @@ public class Hstore extends AProcessor {
         } else {
             return txtEncodingError(x);
         }
+    }
+
+    public static void main(final String... args) {
+        System.out.println(
+                Processors.hstore.decodeTxt(
+                        "\"bar\"=>\"\",\"baz\"=>\"3\",\"foo\"=>",
+                        new CodecParams()
+                )
+        );
+        System.out.println(
+        Processors.hstore.encodeTxt(PersistentHashMap.create(
+                "foo", null,
+                "bar", "",
+                Keyword.intern("baz"), 3
+        ),
+                new CodecParams())
+        );
+
     }
 
 }

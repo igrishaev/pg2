@@ -4786,14 +4786,13 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
     (pg/execute conn "create temp table test (id int, hs hstore)")
 
     (doseq [[hs-in hs-out]
-
             [[{} {}]
              [nil nil]
 
              [{nil 1 "" 2 "test" 3}
               {(keyword "") "1", :test "3"}]
 
-             [{"foo" nil "bar" "" :baz 3} ;;
+             [{"foo" nil "bar" "" :baz 3}
               {:baz "3", :bar "", :foo nil}]
 
              [{1 "test" 'hey 2 :foo :bar}
@@ -4806,34 +4805,17 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
               {(keyword "abc\r\ndef") "foo\r\nbar"}]]]
 
       (testing (format "case: %s" hs-in)
-        (let [_
-
+        (let [result
               (pg/execute conn
-                          "insert into test (hs) values ($1)"
-                          {:params [hs-in]})
-
-              res
-              (pg/query conn "select hs::text from test")
-
-
-              #_
-              (pg/execute conn
-                          "select (cast ($1::hstore) as text) as hs"
+                          "select $1 as hs"
                           {:first? true :params [hs-in] :oids [:hstore]})]
-
-          (is (= 1 res))
-
-
-          #_
           (is (= {:hs hs-out} result)))))
 
-    #_
     (pg/execute conn
                 "insert into test (id, hs) values ($1, $2), ($3, $4)"
                 {:params [1 {:foo 1 :bar 2 :test "3"}
                           2 {"a" nil "c" "test"}]})
 
-    #_
     (let [res
           (pg/execute conn "select * from test order by id")]
 
@@ -4841,7 +4823,6 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
               {:id 2, :hs {:c "test", :a nil}}]
              res)))
 
-    #_
     (let [weird
           "foo'''b'ar\r\n\f\t\bsdf--NULL~!@#$%^&*()\"sdf\"\""
 
