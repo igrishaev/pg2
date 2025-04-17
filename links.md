@@ -27,3 +27,6 @@ https://pgconf.ru/en/talk/1588274
 
 ## 53.64. pg_type
 https://postgrespro.ru/docs/postgresql/15/catalog-pg-type
+
+## Contrib modules
+https://postgrespro.ru/docs/postgresql/15/contrib
