@@ -1,6 +1,6 @@
 # Hstore Support
 
-[hstore]: https://postgrespro.com/docs/postgresql/15/hstore
+[hstore]: https://www.postgresql.org/docs/current/hstore.html
 
 PG2 supports the official "hstore" extension which Postgres ships out from the
 box. The type `hstore` provides a set of text key/value pairs, for example:
@@ -83,3 +83,5 @@ Rules for values:
   to keywords back;
 - nil is written as a `NULL` literal;
 - anything else is transformed to a string.
+
+For details, read the official [hstore documentation][hstore].

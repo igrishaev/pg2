@@ -97,6 +97,14 @@ See [Hstore Support](/docs/hstore.md).
 |----------|-------------|-------------|
 | hstore   | Clojure map | Clojure map |
 
+### CIText
+
+See - [CI (Case Insensitive) Text Support](/docs/citext.md).
+
+| Postgres | Reading | Writing |
+|----------|---------|---------|
+| citext   | String  | String  |
+
 ## Enums
 
 In Postgres, any enum type created in runtime gets its own id. That causes some

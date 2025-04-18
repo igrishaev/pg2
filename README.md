@@ -73,6 +73,7 @@ tests][tests].
 - [Geometry (line, box, etc)](/docs/geometry.md)
 - [PGVector Support](/docs/pgvector.md)
 - [Hstore Support](/docs/hstore.md)
+- [CI (Case Insensitive) Text Support](/docs/citext.md)
 - [Reading Types In Runtime](/docs/read-pg-types.md)
 - [Working With Rows](/docs/row-map.md)
 - Working with Enums
