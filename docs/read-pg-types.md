@@ -49,10 +49,9 @@ copy (
     with (format binary)
 ~~~
 
-Then, having all the information about an unknown type, it tries to find a guess
-a processor for this type. The data gets cached so when you peform the same
-query next time, the "unknown" types will be known, and there won't be an extra
-query.
+Then, having all the information about an unknown type, it tries to find a
+handler for this type. The data gets cached so when you peform the same query
+next time, the "unknown" types will be known, and there won't be an extra query.
 
 So don't be surprised when you review SQL logs and see queries to the `pg_type`
 table. Unfortunately, there is no other way to fetch information about custom
