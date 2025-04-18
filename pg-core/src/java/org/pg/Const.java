@@ -54,10 +54,10 @@ public final class Const {
     public static boolean useSSL = false;
     public static String TYPE_SIG_VECTOR = "vector/vector_in";
     public static String TYPE_SIG_SPARSEVEC = "sparsevec/sparsevec_in";
-    @SuppressWarnings("unused")
     public static String TYPE_SIG_HSTORE = "hstore/hstore_in";
     @SuppressWarnings("unused")
     public static String TYPE_SIG_LTREE = "ltree/ltree_in";
+    public static String TYPE_SEG_CITEXT = "citext/citextin";
     public static String SQL_WHERE_TAG = "{{ WHERE }}";
     public static String SQL_TYPE_COMMON = """
         

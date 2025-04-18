@@ -2,13 +2,12 @@ package org.pg.codec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pg.Const;
-import org.pg.error.PGError;
 import org.pg.json.JSON;
 import org.pg.processor.Array;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
+import org.pg.processor.Text;
 import org.pg.type.PGType;
-import org.pg.util.SQLTool;
 
 import java.nio.charset.Charset;
 import java.time.ZoneId;
@@ -121,21 +120,6 @@ public class CodecParams {
         oidCache.clear();
     }
 
-    public void processTypeMap(final Map<Object, IProcessor> typeMap) {
-        String fullName;
-        IProcessor processor;
-        Integer oid;
-        for (Map.Entry<Object, IProcessor> me: typeMap.entrySet()) {
-            fullName = SQLTool.fullTypeName(me.getKey());
-            processor = me.getValue();
-            oid = oidCache.get(fullName);
-            if (oid == null) {
-                throw new PGError("unknown postgres type: %s", fullName);
-            }
-            oidMap.put(oid, processor);
-        }
-    }
-
     public Integer getOidByType(final String fullType) {
         return oidCache.get(fullType);
     }
@@ -159,6 +143,8 @@ public class CodecParams {
             oidMap.put(oid, Processors.sparsevec);
         } else if (signature.equals(Const.TYPE_SIG_HSTORE)) {
             oidMap.put(oid, Processors.hstore);
+        } else if (signature.equals(Const.TYPE_SEG_CITEXT)) {
+            oidMap.put(oid, new Text(oid));
         } else if (pgType.isArray()) {
             oidMap.put(oid, new Array(oid, pgType.typelem()));
         } else {
