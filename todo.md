@@ -1,7 +1,4 @@
 
-- read-all-types-3
-  - doc: oids
-
 - maybe exted multi-methods in Java?
 
 - RowMap: meta support?
@@ -116,7 +113,6 @@ migrations
 
 - types
   - interval
-  - hstore
   - inet/cidr
 
 - honey helpers
