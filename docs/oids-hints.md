@@ -114,17 +114,13 @@ the `vector` type (see the [PGVector Support](/docs/pgvector.md) section):
   (pg/copy-in-rows conn
                    "copy foo (v) from STDIN WITH (FORMAT CSV)"
                    rows
-                   {:oids [0, oid-vector]}))
+                   {:oids [oid/int4, oid-vector]}))
 ~~~
 
 This exact case would not work without passing `:oids` explicitly. By default,
 PG2 doesn't know that vectors `[1 2 3]` and `[4 5 6]` should be encoded as
 `vector` values from the `pg_vector` extension. But with an explicit oid, it
 does.
-
-OID values like 0, null, and `pg.oid/default` serve like placeholders and are
-skipped. Above, there is no need to specify a type hint for the `id` column as
-Postgres has no problems with it. Thus, it's just 0.
 
 Explicit OIDs are rarely used; most likely you will never need them. But
 sometimes they help a lot.

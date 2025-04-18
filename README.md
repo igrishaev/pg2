@@ -72,6 +72,7 @@ tests][tests].
 - [Type Mapping](/docs/type-mapping.md)
 - [Geometry (line, box, etc)](/docs/geometry.md)
 - [PGVector Support](/docs/pgvector.md)
+- [Hstore Support](/docs/hstore.md)
 - [Reading Types In Runtime](/docs/read-pg-types.md)
 - [Working With Rows](/docs/row-map.md)
 - Working with Enums

@@ -264,7 +264,7 @@ public class Hstore extends AProcessor {
     public static void main(final String... args) {
         System.out.println(
                 Processors.hstore.decodeTxt(
-                        "\"bar\"=>\"\",\"baz\"=>\"3\",\"foo\"=>",
+                        "\"bar\"=>\"\", \"baz\"=>\"3\", \"foo\"=>NULL",
                         new CodecParams()
                 )
         );

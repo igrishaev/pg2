@@ -89,6 +89,14 @@ See [PGVector Support](/docs/pgvector.md).
 | vector    | Vector of doubles | Vector, List        |
 | sparsevec | Clojure map       | Vector, Clojure map |
 
+### Hstore
+
+See [Hstore Support](/docs/hstore.md).
+
+| Postgres | Reading     | Writing     |
+|----------|-------------|-------------|
+| hstore   | Clojure map | Clojure map |
+
 ## Enums
 
 In Postgres, any enum type created in runtime gets its own id. That causes some

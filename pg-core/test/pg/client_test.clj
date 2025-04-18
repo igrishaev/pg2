@@ -4840,7 +4840,38 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
       (is (= [{:hs {(keyword weird) "val"}}] res2)))))
 
 
-;; hstore copy
+(deftest test-copy-in-hstore-ok
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (pg/query conn "create temp table foo (id int, hs hstore)")
+
+    (let [rows
+          [[1 nil]
+           [2 {}]
+           [3 {nil 1 "" 2 "test" 3}]
+           [4 {"foo" nil "bar" "" :baz 3}]
+           [5 {1 "test" 'hey 2 :foo :bar}]
+           [6 {:foo true :bar 'test :test/baz :lol/kek false "test"}]
+           [7 {(keyword "abc\r\ndef") "foo\r\nbar"}]]
+
+          res-copy
+          (pg/copy-in-rows conn
+                           "copy foo (id, hs) from STDIN WITH (FORMAT CSV)"
+                           rows
+                           {:oids [oid/int4 :hstore]})
+
+          res-query
+          (pg/query conn "select * from foo order by 1")]
+
+      (is (= {:copied 7} res-copy))
+
+      (is (= [{:id 1, :hs nil}
+              {:id 2, :hs {}}
+              {:id 3, :hs {(keyword "") "1", :test "3"}}
+              {:id 4, :hs {:baz "3", :bar "", :foo nil}}
+              {:id 5, :hs {:hey "2", :1 "test", :foo "bar"}}
+              {:id 6, :hs {:bar "test", :false "test", :test/baz "lol/kek", :foo "true"}}
+              {:id 7, :hs {(keyword "abc\r\ndef") "foo\r\nbar"}}]
+             res-query)))))
 
 
 ;;
