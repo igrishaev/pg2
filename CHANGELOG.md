@@ -11,12 +11,11 @@
 - ?
 - ?
 
-## 0.1.38-SNAPSHOT
+## 0.1.38
 
 - hstore type support
 - citext type support
 - drop unused code
-- ?
 
 ## 0.1.37
 
