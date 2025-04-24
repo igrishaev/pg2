@@ -46,7 +46,8 @@ public record Config(
         int poolBorrowConnTimeoutMs,
         boolean useUnixSocket,
         String unixSocketPath,
-        Executor executor
+        Executor executor,
+        boolean psCacheOn
 ) {
 
     public ConnType getConnType() {
@@ -99,6 +100,7 @@ public record Config(
         private boolean useUnixSocket = false;
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
+        private boolean psCacheOn = Const.PS_CACHE_ON;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -295,6 +297,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder psCacheOn(final boolean psCacheOn) {
+            this.psCacheOn = psCacheOn;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -337,7 +345,8 @@ public record Config(
                     this.poolBorrowConnTimeoutMs,
                     this.useUnixSocket,
                     this.unixSocketPath,
-                    this.executor
+                    this.executor,
+                    this.psCacheOn
             );
         }
     }

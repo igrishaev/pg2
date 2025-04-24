@@ -109,6 +109,9 @@
                 protocol-version
                 executor
 
+                ;; ps cache
+                ps-cache?
+
                 ;; pool
                 pool-min-size
                 pool-max-size
@@ -210,6 +213,9 @@
 
       pool-borrow-conn-timeout-ms
       (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)
+
+      (some? ps-cache?)
+      (.psCacheOn ps-cache)
 
       executor
       (.executor executor)

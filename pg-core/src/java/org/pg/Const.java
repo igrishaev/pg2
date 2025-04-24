@@ -23,6 +23,7 @@ public final class Const {
     public static final int SO_RECV_BUF_SIZE = 0xFFFF;
     public static final int SO_SEND_BUF_SIZE = 0xFFFF;
     public static final String PG_HOST = "127.0.0.1";
+    public static final boolean PS_CACHE_ON = true;
     public static final int IN_STREAM_BUF_SIZE = 0xFFFF;
     public static final int OUT_STREAM_BUF_SIZE = 0xFFFF;
     public static final boolean SO_KEEP_ALIVE = true;

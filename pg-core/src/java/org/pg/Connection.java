@@ -837,25 +837,36 @@ public final class Connection implements AutoCloseable {
     }
 
     public Object execute (final String sql, final ExecuteParams executeParams) {
+        final boolean psCacheOn = config.psCacheOn();
         try (final TryLock ignored = lock.get()) {
-            PreparedStatement stmt = PSCache.get(sql);
-            if (stmt == null) {
-                if (Debug.isON) {
-                    Debug.debug("Prepared statement not found: %s", sql);
+            PreparedStatement stmt;
+            if (psCacheOn) {
+                // when there is a cache, try to get a prep. statement out from it
+                final String cacheKey = sql + " | oids: "  + executeParams.oids().toString();
+                stmt = PSCache.get(cacheKey);
+                if (stmt == null) {
+                    if (Debug.isON) {
+                        Debug.debug("Prepared statement not found: %s", cacheKey);
+                    }
+                    stmt = prepare(sql, executeParams);
+                    PSCache.put(cacheKey, stmt);
+                } else {
+                    if (Debug.isON) {
+                        Debug.debug("Prepared statement found in cache: %s", stmt);
+                    }
                 }
-                stmt = prepare(sql, executeParams);
-                PSCache.put(sql, stmt);
             } else {
-                if (Debug.isON) {
-                    Debug.debug("Prepared statement found in cache: %s", stmt);
-                }
+                stmt = prepare(sql, executeParams);
             }
             final String portal = generatePortal();
             sendBind(portal, stmt, executeParams);
             sendDescribePortal(portal);
             sendExecute(portal, executeParams.maxRows());
             sendClosePortal(portal);
-            // sendCloseStatement(stmt); // don't close it for caching
+            // with no cache, close the statement
+            if (!psCacheOn) {
+                sendCloseStatement(stmt);
+            }
             sendFlush();
             sendSync();
             try {

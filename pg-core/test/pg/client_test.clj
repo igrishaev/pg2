@@ -1970,6 +1970,23 @@ drop table %1$s;
              statements5)))))
 
 
+(deftest test-client-execute-statement-cache-different-oids
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [sql
+          "select $1 as v"
+
+          res1
+          (pg/execute conn sql {:oids [oid/text]
+                                :params ["kek"]})
+
+          res2
+          (pg/execute conn sql {:oids [oid/text]
+                                :params [42]})]
+
+      (is (= 1 res1))
+      (is (= 2 res2)))))
+
+
 (deftest test-client-execute-sqlvec-no-params
   (pg/with-connection [conn *CONFIG-TXT*]
     (let [res (pg/execute conn "select 42 as foo")]
