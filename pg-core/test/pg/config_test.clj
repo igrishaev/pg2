@@ -66,6 +66,7 @@
             :inStreamBufSize 77
             :outStreamBufSize 45
             :password ""
+            :psCacheOn false
             :poolMinSize 3
             :poolMaxSize 4
             :poolBorrowConnTimeoutMs 449
@@ -91,6 +92,7 @@
                                      "&pool-expire-threshold-ms=3322"
                                      "&pool-borrow-conn-timeout-ms=449"
                                      "&ssl=1"
+                                     "&ps-cache=off"
                                      "&so-recv-buf-size=999"
                                      "&so-send-buf-size=888"
                                      "&so-timeout=212"
@@ -114,6 +116,7 @@
                               :protocolVersion
                               :readOnly
                               :useSSL
+                              :psCacheOn
                               :pgParams]))))))
 
 (deftest test-config-connection-uri-precedence

@@ -100,37 +100,38 @@ The following table describes all the possible connection options with the
 possible values and semantics. Only the two first options are requred. All the
 rest have predefined values.
 
-| Field                  | Type                    | Default            | Comment                                                                                        |
-|------------------------|-------------------------|--------------------|------------------------------------------------------------------------------------------------|
-| `:user`                | string                  | **required**       | the name of the DB user                                                                        |
-| `:database`            | string                  | **required**       | the name of the database                                                                       |
-| `:connection-uri`      | string                  | nil                | A [URI string](/docs/connection-uri.md) with a user, database, and other parameters            |
-| `:host`                | string                  | 127.0.0.1          | IP or hostname                                                                                 |
-| `:port`                | integer                 | 5432               | port number                                                                                    |
-| `:password`            | string                  | ""                 | DB user password                                                                               |
-| `:pg-params`           | map                     | {}                 | A map of session params like {string string}                                                   |
-| `:binary-encode?`      | bool                    | false              | Whether to use binary data encoding                                                            |
-| `:binary-decode?`      | bool                    | false              | Whether to use binary data decoding                                                            |
-| `:read-only?`          | bool                    | false              | Whether to initiate this connection in READ ONLY mode (see below)                              |
-| `:in-stream-buf-size`  | integer                 | 0xFFFF             | Size of the input buffered socket stream                                                       |
-| `:out-stream-buf-size` | integer                 | 0xFFFF             | Size of the output buffered socket stream                                                      |
-| `:fn-notification`     | 1-arg fn                | logging fn         | A function to handle notifications                                                             |
-| `:fn-protocol-version` | 1-arg fn                | logging fn         | A function to handle negotiation version protocol event                                        |
-| `:fn-notice`           | 1-arg fn                | logging fn         | A function to handle notices                                                                   |
-| `:ssl?`                | bool                    | false              | Whether to use an [SSL connection](/docs/ssl.md)                                               |
-| `:use-ssl?`            | bool                    | false              | **Deprecated:** an outdated version of `:ssl?`                                                 |
-| `:ssl-validation`      | mixed                   | nil                | How (and if) to validate SSL certificates                                                      |
-| `:ssl-context`         | SSLContext              | nil                | An custom instance of `SSLContext` class to wrap a socket                                      |
-| `:unix-socket?`        | bool                    | false              | Whether to connect to a [Unix domain socket](/docs/unix-socket.md)                             |
-| `:unix-socket-path`    | string                  | null               | A custom path to Unix domain socket                                                            |
-| `:so-keep-alive?`      | bool                    | true               | Socket KeepAlive value                                                                         |
-| `:so-tcp-no-delay?`    | bool                    | true               | Socket TcpNoDelay value                                                                        |
-| `:so-timeout`          | integer                 | 15.000             | Socket timeout value, in ms                                                                    |
-| `:so-recv-buf-size`    | integer                 | 0xFFFF             | Socket receive buffer size                                                                     |
-| `:so-send-buf-size`    | integer                 | 0xFFFF             | Socket send buffer size                                                                        |
-| `:cancel-timeout-ms`   | integer                 | 5.000              | Default value for the `with-timeout` macro, in ms                                              |
-| `:protocol-version`    | integer                 | 196608             | Postgres protocol version                                                                      |
-| `:object-mapper`       | ObjectMapper            | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section)                |
+| Field                  | Type         | Default            | Comment                                                                             |
+|------------------------|--------------|--------------------|-------------------------------------------------------------------------------------|
+| `:user`                | string       | **required**       | the name of the DB user                                                             |
+| `:database`            | string       | **required**       | the name of the database                                                            |
+| `:connection-uri`      | string       | nil                | A [URI string](/docs/connection-uri.md) with a user, database, and other parameters |
+| `:host`                | string       | 127.0.0.1          | IP or hostname                                                                      |
+| `:port`                | integer      | 5432               | port number                                                                         |
+| `:password`            | string       | ""                 | DB user password                                                                    |
+| `:pg-params`           | map          | {}                 | A map of session params like {string string}                                        |
+| `:binary-encode?`      | bool         | false              | Whether to use binary data encoding                                                 |
+| `:binary-decode?`      | bool         | false              | Whether to use binary data decoding                                                 |
+| `:read-only?`          | bool         | false              | Whether to initiate this connection in READ ONLY mode (see below)                   |
+| `:in-stream-buf-size`  | integer      | 0xFFFF             | Size of the input buffered socket stream                                            |
+| `:out-stream-buf-size` | integer      | 0xFFFF             | Size of the output buffered socket stream                                           |
+| `:fn-notification`     | 1-arg fn     | logging fn         | A function to handle notifications                                                  |
+| `:fn-protocol-version` | 1-arg fn     | logging fn         | A function to handle negotiation version protocol event                             |
+| `:fn-notice`           | 1-arg fn     | logging fn         | A function to handle notices                                                        |
+| `:ssl?`                | bool         | false              | Whether to use an [SSL connection](/docs/ssl.md)                                    |
+| `:use-ssl?`            | bool         | false              | **Deprecated:** an outdated version of `:ssl?`                                      |
+| `:ssl-validation`      | mixed        | nil                | How (and if) to validate SSL certificates                                           |
+| `:ssl-context`         | SSLContext   | nil                | An custom instance of `SSLContext` class to wrap a socket                           |
+| `:unix-socket?`        | bool         | false              | Whether to connect to a [Unix domain socket](/docs/unix-socket.md)                  |
+| `:unix-socket-path`    | string       | null               | A custom path to Unix domain socket                                                 |
+| `:so-keep-alive?`      | bool         | true               | Socket KeepAlive value                                                              |
+| `:so-tcp-no-delay?`    | bool         | true               | Socket TcpNoDelay value                                                             |
+| `:so-timeout`          | integer      | 15.000             | Socket timeout value, in ms                                                         |
+| `:so-recv-buf-size`    | integer      | 0xFFFF             | Socket receive buffer size                                                          |
+| `:so-send-buf-size`    | integer      | 0xFFFF             | Socket send buffer size                                                             |
+| `:cancel-timeout-ms`   | integer      | 5.000              | Default value for the `with-timeout` macro, in ms                                   |
+| `:protocol-version`    | integer      | 196608             | Postgres protocol version                                                           |
+| `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section)     |
+| `:ps-cache?`           | bool         | true               | Whether to use [Prepared Statement Cache](docs/prepared-statement-cache.md)         |
 
 ### Parameter notes
 

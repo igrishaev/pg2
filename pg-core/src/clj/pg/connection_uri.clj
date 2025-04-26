@@ -157,6 +157,7 @@
                 ;; misc
                 cancel-timeout-ms
                 protocol-version
+                ps-cache
 
                 ;; json
                 object-mapper
@@ -259,6 +260,9 @@
 
      :protocol-version
      (some-> (or protocol-version protocolVersion) parse-long)
+
+     :ps-cache?
+     (some-> ps-cache parse-bool)
 
      ;; pool
 

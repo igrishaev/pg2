@@ -1980,11 +1980,56 @@ drop table %1$s;
                                 :params ["kek"]})
 
           res2
-          (pg/execute conn sql {:oids [oid/text]
-                                :params [42]})]
+          (pg/execute conn sql {:oids [oid/int4]
+                                :params [42]})
 
-      (is (= 1 res1))
-      (is (= 2 res2)))))
+          sql-ps
+          "select name, statement, parameter_types from pg_prepared_statements order by prepare_time asc"
+
+          _
+          (pg/execute conn sql {:oids [oid/text] :params ["kek"]})
+
+          _
+          (pg/execute conn sql {:oids [oid/int4] :params [42]})
+
+          statements
+          (pg/query conn sql-ps)]
+
+      (is (= [{:v "kek"}] res1))
+      (is (= [{:v 42}] res2))
+
+      (is (= 2 (count statements)))
+
+      (is (= [{:statement "select $1 as v",
+               :parameter_types ["text"]}
+              {:statement "select $1 as v",
+               :parameter_types ["integer"]}]
+             (for [row statements]
+               (dissoc row :name)))))))
+
+
+(deftest test-client-execute-statement-cache-disables
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :ps-cache? false)]
+    (let [sql
+          "select $1 as v"
+
+          res1
+          (pg/execute conn sql {:oids [oid/text]
+                                :params ["kek"]})
+
+          res2
+          (pg/execute conn sql {:oids [oid/int4]
+                                :params [42]})
+
+          sql-ps
+          "select name, statement, parameter_types from pg_prepared_statements order by prepare_time asc"
+
+          statements
+          (pg/query conn sql-ps)]
+
+      (is (= [{:v "kek"}] res1))
+      (is (= [{:v 42}] res2))
+      (is (= 0 (count statements))))))
 
 
 (deftest test-client-execute-sqlvec-no-params

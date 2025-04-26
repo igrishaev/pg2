@@ -7,9 +7,8 @@
 
 ## 0.1.39-SNAPSHOT
 
-- ?
-- ?
-- ?
+- prep. statement cache flag on/off
+- prep. statement cache key with oids
 
 ## 0.1.38
 

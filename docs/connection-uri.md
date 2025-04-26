@@ -88,31 +88,32 @@ Before you read, here is a brief description of types and parsing agreements.
   `assoc-in` function in a loop. So far, only one group of parameters rely on
   nesting (see below).
 
-| Parameter                     | Parsed as | Comment                                                                                        |
-|-------------------------------|-----------|------------------------------------------------------------------------------------------------|
-| `read-only`                   | bool      | True if make connection always read only                                                       |
-| `so-keep-alive`               | bool      | Enable the standard "keep alive" socket option                                                 |
-| `so-tcp-no-delay`             | bool      | Enable the standard "no delay" socket option                                                   |
-| `so-timeout`                  | long      | Long value for the standard "timeout" socket option                                            |
-| `so-recv-buf-size`            | long      | Socket receive buffer size                                                                     |
-| `so-send-buf-size`            | long      | Socket send buffer size                                                                        |
-| `binary-encode`               | bool      | Whether to use binary encoding                                                                 |
-| `binary-decode`               | bool      | Whether to use binary decoding                                                                 |
-| `in-stream-buf-size`          | long      | `BufferedInputStream` default size                                                             |
-| `out-stream-buf-size`         | long      | `BufferedOutputStream` default size                                                            |
-| `ssl`                         | bool      | Whether to use SSL connection                                                                  |
-| `ssl-context`                 | ref       | A reference to a custom `SSLContext` object                                                    |
-| `fn-notification`             | ref       | A reference to a function handling notifications                                               |
-| `fn-protocol-version`         | ref       | A reference to a function handling protocol mismatch event                                     |
-| `fn-notice`                   | ref       | A reference to a function handling notices                                                     |
-| `cancel-timeout-ms`           | long      | A custom timeout duration when cancelling queries                                              |
-| `protocol-version`            | long      | A custom protocol version                                                                      |
-| `object-mapper`               | ref       | A reference to custom JSON `ObjectMapper` instance                                             |
-| `pool-min-size`               | long      | Minimum pool connection size                                                                   |
-| `pool-max-size`               | long      | Maximum pool connection size                                                                   |
-| `pool-expire-threshold-ms`    | long      | Pool connection expire lifetime                                                                |
-| `pool-borrow-conn-timeout-ms` | long      | How long to wait when borrowing a connection from a pool                                       |
-| `pg-params`                   | nested    | A nested map of Postgres runtime parameters (see below)                                        |
+| Parameter                     | Parsed as | Comment                                                                     |
+|-------------------------------|-----------|-----------------------------------------------------------------------------|
+| `read-only`                   | bool      | True if make connection always read only                                    |
+| `so-keep-alive`               | bool      | Enable the standard "keep alive" socket option                              |
+| `so-tcp-no-delay`             | bool      | Enable the standard "no delay" socket option                                |
+| `so-timeout`                  | long      | Long value for the standard "timeout" socket option                         |
+| `so-recv-buf-size`            | long      | Socket receive buffer size                                                  |
+| `so-send-buf-size`            | long      | Socket send buffer size                                                     |
+| `binary-encode`               | bool      | Whether to use binary encoding                                              |
+| `binary-decode`               | bool      | Whether to use binary decoding                                              |
+| `in-stream-buf-size`          | long      | `BufferedInputStream` default size                                          |
+| `out-stream-buf-size`         | long      | `BufferedOutputStream` default size                                         |
+| `ssl`                         | bool      | Whether to use SSL connection                                               |
+| `ssl-context`                 | ref       | A reference to a custom `SSLContext` object                                 |
+| `fn-notification`             | ref       | A reference to a function handling notifications                            |
+| `fn-protocol-version`         | ref       | A reference to a function handling protocol mismatch event                  |
+| `fn-notice`                   | ref       | A reference to a function handling notices                                  |
+| `cancel-timeout-ms`           | long      | A custom timeout duration when cancelling queries                           |
+| `protocol-version`            | long      | A custom protocol version                                                   |
+| `object-mapper`               | ref       | A reference to custom JSON `ObjectMapper` instance                          |
+| `pool-min-size`               | long      | Minimum pool connection size                                                |
+| `pool-max-size`               | long      | Maximum pool connection size                                                |
+| `pool-expire-threshold-ms`    | long      | Pool connection expire lifetime                                             |
+| `pool-borrow-conn-timeout-ms` | long      | How long to wait when borrowing a connection from a pool                    |
+| `pg-params`                   | nested    | A nested map of Postgres runtime parameters (see below)                     |
+| `:ps-cache`                   | bool      | Whether to use [Prepared Statement Cache](docs/prepared-statement-cache.md) |
 
 ## JDBC Compatible Parameters
 

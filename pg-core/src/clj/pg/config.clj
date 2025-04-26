@@ -215,7 +215,7 @@
       (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)
 
       (some? ps-cache?)
-      (.psCacheOn ps-cache)
+      (.psCacheOn ps-cache?)
 
       executor
       (.executor executor)

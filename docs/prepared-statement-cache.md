@@ -25,6 +25,10 @@ the standard `query` function **does not**. They might look similar but act
 differently under the hood. To read more about the difference, please refer to
 [Query and Execute](/docs/query-execute.md) section.
 
+The cache can be disabled using the `{:ps-cache? false}` boolean flag. When it's
+false, PG2 prepares a new statement, uses it to fetch the data, and closes it
+afterwards. The default value of the flag is true.
+
 The following session demonstrates how a statement cache works. Let's connect to
 a database and check out what prepared statements are there:
 
@@ -137,6 +141,40 @@ a leading or a traling space), it is condidered as another expression:
   :generic_plans 1
   :parameter_types "{}"}]
 ~~~
+
+In more details, the key of a cache is formed using this pattern:
+
+```text
+SQL + <oids>
+```
+
+where `oids` is an array of custom type numbers or names. Imagine you have query
+that returns exactly what a user has passed:
+
+~~~sql
+select $1 as v
+~~~
+
+If you execute this SQL with various sets of OIDs, it will produce two different
+prepared statements. Although they have the same SQL payload, their types
+differs:
+
+~~~clojure
+(pg/execute conn sql {:oids [oid/text] :params ["kek"]})
+(pg/execute conn sql {:oids [oid/int4] :params [42]})
+
+;; now if we select from pg_prepared_statements...
+
+({:name "s1106994951888666"
+  :statement "select $1 as v"
+  :parameter_types ["text"]}
+ {:name "s1106994962854208"
+  :statement "select $1 as v"
+  :parameter_types ["integer"]})
+~~~
+
+See the related section [Type Hints (OIDs)](/docs/oids-hints.md) for details
+about custom OIDs.
 
 There is the `close-cached-statements` function to close all the cached
 statements and clean up the cache. It returs the number of statements closed:
