@@ -1,14 +1,26 @@
 
+## 0.1.42-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.41-SNAPSHOT
+
+- ?
+- ?
+- ?
+
 ## 0.1.40-SNAPSHOT
 
 - ?
 - ?
 - ?
 
-## 0.1.39-SNAPSHOT
+## 0.1.39
 
-- prep. statement cache flag on/off
-- prep. statement cache key with oids
+- prep. statement cache flag on/off #46
+- prep. statement cache key with oids #46
 
 ## 0.1.38
 
