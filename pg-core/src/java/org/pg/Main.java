@@ -61,6 +61,8 @@ public final class Main {
 //        System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
 //        System.out.println(conn.execute("select 'test'::citext as test"));
         System.out.println(conn.execute("select $1::citext", List.of("test")));
+        conn.query("deallocate all");
+        System.out.println(conn.execute("select $1::citext", List.of("test")));
 //        System.out.println(conn.execute("select '12:01:59.123456789+03'::timetz as timetz"));
 //        final Object map = RT.first(conn.execute("select 1 a, 2 b, 3 c, 4 d, 5 e, 6 f, 7 g, 8 h, 9 i, 10 j, 11 k, 12 l, 13 m, 14 n, 15 o, 16 p"));
 //        System.out.println(RT.seq(map));

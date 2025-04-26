@@ -838,11 +838,13 @@ public final class Connection implements AutoCloseable {
 
     public Object execute (final String sql, final ExecuteParams executeParams) {
         final boolean psCacheOn = config.psCacheOn();
+        final String cacheKey = psCacheOn
+                ? sql + " | oids: "  + executeParams.oids().toString()
+                : null;
         try (final TryLock ignored = lock.get()) {
             PreparedStatement stmt;
             if (psCacheOn) {
                 // when there is a cache, try to get a prep. statement out from it
-                final String cacheKey = sql + " | oids: "  + executeParams.oids().toString();
                 stmt = PSCache.get(cacheKey);
                 if (stmt == null) {
                     if (Debug.isON) {
@@ -869,22 +871,28 @@ public final class Connection implements AutoCloseable {
             }
             sendFlush();
             sendSync();
-            try {
+
+            if (!psCacheOn) {
                 return interact(executeParams, sql).getResult();
-            } catch (final PGErrorResponse e) {
-                if (Objects.equals(e.getCode(), ErrCode.PREPARED_STATEMENT_NOT_FOUND)) {
-                    if (Debug.isON) {
-                        Debug.debug("Prepared statement is missing: %s, error: %s",
-                                stmt,
-                                e.getMessage()
-                        );
+            } else {
+                try {
+                    return interact(executeParams, sql).getResult();
+                } catch (final PGErrorResponse e) {
+                    if (Objects.equals(e.getCode(), ErrCode.PREPARED_STATEMENT_NOT_FOUND)) {
+                        if (Debug.isON) {
+                            Debug.debug("Prepared statement is missing: %s, error: %s",
+                                    stmt,
+                                    e.getMessage()
+                            );
+                        }
+                        PSCache.remove(cacheKey);
+                        return execute(sql, executeParams);
+                    } else {
+                        throw e;
                     }
-                    PSCache.remove(sql);
-                    return execute(sql, executeParams);
-                } else {
-                    throw e;
                 }
             }
+
         }
     }
 
