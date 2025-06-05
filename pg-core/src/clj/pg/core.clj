@@ -226,6 +226,41 @@
 
 
 ;;
+;; Runtime settings
+;;
+
+(defn set-config
+  "
+  Set a runtime postgres configuration parameter.
+  The `param` is a name of a parameter. The `value`
+  might be of any type and will be transformed into
+  a string. The optional `is-local` parameter, when
+  true, is used for `SET LOCAL` expression.
+  "
+  ([^Connection conn ^String param ^String value]
+   (set-config conn param value false))
+
+  ([^Connection conn ^String param ^String value ^Boolean is-local]
+   (.setConfig conn param (str value) (boolean is-local))))
+
+
+(defn current-setting
+  "
+  Return the current value of a runtime configuration
+  parameter. The `param` is the name of a parameter.
+  The `missing-ok?` boolean parameter decides if a
+  negative response will be returned should a parameter
+  missing. True by default meaning the function returns
+  nil for anknown parameter.
+  "
+  (^String [^Connection conn ^String param]
+   (current-setting conn param true))
+
+  (^String [^Connection conn ^String param ^Boolean missing-ok?]
+   (.currentSetting conn param missing-ok?)))
+
+
+;;
 ;; Prepared statement
 ;;
 

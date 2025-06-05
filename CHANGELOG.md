@@ -13,9 +13,7 @@
 
 ## 0.1.40-SNAPSHOT
 
-- ?
-- ?
-- ?
+- get and set runtime parameters #58
 
 ## 0.1.39
 

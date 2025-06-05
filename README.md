@@ -67,6 +67,7 @@ tests][tests].
 - [Arrays Support](/docs/arrays.md)
 - [Migrations](/docs/migrations.md)
 - [Unix Domain Sockets](/docs/unix-socket.md)
+- [Get & Set Runtime Parameters](/docs/pg-settings.md)
 - Common Execute Parameters
 - [Type Hints (OIDs)](/docs/oids-hints.md)
 - [Type Mapping](/docs/type-mapping.md)

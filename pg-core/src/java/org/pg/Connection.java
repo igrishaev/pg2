@@ -3,6 +3,7 @@ package org.pg;
 import clojure.lang.*;
 import org.pg.auth.MD5;
 import org.pg.auth.ScramSha256;
+import org.pg.clojure.CljAPI;
 import org.pg.clojure.KW;
 import org.pg.clojure.RowMap;
 import org.pg.codec.CodecParams;
@@ -515,6 +516,15 @@ public final class Connection implements AutoCloseable {
 
     private String generatePortal () {
         return String.format("p%d", System.nanoTime());
+    }
+
+    public void setConfig(final String parameter, final String value, final boolean isLocal) {
+        execute("select set_config($1, $2, $3)", List.of(parameter, value, isLocal));
+    }
+
+    public String currentSetting(final String parameter, final Boolean missingOk) {
+        final Object result = execute("select current_setting($1, $2)", List.of(parameter, missingOk));
+        return (String) CljAPI.nth.invoke(CljAPI.first.invoke(result), 0);
     }
 
     private void sendStartupMessage () {

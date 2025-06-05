@@ -1095,15 +1095,82 @@ from
 
 
 (deftest test-client-wrong-startup-params
-
   (let [config
         (assoc *CONFIG-TXT* :pg-params {"application_name" "Clojure"
                                         "DateStyle" "ISO, MDY"})]
-
     (pg/with-connection [conn config]
       (let [param
             (pg/get-parameter conn "application_name")]
         (is (= "Clojure" param))))))
+
+
+(deftest test-client-set-config
+
+  (let [config
+        (assoc *CONFIG-TXT* :pg-params {"application_name" "foo-bar"})]
+
+    (pg/with-connection [conn config]
+
+      (pg/set-config conn "application_name" "A_B_C")
+      (let [value
+            (pg/current-setting conn "application_name")]
+        (is (= "A_B_C" value)))
+
+      (testing "change in transaction globally"
+        (pg/with-tx [conn]
+          (pg/set-config conn "application_name" "123")
+          (let [value
+                (pg/current-setting conn "application_name")]
+            (is (= "123" value))))
+        (let [value
+              (pg/current-setting conn "application_name")]
+          (is (= "123" value))))
+
+      (testing "change in transaction locally"
+        (pg/with-tx [conn]
+          (pg/set-config conn "application_name" "xxx-yyy" true)
+          (let [value
+                (pg/current-setting conn "application_name")]
+            (is (= "xxx-yyy" value))))
+        (let [value
+              (pg/current-setting conn "application_name")]
+          (is (= "123" value))))
+
+      (testing "change a missing parameter"
+        (try
+          (pg/set-config conn "dunno" "123")
+          (is false)
+          (catch PGErrorResponse e
+            (is (-> e
+                    (ex-message)
+                    (str/includes? "unrecognized configuration parameter")))))))))
+
+
+(deftest test-client-current-setting
+
+  (let [config
+        (assoc *CONFIG-TXT* :pg-params {"application_name" "foo-bar"})]
+
+    (pg/with-connection [conn config]
+      (let [value
+            (pg/current-setting conn "application_name")]
+        (is (= "foo-bar" value)))
+
+      (let [value
+            (pg/current-setting conn "kek")]
+        (is (nil? value)))
+
+      (try
+        (pg/current-setting conn "kek" false)
+        (is false)
+        (catch PGErrorResponse e
+          (is (-> e
+                  (ex-message)
+                  (str/includes? "unrecognized configuration parameter")))))
+
+      (let [value
+            (pg/current-setting conn "kek" true)]
+        (is (nil? value))))))
 
 
 (deftest test-terminate-closed
