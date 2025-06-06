@@ -87,7 +87,7 @@ parameter should be local (per a transaction):
 ~~~
 
 These Clojure functions rely on Postgres functions called `set_config` and
-`current-setting`. Both functions work with parameters meaning they are safe
+`current_setting`. Both functions work with parameters meaning they are safe
 from SQL injections.
 
 ## Time Zone
