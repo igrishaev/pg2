@@ -11,9 +11,10 @@
 - ?
 - ?
 
-## 0.1.40-SNAPSHOT
+## 0.1.40
 
 - get and set runtime parameters #58
+- and pg-settings doc
 
 ## 0.1.39
 
