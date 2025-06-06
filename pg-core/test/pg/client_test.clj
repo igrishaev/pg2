@@ -1123,12 +1123,12 @@ from
                 (pg/current-setting conn "application_name")]
             (is (= "123" value))))
         (let [value
-              (pg/current-setting conn "TimeZone")]
+              (pg/current-setting conn "application_name")]
           (is (= "123" value))))
 
       (testing "change in transaction locally"
         (pg/with-tx [conn]
-          (pg/set-config conn "TimeZone" "America/Los_Angeles")
+          (pg/set-config conn "application_name" "xxx-yyy" true)
           (let [value
                 (pg/current-setting conn "application_name")]
             (is (= "xxx-yyy" value))))
