@@ -28,6 +28,8 @@ It's a bit inconvenient to call these commands directly from PG2 as they don't
 support parameters. Thus, you have to format or concatenate strings which leads
 to SQL injections.
 
+## Get A Parameter's Value
+
 A recent release of PG2 ships special functions to get and set a parameter by
 its name. The **`current-setting`** function gets a parameter:
 
@@ -53,6 +55,8 @@ by default) checking if a missing parameter should lead to an exception:
 ;; throws PGErrorResponse
 ;; ... unrecognized configuration parameter "dunno"
 ~~~
+
+## Set A Parameter's Value
 
 The **`set-config`** function sets a new value for an existing parameter:
 
@@ -85,3 +89,14 @@ parameter should be local (per a transaction):
 These Clojure functions rely on Postgres functions called `set_config` and
 `current-setting`. Both functions work with parameters meaning they are safe
 from SQL injections.
+
+## Time Zone
+
+To mimic the `SET TIME ZONE ...` expression, use the `TimeZone` parameter:
+
+~~~clojure
+(pg/current-setting conn "TimeZone")
+;; Etc/UTC
+
+(pg/set-config conn "TimeZone" "America/Los_Angeles")
+~~~
