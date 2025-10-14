@@ -23,9 +23,9 @@ public final class IOTool {
         }
     }
 
-    public static void skip (final InputStream inputStream, final int len) {
+    public static void skip (final InputStream inputStream, final long len) {
         try {
-            inputStream.readNBytes(len);
+            inputStream.skipNBytes(len);
         }
         catch (final IOException e) {
             throw new PGErrorIO(e, "Could not skip %s byte(s), cause: %s", len, e.getMessage());
