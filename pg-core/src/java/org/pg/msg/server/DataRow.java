@@ -11,19 +11,21 @@ public record DataRow (
 ) implements IServerMessage {
 
     /*
-    Return a plain int array where [i] is the offset
-    of a data entry and [i + 1] is its length.
+    Return the Table of Content: a plain int array where [i]
+    is the offset of data and [i + 1] is its length.
      */
     public int[] ToC() {
-        buf.rewind();
-        final short size = buf.getShort();
+        // clone buffer to make the method thread-safe
+        final ByteBuffer bb = buf.duplicate();
+        bb.rewind();
+        final short size = bb.getShort();
         final int[] ToC = new int[size * 2];
         for (short i = 0; i < size; i++) {
-            final int length = buf.getInt();
-            ToC[i * 2] = buf.position();
+            final int length = bb.getInt();
+            ToC[i * 2] = bb.position();
             ToC[i * 2 + 1] = length;
             if (length > 0) {
-                BBTool.skip(buf, length);
+                BBTool.skip(bb, length);
             }
         }
         return ToC;

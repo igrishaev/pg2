@@ -66,7 +66,10 @@ public final class RowMap extends APersistentMap implements Indexed {
         if (parsedKeys[i]) {
             return parsedValues[i];
         }
-        return getValueByIndexInner(i);
+        final Object value = parseValueInner(i);
+        parsedKeys[i] = true;
+        parsedValues[i] = value;
+        return value;
     }
 
     private MapEntry entryById(final int i) {
@@ -110,8 +113,7 @@ public final class RowMap extends APersistentMap implements Indexed {
         }
     }
 
-    private Object getValueByIndexInner(final int i) {
-
+    private Object parseValueInner(final int i) {
         if (ToC == null) {
             ToC = dataRow.ToC();
         }
@@ -120,8 +122,6 @@ public final class RowMap extends APersistentMap implements Indexed {
         final int length = ToC[i * 2 + 1];
 
         if (length == -1) {
-            parsedKeys[i] = true;
-            parsedValues[i] = null;
             return null;
         }
 
@@ -131,7 +131,7 @@ public final class RowMap extends APersistentMap implements Indexed {
 
         final IProcessor typeProcessor = codecParams.getProcessor(oid);
 
-        final Object value = switch (col.format()) {
+        return switch (col.format()) {
             case TXT -> {
                 final String string = new String(payload, offset, length, codecParams.serverCharset());
                 yield typeProcessor.decodeTxt(string, codecParams);
@@ -141,11 +141,6 @@ public final class RowMap extends APersistentMap implements Indexed {
                 yield typeProcessor.decodeBin(buf, codecParams);
             }
         };
-
-        parsedKeys[i] = true;
-        parsedValues[i] = value;
-
-        return value;
     }
 
     @SuppressWarnings("unused") // pg.fold
