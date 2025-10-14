@@ -1,4 +1,6 @@
 
+- replace `for (` with i
+
 - maybe exted multi-methods in Java?
 
 - RowMap: meta support?
