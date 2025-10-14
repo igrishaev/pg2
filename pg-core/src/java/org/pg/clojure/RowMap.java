@@ -5,7 +5,6 @@ import org.pg.codec.CodecParams;
 import org.pg.msg.server.DataRow;
 import org.pg.msg.server.RowDescription;
 import org.pg.processor.IProcessor;
-import org.pg.util.TryLock;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -14,7 +13,6 @@ public final class RowMap extends APersistentMap implements Indexed {
 
     private int[] ToC = null;
     private final int count;
-    private final TryLock lock;
     private final DataRow dataRow;
     private final RowDescription rowDescription;
     private final Object[] keys;
@@ -30,7 +28,6 @@ public final class RowMap extends APersistentMap implements Indexed {
                   final CodecParams codecParams
     ) {
         this.count = dataRow.count();
-        this.lock = new TryLock();
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
         this.keys = keys;
@@ -69,9 +66,7 @@ public final class RowMap extends APersistentMap implements Indexed {
         if (parsedKeys[i]) {
             return parsedValues[i];
         }
-        try (TryLock ignored = lock.get()) {
-            return getValueByIndexUnlocked(i);
-        }
+        return getValueByIndexInner(i);
     }
 
     private MapEntry entryById(final int i) {
@@ -115,7 +110,7 @@ public final class RowMap extends APersistentMap implements Indexed {
         }
     }
 
-    private Object getValueByIndexUnlocked(final int i) {
+    private Object getValueByIndexInner(final int i) {
 
         if (ToC == null) {
             ToC = dataRow.ToC();
