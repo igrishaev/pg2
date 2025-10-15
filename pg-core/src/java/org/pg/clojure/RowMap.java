@@ -26,7 +26,7 @@ public final class RowMap extends APersistentMap implements Indexed {
                   final Object[] keys,
                   final CodecParams codecParams
     ) {
-        this.count = dataRow.count();
+        this.count = keys.length;
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
         this.keys = keys;

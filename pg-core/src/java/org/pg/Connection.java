@@ -603,7 +603,7 @@ public final class Connection implements AutoCloseable {
             case 'Z' -> ReadyForQuery.fromByteBuffer(bbBody);
             case 'C' -> CommandComplete.fromByteBuffer(bbBody, codecParams.serverCharset());
             case 'T' -> RowDescription.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'D' -> DataRow.fromByteBuffer(bbBody);
+            case 'D' -> DataRow.fromBytes(bufBody);
             case 'E' -> ErrorResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
             case 'K' -> BackendKeyData.fromByteBuffer(bbBody);
             case '1' -> ParseComplete.INSTANCE;

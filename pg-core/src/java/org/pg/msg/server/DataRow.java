@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public record DataRow (
-        short count,
         byte[] bytes
 ) implements IServerMessage {
 
@@ -17,7 +16,7 @@ public record DataRow (
      */
     public int[] ToC() {
         final ByteBuffer bb = ByteBuffer.wrap(bytes);
-        BBTool.skip(bb, 2);
+        final short count = bb.getShort();
         int length;
         final int[] ToC = new int[count * 2];
         for (short i = 0; i < count; i++) {
@@ -34,14 +33,12 @@ public record DataRow (
     @Override
     public String toString() {
         return String.format("DataRow[count=%s, buf=%s]",
-                count,
+                ArrayTool.readShort(bytes, 0),
                 Arrays.toString(bytes)
         );
     }
 
-    public static DataRow fromByteBuffer(final ByteBuffer bb) {
-        // TODO: don't parse it?
-        final short count = bb.getShort();
-        return new DataRow(count, bb.array());
+    public static DataRow fromBytes(final byte[] buf) {
+        return new DataRow(buf);
     }
 }
