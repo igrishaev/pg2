@@ -1,13 +1,12 @@
 package org.pg.msg.server;
 
-import org.pg.util.BBTool;
+import org.pg.util.ArrayTool;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public record DataRow (
         short count,
-        ByteBuffer buf
+        byte[] bytes
 ) implements IServerMessage {
 
     /*
@@ -15,17 +14,15 @@ public record DataRow (
     is the offset of data and [i + 1] is its length.
      */
     public int[] ToC() {
-        // clone buffer to make the method thread-safe
-        final ByteBuffer bb = buf.duplicate();
-        bb.rewind();
-        final short size = bb.getShort();
-        final int[] ToC = new int[size * 2];
-        for (short i = 0; i < size; i++) {
-            final int length = bb.getInt();
-            ToC[i * 2] = bb.position();
+        final int[] off = {2};
+        int length;
+        final int[] ToC = new int[count * 2];
+        for (short i = 0; i < count; i++) {
+            length = ArrayTool.readInt(bytes, off);
+            ToC[i * 2] = off[0];
             ToC[i * 2 + 1] = length;
             if (length > 0) {
-                BBTool.skip(bb, length);
+                ArrayTool.skip(length, off);
             }
         }
         return ToC;
@@ -35,11 +32,12 @@ public record DataRow (
     public String toString() {
         return String.format("DataRow[count=%s, buf=%s]",
                 count,
-                Arrays.toString(buf.array())
+                Arrays.toString(bytes)
         );
     }
 
-    public static DataRow fromByteBuffer(final ByteBuffer buf) {
-        return new DataRow(buf.getShort(), buf);
+    public static DataRow fromBytes(final byte[] bytes) {
+        final short count = ArrayTool.readShort(bytes, 0);
+        return new DataRow(count, bytes);
     }
 }

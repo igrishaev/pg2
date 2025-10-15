@@ -1,6 +1,7 @@
 package org.pg.msg.server;
 
-import java.nio.ByteBuffer;
+import org.pg.util.ArrayTool;
+
 import java.util.Arrays;
 
 public record ParameterDescription (
@@ -16,11 +17,12 @@ public record ParameterDescription (
         );
     }
 
-    public static ParameterDescription fromByteBuffer(final ByteBuffer buf) {
-        final int count = Short.toUnsignedInt(buf.getShort());
+    public static ParameterDescription fromBytes(final byte[] bytes) {
+        final int[] off = {0};
+        final int count = Short.toUnsignedInt(ArrayTool.readShort(bytes, off));
         final int[] OIDs = new int[count];
         for (int i = 0; i < count; i++) {
-            OIDs[i] = buf.getInt();
+            OIDs[i] = ArrayTool.readInt(bytes, off);
         }
         return new ParameterDescription(count, OIDs);
     }
