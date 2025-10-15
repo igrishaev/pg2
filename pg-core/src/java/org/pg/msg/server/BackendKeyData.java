@@ -1,12 +1,11 @@
 package org.pg.msg.server;
 
-import org.pg.util.ArrayTool;
+import java.nio.ByteBuffer;
 
 public record BackendKeyData (int pid, int secretKey) implements IServerMessage {
-    public static BackendKeyData fromBytes(final byte[] bytes) {
-        final int[] off = {0};
-        final int pid = ArrayTool.readInt(bytes, off);
-        final int key = ArrayTool.readInt(bytes, off);
+    public static BackendKeyData fromByteBuffer(final ByteBuffer bb) {
+        final int pid = bb.getInt();
+        final int key = bb.getInt();
         return new BackendKeyData(pid, key);
     }
 }

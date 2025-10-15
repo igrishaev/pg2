@@ -578,9 +578,10 @@ public final class Connection implements AutoCloseable {
     private IServerMessage readMessage (final boolean skipMode) {
 
         final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
+        final ByteBuffer bbHeader = ByteBuffer.wrap(bufHeader);
 
-        final char tag = (char) bufHeader[0];
-        final int bodySize = ArrayTool.readInt(bufHeader, 1) - 4;
+        final char tag = (char) bbHeader.get();
+        final int bodySize = bbHeader.getInt() - 4;
 
         // skipMode means there has been an exception before. There is no need
         // to parse data-heavy messages as we're going to throw an exception
@@ -598,17 +599,17 @@ public final class Connection implements AutoCloseable {
 
         return switch (tag) {
             case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'S' -> ParameterStatus.fromBytes(bufBody, codecParams.serverCharset());
-            case 'Z' -> ReadyForQuery.fromBytes(bufBody);
-            case 'C' -> CommandComplete.fromBytes(bufBody, codecParams.serverCharset());
-            case 'T' -> RowDescription.fromBytes(bufBody, codecParams.serverCharset());
-            case 'D' -> DataRow.fromBytes(bufBody);
+            case 'S' -> ParameterStatus.fromByteBuffer(bbBody, codecParams.serverCharset());
+            case 'Z' -> ReadyForQuery.fromByteBuffer(bbBody);
+            case 'C' -> CommandComplete.fromByteBuffer(bbBody, codecParams.serverCharset());
+            case 'T' -> RowDescription.fromByteBuffer(bbBody, codecParams.serverCharset());
+            case 'D' -> DataRow.fromByteBuffer(bbBody);
             case 'E' -> ErrorResponse.fromByteBuffer(bbBody, codecParams.serverCharset());
-            case 'K' -> BackendKeyData.fromBytes(bufBody);
+            case 'K' -> BackendKeyData.fromByteBuffer(bbBody);
             case '1' -> ParseComplete.INSTANCE;
             case '2' -> BindComplete.INSTANCE;
             case '3' -> CloseComplete.INSTANCE;
-            case 't' -> ParameterDescription.fromBytes(bufBody);
+            case 't' -> ParameterDescription.fromByteBuffer(bbBody);
             case 'H' -> CopyOutResponse.fromByteBuffer(bbBody);
             case 'd' -> CopyData.fromByteBuffer(bbBody);
             case 'c' -> CopyDone.INSTANCE;

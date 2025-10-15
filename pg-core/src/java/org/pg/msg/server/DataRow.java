@@ -1,7 +1,9 @@
 package org.pg.msg.server;
 
 import org.pg.util.ArrayTool;
+import org.pg.util.BBTool;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public record DataRow (
@@ -14,15 +16,16 @@ public record DataRow (
     is the offset of data and [i + 1] is its length.
      */
     public int[] ToC() {
-        final int[] off = {2};
+        final ByteBuffer bb = ByteBuffer.wrap(bytes);
+        BBTool.skip(bb, 2);
         int length;
         final int[] ToC = new int[count * 2];
         for (short i = 0; i < count; i++) {
-            length = ArrayTool.readInt(bytes, off);
-            ToC[i * 2] = off[0];
+            length = bb.getInt();
+            ToC[i * 2] = bb.position();
             ToC[i * 2 + 1] = length;
             if (length > 0) {
-                ArrayTool.skip(length, off);
+                BBTool.skip(bb, length);
             }
         }
         return ToC;
@@ -36,8 +39,9 @@ public record DataRow (
         );
     }
 
-    public static DataRow fromBytes(final byte[] bytes) {
-        final short count = ArrayTool.readShort(bytes, 0);
-        return new DataRow(count, bytes);
+    public static DataRow fromByteBuffer(final ByteBuffer bb) {
+        // TODO: don't parse it?
+        final short count = bb.getShort();
+        return new DataRow(count, bb.array());
     }
 }
