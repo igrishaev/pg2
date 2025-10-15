@@ -1,8 +1,7 @@
 package org.pg;
 
-import clojure.lang.PersistentHashMap;
-import clojure.lang.PersistentVector;
-import clojure.lang.RT;
+import clojure.java.api.Clojure;
+import clojure.lang.*;
 import org.pg.codec.CodecParams;
 import org.pg.processor.IProcessor;
 import org.pg.processor.Processors;
@@ -58,13 +57,41 @@ public final class Main {
 //            System.out.println(pgType);
 //        }
 
-//        System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
+        final List<Object> result = (List<Object>) conn.execute("select 1 as a, 2 as b;", ExecuteParams.builder().fnKeyTransform((IFn) Clojure.var("clojure.core", "identity")).build());
+        final Object map = result.get(0);
+
+        System.out.println(result.getClass());
+
+        System.out.println(Clojure.var("clojure.core", "get").invoke(map, "a"));
+
+//        System.out.println(Util.equiv(
+//                PersistentHashMap.create(Keyword.intern("a"), 1, Keyword.intern("b"), 2),
+//                map
+//        ));
+
+//        System.out.println(result);
+//        System.out.println(PersistentVector.create(
+//                PersistentHashMap.create(Keyword.intern("a"), 1, Keyword.intern("b"), 2)
+//        ));
+//
+//        System.out.println(
+//                Clojure.var("clojure.core", "=").invoke(
+//                        PersistentVector.create(
+//                            PersistentHashMap.create(Keyword.intern("a"), 1, Keyword.intern("b"), 2)
+//                        )
+//                        ,
+//                        result//.get(0)
+//
+//                )
+//        );
+
+        // System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
 //        System.out.println(conn.execute("select 'test'::citext as test"));
 //        System.out.println(conn.execute("select $1::citext", List.of("test")));
 //        conn.query("deallocate all");
 //        System.out.println(conn.execute("select $1::citext", List.of("test")));
-            conn.setConfig("application_name", "aaa", false);
-            System.out.println(conn.currentSetting("application_nameaaa", false));
+//            conn.setConfig("application_name", "aaa", false);
+//            System.out.println(conn.currentSetting("application_nameaaa", false));
 
 //        System.out.println(conn.execute("select '12:01:59.123456789+03'::timetz as timetz"));
 //        final Object map = RT.first(conn.execute("select 1 a, 2 b, 3 c, 4 d, 5 e, 6 f, 7 g, 8 h, 9 i, 10 j, 11 k, 12 l, 13 m, 14 n, 15 o, 16 p"));

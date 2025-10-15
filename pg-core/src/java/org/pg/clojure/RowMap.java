@@ -5,6 +5,7 @@ import org.pg.codec.CodecParams;
 import org.pg.msg.server.DataRow;
 import org.pg.msg.server.RowDescription;
 import org.pg.processor.IProcessor;
+import org.pg.util.ArrayTool;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -16,7 +17,6 @@ public final class RowMap extends APersistentMap implements Indexed {
     private final DataRow dataRow;
     private final RowDescription rowDescription;
     private final Object[] keys;
-    private final Map<Object, Short> keysIndex;
     private final CodecParams codecParams;
     private final Object[] parsedValues;
     private final boolean[] parsedKeys;
@@ -24,14 +24,12 @@ public final class RowMap extends APersistentMap implements Indexed {
     public RowMap(final DataRow dataRow,
                   final RowDescription rowDescription,
                   final Object[] keys,
-                  final Map<Object, Short> keysIndex,
                   final CodecParams codecParams
     ) {
         this.count = dataRow.count();
         this.dataRow = dataRow;
         this.rowDescription = rowDescription;
         this.keys = keys;
-        this.keysIndex = keysIndex;
         this.codecParams = codecParams;
         this.parsedValues = new Object[count];
         this.parsedKeys = new boolean[count];
@@ -39,21 +37,25 @@ public final class RowMap extends APersistentMap implements Indexed {
 
     private IPersistentMap toClojureMap() {
         ITransientMap result = PersistentHashMap.EMPTY.asTransient();
-        short i;
-        for (final Map.Entry<Object, Short> mapEntry: keysIndex.entrySet()) {
-            i = mapEntry.getValue();
-            result = result.assoc(mapEntry.getKey(), getValueByIndex(i));
+        Object key;
+        Object value;
+        for (short i = 0; i < count; i++) {
+            key = keys[i];
+            value = getValueByIndex(i);
+            result = result.assoc(key, value);
         }
         return result.persistent();
     }
 
     @SuppressWarnings("unused") // pg.fold
     public Map<Object, Object> toJavaMap() {
-        final Map<Object, Object> result = new HashMap<>(keysIndex.size());
-        short i;
-        for (final Map.Entry<Object, Short> mapEntry: keysIndex.entrySet()) {
-            i = mapEntry.getValue();
-            result.put(mapEntry.getKey(), getValueByIndex(i));
+        final Map<Object, Object> result = new HashMap<>(count);
+        Object key;
+        Object value;
+        for (short i = 0; i < count; i++) {
+            key = keys[i];
+            value = getValueByIndex(i);
+            result.put(key, value);
         }
         return result;
     }
@@ -125,7 +127,7 @@ public final class RowMap extends APersistentMap implements Indexed {
             return null;
         }
 
-        final byte[] payload = dataRow.buf().array();
+        final byte[] payload = dataRow.bytes();
         final RowDescription.Column col = rowDescription.columns()[i];
         final int oid = col.typeOid();
 
@@ -151,23 +153,29 @@ public final class RowMap extends APersistentMap implements Indexed {
     @SuppressWarnings("unused") // pg.fold
     public IPersistentCollection vals () {
         ITransientCollection result = PersistentVector.EMPTY.asTransient();
-        for (final Object key: keys) {
-            result = result.conj(getValueByKey(key));
+        Object value;
+        for (int i = 0; i < count; i++) {
+            value = getValueByIndex(i);
+            result = result.conj(value);
         }
         return result.persistent();
     }
 
+    private int findIndex(final Object key) {
+        return ArrayTool.indexOf(keys, key);
+    }
+
     private Object getValueByKey (final Object key) {
-        if (!keysIndex.containsKey(key)) {
+        final int i = findIndex(key);
+        if (i == -1) {
             return null;
         }
-        final int i = keysIndex.get(key);
         return getValueByIndex(i);
     }
 
     @Override
     public boolean containsKey(final Object key) {
-        return keysIndex.containsKey(key);
+        return findIndex(key) > -1;
     }
 
     @Override

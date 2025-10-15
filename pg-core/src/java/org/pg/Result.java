@@ -22,7 +22,6 @@ public final class Result {
          private RowDescription rowDescription;
          private CommandComplete commandComplete;
          private ParameterDescription parameterDescription;
-         private Map<Object, Short> keysIndex;
          private Object[] keys;
          private Object acc;
 
@@ -147,10 +146,6 @@ public final class Result {
         return current.parameterDescription;
     }
 
-    public Map<Object, Short> getCurrentKeysIndex () {
-        return current.keysIndex;
-    }
-
     public Object[] getCurrentKeys () {
         return current.keys;
     }
@@ -161,13 +156,10 @@ public final class Result {
         final String[] names = unifyKeys(msg.getColumnNames());
         final int len = names.length;
         final Object[] keys = new Object[len];
-        final Map<Object, Short> keysIndex = new HashMap<>(len);
         for (short i = 0; i < len; i ++) {
             final Object newKey = fnKeyTransform.invoke(names[i]);
             keys[i] = newKey;
-            keysIndex.put(newKey, i);
         }
-        current.keysIndex = keysIndex;
         current.keys = keys;
         current.acc = executeParams.reducer().invoke();
     }
