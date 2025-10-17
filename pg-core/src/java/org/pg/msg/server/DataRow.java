@@ -30,10 +30,14 @@ public record DataRow (
         return ToC;
     }
 
+    public int count() {
+        return ArrayTool.readShort(bytes, 0);
+    }
+
     @Override
     public String toString() {
         return String.format("DataRow[count=%s, buf=%s]",
-                ArrayTool.readShort(bytes, 0),
+                count(),
                 Arrays.toString(bytes)
         );
     }

@@ -12,7 +12,7 @@ import java.util.*;
 
 public final class RowMap extends APersistentMap implements Indexed {
 
-    private int[] ToC = null;
+    private final int[] ToC;
     private final int count;
     private final DataRow dataRow;
     private final RowDescription rowDescription;
@@ -28,6 +28,7 @@ public final class RowMap extends APersistentMap implements Indexed {
     ) {
         this.count = keys.length;
         this.dataRow = dataRow;
+        this.ToC = dataRow.ToC();
         this.rowDescription = rowDescription;
         this.keys = keys;
         this.codecParams = codecParams;
@@ -116,9 +117,6 @@ public final class RowMap extends APersistentMap implements Indexed {
     }
 
     private Object parseValueInner(final int i) {
-        if (ToC == null) {
-            ToC = dataRow.ToC();
-        }
 
         final int offset = ToC[i * 2];
         final int length = ToC[i * 2 + 1];
