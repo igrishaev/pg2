@@ -21,7 +21,7 @@ public final class Main {
          String user = "test"; // System.getenv("USER");
 
         Config config = Config.builder(user, user)
-                .port(10150)
+                .port(15432) // 10150
                 .host("127.0.0.1")
                 .password(user)
                 .binaryEncode(true)
@@ -57,12 +57,12 @@ public final class Main {
 //            System.out.println(pgType);
 //        }
 
-        final List<Object> result = (List<Object>) conn.execute("select 1 as a, 2 as b;", ExecuteParams.builder().fnKeyTransform((IFn) Clojure.var("clojure.core", "identity")).build());
-        final Object map = result.get(0);
-
-        System.out.println(result.getClass());
-
-        System.out.println(Clojure.var("clojure.core", "get").invoke(map, "a"));
+//        final List<Object> result = (List<Object>) conn.execute("select 1 as a, 2 as b;", ExecuteParams.builder().fnKeyTransform((IFn) Clojure.var("clojure.core", "identity")).build());
+//        final Object map = result.get(0);
+//
+//        System.out.println(result.getClass());
+//
+//        System.out.println(Clojure.var("clojure.core", "get").invoke(map, "a"));
 
 //        System.out.println(Util.equiv(
 //                PersistentHashMap.create(Keyword.intern("a"), 1, Keyword.intern("b"), 2),
@@ -85,7 +85,7 @@ public final class Main {
 //                )
 //        );
 
-        // System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
+         System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
 //        System.out.println(conn.execute("select 'test'::citext as test"));
 //        System.out.println(conn.execute("select $1::citext", List.of("test")));
 //        conn.query("deallocate all");
