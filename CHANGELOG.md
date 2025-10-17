@@ -7,9 +7,10 @@
 
 ## 0.1.41-SNAPSHOT
 
-- ?
-- ?
-- ?
+- remove map from DataRow
+- faster toClojure and toJava methods
+- add ArrayTool class
+- custom map type in Processors
 
 ## 0.1.40
 
