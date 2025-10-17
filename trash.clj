@@ -183,8 +183,15 @@ connUsedSince.put(conn.getId(), System.currentTimeMillis());
       (let [res1
             (pg/execute conn (format "select '(1,\"hello,world\",true)'::%s as tuple" typename))]
         (is (= 1
-               res1))))
+               res1))))))
 
-    )
 
-  )
+(doseq [r (range 160 300)]
+  (->> oids
+       (mapv (fn [oid]
+               (mod oid 206)))
+       (frequencies)
+       (sort-by first)
+       (vals)
+       (set)
+       (println)))
