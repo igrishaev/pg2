@@ -85,7 +85,10 @@ public final class Main {
 //                )
 //        );
 
-         System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
+         // System.out.println(conn.execute2("select 'foo=>test,ab=>null,c=>42'::hstore as hs;", ExecuteParams.INSTANCE));
+
+        System.out.println(conn.execute2("select 1 as a, 'test' as b;", ExecuteParams.INSTANCE));
+
 //        System.out.println(conn.execute("select 'test'::citext as test"));
 //        System.out.println(conn.execute("select $1::citext", List.of("test")));
 //        conn.query("deallocate all");

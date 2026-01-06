@@ -48,7 +48,6 @@ public final class NumericBin {
         if (digitsNum == 0) {
             return BigDecimal.ZERO;
         }
-
         final short weight = bb.getShort();
         final short sign = bb.getShort();
         final short scale = bb.getShort();

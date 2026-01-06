@@ -727,18 +727,18 @@ public final class Connection implements AutoCloseable {
         return new PreparedStatement(parse, parameterDescription, rowDescription);
     }
 
-    private void sendBind (final String portal,
-                           final PreparedStatement stmt,
+    private void sendBind (final String statement,
+                           final String portal,
+                           final int[] paramOIDs,
                            final ExecuteParams executeParams
     ) {
         final List<Object> params = executeParams.params();
-        final int[] OIDs = stmt.parameterDescription().oids();
         final int size = params.size();
 
-        if (size != OIDs.length) {
+        if (size != paramOIDs.length) {
             throw new PGError(
                     "Wrong parameters count: %s (must be %s)",
-                    size, OIDs.length
+                    size, paramOIDs.length
             );
         }
 
@@ -746,7 +746,6 @@ public final class Connection implements AutoCloseable {
         final Format columnFormat = (executeParams.binaryDecode() || config.binaryDecode()) ? Format.BIN : Format.TXT;
 
         final byte[][] bytes = new byte[size][];
-        String statement = stmt.parse().statement();
 
         IProcessor typeProcessor;
 
@@ -757,7 +756,7 @@ public final class Connection implements AutoCloseable {
                 bytes[i] = null;
                 continue;
             }
-            int oid = OIDs[i];
+            int oid = paramOIDs[i];
             typeProcessor = codecParams.getProcessor(oid);
 
             switch (paramsFormat) {
@@ -805,8 +804,10 @@ public final class Connection implements AutoCloseable {
     ) {
         final String sql = stmt.parse().query();
         try (final TryLock ignored = lock.get()) {
+            final String statement = stmt.parse().statement();
             final String portal = generatePortal();
-            sendBind(portal, stmt, executeParams);
+            final int[] OIDs = stmt.parameterDescription().oids();
+            sendBind(statement, portal, OIDs, executeParams);
             sendDescribePortal(portal);
             sendExecute(portal, executeParams.maxRows());
             sendClosePortal(portal);
@@ -845,6 +846,21 @@ public final class Connection implements AutoCloseable {
         return execute(sql, ExecuteParams.builder().params(params).build());
     }
 
+    public Object execute2(final String sql, final ExecuteParams executeParams) {
+        final String statement = generateStatement();
+        final String portal = generatePortal();
+        final int[] oids = intOids(executeParams.oids());
+        final Parse parse = new Parse(statement, sql, oids);
+        sendMessage(parse);
+        sendBind(statement, portal, oids, executeParams);
+        sendDescribePortal(portal);
+        sendExecute(portal, 0);
+        sendClosePortal(portal);
+        sendCloseStatement(statement);
+        sendSync();
+        return interact(sql).getResult();
+    }
+
     public Object execute (final String sql, final ExecuteParams executeParams) {
         final boolean psCacheOn = config.psCacheOn();
         final String cacheKey = psCacheOn
@@ -869,8 +885,10 @@ public final class Connection implements AutoCloseable {
             } else {
                 stmt = prepare(sql, executeParams);
             }
+            final String statement = stmt.parse().statement();
             final String portal = generatePortal();
-            sendBind(portal, stmt, executeParams);
+            final int[] oids = stmt.parameterDescription().oids();
+            sendBind(statement, portal, oids, executeParams);
             sendDescribePortal(portal);
             sendExecute(portal, executeParams.maxRows());
             sendClosePortal(portal);
