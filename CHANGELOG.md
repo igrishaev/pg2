@@ -23,7 +23,7 @@
 - ?
 - ?
 
-## 0.1.42-SNAPSHOT
+## 0.1.42
 
 - fix migrations list command (long ID case)
 - fix migrations create command (path)
