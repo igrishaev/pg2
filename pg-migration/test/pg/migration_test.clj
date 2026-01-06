@@ -34,6 +34,11 @@
         (is (= "Neither a resource nor a local file exists: dunno"
                (ex-message e)))))))
 
+(deftest test-list-printing
+  (is (= 12
+         (cli/get-id-width {202601061234 {:foo 1}})))
+  (is (= 4
+         (cli/get-id-width {1 {:foo 1}}))))
 
 (deftest test-parse-file-simple
   (is (= nil

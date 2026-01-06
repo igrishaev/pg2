@@ -1,11 +1,35 @@
 
-## 0.1.42-SNAPSHOT
+## 0.1.45-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.44-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.43-SNAPSHOT
 
 - ?
 - ?
 - ?
 
 ## 0.1.41-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.42-SNAPSHOT
+
+- fix migrations list command (long ID case)
+- fix migrations create command (path)
+- add todos
+
+## 0.1.41
 
 - remove map from DataRow
 - faster toClojure and toJava methods

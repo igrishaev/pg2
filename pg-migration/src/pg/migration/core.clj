@@ -114,22 +114,33 @@
          (or id
              (generate-datetime-id))
 
+         path-full
+         (or (some-> path io/resource io/file)
+             (io/file path))
+
+         _ (log/infof "path: %s" path-full)
+
          name-prev
          (make-file-name id slug :prev)
 
          name-next
          (make-file-name id slug :next)
 
+         _ (log/infof "prev file: %s" name-prev)
+         _ (log/infof "next file: %s" name-next)
+
          file-prev
-         (io/file path name-prev)
+         (io/file path-full name-prev)
 
          file-next
-         (io/file path name-next)]
+         (io/file path-full name-next)]
 
-     (.mkdirs (io/file path))
+     (.mkdirs (io/file path-full))
 
      (spit file-prev "")
      (spit file-next "")
+
+     (log/info "files created")
 
      [file-prev file-next])))
 

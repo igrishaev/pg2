@@ -455,13 +455,13 @@ Command-specific help:
 
     (is (= "Migrations:
 
-|    ID | Applied? | Slug
-| ----- | -------- | --------
-|     1 | false    | create users
-|     2 | false    | create profiles
-|     3 | false    | next only migration
-|     4 | false    | prev only migration
-|     5 | false    | add some table
+|   ID | Applied? | Slug
+| ---- | -------- | --------
+|    1 | false    | create users
+|    2 | false    | create profiles
+|    3 | false    | next only migration
+|    4 | false    | prev only migration
+|    5 | false    | add some table
 "
            out)))
 
@@ -482,13 +482,13 @@ Command-specific help:
 
     (is (= "Migrations:
 
-|    ID | Applied? | Slug
-| ----- | -------- | --------
-|     1 | true     | create users
-|     2 | true     | create profiles
-|     3 | true     | next only migration
-|     4 | true     | prev only migration
-|     5 | true     | add some table
+|   ID | Applied? | Slug
+| ---- | -------- | --------
+|    1 | true     | create users
+|    2 | true     | create profiles
+|    3 | true     | next only migration
+|    4 | true     | prev only migration
+|    5 | true     | add some table
 "
            out))))
 

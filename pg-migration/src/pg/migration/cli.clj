@@ -362,6 +362,12 @@
   (doseq [cmd (sort CMDS)]
     (println " -" cmd)))
 
+(defn get-id-width [migrations]
+  (->> migrations
+       keys
+       (map str)
+       (map count)
+       (apply max 4)))
 
 (defn handle-list
   "
@@ -378,6 +384,8 @@
         id-max-size
         (->> migrations
              keys
+             (map str)
+             (map count)
              (apply max 4))
 
         | \|
