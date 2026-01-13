@@ -441,3 +441,29 @@ syntax. Also, we produce a pretty-formatted SQL for better logs:
 
 For more options, please refer to the official [HoneySQL
 documentation][honeysql].
+
+## Arrays
+
+To pass an array as a parameter, you must wrap it with a tag. Either use the
+`:array` tag with an explicit type:
+
+~~~clojure
+(pgh/execute conn
+  {:insert-into :table
+   :values [{:id 1 :arr [:array [1 2 3] :bigint]}]}
+  {:honey
+   {:pretty true}})
+~~~
+
+If it's a text array, you may skip the type. Another way is to use `:lift`:
+
+~~~clojure
+(pgh/execute conn
+  {:insert-into :table
+   :values [{:id 1 :arr [:lift [1 2 3]]}]}
+  {:honey
+   {:pretty true}})
+~~~
+
+The `:lift` tag passes a value as is (HoneySQL won't treat it as a special
+one). PG2 will handle the value properly and encode it into a Postgres array.
