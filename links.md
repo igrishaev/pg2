@@ -30,3 +30,9 @@ https://postgrespro.ru/docs/postgresql/15/catalog-pg-type
 
 ## Contrib modules
 https://postgrespro.ru/docs/postgresql/15/contrib
+
+## JDBC (Java)
+https://github.com/pgjdbc/pgjdbc/blob/c44a2a99d413d4354584b0f9af24ed8bf7aed314/pgjdbc/src/main/java/org/postgresql/jdbc/PgConnection.java
+
+## JDBC.next (Clojure)
+https://github.com/seancorfield/next-jdbc/blob/411c343bc6c6112040c57449be4dca5f96103015/src/next/jdbc/transaction.clj

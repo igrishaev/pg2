@@ -21,7 +21,7 @@ public record PG2DatabaseMetaData(org.pg.Connection conn) implements DatabaseMet
 
     @Override
     public String getUserName() throws SQLException {
-        return "";
+        return conn.getUser();
     }
 
     @Override
