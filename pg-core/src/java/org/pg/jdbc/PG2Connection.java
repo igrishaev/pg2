@@ -39,8 +39,21 @@ public class PG2Connection implements Connection {
         return sql;
     }
 
+    private final String sqlReadOnly = "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY";
+    private final String sqlReadWrite = "SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE";
+
     @Override
     public void setAutoCommit(boolean autoCommit) {
+        if (this.autoCommit == autoCommit) {
+            return;
+        }
+
+        if (!this.autoCommit) {
+            commit();
+        }
+
+        // TODO: read only?
+
         this.autoCommit = autoCommit;
     }
 
@@ -75,7 +88,13 @@ public class PG2Connection implements Connection {
     }
 
     @Override
-    public void setReadOnly(boolean readOnly) {
+    public void setReadOnly(boolean readOnly) throws SQLException {
+        if (conn.isTransaction()) {
+            throw sqlError("cannot set read only in the middle of a transaction");
+        }
+
+        // TODO
+
         this.readOnly = readOnly;
     }
 
@@ -94,9 +113,24 @@ public class PG2Connection implements Connection {
         throw notSupported("getCatalog is not supported");
     }
 
+    private static String getIsolationLevelSQL(final int level) throws SQLException {
+        return switch (level) {
+            case Connection.TRANSACTION_READ_UNCOMMITTED -> "READ UNCOMMITTED";
+            case Connection.TRANSACTION_READ_COMMITTED -> "READ COMMITTED";
+            case Connection.TRANSACTION_REPEATABLE_READ -> "REPEATABLE READ";
+            case Connection.TRANSACTION_SERIALIZABLE -> "SERIALIZABLE";
+            default -> throw sqlError("unknown isolation level: %s", level);
+        };
+    }
+
     @Override
-    public void setTransactionIsolation(int level) {
+    public void setTransactionIsolation(int level) throws SQLException {
+        if (conn.isTransaction()) {
+            throw sqlError("cannot change isolation level in the middle of a transaction");
+        }
         this.isolationLevel = level;
+        final String levelSql = getIsolationLevelSQL(level);
+        conn.query("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL " + levelSql);
     }
 
     @Override
