@@ -3,9 +3,7 @@ package org.pg.type;
 import clojure.lang.IDeref;
 import clojure.lang.PersistentHashMap;
 import org.pg.clojure.KW;
-import org.pg.util.BBTool;
-
-import java.nio.ByteBuffer;
+import org.pg.clojure.RowMap;
 
 public record PGType(
         int oid,
@@ -52,59 +50,19 @@ public record PGType(
         return buildFullName(nspname, typname);
     }
 
-    /*
-    Parse a 'COPY TO' binary row manually and compose an instance of PGType.
-     */
-    public static PGType fromCopyBuffer(final ByteBuffer bb) {
-        int len;
-
-        BBTool.skip(bb, 2);
-
-        BBTool.skip(bb, 4);
-        final int oid = bb.getInt();
-
-        len = bb.getInt();
-        final String typname = BBTool.getString(bb, len);
-
-        BBTool.skip(bb, 4);
-        final char typtype = (char) bb.get();
-
-        len = bb.getInt();
-        final String typinput = BBTool.getString(bb, len);
-
-        len = bb.getInt();
-        final String typoutput = BBTool.getString(bb, len);
-
-        len = bb.getInt();
-        final String typreceive = BBTool.getString(bb, len);
-
-        len = bb.getInt();
-        final String typsend = BBTool.getString(bb, len);
-
-        BBTool.skip(bb, 4);
-        final int typarray = bb.getInt();
-
-        BBTool.skip(bb, 4);
-        final char typdelim = (char) bb.get();
-
-        BBTool.skip(bb, 4);
-        final int typelem = bb.getInt();
-
-        len = bb.getInt();
-        final String nspname = BBTool.getString(bb, len);
-
+    public static PGType fromRowMap(final RowMap row) {
         return new PGType(
-                oid,
-                typname,
-                typtype,
-                typinput,
-                typoutput,
-                typreceive,
-                typsend,
-                typarray,
-                typdelim,
-                typelem,
-                nspname
+                (int)    row.nth(0),
+                (String) row.nth(1),
+                (char)   row.nth(2),
+                (String) row.nth(3),
+                (String) row.nth(4),
+                (String) row.nth(5),
+                (String) row.nth(6),
+                (int)    row.nth(7),
+                (char)   row.nth(8),
+                (int)    row.nth(9),
+                (String) row.nth(10)
         );
     }
 

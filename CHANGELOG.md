@@ -1,4 +1,16 @@
 
+## 0.1.47-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.46-SNAPSHOT
+
+- ?
+- ?
+- ?
+
 ## 0.1.45-SNAPSHOT
 
 - ?
@@ -7,9 +19,10 @@
 
 ## 0.1.44-SNAPSHOT
 
-- ?
-- ?
-- ?
+- better readTypesProcess: query instead of copy
+- alter SQL_TYPE_COMMON query template
+- PGType from row map constructor
+- better notification polling: handle all messages
 
 ## 0.1.43
 

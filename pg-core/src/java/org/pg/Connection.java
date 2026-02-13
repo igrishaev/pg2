@@ -224,57 +224,19 @@ public final class Connection implements AutoCloseable {
     Common logic for reading and parsing binary COPY payload.
      */
     private List<PGType> readTypesProcess(final String query) {
-        sendQuery(query);
-        flush();
-        IServerMessage msg;
         PGType pgType;
-        ByteBuffer bb;
-        boolean headerSeen = false;
-        final List<PGType> result = new ArrayList<>();
-        ErrorResponse errorResponse = null;
-        while (true) {
-            msg = readMessage(false);
+        final List<PGType> types = new ArrayList<>();
+        @SuppressWarnings("unchecked")
+        final List<RowMap> result = (List<RowMap>) query(query);
+        for (RowMap row: result) {
+            pgType = PGType.fromRowMap(row);
             if (Debug.isON) {
-                Debug.debug(" -> %s", msg);
+                Debug.debug(" -> %s\r\n", pgType);
             }
-            if (msg instanceof CopyData copyData) {
-                bb = copyData.buf();
-                if (!headerSeen) {
-                    BBTool.skip(bb, Copy.COPY_BIN_HEADER.length);
-                    headerSeen = true;
-                }
-                if (Copy.isTerminator(bb)) {
-                    continue;
-                }
-                pgType = PGType.fromCopyBuffer(bb);
-                if (Debug.isON) {
-                    Debug.debug(" -> %s\r\n", pgType);
-                }
-                result.add(pgType);
-            } else if (msg instanceof CopyOutResponse
-                    || msg instanceof CopyDone
-                    || msg instanceof CommandComplete) {
-                if (Debug.isON) {
-                    Debug.debug(" -> skipping message: %s", msg);
-                }
-            } else if (msg instanceof ReadyForQuery) {
-                break;
-            } else if (msg instanceof ErrorResponse e) {
-                errorResponse = e;
-            } else if (msg instanceof NoticeResponse nr) {
-                handleNoticeResponse(nr);
-            } else if (msg instanceof ParameterStatus ps) {
-                handleParameterStatus(ps);
-            } else if (msg instanceof NotificationResponse nr) {
-                handleNotificationResponse(nr);
-            } else {
-                throw new PGError("Unexpected message in readTypes: %s", msg);
-            }
+            types.add(pgType);
+
         }
-        if (errorResponse != null) {
-            throw new PGErrorResponse(errorResponse);
-        }
-        return result;
+        return types;
     }
 
     @SuppressWarnings("unused")
@@ -524,10 +486,12 @@ public final class Connection implements AutoCloseable {
         return String.format("p%d", System.nanoTime());
     }
 
+    @SuppressWarnings("unused") // clojure
     public void setConfig(final String parameter, final String value, final boolean isLocal) {
         execute("select set_config($1, $2, $3)", List.of(parameter, value, isLocal));
     }
 
+    @SuppressWarnings("unused") // clojure
     public String currentSetting(final String parameter, final Boolean missingOk) {
         final Object result = execute("select current_setting($1, $2)", List.of(parameter, missingOk));
         return (String) CljAPI.nth.invoke(CljAPI.first.invoke(result), 0);
@@ -1590,12 +1554,8 @@ public final class Connection implements AutoCloseable {
                 if (msg instanceof NotificationResponse nr) {
                     count++;
                     handleNotificationResponse(nr);
-                } else if (msg instanceof NoticeResponse nr) {
-                    handleNoticeResponse(nr);
-                } else if (msg instanceof ParameterStatus ps) {
-                    handleParameterStatus(ps);
                 } else {
-                    throw new PGError("Unexpected message in pollNotifications: %s", msg);
+                    handleMessage(msg, res);
                 }
             }
             res.maybeThrowError();
