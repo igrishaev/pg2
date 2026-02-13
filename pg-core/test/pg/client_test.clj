@@ -3154,11 +3154,11 @@ drop table %1$s;
     (pg/with-timeout [conn 2000]
       (let [res
             (pg/query conn "select pg_sleep(1) as sleep")]
-        (is (= [{:sleep ""}] res))))
+        (is (= [{:sleep nil}] res))))
     (testing "ensure it has been cancelled"
       (let [res
             (pg/query conn "select pg_sleep(2) as sleep")]
-        (is (= [{:sleep ""}] res))))))
+        (is (= [{:sleep nil}] res))))))
 
 
 (deftest test-with-timeout-do-cancell
@@ -3173,7 +3173,7 @@ drop table %1$s;
     (testing "ensure it has been cancelled"
       (let [res
             (pg/query conn "select pg_sleep(1) as sleep")]
-        (is (= [{:sleep ""}] res))))))
+        (is (= [{:sleep nil}] res))))))
 
 
 (deftest test-cancel-query
@@ -3823,6 +3823,22 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                  (update :arr vec)
                  (update-in [:arr 0] vec)
                  (update-in [:arr 1] vec)))))))
+
+
+(deftest test-void-result
+  (pg/with-connection [conn *CONFIG-BIN*]
+    (let [res (pg/execute conn "select ''::void as void" {:first? true})]
+      (is (= res {:void nil})))
+    (let [res (pg/execute conn "select $1::void as void" {:params [nil]
+                                                          :first? true})]
+      (is (= res {:void nil}))))
+
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [res (pg/execute conn "select ''::void as void" {:first? true})]
+      (is (= res {:void nil})))
+    (let [res (pg/execute conn "select $1::void as void" {:params [nil]
+                                                          :first? true})]
+      (is (= res {:void nil})))))
 
 
 (deftest test-array-read-bin

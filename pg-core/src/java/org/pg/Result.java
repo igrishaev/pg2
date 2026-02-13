@@ -77,7 +77,6 @@ public final class Result {
     private Throwable exception;
     public ScramSha256.Pipeline scramPipeline;
     private final String sql;
-    private int notificationCount;
 
     public static String[] unifyKeys (final String[] oldKeys) {
         final Map<String, Integer> map = new HashMap<>();
@@ -100,14 +99,6 @@ public final class Result {
 
     public Result(final ExecuteParams executeParams) {
         this(executeParams, null);
-    }
-
-    public void incNotificationCount() {
-        notificationCount += 1;
-    }
-
-    public int getNotificationCount() {
-        return notificationCount;
     }
 
     public Result(final ExecuteParams executeParams, final String sql) {
