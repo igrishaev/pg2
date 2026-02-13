@@ -17,7 +17,7 @@
 - ?
 - ?
 
-## 0.1.44-SNAPSHOT
+## 0.1.44
 
 - better readTypesProcess: query instead of copy
 - alter SQL_TYPE_COMMON query template
