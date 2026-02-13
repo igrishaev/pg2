@@ -11,7 +11,7 @@
 - ?
 - ?
 
-## 0.1.43-SNAPSHOT
+## 0.1.43
 
 - add void processor (empty strings become nil)
 - when processing types, handle notices, notifications, parameters
