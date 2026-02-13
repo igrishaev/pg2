@@ -30,3 +30,6 @@ https://postgrespro.ru/docs/postgresql/15/catalog-pg-type
 
 ## Contrib modules
 https://postgrespro.ru/docs/postgresql/15/contrib
+
+## Eric's issues
+https://github.com/brian-study/pg2/commit/8ee21348de3b7f097750344c605d3806db76945e

@@ -261,6 +261,12 @@ public final class Connection implements AutoCloseable {
                 break;
             } else if (msg instanceof ErrorResponse e) {
                 errorResponse = e;
+            } else if (msg instanceof NoticeResponse nr) {
+                handleNoticeResponse(nr);
+            } else if (msg instanceof ParameterStatus ps) {
+                handleParameterStatus(ps);
+            } else if (msg instanceof NotificationResponse nr) {
+                handleNotificationResponse(nr);
             } else {
                 throw new PGError("Unexpected message in readTypes: %s", msg);
             }
@@ -972,7 +978,7 @@ public final class Connection implements AutoCloseable {
         if (msg instanceof final DataRow x) {
             handleDataRow(x, res);
         } else if (msg instanceof final NotificationResponse x) {
-            handleNotificationResponse(x, res);
+            handleNotificationResponse(x);
         } else if (msg instanceof AuthenticationCleartextPassword) {
             handleAuthenticationCleartextPassword();
         } else if (msg instanceof final AuthenticationSASL x) {
@@ -1275,8 +1281,7 @@ public final class Connection implements AutoCloseable {
         config.executor().execute(() -> f.invoke(arg));
     }
 
-    private void handleNotificationResponse (final NotificationResponse msg, final Result res) {
-        res.incNotificationCount();
+    private void handleNotificationResponse (final NotificationResponse msg) {
         // Sometimes, it's important to know whether a notification
         // was triggered by the current connection or another.
         final boolean isSelf = msg.pid() == pid;
@@ -1576,20 +1581,25 @@ public final class Connection implements AutoCloseable {
 
     @SuppressWarnings("unused")
     public int pollNotifications() {
+        int count = 0;
         try (final TryLock ignored = lock.get()) {
             final Result res = new Result(ExecuteParams.INSTANCE, "--pollNotifications");
             while (IOTool.available(inStream) > 0) {
                 final IServerMessage msg = readMessage(res.hasException());
-                if (   msg instanceof NotificationResponse
-                    || msg instanceof NoticeResponse
-                    || msg instanceof ParameterStatus) {
-                    handleMessage(msg, res);
+                // count the amount of notifications handled
+                if (msg instanceof NotificationResponse nr) {
+                    count++;
+                    handleNotificationResponse(nr);
+                } else if (msg instanceof NoticeResponse nr) {
+                    handleNoticeResponse(nr);
+                } else if (msg instanceof ParameterStatus ps) {
+                    handleParameterStatus(ps);
                 } else {
                     throw new PGError("Unexpected message in pollNotifications: %s", msg);
                 }
             }
             res.maybeThrowError();
-            return res.getNotificationCount();
+            return count;
         }
     }
 

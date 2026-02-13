@@ -44,13 +44,13 @@
           diff
           (- time2 time1)]
 
-      (is (= [[{:x 1}] [{:pg_sleep ""}] [{:x 2}]]
+      (is (= [[{:x 1}] [{:pg_sleep nil}] [{:x 2}]]
              res1))
 
-      (is (= [[{:pg_sleep ""}] [{:x 3}] [{:x 4}]]
+      (is (= [[{:pg_sleep nil}] [{:x 3}] [{:x 4}]]
              res2))
 
-      (is (= [[{:x 5}] [{:x 6}] [{:pg_sleep ""}]]
+      (is (= [[{:x 5}] [{:x 6}] [{:pg_sleep nil}]]
              res3))
 
       (is (< 9000 diff 9500)))))
@@ -85,9 +85,9 @@
           diff
           (- time2 time1)]
 
-      (is (= [{:a ""}] res1))
-      (is (= [{:b ""}] res2))
-      (is (= [{:c ""}] res3))
+      (is (= [{:a nil}] res1))
+      (is (= [{:b nil}] res2))
+      (is (= [{:c nil}] res3))
 
       (is (< 6000 diff 6100)))))
 
@@ -137,9 +137,9 @@
           diff
           (- time2 time1)]
 
-      (is (= [{:a ""}] res1))
-      (is (= [{:b ""}] res2))
-      (is (= [{:c ""}] res3))
+      (is (= [{:a nil}] res1))
+      (is (= [{:b nil}] res2))
+      (is (= [{:c nil}] res3))
 
       (is (< 6000 diff 6700)))))
 
@@ -174,8 +174,8 @@
           diff
           (- time2 time1)]
 
-      (is (= {:a ""} res1))
-      (is (= {:b ""} res2))
+      (is (= {:a nil} res1))
+      (is (= {:b nil} res2))
 
       (is (< 3000 diff 3100)))))
 

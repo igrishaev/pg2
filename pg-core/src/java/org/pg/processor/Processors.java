@@ -93,6 +93,7 @@ public class Processors {
         oidMap.set(OID.BYTEA, new Bytea());
         oidMap.set(OID.BOOL, new Bool());
         oidMap.set(OID.BIT, new Bit());
+        oidMap.set(OID.VOID, new Void());
         // date & time
         oidMap.set(OID.TIMESTAMPTZ, new Timestamptz());
         oidMap.set(OID.TIMESTAMP, new Timestamp());
