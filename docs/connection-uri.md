@@ -117,7 +117,7 @@ Before you read, here is a brief description of types and parsing agreements.
 | `kebab-keys`                  | bool      | Use `:kebab-in-lower-case` keys when parsing DB column names                |
 | `fn-key`                      | ref       | A custom function to parse DB column names                                  |
 
-For DB keys, see a separate section ["Parsing Db Column Names"](docs/keys.md).
+For DB keys, see a separate section [Parsing DB Column Names](docs/keys.md).
 
 ## JDBC Compatible Parameters
 

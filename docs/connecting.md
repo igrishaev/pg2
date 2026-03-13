@@ -135,7 +135,7 @@ rest have predefined values.
 | `:kebab-keys?`         | bool         | false              | Use `:kebab-in-lower-case` keys when parsing DB column names                        |
 | `:fn-key`              | 1-arg fn     | nil                | A custom function to parse DB column names                                          |
 
-For DB keys, see a separate section ["Parsing Db Column Names"](docs/keys.md).
+For DB keys, see a separate section [Parsing DB Column Names](docs/keys.md).
 
 ### Parameter notes
 

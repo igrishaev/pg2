@@ -54,6 +54,7 @@ tests][tests].
 - [Data Source Abstraction](/docs/data-source.md)
 - [URI Connection String](/docs/connection-uri.md)
 - [Query and Execute](/docs/query-execute.md)
+- [Parsing DB Column Names](docs/keys.md)
 - [Prepared Statements](/docs/prepared-statement.md)
 - [Prepared Statement Cache](docs/prepared-statement-cache.md)
 - [Transactions](/docs/transaction.md)
