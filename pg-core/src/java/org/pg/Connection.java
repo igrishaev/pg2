@@ -912,7 +912,7 @@ public final class Connection implements AutoCloseable {
 
     private Result interact (final ExecuteParams executeParams, final boolean isAuth, final String sql) {
         flush();
-        final Result res = new Result(executeParams, sql);
+        final Result res = new Result(config, executeParams, sql);
         while (true) {
             final IServerMessage msg = readMessage(res.hasException());
             if (Debug.isON) {
@@ -1547,7 +1547,7 @@ public final class Connection implements AutoCloseable {
     public int pollNotifications() {
         int count = 0;
         try (final TryLock ignored = lock.get()) {
-            final Result res = new Result(ExecuteParams.INSTANCE, "--pollNotifications");
+            final Result res = new Result(config, ExecuteParams.INSTANCE, "--pollNotifications");
             while (IOTool.available(inStream) > 0) {
                 final IServerMessage msg = readMessage(res.hasException());
                 // count the amount of notifications handled

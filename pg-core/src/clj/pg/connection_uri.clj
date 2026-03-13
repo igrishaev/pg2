@@ -154,6 +154,9 @@
                 ;; unix-socket
                 ;; unix-socket-path
 
+                kebab-keys
+                fn-key
+
                 ;; misc
                 cancel-timeout-ms
                 protocol-version
@@ -213,6 +216,13 @@
 
      :fn-notice
      (some-> fn-notice parse-ref)
+
+     ;; keys
+     :fn-key
+     (some-> fn-key parse-ref)
+
+     :kebab-keys?
+     (some-> kebab-keys parse-bool)
 
      ;; ssl
      :use-ssl?

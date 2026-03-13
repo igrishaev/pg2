@@ -4,22 +4,12 @@
   `ExecuteParams` class from a Clojure map.
   "
   (:require
-   [clojure.string :as str]
-   [pg.fold :as fold])
+   [pg.fold :as fold]
+   [pg.keys :as keys])
   (:import
-   clojure.lang.Keyword
    java.util.List
    java.util.Map
    org.pg.ExecuteParams))
-
-
-(defn ->kebab
-  "
-  Turn a string column name into into  a kebab-case
-  formatted keyword.
-  "
-  ^Keyword [^String column]
-  (-> column (str/replace #"_" "-") keyword))
 
 
 (defn ->execute-params
@@ -94,9 +84,6 @@
         max-rows
         (.maxRows max-rows)
 
-        fn-key
-        (.fnKeyTransform fn-key)
-
         output-stream
         (.outputStream output-stream)
 
@@ -104,7 +91,10 @@
         (.inputStream input-stream)
 
         kebab-keys?
-        (.fnKeyTransform ->kebab)
+        (.fnKeyTransform keys/->kebab)
+
+        fn-key
+        (.fnKeyTransform fn-key)
 
         ;;
         ;; reducers

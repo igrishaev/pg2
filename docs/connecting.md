@@ -133,6 +133,9 @@ rest have predefined values.
 | `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section)     |
 | `:ps-cache?`           | bool         | true               | Whether to use [Prepared Statement Cache](docs/prepared-statement-cache.md)         |
 
+TODO: kebab keys
+TODO: separate section
+
 ### Parameter notes
 
 #### Read Only Mode

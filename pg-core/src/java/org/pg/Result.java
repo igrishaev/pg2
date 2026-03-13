@@ -8,6 +8,7 @@ import org.pg.clojure.RowMap;
 import org.pg.error.PGError;
 import org.pg.error.PGErrorResponse;
 import org.pg.msg.server.*;
+import org.pg.util.ObjTool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,6 +71,7 @@ public final class Result {
          }
     }
 
+    private final Config config;
     public final ExecuteParams executeParams;
     private final ArrayList<Node> nodes;
     private ErrorResponse errorResponse;
@@ -97,11 +99,12 @@ public final class Result {
         return newKeys;
     }
 
-    public Result(final ExecuteParams executeParams) {
-        this(executeParams, null);
+    public Result(final Config config, final ExecuteParams executeParams) {
+        this(config, executeParams, null);
     }
 
-    public Result(final ExecuteParams executeParams, final String sql) {
+    public Result(final Config config, final ExecuteParams executeParams, final String sql) {
+        this.config = config;
         this.executeParams = executeParams;
         this.sql = sql;
         nodes = new ArrayList<>(2);
@@ -143,7 +146,10 @@ public final class Result {
 
     public void handleRowDescription(final RowDescription msg) {
         current.rowDescription = msg;
-        final IFn fnKeyTransform = executeParams.fnKeyTransform();
+        final IFn fnKeyTransform = ObjTool.coalesce(
+                config.fnKeyTransform(),
+                executeParams.fnKeyTransform()
+        );
         final String[] names = unifyKeys(msg.getColumnNames());
         final int len = names.length;
         final Object[] keys = new Object[len];

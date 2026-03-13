@@ -47,7 +47,8 @@ public record Config(
         boolean useUnixSocket,
         String unixSocketPath,
         Executor executor,
-        boolean psCacheOn
+        boolean psCacheOn,
+        IFn fnKeyTransform
 ) {
 
     public ConnType getConnType() {
@@ -101,6 +102,7 @@ public record Config(
         private String unixSocketPath = null;
         private Executor executor = Const.executor;
         private boolean psCacheOn = Const.PS_CACHE_ON;
+        private IFn fnKeyTransform;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -303,6 +305,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder fnKeyTransform(final IFn fnKeyTransform) {
+            this.fnKeyTransform = fnKeyTransform;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -346,7 +354,8 @@ public record Config(
                     this.useUnixSocket,
                     this.unixSocketPath,
                     this.executor,
-                    this.psCacheOn
+                    this.psCacheOn,
+                    this.fnKeyTransform
             );
         }
     }

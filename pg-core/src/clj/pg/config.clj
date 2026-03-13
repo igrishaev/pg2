@@ -6,7 +6,8 @@
   "
   (:require
    [pg.common :refer [error!]]
-   [pg.connection-uri :as uri])
+   [pg.connection-uri :as uri]
+   [pg.keys :as keys])
   (:import
    org.pg.Config
    org.pg.Config$Builder
@@ -61,6 +62,10 @@
                 host
                 port
                 password
+
+                ;; keys
+                kebab-keys?
+                fn-key
 
                 ;; Next.JDBC
                 dbname
@@ -150,6 +155,12 @@
 
       out-stream-buf-size
       (.outStreamBufSize out-stream-buf-size)
+
+      kebab-keys?
+      (.fnKeyTransform keys/->kebab)
+
+      fn-key
+      (.fnKeyTransform fn-key)
 
       (some? use-ssl?)
       (.useSSL use-ssl?)
