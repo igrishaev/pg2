@@ -195,6 +195,20 @@ from
     (is (= [{:just-one 1}] result))))
 
 
+(deftest test-client-config-key-kebab
+  (let [result
+        (pg/with-connection [conn (assoc *CONFIG-TXT* :kebab-keys? true)]
+          (pg/execute conn "select 1 as just_one"))]
+    (is (= [{:just-one 1}] result))))
+
+
+(deftest test-client-config-custom-key-fn
+  (let [result
+        (pg/with-connection [conn (assoc *CONFIG-TXT* :fn-key str/upper-case)]
+          (pg/execute conn "select 1 as just_one"))]
+    (is (= [{"JUST_ONE" 1}] result))))
+
+
 (deftest test-client-read-only-on
 
   (let [res
@@ -4815,10 +4829,11 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
 
 
 (deftest test-client-connection-uri
-  (let [uri (format "postgresql://test:test@localhost:%s/test?ssl=false" *PORT*)]
+  ;; also: fn-key=clojure.string/upper-case
+  (let [uri (format "postgresql://test:test@localhost:%s/test?ssl=false&kebab-keys=true" *PORT*)]
     (pg/with-conn [conn {:connection-uri uri}]
-      (let [res (pg/query conn "select 1 as num")]
-        (is (= [{:num 1}] res))))))
+      (let [res (pg/query conn "select 1 as just_num")]
+        (is (= [{:just-num 1}] res))))))
 
 
 (deftest test-data-source-map

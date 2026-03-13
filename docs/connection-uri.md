@@ -113,7 +113,11 @@ Before you read, here is a brief description of types and parsing agreements.
 | `pool-expire-threshold-ms`    | long      | Pool connection expire lifetime                                             |
 | `pool-borrow-conn-timeout-ms` | long      | How long to wait when borrowing a connection from a pool                    |
 | `pg-params`                   | nested    | A nested map of Postgres runtime parameters (see below)                     |
-| `:ps-cache`                   | bool      | Whether to use [Prepared Statement Cache](docs/prepared-statement-cache.md) |
+| `ps-cache`                    | bool      | Whether to use [Prepared Statement Cache](docs/prepared-statement-cache.md) |
+| `kebab-keys`                  | bool      | Use `:kebab-in-lower-case` keys when parsing DB column names                |
+| `fn-key`                      | ref       | A custom function to parse DB column names                                  |
+
+For DB keys, see a separate section ["Parsing Db Column Names"](docs/keys.md).
 
 ## JDBC Compatible Parameters
 

@@ -132,9 +132,10 @@ rest have predefined values.
 | `:protocol-version`    | integer      | 196608             | Postgres protocol version                                                           |
 | `:object-mapper`       | ObjectMapper | JSON.defaultMapper | An instance of ObjectMapper for custom JSON processing (see the "JSON" section)     |
 | `:ps-cache?`           | bool         | true               | Whether to use [Prepared Statement Cache](docs/prepared-statement-cache.md)         |
+| `:kebab-keys?`         | bool         | false              | Use `:kebab-in-lower-case` keys when parsing DB column names                        |
+| `:fn-key`              | 1-arg fn     | nil                | A custom function to parse DB column names                                          |
 
-TODO: kebab keys
-TODO: separate section
+For DB keys, see a separate section ["Parsing Db Column Names"](docs/keys.md).
 
 ### Parameter notes
 

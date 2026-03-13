@@ -128,3 +128,8 @@ section for details.
 
 The `execute` function silently caches prepared statements. See the [Prepared
 Statement Cache](/docs/prepared-statement-cache.md) section for more info.
+
+## Transforming Column Names
+
+For kebab-case and similar transformations, check out a separate section
+["Parsing Db Column Names"](docs/keys.md).
