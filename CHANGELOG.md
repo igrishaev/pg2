@@ -11,11 +11,10 @@
 - ?
 - ?
 
-## 0.1.45-SNAPSHOT
+## 0.1.45
 
-- ?
-- ?
-- ?
+- global kebab-keys and fn-key
+- update docs
 
 ## 0.1.44
 
