@@ -23,56 +23,7 @@ public final class IOTool {
         }
     }
 
-    public static void skip (final InputStream inputStream, final long len) {
-        try {
-            inputStream.skipNBytes(len);
-        }
-        catch (final IOException e) {
-            throw new PGErrorIO(e, "Could not skip %s byte(s), cause: %s", len, e.getMessage());
-        }
-    }
-
-    public static byte[] readNBytes (final InputStream inputStream, final int len) {
-        try {
-            return inputStream.readNBytes(len);
-        }
-        catch (final IOException e) {
-            throw new PGErrorIO(e, "Could not read %s byte(s), cause: %s", len, e.getMessage());
-        }
-    }
-
-    public static int read (
-            final InputStream inputStream,
-            final byte[] buf
-    ) {
-        try {
-            return inputStream.read(buf);
-        } catch (final IOException e) {
-            throw new PGErrorIO(e, "cannot read from the input stream");
-        }
-    }
-
-    public static int read (
-            final InputStream inputStream,
-            final byte[] buf,
-            final int offset,
-            int len
-    ) {
-        try {
-            return inputStream.read(buf, offset, len);
-        } catch (final IOException e) {
-            throw new PGErrorIO(e, "cannot read from the input stream");
-        }
-    }
-
-    public static int read (final InputStream inputStream) {
-        try {
-            return inputStream.read();
-        } catch (final IOException e) {
-            throw new PGErrorIO(e, "cannot read from the input stream");
-        }
-    }
-
+    // TODO: remove it
     public static int available(final InputStream inputStream) {
         try {
             return inputStream.available();

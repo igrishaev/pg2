@@ -51,6 +51,8 @@ public final class Main {
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
         Connection conn = Connection.connect(config);
+        conn.execute("select pg_terminate_backend($1)", List.of(conn.getPid()));
+        System.out.println(conn.query("select 42 as num"));
 //        System.out.println(conn.execute("create type RGB as enum('r', 'g', 'b')"));
 //        System.out.println();
 //        for (PGType pgType: conn.getPGTypes()) {
@@ -85,7 +87,7 @@ public final class Main {
 //                )
 //        );
 
-         System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
+//         System.out.println(conn.execute("select 'foo=>test,ab=>null,c=>42'::hstore as hs;"));
 //        System.out.println(conn.execute("select 'test'::citext as test"));
 //        System.out.println(conn.execute("select $1::citext", List.of("test")));
 //        conn.query("deallocate all");

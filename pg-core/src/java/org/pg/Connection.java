@@ -53,6 +53,8 @@ public final class Connection implements AutoCloseable {
     private final Map<String, PreparedStatement> PSCache;
     private final List<Object> notifications = new ArrayList<>(0);
     private final List<Object> notices = new ArrayList<>(0);
+    private final byte[] bufHeader;
+    private final ByteBuffer bbHeader;
 
     @Override
     public boolean equals (Object other) {
@@ -73,6 +75,31 @@ public final class Connection implements AutoCloseable {
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
         this.PSCache = new HashMap<>();
+        this.bufHeader = new byte[5];
+        this.bbHeader = ByteBuffer.wrap(bufHeader);
+    }
+
+    private byte[] readBuf(final int len) throws IOException {
+        final byte[] buf = new byte[len];
+        readBuf(buf);
+        return buf;
+    }
+
+    private void readBuf(final byte[] buf) throws IOException {
+        final int lim = buf.length;
+        int len = lim;
+        int off = 0;
+        int r;
+        while (off < lim) {
+            r = inStream.read(buf, off, len);
+            if (r == -1) {
+                closeIO();
+                throw new PGError("the remote server has disconnected");
+            } else {
+                off += r;
+                len -= r;
+            }
+        }
     }
 
     public static Connection connect(final Config config, final boolean sendStartup) {
@@ -108,9 +135,9 @@ public final class Connection implements AutoCloseable {
     }
 
     private void closeIO() {
+        isClosed = true;
         IOTool.close(inStream);
         IOTool.close(outStream);
-        isClosed = true;
     }
 
     public void close () {
@@ -289,7 +316,7 @@ public final class Connection implements AutoCloseable {
         return createdAt;
     }
 
-    public Boolean isClosed () {
+    public boolean isClosed () {
         try (final TryLock ignored = lock.get()) {
             return isClosed;
         }
@@ -382,7 +409,12 @@ public final class Connection implements AutoCloseable {
     }
 
     private boolean readSSLResponse () {
-        final char c = (char) IOTool.read(inStream);
+        char c = 0;
+        try {
+            c = (char) inStream.read();
+        } catch (final IOException e) {
+            onIOException(e);
+        }
         return switch (c) {
             case 'N' -> false;
             case 'S' -> true;
@@ -544,12 +576,21 @@ public final class Connection implements AutoCloseable {
     private void sendSSLRequest () {
         sendMessage(new SSLRequest(Const.SSL_CODE));
     }
+    
+    private void onIOException(final IOException e) {
+        closeIO();
+        throw new PGError(e, "I/O exception occurred: %s", e.getMessage());
+    }
 
     private IServerMessage readMessage (final boolean skipMode) {
 
-        final byte[] bufHeader = IOTool.readNBytes(inStream, 5);
-        final ByteBuffer bbHeader = ByteBuffer.wrap(bufHeader);
+        try {
+            readBuf(bufHeader);
+        } catch (final IOException e) {
+            onIOException(e);
+        }
 
+        bbHeader.rewind();
         final char tag = (char) bbHeader.get();
         final int bodySize = bbHeader.getInt() - 4;
 
@@ -559,13 +600,22 @@ public final class Connection implements AutoCloseable {
         // just skip it.
         if (skipMode) {
             if (tag == 'D' || tag == 'd') {
-                IOTool.skip(inStream, bodySize);
+                try {
+                    inStream.skipNBytes(bodySize);
+                } catch (IOException e) {
+                    onIOException(e);
+                }
                 return SkippedMessage.INSTANCE;
             }
         }
 
-        byte[] bufBody = IOTool.readNBytes(inStream, bodySize);
-        ByteBuffer bbBody = ByteBuffer.wrap(bufBody);
+        final byte[] bufBody = new byte[bodySize];
+        final ByteBuffer bbBody = ByteBuffer.wrap(bufBody);
+        try {
+            readBuf(bufBody);
+        } catch (final IOException e) {
+            onIOException(e);
+        }
 
         return switch (tag) {
             case 'R' -> AuthenticationResponse.fromByteBuffer(bbBody, codecParams.serverCharset());

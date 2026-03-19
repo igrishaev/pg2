@@ -268,11 +268,13 @@ public final class Pool implements AutoCloseable {
 
     public void close () {
         try (TryLock ignored = lock.get()) {
-            closeLocked();
+            isClosed = true;
+            closeFreeConnections();
+            closeUsedConnections();
         }
     }
 
-    private void closeFree() {
+    private void closeFreeConnections() {
         logger.log(System.Logger.Level.DEBUG, "Closing {0} free connections, pool: {1}", connsFree.size(), id);
         Connection conn;
         while (true) {
@@ -286,7 +288,7 @@ public final class Pool implements AutoCloseable {
         }
     }
 
-    private void closeUsed() {
+    private void closeUsedConnections() {
         logger.log(System.Logger.Level.DEBUG, "Closing {0} used connections, pool: {1}", connsUsed.size(), id);
         Connection conn;
         for (final UUID id: connsUsed.keySet()) {
@@ -295,12 +297,6 @@ public final class Pool implements AutoCloseable {
             closeConnection(conn);
             connsUsed.remove(id);
         }
-    }
-
-    private void closeLocked() {
-        closeFree();
-        closeUsed();
-        isClosed = true;
     }
 
     public boolean isClosed() {

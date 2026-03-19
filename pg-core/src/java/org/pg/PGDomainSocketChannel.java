@@ -28,10 +28,12 @@ public class PGDomainSocketChannel implements PGIOChannel {
         }
     }
 
+    @Override
     public InputStream getInputStream() {
         return Channels.newInputStream(channel);
     }
 
+    @Override
     public OutputStream getOutputStream() {
         return Channels.newOutputStream(channel);
     }
@@ -40,6 +42,7 @@ public class PGDomainSocketChannel implements PGIOChannel {
         return channel.isOpen();
     }
 
+    @Override
     public Certificate getPeerCertificate() {
         return null;
     }
@@ -48,6 +51,7 @@ public class PGDomainSocketChannel implements PGIOChannel {
         channel.close();
     }
 
+    @Override
     public PGIOChannel upgradeToSSL(final SSLContext sslContext) {
         throw new UnsupportedOperationException("Unable to upgrade domain socket to SSL");
     }

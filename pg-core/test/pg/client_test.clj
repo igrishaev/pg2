@@ -5021,6 +5021,30 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                        "select * from test where email = $1 order by id"
                        {:params ["fobar@lol.KEK"]})))))
 
+(deftest test-client-server-disconnected
+  (pg/with-connection [conn1 *CONFIG-TXT*]
+    (pg/with-connection [conn2 *CONFIG-TXT*]
+
+      (is (= {:num 1}
+             (pg/query conn1 "select 1 as num" {:first? true})))
+
+      (is (= {:ok true}
+             (pg/execute conn2
+                         "select pg_terminate_backend($1) as ok"
+                         {:first? true
+                          :params [(pg/pid conn1)]})))
+
+      (is (false? (pg/closed? conn1)))
+
+      (try
+        (pg/query conn1 "select 1 as num" {:first? true})
+        (is false)
+        (catch PGError e
+          (is (= "the remote server has disconnected"
+                 (ex-message e)))))
+
+      (is (true? (pg/closed? conn1))))))
+
 
 ;;
 ;; Future tests

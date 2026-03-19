@@ -11,7 +11,7 @@
   [[lein-parent "0.3.8"]]
 
   :dependencies
-  [[org.clojure/clojure :scope "provided"]
+  [[org.clojure/clojure]
    [metosin/jsonista]
    [less-awful-ssl]]
 

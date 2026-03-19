@@ -469,3 +469,44 @@
   (pg/with-pool [pool URI]
     (let [res (pg/query pool "select 1 as one")]
       (is (= [{:one 1}] res)))))
+
+
+(deftest test-pool-server-disconnected
+  (pg/with-pool [pool (assoc *CONFIG* :pool-max-size 2)]
+
+    (testing "conn2 kills conn1"
+      (pg/with-conn [conn1 pool]
+        (pg/with-conn [conn2 pool]
+
+          (let [res (pg/execute conn1 "select 1 as one")]
+            (is (= [{:one 1}] res)))
+
+          (is (= {:ok true}
+                 (pg/execute conn2
+                             "select pg_terminate_backend($1) as ok"
+                             {:first? true
+                              :params [(pg/pid conn1)]}))))))
+
+    (testing "conn1 gets broken when used"
+      (pg/with-conn [conn1 pool]
+        (pg/with-conn [conn2 pool]
+
+          (let [res (pg/execute conn1 "select 1 as one")]
+            (is (= [{:one 1}] res)))
+
+          (try
+            (pg/execute conn2 "select 2 as two")
+            (is false)
+            (catch PGError e
+              (is (= "the remote server has disconnected"
+                     (ex-message e))))))))
+
+    (testing "conn1 is re-created"
+      (pg/with-conn [conn1 pool]
+        (pg/with-conn [conn2 pool]
+
+          (let [res (pg/execute conn1 "select 1 as one")]
+            (is (= [{:one 1}] res)))
+
+          (let [res (pg/execute conn2 "select 2 as two")]
+            (is (= [{:two 2}] res))))))))

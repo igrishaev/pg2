@@ -51,10 +51,12 @@ public class PGSocketChannel implements PGIOChannel {
         }
     }
 
+    @Override
     public InputStream getInputStream() {
         return IOTool.getInputStream(socket);
     }
 
+    @Override
     public OutputStream getOutputStream() {
         return IOTool.getOutputStream(socket);
     }
@@ -63,6 +65,7 @@ public class PGSocketChannel implements PGIOChannel {
         return socket.isConnected();
     }
 
+    @Override
     public Certificate getPeerCertificate() {
         if (socket instanceof SSLSocket sslSocket) {
             return SSLTool.getPeerCertificate(sslSocket);
@@ -75,6 +78,7 @@ public class PGSocketChannel implements PGIOChannel {
         socket.close();
     }
 
+    @Override
     public PGIOChannel upgradeToSSL(final SSLContext sslContext) {
         final int port = address.getPort();
         final String host = address.getHostName();
