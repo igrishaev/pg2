@@ -9,6 +9,7 @@ import org.pg.clojure.RowMap;
 import org.pg.codec.CodecParams;
 import org.pg.enums.*;
 import org.pg.error.PGError;
+import org.pg.error.PGErrorIO;
 import org.pg.error.PGErrorResponse;
 import org.pg.json.JSON;
 import org.pg.msg.*;
@@ -79,12 +80,6 @@ public final class Connection implements AutoCloseable {
         this.bbHeader = ByteBuffer.wrap(bufHeader);
     }
 
-    private byte[] readBuf(final int len) throws IOException {
-        final byte[] buf = new byte[len];
-        readBuf(buf);
-        return buf;
-    }
-
     private void readBuf(final byte[] buf) throws IOException {
         final int lim = buf.length;
         int len = lim;
@@ -94,7 +89,7 @@ public final class Connection implements AutoCloseable {
             r = inStream.read(buf, off, len);
             if (r == -1) {
                 closeIO();
-                throw new PGError("the remote server has disconnected");
+                throw new PGError("server %s has closed the connection", ioChannel.represent());
             } else {
                 off += r;
                 len -= r;
@@ -579,7 +574,7 @@ public final class Connection implements AutoCloseable {
     
     private void onIOException(final IOException e) {
         closeIO();
-        throw new PGError(e, "I/O exception occurred: %s", e.getMessage());
+        throw new PGErrorIO(e, "I/O exception occurred: %s", e.getMessage());
     }
 
     private IServerMessage readMessage (final boolean skipMode) {

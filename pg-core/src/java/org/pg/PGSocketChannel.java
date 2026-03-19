@@ -24,6 +24,11 @@ public class PGSocketChannel implements PGIOChannel {
         this.socket = socket;
     }
 
+    @Override
+    public String represent() {
+        return address.toString();
+    }
+
     private static void setSocketOptions(final Socket socket, final Config config) {
         try {
             socket.setTcpNoDelay(config.SOTCPnoDelay());

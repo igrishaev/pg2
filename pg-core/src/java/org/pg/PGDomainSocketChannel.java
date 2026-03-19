@@ -14,18 +14,25 @@ import javax.net.ssl.SSLContext;
 
 public class PGDomainSocketChannel implements PGIOChannel {
     private final SocketChannel channel;
+    private final UnixDomainSocketAddress address;
 
-    protected PGDomainSocketChannel(final SocketChannel channel) {
+    protected PGDomainSocketChannel(final UnixDomainSocketAddress address, final SocketChannel channel) {
+        this.address = address;
         this.channel = channel;
     }
 
     public static PGDomainSocketChannel connect(final UnixDomainSocketAddress address) {
         try {
             final SocketChannel channel = SocketChannel.open(address);
-            return new PGDomainSocketChannel(channel);
+            return new PGDomainSocketChannel(address, channel);
         } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
         }
+    }
+
+    @Override
+    public String represent() {
+        return address.toString();
     }
 
     @Override

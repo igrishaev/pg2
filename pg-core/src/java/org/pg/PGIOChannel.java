@@ -14,6 +14,7 @@ other kinds for IO backends as well (e.g. channels, etc).
  */
 @SuppressWarnings("unused")
 public interface PGIOChannel extends Channel, AutoCloseable {
+    String represent();
     InputStream getInputStream();
     OutputStream getOutputStream();
     PGIOChannel upgradeToSSL(SSLContext sslContext);
