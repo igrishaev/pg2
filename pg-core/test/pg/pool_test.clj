@@ -474,9 +474,10 @@
 
 ;; TODO
 ;; health check default false?
-;; pass into config
-;; jdbc uri
-;; update docs
+;; health check threashold?
+;; pass into clojure config
+;; jdbc uri config
+;; update docs (config and pool)
 
 (deftest test-pool-server-disconnected
   (pg/with-pool [pool (assoc *CONFIG* :pool-max-size 2)]
