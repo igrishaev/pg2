@@ -4,9 +4,12 @@ import org.pg.error.PGError;
 import org.pg.util.TryLock;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public final class Pool implements AutoCloseable {
+
+    // TODO: reduce locking
 
     private final UUID id;
     private final Config config;
@@ -53,7 +56,7 @@ public final class Pool implements AutoCloseable {
         final int size = config.poolMaxSize();
         this.id = UUID.randomUUID();
         this.config = config;
-        this.connsUsed = new HashMap<>(size);
+        this.connsUsed = new ConcurrentHashMap<>(size);
         this.connsFree = new ArrayBlockingQueue<>(size);
     }
 
@@ -113,21 +116,44 @@ public final class Pool implements AutoCloseable {
 
         // try to get from the queue without waiting
         while (true) {
-            try (TryLock ignored = lock.get()) {
-                conn = connsFree.poll();
-                if (conn == null) {
-                    break;
-                } else  {
-                    // if expired, close and return null
-                    if (isExpired(conn)) {
-                        logger.log(System.Logger.Level.DEBUG, "Connection {0} has been expired, closing. Pool: {1}", conn.getId(),  this.id);
-                        closeConnection(conn);
-                    } else {
+            conn = connsFree.poll();
+            if (conn == null) {
+                break;
+            } else {
+                // if expired, close and return null
+                if (isExpired(conn)) {
+                    logger.log(
+                            System.Logger.Level.DEBUG,
+                            "Connection {0} has been expired, closing. Pool: {1}",
+                            conn.getId(), this.id
+                    );
+                    closeConnection(conn);
+                }
+                // health check, if set
+                else if (config.poolHealthCheckOn()) {
+                    boolean healthCheck = true;
+                    try {
+                        conn.query(config.poolHealthCheckQuery());
+                    } catch (PGError e) {
+                        healthCheck = false;
+                        logger.log(
+                                System.Logger.Level.DEBUG,
+                                "Connection {0} didn't pass health check, closing. Pool: {1}, error: %s",
+                                conn.getId(), this.id, e.getMessage()
+                        );
+                    }
+                    if (healthCheck) {
                         addUsed(conn);
                         return conn;
+                    } else {
+                        closeConnection(conn);
                     }
+                } else {
+                    addUsed(conn);
+                    return conn;
                 }
             }
+
         }
 
         // no free connections. If possible, create a new one
@@ -137,9 +163,9 @@ public final class Pool implements AutoCloseable {
                 addUsed(conn);
                 return conn;
             }
-
         }
 
+        // poll free connections
         try {
             conn = connsFree.poll(config.poolBorrowConnTimeoutMs(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -155,8 +181,7 @@ public final class Pool implements AutoCloseable {
                     usedCount(),
                     config.poolBorrowConnTimeoutMs()
             );
-        }
-        else {
+        } else {
             try (TryLock ignored = lock.get()) {
                 addUsed(conn);
                 return conn;

@@ -42,6 +42,7 @@
    [pg.pool :as pool]
    [pg.type :as t]))
 
+(set! *warn-on-reflection* true)
 
 (use-fixtures :each fix-multi-port)
 
@@ -5040,8 +5041,9 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
         (pg/query conn1 "select 1 as num" {:first? true})
         (is false)
         (catch PGError e
-          (is (= "the remote server has disconnected"
-                 (ex-message e)))))
+          (let [msg (ex-message e)])
+          (is (re-matches #"^server /127.0.0.1:\d+ has closed the connection$"
+                          (ex-message e)))))
 
       (is (true? (pg/closed? conn1))))))
 

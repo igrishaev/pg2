@@ -48,7 +48,9 @@ public record Config(
         String unixSocketPath,
         Executor executor,
         boolean psCacheOn,
-        IFn fnKeyTransform
+        IFn fnKeyTransform,
+        boolean poolHealthCheckOn,
+        String poolHealthCheckQuery
 ) {
 
     public ConnType getConnType() {
@@ -103,6 +105,8 @@ public record Config(
         private Executor executor = Const.executor;
         private boolean psCacheOn = Const.PS_CACHE_ON;
         private IFn fnKeyTransform;
+        private boolean poolHealthCheckOn = Const.POOL_HEALTH_CHECK_ON;
+        private String poolHealthCheckQuery = Const.POOL_HEALTH_CHECK_QUERY;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -311,6 +315,18 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder poolHealthCheckOn(final boolean poolHealthCheckOn) {
+            this.poolHealthCheckOn = poolHealthCheckOn;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public Builder poolHealthCheckQuery(final String poolHealthCheckQuery) {
+            this.poolHealthCheckQuery = poolHealthCheckQuery;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -355,7 +371,9 @@ public record Config(
                     this.unixSocketPath,
                     this.executor,
                     this.psCacheOn,
-                    this.fnKeyTransform
+                    this.fnKeyTransform,
+                    this.poolHealthCheckOn,
+                    this.poolHealthCheckQuery
             );
         }
     }

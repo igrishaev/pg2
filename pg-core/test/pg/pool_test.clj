@@ -1,12 +1,14 @@
 (ns pg.pool-test
   (:import
-   org.pg.error.PGError
-   org.pg.error.PGErrorResponse)
+   (java.util HashSet)
+   (org.pg.error PGError
+                 PGErrorResponse))
   (:require
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
    [pg.pool :as pool]))
 
+(set! *warn-on-reflection* true)
 
 (def USER "test")
 (def PASS "test")
@@ -470,43 +472,43 @@
     (let [res (pg/query pool "select 1 as one")]
       (is (= [{:one 1}] res)))))
 
+;; TODO
+;; health check default false?
+;; pass into config
+;; jdbc uri
+;; update docs
 
 (deftest test-pool-server-disconnected
   (pg/with-pool [pool (assoc *CONFIG* :pool-max-size 2)]
 
-    (testing "conn2 kills conn1"
-      (pg/with-conn [conn1 pool]
+    (let [hs (new java.util.HashSet)]
+
+      (testing "conn2 kills conn1"
+        (pg/with-conn [conn1 pool]
+          (pg/with-conn [conn2 pool]
+
+            (.add hs (pg/id conn1))
+            (.add hs (pg/id conn2))
+
+            (let [res (pg/execute conn1 "select 1 as one")]
+              (is (= [{:one 1}] res)))
+
+            (is (= {:ok true}
+                   (pg/execute conn2
+                               "select pg_terminate_backend($1) as ok"
+                               {:first? true
+                                :params [(pg/pid conn1)]}))))))
+
+      (testing "conn1 gets broken and recreated"
+        ;; the order is opposite
         (pg/with-conn [conn2 pool]
+          (pg/with-conn [conn1 pool]
 
-          (let [res (pg/execute conn1 "select 1 as one")]
-            (is (= [{:one 1}] res)))
+            (is (not (.contains hs (pg/id conn1))))
+            (is (.contains hs (pg/id conn2)))
 
-          (is (= {:ok true}
-                 (pg/execute conn2
-                             "select pg_terminate_backend($1) as ok"
-                             {:first? true
-                              :params [(pg/pid conn1)]}))))))
+            (let [res (pg/execute conn1 "select 1 as one")]
+              (is (= [{:one 1}] res)))
 
-    (testing "conn1 gets broken when used"
-      (pg/with-conn [conn1 pool]
-        (pg/with-conn [conn2 pool]
-
-          (let [res (pg/execute conn1 "select 1 as one")]
-            (is (= [{:one 1}] res)))
-
-          (try
-            (pg/execute conn2 "select 2 as two")
-            (is false)
-            (catch PGError e
-              (is (= "the remote server has disconnected"
-                     (ex-message e))))))))
-
-    (testing "conn1 is re-created"
-      (pg/with-conn [conn1 pool]
-        (pg/with-conn [conn2 pool]
-
-          (let [res (pg/execute conn1 "select 1 as one")]
-            (is (= [{:one 1}] res)))
-
-          (let [res (pg/execute conn2 "select 2 as two")]
-            (is (= [{:two 2}] res))))))))
+            (let [res (pg/execute conn2 "select 2 as two")]
+              (is (= [{:two 2}] res)))))))))

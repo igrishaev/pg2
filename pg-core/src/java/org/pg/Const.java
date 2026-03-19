@@ -44,6 +44,8 @@ public final class Const {
     public static final int POOL_SIZE_MAX = 8;
     public static final int POOL_EXPIRE_THRESHOLD_MS = 1000 * 60 * 5;
     public static final int POOL_BORROW_CONN_TIMEOUT_MS = 1000 * 15;
+    public static final boolean POOL_HEALTH_CHECK_ON = true;
+    public static final String POOL_HEALTH_CHECK_QUERY = "select -- pool health check";
     public static final Executor executor = Agent.soloExecutor;
     public static Charset serverCharset = StandardCharsets.UTF_8;
     public static Charset clientCharset = StandardCharsets.UTF_8;
