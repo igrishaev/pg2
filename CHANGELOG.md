@@ -1,4 +1,22 @@
 
+## 0.1.50-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.49-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.48-SNAPSHOT
+
+- ?
+- ?
+- ?
+
 ## 0.1.47-SNAPSHOT
 
 - ?
@@ -7,9 +25,10 @@
 
 ## 0.1.46-SNAPSHOT
 
-- ?
-- ?
-- ?
+- rewrite IO; close on IO error
+- detect disconnection
+- pool health check
+- docs and tests
 
 ## 0.1.45
 
