@@ -47,35 +47,4 @@ public final class IOTool {
         }
     }
 
-    public static void flush(final OutputStream outputStream) {
-        try {
-            outputStream.flush();
-        } catch (final IOException e) {
-            throw new PGErrorIO(e, "cannot flush an output stream");
-        }
-    }
-
-    public static InputStream getInputStream(final Socket socket) {
-        try {
-            return socket.getInputStream();
-        }
-        catch (final IOException e) {
-            throw new PGErrorIO(
-                    e,
-                    "cannot get an input stream from a socket"
-            );
-        }
-    }
-
-    public static OutputStream getOutputStream(final Socket socket) {
-        try {
-            return socket.getOutputStream();
-        }
-        catch (final IOException e) {
-            throw new PGErrorIO(
-                    e,
-                    "cannot get an output stream from a socket"
-            );
-        }
-    }
 }

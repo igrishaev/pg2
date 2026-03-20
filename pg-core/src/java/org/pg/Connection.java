@@ -131,15 +131,19 @@ public final class Connection implements AutoCloseable {
 
     private void closeIO() {
         isClosed = true;
-        IOTool.close(inStream);
-        IOTool.close(outStream);
+        if (inStream != null) {
+            IOTool.close(inStream);
+        }
+        if (outStream != null) {
+            IOTool.close(outStream);
+        }
     }
 
     public void close () {
         try (final TryLock ignored = lock.get()) {
             if (!isClosed) {
                 sendTerminate();
-                flush();
+                flushSocket();
                 closeIO();
             }
         }
@@ -166,8 +170,13 @@ public final class Connection implements AutoCloseable {
     }
 
     private void connectStreams() {
-        setInputStream(ioChannel.getInputStream());
-        setOutputStream(ioChannel.getOutputStream());
+        try {
+            setInputStream(ioChannel.getInputStream());
+            setOutputStream(ioChannel.getOutputStream());
+        } catch (IOException e) {
+            onIOException(e, "connectStreams");
+        }
+
     }
 
     public void connectUnixSocket() {
@@ -440,7 +449,7 @@ public final class Connection implements AutoCloseable {
     private void preSSLStage() {
         final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
         sendMessage(msg);
-        flush();
+        flushSocket();
         final boolean ssl = readSSLResponse();
         if (ssl) {
             try {
@@ -823,8 +832,12 @@ public final class Connection implements AutoCloseable {
     get sent to a socket forcibly. Must be called *before*
     reading something from the service back.
      */
-    private void flush () {
-        IOTool.flush(outStream);
+    private void flushSocket() {
+        try {
+            outStream.flush();
+        } catch (IOException e) {
+            onIOException(e, "flushSocket");
+        }
     }
 
     @SuppressWarnings("unused")
@@ -974,7 +987,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private Result interact (final ExecuteParams executeParams, final boolean isAuth, final String sql) {
-        flush();
+        flushSocket();
         final Result res = new Result(config, executeParams, sql);
         while (true) {
             final IServerMessage msg = readMessage(res.hasException());
@@ -1142,7 +1155,7 @@ public final class Connection implements AutoCloseable {
         );
         res.scramPipeline.step1 = step1;
         sendMessage(msgSASL);
-        flush();
+        flushSocket();
     }
 
     private void handleAuthenticationSASLContinue (final AuthenticationSASLContinue msg, final Result res) {
@@ -1154,7 +1167,7 @@ public final class Connection implements AutoCloseable {
         res.scramPipeline.step3 = step3;
         final SASLResponse msgSASL = new SASLResponse(step3.clientFinalMessage());
         sendMessage(msgSASL);
-        flush();
+        flushSocket();
     }
 
     private void handleAuthenticationSASLFinal (final AuthenticationSASLFinal msg, final Result res) {
@@ -1297,7 +1310,7 @@ public final class Connection implements AutoCloseable {
             handleCopyInResponseStream(res);
         }
         // Finally, we flush the output stream so all unsent bytes get sent.
-        flush();
+        flushSocket();
     }
 
     private void handlePortalSuspended (final PortalSuspended msg, final Result res) {
@@ -1374,7 +1387,7 @@ public final class Connection implements AutoCloseable {
                 msg.salt()
         );
         sendPassword(hashed);
-        flush();
+        flushSocket();
     }
 
     private void handleCopyData (final CopyData msg, final Result res) {
@@ -1421,7 +1434,7 @@ public final class Connection implements AutoCloseable {
 
     private void handleAuthenticationCleartextPassword () {
         sendPassword(config.password());
-        flush();
+        flushSocket();
     }
 
     private void handleParameterStatus (final ParameterStatus msg) {

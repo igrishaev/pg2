@@ -57,13 +57,13 @@ public class PGSocketChannel implements PGIOChannel {
     }
 
     @Override
-    public InputStream getInputStream() {
-        return IOTool.getInputStream(socket);
+    public InputStream getInputStream() throws IOException {
+        return socket.getInputStream();
     }
 
     @Override
-    public OutputStream getOutputStream() {
-        return IOTool.getOutputStream(socket);
+    public OutputStream getOutputStream() throws IOException {
+        return socket.getOutputStream();
     }
 
     public boolean isOpen() {
