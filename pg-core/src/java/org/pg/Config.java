@@ -50,7 +50,8 @@ public record Config(
         boolean psCacheOn,
         IFn fnKeyTransform,
         boolean poolHealthCheckOn,
-        String poolHealthCheckQuery
+        String poolHealthCheckQuery,
+        long poolHealthCheckTimeoutMS
 ) {
 
     public ConnType getConnType() {
@@ -107,6 +108,7 @@ public record Config(
         private IFn fnKeyTransform;
         private boolean poolHealthCheckOn = Const.POOL_HEALTH_CHECK_ON;
         private String poolHealthCheckQuery = Const.POOL_HEALTH_CHECK_QUERY;
+        private long poolHealthCheckTimeoutMS = Const.POOL_HEALTH_CHECK_TIMEOUT_MS;
 
         public Builder(final String user, final String database) {
             this.user = Objects.requireNonNull(user, "User cannot be null");
@@ -327,6 +329,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder poolHealthCheckTimeoutMS(final long poolHealthCheckTimeoutMS) {
+            this.poolHealthCheckTimeoutMS = poolHealthCheckTimeoutMS;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         private void _validate() {
             if (!(poolMinSize <= poolMaxSize)) {
                 throw new PGError("pool min size (%s) must be <= pool max size (%s)",
@@ -373,7 +381,8 @@ public record Config(
                     this.psCacheOn,
                     this.fnKeyTransform,
                     this.poolHealthCheckOn,
-                    this.poolHealthCheckQuery
+                    this.poolHealthCheckQuery,
+                    this.poolHealthCheckTimeoutMS
             );
         }
     }
