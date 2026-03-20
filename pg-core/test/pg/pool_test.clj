@@ -4,6 +4,7 @@
    (org.pg.error PGError
                  PGErrorResponse))
   (:require
+   [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
    [pg.pool :as pool]))
@@ -472,7 +473,7 @@
     (let [res (pg/query pool "select 1 as one")]
       (is (= [{:one 1}] res)))))
 
-(deftest test-pool-server-disconnected
+(deftest test-pool-server-disconnected-health-check-default-timeout
   (pg/with-pool [pool (assoc *CONFIG* :pool-max-size 2)]
 
     (let [hs (new java.util.HashSet)]
@@ -493,8 +494,21 @@
                                {:first? true
                                 :params [(pg/pid conn1)]}))))))
 
-      (testing "conn1 gets broken and recreated"
+      (testing "conn1 gets broken"
         ;; the order is opposite
+        (pg/with-conn [conn2 pool]
+          (pg/with-conn [conn1 pool]
+
+            (is (.contains hs (pg/id conn1)))
+            (is (.contains hs (pg/id conn2)))
+
+            (try
+              (pg/execute conn1 "select 1 as one")
+              (is false)
+              (catch PGError e
+                (is (str/includes? (ex-message e) "has closed the connection")))))))
+
+      (testing "conn1 gets recreated"
         (pg/with-conn [conn2 pool]
           (pg/with-conn [conn1 pool]
 
@@ -504,5 +518,43 @@
             (let [res (pg/execute conn1 "select 1 as one")]
               (is (= [{:one 1}] res)))
 
-            (let [res (pg/execute conn2 "select 2 as two")]
-              (is (= [{:two 2}] res)))))))))
+            (let [res (pg/execute conn2 "select 1 as one")]
+              (is (= [{:one 1}] res)))))))))
+
+(deftest test-pool-server-disconnected-health-check-custom-timeout
+  (pg/with-pool [pool (assoc *CONFIG*
+                             :pool-max-size 2
+                             :pool-health-check-timeout-ms 50)]
+
+    (let [hs (new java.util.HashSet)]
+
+      (testing "conn2 kills conn1"
+        (pg/with-conn [conn1 pool]
+          (pg/with-conn [conn2 pool]
+
+            (.add hs (pg/id conn1))
+            (.add hs (pg/id conn2))
+
+            (let [res (pg/execute conn1 "select 1 as one")]
+              (is (= [{:one 1}] res)))
+
+            (is (= {:ok true}
+                   (pg/execute conn2
+                               "select pg_terminate_backend($1) as ok"
+                               {:first? true
+                                :params [(pg/pid conn1)]}))))))
+
+      (Thread/sleep 100)
+
+      (testing "conn1 gets recreated"
+        (pg/with-conn [conn2 pool]
+          (pg/with-conn [conn1 pool]
+
+            (is (not (.contains hs (pg/id conn1))))
+            (is (.contains hs (pg/id conn2)))
+
+            (let [res (pg/execute conn1 "select 1 as one")]
+              (is (= [{:one 1}] res)))
+
+            (let [res (pg/execute conn2 "select 1 as one")]
+              (is (= [{:one 1}] res)))))))))

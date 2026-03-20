@@ -86,12 +86,15 @@ The pool object accepts the same config the `Connection` object does (see the
 [Connecting to the server](/docs/connecting.md) section for the table of
 parameters). In addition to these, the fillowing options are accepted:
 
-| Field                          | Type    | Default          | Comment                                                                                                              |
-|--------------------------------|---------|------------------|----------------------------------------------------------------------------------------------------------------------|
-| `:pool-min-size`               | integer | 2                | Minimum number of open connections when initialized.                                                                 |
-| `:pool-max-size`               | integer | 8                | Maximum number of open connections. Cannot be exceeded.                                                              |
-| `:pool-expire-threshold-ms`    | integer | 300.000 (5 mins) | How soon a connection is treated as expired and will be forcibly closed.                                             |
-| `:pool-borrow-conn-timeout-ms` | integer | 15.000 (15 secs) | How long to wait when borrowing a connection while all the connections are busy. By timeout, an exception is thrown. |
+| Field                           | Type    | Default          | Comment                                                                                                              |
+|---------------------------------|---------|------------------|----------------------------------------------------------------------------------------------------------------------|
+| `:pool-min-size`                | integer | 2                | Minimum number of open connections when initialized.                                                                 |
+| `:pool-max-size`                | integer | 8                | Maximum number of open connections. Cannot be exceeded.                                                              |
+| `:pool-expire-threshold-ms`     | integer | 300.000 (5 mins) | How soon a connection is treated as expired and will be forcibly closed.                                             |
+| `:pool-borrow-conn-timeout-ms`  | integer | 15.000 (15 secs) | How long to wait when borrowing a connection while all the connections are busy. By timeout, an exception is thrown. |
+| `:pool-health-check-on`         | true    | true             | Test connectivity with a dummy query                                                                                 |
+| `:pool-health-check-query`      | string  | `select -- `     | A query without any parameters                                                                                       |
+| `:pool-health-check-timeout-ms` | long    | 30.000 (30 sec)  | Check not often than X miliseconds                                                                                   |
 
 The first option `:pool-min-size` specifies how many connection are opened at
 the beginning. Setting too many is not necessary because you never know if you
@@ -217,3 +220,18 @@ play:
 - if the pool is closed, the connection is removed from used connections;
 - when none of above conditions is met, the connection is removed from used and
   becomes available for other consumers again.
+
+## Pool Health Check
+
+Postgres might close connections that haven't been used for some time. The
+`Connection` object is unaware of it until you use it. To prevent this from
+happening, the `Pool` object checks connections for their availability running a
+dummy query like `select -- pool health check`.
+
+The check is made not every time you borrow a connection but with a timeout. The
+default value is 30 seconds per connection. It means, if a certain connection
+has passed health check, it will be checked again when borrowing only if 30
+seconds have passed. Health check can be disabled if Postgres is set up to never
+close idle connections.
+
+See the `:pool-health-check-...` options from the table above for more details.

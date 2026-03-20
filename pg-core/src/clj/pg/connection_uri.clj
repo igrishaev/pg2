@@ -170,6 +170,9 @@
                 pool-max-size
                 pool-expire-threshold-ms
                 pool-borrow-conn-timeout-ms
+                pool-health-check-on
+                pool-health-check-query
+                pool-health-check-timeout-ms
 
                 ;; JDBC camelCase options
                 readOnly
@@ -287,6 +290,17 @@
 
      :pool-min-size
      (some-> pool-min-size parse-long)
+
+     :pool-health-check-on
+     (some-> pool-health-check-on parse-bool)
+
+     :pool-health-check-query
+     (some-> pool-health-check-query)
+
+     :pool-health-check-timeout-ms
+     (some-> pool-health-check-timeout-ms parse-long)
+
+     ;;
 
      :pg-params
      (cond-> pg-params

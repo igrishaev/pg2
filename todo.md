@@ -1,10 +1,5 @@
 
-health check default false?
-health check threashold?
-pass into clojure config
-jdbc uri config
-update docs (config and pool)
-reduce locking in pool
+- reduce locking in pool
 
 - replace `for (` with i
 

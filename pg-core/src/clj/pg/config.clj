@@ -121,7 +121,10 @@
                 pool-min-size
                 pool-max-size
                 pool-expire-threshold-ms
-                pool-borrow-conn-timeout-ms]}
+                pool-borrow-conn-timeout-ms
+                pool-health-check-on
+                pool-health-check-query
+                pool-health-check-timeout-ms]}
         params
 
         DB
@@ -213,6 +216,8 @@
       read-only?
       (.readOnly)
 
+      ;; pool
+
       pool-min-size
       (.poolMinSize pool-min-size)
 
@@ -224,6 +229,17 @@
 
       pool-borrow-conn-timeout-ms
       (.poolBorrowConnTimeoutMs pool-borrow-conn-timeout-ms)
+
+      (some? pool-health-check-on)
+      (.poolHealthCheckOn pool-health-check-on)
+
+      pool-health-check-query
+      (.poolHealthCheckQuery pool-health-check-query)
+
+      pool-health-check-timeout-ms
+      (.poolHealthCheckTimeoutMS pool-health-check-timeout-ms)
+
+      ;;
 
       (some? ps-cache?)
       (.psCacheOn ps-cache?)
