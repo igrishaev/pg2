@@ -23,7 +23,7 @@
 - ?
 - ?
 
-## 0.1.46-SNAPSHOT
+## 0.1.46
 
 - rewrite IO; close on IO error
 - detect disconnection
