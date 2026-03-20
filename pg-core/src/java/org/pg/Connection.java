@@ -408,7 +408,7 @@ public final class Connection implements AutoCloseable {
         try {
             c = (char) inStream.read();
         } catch (final IOException e) {
-            onIOException(e);
+            onIOException(e, "readSSLResponse");
         }
         return switch (c) {
             case 'N' -> false;
@@ -481,12 +481,20 @@ public final class Connection implements AutoCloseable {
         if (Debug.isON) {
             Debug.debug(" <- sendBytes (%s): %s", tag, Arrays.toString(buf));
         }
-        IOTool.write(outStream, buf);
+        try {
+            outStream.write(buf);
+        } catch (IOException e) {
+            onIOException(e, "sendBytes");
+        }
     }
 
     // Like sendBytes above but taking boundaries into account.
     private void sendBytes (final byte[] buf, final int len) {
-        IOTool.write(outStream, buf, 0, len);
+        try {
+            outStream.write(buf, 0, len);
+        } catch (IOException e) {
+            onIOException(e, "outStream");
+        }
     }
 
     private void sendBytesCopy(final byte[] bytes) {
@@ -502,7 +510,12 @@ public final class Connection implements AutoCloseable {
             Debug.debug(" <- %s", msg);
         }
         final ByteBuffer buf = msg.encode(codecParams.clientCharset());
-        IOTool.write(outStream, buf.array());
+        try {
+            outStream.write(buf.array());
+        } catch (IOException e) {
+            onIOException(e);
+        }
+
     }
 
     private String generateStatement () {
@@ -571,10 +584,15 @@ public final class Connection implements AutoCloseable {
     private void sendSSLRequest () {
         sendMessage(new SSLRequest(Const.SSL_CODE));
     }
-    
+
     private void onIOException(final IOException e) {
+        onIOException(e, "<unknown>");
+    }
+    
+    private void onIOException(final IOException e, final String source) {
         closeIO();
-        throw new PGErrorIO(e, "I/O exception occurred: %s", e.getMessage());
+        throw new PGErrorIO(e, "I/O exception occurred, source: %s: %s",
+                source, e.getMessage());
     }
 
     private IServerMessage readMessage (final boolean skipMode) {
@@ -582,7 +600,7 @@ public final class Connection implements AutoCloseable {
         try {
             readBuf(bufHeader);
         } catch (final IOException e) {
-            onIOException(e);
+            onIOException(e, "readMessage");
         }
 
         bbHeader.rewind();
@@ -598,7 +616,7 @@ public final class Connection implements AutoCloseable {
                 try {
                     inStream.skipNBytes(bodySize);
                 } catch (IOException e) {
-                    onIOException(e);
+                    onIOException(e, "skipNBytes");
                 }
                 return SkippedMessage.INSTANCE;
             }
@@ -609,7 +627,7 @@ public final class Connection implements AutoCloseable {
         try {
             readBuf(bufBody);
         } catch (final IOException e) {
-            onIOException(e);
+            onIOException(e, "readBuf");
         }
 
         return switch (tag) {
@@ -1593,7 +1611,7 @@ public final class Connection implements AutoCloseable {
         int count = 0;
         try (final TryLock ignored = lock.get()) {
             final Result res = new Result(config, ExecuteParams.INSTANCE, "--pollNotifications");
-            while (IOTool.available(inStream) > 0) {
+            while (inStream.available() > 0) {
                 final IServerMessage msg = readMessage(res.hasException());
                 // count the amount of notifications handled
                 if (msg instanceof NotificationResponse nr) {
@@ -1605,6 +1623,9 @@ public final class Connection implements AutoCloseable {
             }
             res.maybeThrowError();
             return count;
+        } catch (IOException e) {
+            onIOException(e, "pollNotifications");
+            return 0;
         }
     }
 

@@ -478,6 +478,7 @@
 ;; pass into clojure config
 ;; jdbc uri config
 ;; update docs (config and pool)
+;; better outputstream writing
 
 (deftest test-pool-server-disconnected
   (pg/with-pool [pool (assoc *CONFIG* :pool-max-size 2)]

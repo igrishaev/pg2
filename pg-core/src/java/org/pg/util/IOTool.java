@@ -23,15 +23,6 @@ public final class IOTool {
         }
     }
 
-    // TODO: remove it
-    public static int available(final InputStream inputStream) {
-        try {
-            return inputStream.available();
-        } catch (IOException e) {
-            throw new PGErrorIO(e, "input stream is not available");
-        }
-    }
-
     public static BufferedInputStream wrapBuf(final InputStream in, final int size) {
         if (in instanceof final BufferedInputStream b) {
             return b;
@@ -61,23 +52,6 @@ public final class IOTool {
             outputStream.flush();
         } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot flush an output stream");
-        }
-    }
-
-    public static void write (
-            final OutputStream outputStream,
-            final byte[] buf,
-            final int offset,
-            final int len
-    ) {
-        try {
-            outputStream.write(buf, offset, len);
-        } catch (final IOException e) {
-            throw new PGErrorIO(
-                    e,
-                    "cannot write a byte array into an output stream, offset: %s, len: %s",
-                    offset, len
-            );
         }
     }
 
