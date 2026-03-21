@@ -17,8 +17,8 @@ public record PreparedStatement (
         return String.format(
                 "<Prepared statement, name: %s, param(s): %s, oids: %s, SQL: %s>",
                 parse.statement(),
-                parameterDescription.paramCount(),
-                Arrays.toString(parameterDescription.oids()),
+                parameterDescription == null ? "null" : parameterDescription.paramCount(),
+                parameterDescription == null ? "null" : Arrays.toString(parameterDescription.oids()),
                 parse.query()
         );
     }

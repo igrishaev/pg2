@@ -44,7 +44,7 @@ public final class Connection implements AutoCloseable {
     private TXStatus txStatus;
     private PGIOChannel ioChannel;
     private String unixSocketPath;
-    private InputStream inStream;
+    private static InputStream inStream;
     private OutputStream outStream;
     private final Map<String, String> params;
     private final CodecParams codecParams;
@@ -265,7 +265,6 @@ public final class Connection implements AutoCloseable {
                 Debug.debug(" -> %s\r\n", pgType);
             }
             types.add(pgType);
-
         }
         return types;
     }
@@ -1483,12 +1482,14 @@ public final class Connection implements AutoCloseable {
         secretKey = msg.secretKey();
     }
 
-    private static Boolean isEnough (final IServerMessage msg, final boolean isAuth) {
-        return switch (msg.getClass().getSimpleName()) {
-            case "ReadyForQuery" -> true;
-            case "ErrorResponse" -> isAuth;
-            default -> false;
-        };
+    private Boolean isEnough (final IServerMessage msg, final boolean isAuth) {
+        if (msg instanceof ReadyForQuery) {
+            return true;
+        } else if (msg instanceof ErrorResponse) {
+            return isAuth;
+        } else {
+            return false;
+        }
     }
 
     @SuppressWarnings("unused")

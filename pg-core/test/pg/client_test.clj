@@ -883,6 +883,46 @@ from
                (mapv :message @capture)))))))
 
 
+#_ ;; todo: move to pool_test
+(deftest test-client-listen-notify-pending-messages
+  (let [channel "hello_test"
+        capture (atom [])]
+
+    (pg/with-pool [pool (assoc *CONFIG-TXT* :pool-max-size 2)]
+
+      (pg/with-conn [conn1 pool]
+        (pg/with-conn [conn2 pool]
+
+          (pg/listen conn1 channel)
+
+          (dotimes [i 100]
+            (pg/notify conn2 channel (format "message %s" i)))
+
+          (is (= [{:one 1}]
+                 (pg/query conn1 "select 1 as one")
+                 ))
+
+          (is (= [{:two 2}]
+                 (pg/query conn2 "select 2 as two")
+                 ))))
+
+      #_
+      (pg/with-conn [conn1 pool]
+        (pg/with-conn [conn2 pool]
+
+          (is (= [{:one 1}]
+                 (pg/query conn1 "select 1 as one")
+                 ))
+
+          (is (= [{:two 2}]
+                 (pg/query conn2 "select 2 as two")
+                 ))
+
+          )))
+
+    ))
+
+
 (deftest test-client-notice-store
 
   (pg/with-connection [conn *CONFIG-TXT*]
@@ -5046,6 +5086,9 @@ copy (select s.x as X from generate_series(1, 3) as s(x)) TO STDOUT WITH (FORMAT
                           (ex-message e)))))
 
       (is (true? (pg/closed? conn1))))))
+
+
+
 
 
 ;;
