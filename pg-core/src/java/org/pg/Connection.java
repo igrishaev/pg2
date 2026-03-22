@@ -139,6 +139,7 @@ public final class Connection implements AutoCloseable {
         }
     }
 
+    // TODO: deduplicate
     public void close () {
         try (final TryLock ignored = lock.get()) {
             if (!isClosed) {

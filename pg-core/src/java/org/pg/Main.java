@@ -50,9 +50,16 @@ public final class Main {
 //                .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
-        Connection conn = Connection.connect(config);
-        conn.execute("select pg_terminate_backend($1)", List.of(conn.getPid()));
-        System.out.println(conn.query("select 42 as num"));
+        Connection conn1 = Connection.connect(config);
+        Connection conn2 = Connection.connect(config);
+
+        conn1.listen("test");
+        conn2.notify("test", "msg1");
+        conn2.notify("test", "msg2");
+
+
+        // conn.execute("select pg_terminate_backend($1)", List.of(conn.getPid()));
+        // System.out.println(conn.query("select 42 as num"));
 //        System.out.println(conn.execute("create type RGB as enum('r', 'g', 'b')"));
 //        System.out.println();
 //        for (PGType pgType: conn.getPGTypes()) {
