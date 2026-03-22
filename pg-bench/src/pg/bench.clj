@@ -172,7 +172,7 @@ from
 ")
 
 
-(def QUERY_SELECT_RANDOM_MANY_FIELDS
+(def _QUERY_SELECT_RANDOM_MANY_FIELDS
   "
 select
    now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now(),now()
@@ -273,44 +273,44 @@ from
   (with-title "generating CSV"
     (generate-csv))
 
-  #_
+  #_ ;; this
   (with-title "next.JDBC select many fields NO ASSOC"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
       (quick-bench
           (jdbc/execute! conn
-                         [QUERY_SELECT_RANDOM_MANY_FIELDS]
+                         [QUERY_SELECT_RANDOM_COMPLEX]
                          {:as rs/as-unqualified-maps}))))
 
-  #_
+  #_ ;; this
   (with-title "pg select many fields NO ASSOC"
     (pg/with-connection [conn pg-config]
       (quick-bench
-          (pg/execute conn QUERY_SELECT_RANDOM_MANY_FIELDS))))
+          (pg/execute conn QUERY_SELECT_RANDOM_COMPLEX))))
 
-  #_
+  #_ ;; this
   (with-title "pg select many fields NO ASSOC"
     (pg/with-connection [conn pg-config]
-      (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_MANY_FIELDS]
+      (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_COMPLEX]
         (quick-bench
             (pg/execute-statement conn stmt)))))
 
-  #_
+  #_ ;; this
   (with-title "next.JDBC select many fields WITH ASSOC"
     (with-open [conn (jdbc/get-connection
                       jdbc-config)]
       (quick-bench
           (let [rows
                 (jdbc/execute! conn
-                               [QUERY_SELECT_RANDOM_MANY_FIELDS]
+                               [QUERY_SELECT_RANDOM_COMPLEX]
                                {:as rs/as-unqualified-maps})]
             (doseq [row rows]
               (assoc row :extra 42))))))
 
-  #_
+  #_ ;; this
   (with-title "pg select many fields WITH ASSOC"
     (pg/with-connection [conn pg-config]
-      (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_MANY_FIELDS]
+      (pg/with-statement [stmt conn QUERY_SELECT_RANDOM_COMPLEX]
         (quick-bench
             (let [rows (pg/execute-statement conn stmt)]
               (doseq [row rows]
@@ -413,13 +413,21 @@ from
     (let [^java.sql.Connection conn
           (DriverManager/getConnection JDBC-URL USER USER)
           ^PreparedStatement stmt
-          (.prepareStatement conn QUERY_SELECT_RANDOM_SIMPLE)]
+          (.prepareStatement conn QUERY_SELECT_RANDOM_COMPLEX)]
       (quick-bench
           (let [^ResultSet rs (.executeQuery stmt)
-                ^ArrayList l (new ArrayList 50000)]
+                ^ArrayList l (new ArrayList)]
             (while (.next rs)
-              (let [^HashMap m (new HashMap)]
-                (.put m "x" (.getString rs "x"))
+              (let [^HashMap m    (new HashMap)]
+                (.put m "int4"    (.getObject rs "int4"))
+                (.put m "int8"    (.getObject rs "int8"))
+                (.put m "numeric" (.getObject rs "numeric"))
+                (.put m "line"    (.getObject rs "line"))
+                (.put m "bool"    (.getObject rs "bool"))
+                (.put m "ts"      (.getObject rs "ts"))
+                (.put m "date"    (.getObject rs "date"))
+                (.put m "time"    (.getObject rs "time"))
+                (.put m "nil"     (.getObject rs "nil"))
                 (.add l m)))))))
 
   #_
