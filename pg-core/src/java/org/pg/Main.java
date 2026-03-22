@@ -53,9 +53,11 @@ public final class Main {
         Connection conn1 = Connection.connect(config);
         Connection conn2 = Connection.connect(config);
 
+//        conn2.notify("test", "aaa1");
+//        conn2.notify("test", "aaa2");
         conn1.listen("test");
-        conn2.notify("test", "msg1");
-        conn2.notify("test", "msg2");
+        // conn2.notify("test", "msg1");
+        // conn2.notify("test", "msg2");
 
 
         // conn.execute("select pg_terminate_backend($1)", List.of(conn.getPid()));

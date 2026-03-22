@@ -882,75 +882,50 @@ from
                 "world"]
                (mapv :message @capture)))))))
 
-#_
 (deftest test-client-listen-notify-desync
-  (let [channel "hello_test"
-        capture (atom [])]
+  (let [notifications!
+        (atom [])
 
-    (pg/with-conn [conn1 *CONFIG-TXT*]
-      (pg/with-conn [conn2 *CONFIG-TXT*]
+        notices!
+        (atom [])
+
+        config
+        (assoc *CONFIG-TXT*
+               :fn-notification
+               (fn [msg]
+                 (swap! notifications! conj msg))
+
+               :fn-notice
+               (fn [message]
+                 (reset! notices! message)))
+
+        channel
+        (name (gensym "channel"))]
+
+    (pg/with-conn [conn1 config]
+      (pg/with-conn [conn2 config]
 
         (pg/listen conn1 channel)
 
-        #_
         (let [f1
               (future
                 (dotimes [i 100]
-                  nil
-                  #_
+                  (Thread/sleep ^long (rand-int 10))
                   (pg/notify conn2 channel (format "message %s" i))))
+
+              _
+              (Thread/sleep 500)
 
               f2
               (future
                 (dotimes [i 100]
-                  nil
-                  #_
-                  (pg/poll-notifications conn1)))]
-
+                  (Thread/sleep ^long (rand-int 10))
+                  (pg/rollback conn1)))]
 
           @f1
-          @f2
+          @f2)))
 
-          )
-
-
-        ))
-
-    #_
-    (pg/with-pool [pool (assoc *CONFIG-TXT* :pool-max-size 2)]
-
-      (pg/with-conn [conn1 pool]
-        (pg/with-conn [conn2 pool]
-
-          (pg/listen conn1 channel)
-
-          #_
-          (let [f1
-                (future
-                  (dotimes [i 100]
-                    nil
-                    #_
-                    (pg/notify conn2 channel (format "message %s" i))))
-
-                f2
-                (future
-                  (dotimes [i 100]
-                    nil
-                    #_
-                    (pg/poll-notifications conn1)))]
-
-
-            @f1
-            @f2
-
-            )
-
-
-          ))
-
-      )
-
-    ))
+    (is (= 100 (count @notifications!)))))
 
 
 (deftest test-client-notice-store

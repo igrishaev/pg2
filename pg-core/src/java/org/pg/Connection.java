@@ -44,7 +44,7 @@ public final class Connection implements AutoCloseable {
     private TXStatus txStatus;
     private PGIOChannel ioChannel;
     private String unixSocketPath;
-    private static InputStream inStream;
+    private InputStream inStream;
     private OutputStream outStream;
     private final Map<String, String> params;
     private final CodecParams codecParams;
@@ -130,21 +130,21 @@ public final class Connection implements AutoCloseable {
     }
 
     private void closeIO() {
+        if (!isClosed) {
+            if (inStream != null) {
+                IOTool.close(inStream);
+            }
+            if (outStream != null) {
+                IOTool.close(outStream);
+            }
+        }
         isClosed = true;
-        if (inStream != null) {
-            IOTool.close(inStream);
-        }
-        if (outStream != null) {
-            IOTool.close(outStream);
-        }
     }
 
-    // TODO: deduplicate
     public void close () {
         try (final TryLock ignored = lock.get()) {
             if (!isClosed) {
                 sendTerminate();
-                flushSocket();
                 closeIO();
             }
         }
@@ -449,7 +449,6 @@ public final class Connection implements AutoCloseable {
     private void preSSLStage() {
         final SSLRequest msg = new SSLRequest(Const.SSL_CODE);
         sendMessage(msg);
-        flushSocket();
         final boolean ssl = readSSLResponse();
         if (ssl) {
             try {
@@ -524,7 +523,7 @@ public final class Connection implements AutoCloseable {
         } catch (IOException e) {
             onIOException(e);
         }
-
+        flushSocket();
     }
 
     private String generateStatement () {
@@ -825,6 +824,7 @@ public final class Connection implements AutoCloseable {
         for (byte[] buf: msg.toByteArrays()) {
             sendBytes(buf, "BIND");
         }
+        flushSocket();
     }
 
     /*
@@ -987,7 +987,7 @@ public final class Connection implements AutoCloseable {
     }
 
     private Result interact (final ExecuteParams executeParams, final boolean isAuth, final String sql) {
-        flushSocket();
+        // flushSocket();
         final Result res = new Result(config, executeParams, sql);
         while (true) {
             final IServerMessage msg = readMessage(res.hasException());
@@ -1155,7 +1155,6 @@ public final class Connection implements AutoCloseable {
         );
         res.scramPipeline.step1 = step1;
         sendMessage(msgSASL);
-        flushSocket();
     }
 
     private void handleAuthenticationSASLContinue (final AuthenticationSASLContinue msg, final Result res) {
@@ -1167,7 +1166,6 @@ public final class Connection implements AutoCloseable {
         res.scramPipeline.step3 = step3;
         final SASLResponse msgSASL = new SASLResponse(step3.clientFinalMessage());
         sendMessage(msgSASL);
-        flushSocket();
     }
 
     private void handleAuthenticationSASLFinal (final AuthenticationSASLFinal msg, final Result res) {
@@ -1387,7 +1385,6 @@ public final class Connection implements AutoCloseable {
                 msg.salt()
         );
         sendPassword(hashed);
-        flushSocket();
     }
 
     private void handleCopyData (final CopyData msg, final Result res) {
@@ -1434,7 +1431,6 @@ public final class Connection implements AutoCloseable {
 
     private void handleAuthenticationCleartextPassword () {
         sendPassword(config.password());
-        flushSocket();
     }
 
     private void handleParameterStatus (final ParameterStatus msg) {
