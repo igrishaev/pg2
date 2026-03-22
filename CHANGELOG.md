@@ -17,11 +17,11 @@
 - ?
 - ?
 
-## 0.1.47-SNAPSHOT
+## 0.1.47
 
-- ?
-- ?
-- ?
+- rework socket flushing
+- minor tweaks to IO
+- add tests
 
 ## 0.1.46
 
