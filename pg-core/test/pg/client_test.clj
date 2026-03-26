@@ -2567,6 +2567,119 @@ drop table %1$s;
       (is (nil? (-> row seq))))))
 
 
+(deftest test-row-map-assoc
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [m {:a 1 :b 2 :c 3}
+          [row] (pg/query conn "select 1 as a, 2 as b, 3 as c")]
+
+      (is (instance? RowMap row))
+
+      (testing "result of assoc is a plain map, not a RowMap"
+        (is (not (instance? RowMap (assoc row :a 99)))))
+
+      (testing "assoc existing key updates the value"
+        (is (= (assoc m :a 99)
+               (assoc row :a 99))))
+
+      (testing "assoc new key adds the entry"
+        (is (= (assoc m :d 4)
+               (assoc row :d 4))))
+
+      (testing "assoc multiple keys"
+        (is (= (assoc m :a 10 :b 20)
+               (assoc row :a 10 :b 20))))
+
+      (testing "original row is unaffected after assoc"
+        (assoc row :a 99)
+        (is (= m row))))))
+
+
+(deftest test-row-map-dissoc
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [m {:a 1 :b 2 :c 3}
+          [row] (pg/query conn "select 1 as a, 2 as b, 3 as c")]
+
+      (is (instance? RowMap row))
+
+      (testing "result of dissoc is a plain map, not a RowMap"
+        (is (not (instance? RowMap (dissoc row :a)))))
+
+      (testing "dissoc existing key removes it"
+        (is (= (dissoc m :b)
+               (dissoc row :b))))
+
+      (testing "dissoc all keys yields empty map"
+        (is (= (dissoc m :a :b :c)
+               (dissoc row :a :b :c))))
+
+      (testing "dissoc non-existent key is a no-op"
+        (is (= (dissoc m :z)
+               (dissoc row :z))))
+
+      (testing "original row is unaffected after dissoc"
+        (dissoc row :a)
+        (is (= m row))))))
+
+
+(deftest test-row-map-get
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [m {:a 1 :b nil :c 3}
+          [row] (pg/query conn "select 1 as a, null as b, 3 as c")]
+
+      (is (instance? RowMap row))
+
+      (testing "get existing key returns the value"
+        (is (= (get m :a)
+               (get row :a))))
+
+      (testing "get key with null value returns nil"
+        (is (= (get m :b)
+               (get row :b))))
+
+      (testing "get missing key returns nil"
+        (is (= (get m :z)
+               (get row :z))))
+
+      (testing "get missing key with not-found returns not-found"
+        (is (= (get m :z ::not-found)
+               (get row :z ::not-found))))
+
+      (testing "get key with null value ignores not-found"
+        (is (= (get m :b ::not-found)
+               (get row :b ::not-found)))))))
+
+
+(deftest test-row-map-select-keys
+  (pg/with-connection [conn *CONFIG-TXT*]
+    (let [m {:a 1 :b nil :c 3}
+          [row] (pg/query conn "select 1 as a, null as b, 3 as c")]
+
+      (is (instance? RowMap row))
+
+      (testing "result of select-keys is a plain map, not a RowMap"
+        (is (not (instance? RowMap (select-keys row [:a])))))
+
+      (testing "select-keys returns only the specified keys"
+        (is (= (select-keys m [:a :c])
+               (select-keys row [:a :c]))))
+
+      (testing "select-keys includes keys with null values"
+        (is (= (select-keys m [:a :b])
+               (select-keys row [:a :b]))))
+
+      (testing "select-keys with missing key omits it"
+        (is (= (select-keys m [:a :z])
+               (select-keys row [:a :z]))))
+
+      (testing "select-keys with all missing keys returns empty map"
+        (is (= (select-keys m [:x :y :z])
+               (select-keys row [:x :y :z]))))
+
+      (testing "select-keys on all keys returns a map equal to the row"
+        (is (= (select-keys m [:a :b :c])
+               (select-keys row [:a :b :c])))))))
+
+
 (deftest test-acc-as-edn
 
   (pg/with-connection [conn *CONFIG-TXT*]
