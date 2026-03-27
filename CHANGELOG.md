@@ -11,11 +11,9 @@
 - ?
 - ?
 
-## 0.1.48-SNAPSHOT
+## 0.1.48
 
-- ?
-- ?
-- ?
+- Fix RowMap select-keys #59 @jlesquembre
 
 ## 0.1.47
 
