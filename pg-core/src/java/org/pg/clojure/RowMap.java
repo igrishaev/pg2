@@ -178,8 +178,11 @@ public final class RowMap extends APersistentMap implements Indexed {
 
     @Override
     public IMapEntry entryAt(final Object key) {
-        final Object value = getValueByKey(key);
-        return new MapEntry(key, value);
+        final int i = findIndex(key);
+        if (i == -1) {
+            return null;
+        }
+        return new MapEntry(key, getValueByIndex(i));
     }
 
     @Override
