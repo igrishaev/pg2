@@ -5,11 +5,11 @@
 - ?
 - ?
 
-## 0.1.49-SNAPSHOT
+## 0.1.49
 
-- ?
-- ?
-- ?
+- fix pool issues when connection is broken (reported by Max Penzin)
+- better Java suppressors
+- macros indentation
 
 ## 0.1.48
 
