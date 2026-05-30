@@ -107,6 +107,7 @@
   "
   Deprecated! Use `pg.core/with-pool`.
   "
+  {:style/indent 1}
   [& args]
   `(pg/with-pool ~@args))
 
@@ -115,6 +116,7 @@
   "
   Deprecated! Use `pg.core/with-connection`.
   "
+  {:style/indent 1}
   [& args]
   `(pg/with-connection ~@args))
 
@@ -123,6 +125,7 @@
   "
   Deprecated! Use `pg.core/with-conn`.
   "
+  {:style/indent 1}
   [& args]
   `(pg/with-conn ~@args))
 

@@ -556,6 +556,7 @@ public final class Connection implements AutoCloseable {
         sendMessage(msg);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void sendCopyData(final byte[] buf) {
         sendMessage(new CopyData(ByteBuffer.wrap(buf)));
     }
@@ -564,6 +565,7 @@ public final class Connection implements AutoCloseable {
         sendMessage(CopyDone.INSTANCE);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void sendCopyFail (final String errorMessage) {
         sendMessage(new CopyFail(errorMessage));
     }
@@ -1184,7 +1186,6 @@ public final class Connection implements AutoCloseable {
         final ByteBuffer bbLead = ByteBuffer.allocate(5);
         bbLead.put((byte)'d');
 
-        @SuppressWarnings("resource")
         InputStream inputStream = res.executeParams.inputStream();
 
         Throwable e = null;
@@ -1387,6 +1388,7 @@ public final class Connection implements AutoCloseable {
         sendPassword(hashed);
     }
 
+    @SuppressWarnings("CatchMayIgnoreException")
     private void handleCopyData (final CopyData msg, final Result res) {
         try {
             handleCopyDataUnsafe(msg, res);
@@ -1396,7 +1398,6 @@ public final class Connection implements AutoCloseable {
     }
 
     private void handleCopyDataUnsafe (final CopyData msg, final Result res) throws IOException {
-        @SuppressWarnings("resource")
         final OutputStream outputStream = res.executeParams.outputStream();
         final byte[] bytes = msg.buf().array();
         outputStream.write(bytes);
@@ -1453,6 +1454,7 @@ public final class Connection implements AutoCloseable {
         res.addClojureRow(rowMap);
     }
 
+    @SuppressWarnings("CatchMayIgnoreException")
     private void handleDataRow (final DataRow msg, final Result res) {
         try {
             handleDataRowUnsafe(msg, res);

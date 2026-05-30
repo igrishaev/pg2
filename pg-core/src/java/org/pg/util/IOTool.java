@@ -3,13 +3,15 @@ package org.pg.util;
 import org.pg.error.PGErrorIO;
 
 import java.io.*;
-import java.net.Socket;
+import java.nio.channels.ClosedChannelException;
 
 public final class IOTool {
 
     public static void close (final InputStream inputStream) {
         try {
             inputStream.close();
+        } catch (final ClosedChannelException ignored) {
+            // return
         } catch (final IOException e) {
             throw new PGErrorIO(e, "cannot close input stream, cause: %s", e.getMessage());
         }
@@ -18,7 +20,10 @@ public final class IOTool {
     public static void close (final OutputStream outputStream) {
         try {
             outputStream.close();
-        } catch (final IOException e) {
+        } catch (final ClosedChannelException ignored) {
+            // return
+        }
+        catch (final IOException e) {
             throw new PGErrorIO(e, "cannot close output stream, cause: %s", e.getMessage());
         }
     }

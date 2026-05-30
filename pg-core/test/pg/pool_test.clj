@@ -7,7 +7,8 @@
    [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures testing]]
    [pg.core :as pg]
-   [pg.pool :as pool]))
+   [pg.pool :as pool]
+   [pg.source :as src]))
 
 (set! *warn-on-reflection* true)
 
@@ -28,6 +29,19 @@
 
 (def URI
   (format "postgresql://%s:%s@%s:%s/%s" USER PASS HOST PORT DATABASE))
+
+
+(set! *warn-on-reflection* false)
+(defn private-field [obj ^String field]
+  (let [m (.. obj getClass (getDeclaredField field))]
+    (. m (setAccessible true))
+    (. m (get obj))))
+(set! *warn-on-reflection* true)
+
+
+(defn break-conn [conn]
+  (.close ^java.lang.AutoCloseable
+          (private-field conn "ioChannel")))
 
 
 (deftest test-pool-it-works
@@ -558,3 +572,137 @@
 
             (let [res (pg/execute conn2 "select 1 as one")]
               (is (= [{:one 1}] res)))))))))
+
+
+(deftest test-broken-conn-no-tx
+
+  (let [pool
+        (pg/pool (assoc *CONFIG*
+                        :pool-min-size 1
+                        :pool-max-size 1))
+
+        id1
+        (promise)
+
+        id2
+        (promise)
+
+        id3
+        (promise)
+
+        conn
+        (pg.source/-borrow-connection pool)]
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (break-conn conn)
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (pg.source/-return-connection pool conn)
+
+    (is (= {:free 1 :used 0}
+           (pool/stats pool)))
+
+    (pg/with-conn [conn pool]
+      (try
+        (pg/execute conn "select 1")
+        (is false)
+        (catch Exception e
+          (is e))))
+
+    (pg/with-conn [conn pool]
+      (is (= [{:n 1}]
+             (pg/execute conn "select 1 as n"))))
+
+    (pg/close pool)))
+
+
+(deftest test-broken-conn-tx-ok
+
+  (let [pool
+        (pg/pool (assoc *CONFIG*
+                        :pool-min-size 1
+                        :pool-max-size 1))
+
+        id1
+        (promise)
+
+        id2
+        (promise)
+
+        id3
+        (promise)
+
+        conn
+        (pg.source/-borrow-connection pool)]
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (pg/begin conn)
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (break-conn conn)
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (pg.source/-return-connection pool conn)
+
+    (is (= {:free 0 :used 0}
+           (pool/stats pool)))
+
+    (pg/close pool)))
+
+
+(deftest test-broken-conn-tx-error
+
+  (let [pool
+        (pg/pool (assoc *CONFIG*
+                        :pool-min-size 1
+                        :pool-max-size 1))
+
+        id1
+        (promise)
+
+        id2
+        (promise)
+
+        id3
+        (promise)
+
+        conn
+        (pg.source/-borrow-connection pool)]
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (try
+      (pg/begin conn)
+      (pg/execute conn "selekt 42")
+      (is false)
+      (catch PGErrorResponse e
+        (is e)))
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (break-conn conn)
+
+    (is (= {:free 0 :used 1}
+           (pool/stats pool)))
+
+    (pg.source/-return-connection pool conn)
+
+    (is (= {:free 0 :used 0}
+           (pool/stats pool)))
+
+    (pg/close pool)))
