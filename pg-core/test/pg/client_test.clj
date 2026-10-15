@@ -11,6 +11,7 @@
               LocalTime
               OffsetDateTime
               OffsetTime)
+   (java.time.temporal ChronoUnit)
    (java.util ArrayList
               Date
               HashMap)
@@ -2253,21 +2254,20 @@ drop table %1$s;
 
       (is (instance? LocalTime time)))))
 
-
 (deftest test-client-pass-time
 
   (pg/with-connection [conn *CONFIG-TXT*]
-    (let [time1
+    (let [^LocalTime time1
           (LocalTime/now)
 
           res
           (pg/execute conn "select $1::time as time" {:params [time1]})
 
-          time2
+          ^LocalTime time2
           (-> res first :time)]
 
-      (is (= time1 time2)))))
-
+      (is (= (.truncatedTo time1 ChronoUnit/MICROS)
+             (.truncatedTo time2 ChronoUnit/MICROS))))))
 
 (deftest test-client-read-timetz
 
@@ -2280,27 +2280,25 @@ drop table %1$s;
 
       (is (instance? OffsetTime timetz)))))
 
-
 (deftest test-client-pass-timetz
 
   (pg/with-connection [conn *CONFIG-TXT*]
-    (let [time1
+    (let [^OffsetTime time1
           (OffsetTime/now)
 
           res
           (pg/execute conn "select $1::timetz as timetz" {:params [time1]})
 
-          time2
+          ^OffsetTime time2
           (-> res first :timetz)]
 
-      (is (= time1 time2)))))
-
+      (is (= (.truncatedTo time1 ChronoUnit/MICROS)
+             (.truncatedTo time2 ChronoUnit/MICROS))))))
 
 (deftest test-client-conn-with-open
   (with-open [conn (pg/connect *CONFIG-TXT*)]
     (let [res (pg/execute conn "select 1 as one")]
       (is (= [{:one 1}] res)))))
-
 
 (deftest test-client-prepare-&-close-ok
 
@@ -3203,37 +3201,36 @@ drop table %1$s;
       (is (instance? LocalDate date))
       (is (= "2022-01-01" (str date))))))
 
-
 (deftest test-pass-zoned-time-timetz-bin
   (pg/with-connection [conn *CONFIG-BIN*]
-    (let [x1
+    (let [^OffsetTime x1
           (OffsetTime/now)
 
           res
           (pg/execute conn "select $1 as x" {:params [x1]
                                              :oids [oid/timetz]})
 
-          x2
+          ^OffsetTime x2
           (-> res first :x)]
 
       (is (instance? OffsetTime x2))
-      (is (= x1 x2)))))
-
+      (is (= (.truncatedTo x1 ChronoUnit/MICROS)
+             (.truncatedTo x2 ChronoUnit/MICROS))))))
 
 (deftest test-pass-local-time-time-bin
   (pg/with-connection [conn *CONFIG-BIN*]
-    (let [x1
+    (let [^LocalTime x1
           (LocalTime/now)
 
           res
           (pg/execute conn "select $1::time as x;" {:params [x1]})
 
-          x2
+          ^LocalTime x2
           (-> res first :x)]
 
       (is (instance? LocalTime x2))
-      (is (= x1 x2)))))
-
+      (is (= (.truncatedTo x1 ChronoUnit/MICROS)
+             (.truncatedTo x2 ChronoUnit/MICROS))))))
 
 (deftest test-pass-instant-timestamptz-bin
   (pg/with-connection [conn *CONFIG-BIN*]
@@ -3246,8 +3243,8 @@ drop table %1$s;
           ^OffsetDateTime x2
           (-> res first :x)]
 
-      (is (= x1 (.toInstant x2))))))
-
+      (is (= (.truncatedTo x1 ChronoUnit/MICROS)
+             (.truncatedTo (.toInstant x2) ChronoUnit/MICROS))))))
 
 (deftest test-pass-instant-timestamp-bin
   (pg/with-connection [conn *CONFIG-BIN*]

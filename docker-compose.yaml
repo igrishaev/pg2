@@ -1,56 +1,5 @@
 services:
 
-  pg11:
-    build:
-      dockerfile: Dockerfile.11.docker
-    command: >
-      -E
-      -c log_duration=on
-      -c log_min_duration_statement=0
-    hostname: pg11
-    ports:
-      - "10110:5432"
-    volumes:
-      - ./.docker/postgres/initdb.d:/docker-entrypoint-initdb.d
-    environment:
-      - POSTGRES_DB=test
-      - POSTGRES_PASSWORD=test
-      - POSTGRES_USER=test
-
-  pg12:
-    build:
-      dockerfile: Dockerfile.12.docker
-    command: >
-      -E
-      -c log_duration=on
-      -c log_min_duration_statement=0
-    hostname: pg12
-    ports:
-      - "10120:5432"
-    volumes:
-      - ./.docker/postgres/initdb.d:/docker-entrypoint-initdb.d
-    environment:
-      - POSTGRES_DB=test
-      - POSTGRES_PASSWORD=test
-      - POSTGRES_USER=test
-
-  pg13:
-    build:
-      dockerfile: Dockerfile.13.docker
-    command: >
-      -E
-      -c log_duration=on
-      -c log_min_duration_statement=0
-    hostname: pg13
-    ports:
-      - "10130:5432"
-    volumes:
-      - ./.docker/postgres/initdb.d:/docker-entrypoint-initdb.d
-    environment:
-      - POSTGRES_DB=test
-      - POSTGRES_PASSWORD=test
-      - POSTGRES_USER=test
-
   pg14:
     build:
       dockerfile: Dockerfile.14.docker

@@ -9,8 +9,8 @@
    java.time.LocalTime
    java.time.OffsetDateTime
    java.time.OffsetTime
-   java.time.ZoneOffset
    java.time.ZonedDateTime
+   java.time.temporal.ChronoUnit
    java.util.Date
    org.pg.error.PGError)
   (:require
@@ -307,6 +307,11 @@
     (is (= (str x1) (str x2)))
     (is (bb== (byte-array [63 -15 -103 -103 -103 -103 -103 -102]) buf))))
 
+(defn- trunc-micros-local-time [^LocalTime t]
+  (.truncatedTo t ChronoUnit/MICROS))
+
+(defn- trunc-micros-offset-time [^OffsetTime t]
+  (.truncatedTo t ChronoUnit/MICROS))
 
 (deftest test-datetime
 
@@ -316,13 +321,15 @@
     (let [val1 (OffsetTime/now)
           buf (pg/encode-bin val1)
           val2 (pg/decode-bin buf oid/timetz)]
-      (is (= val1 val2))))
+      (is (= (trunc-micros-offset-time val1)
+             (trunc-micros-offset-time val2)))))
 
   (testing "timetz"
     (let [val1 (OffsetTime/now)
           buf (pg/encode-bin val1 oid/timetz)
           val2 (pg/decode-bin buf oid/timetz)]
-      (is (= val1 val2))))
+      (is (= (trunc-micros-offset-time val1)
+             (trunc-micros-offset-time val2)))))
 
   (testing "time"
     (let [val1 (OffsetTime/parse "12:28:23.336188+03:00")
@@ -336,13 +343,15 @@
     (let [val1 (LocalTime/now)
           buf (pg/encode-bin val1)
           val2 (pg/decode-bin buf oid/time)]
-      (is (= val1 val2))))
+      (is (= (trunc-micros-local-time val1)
+             (trunc-micros-local-time val2)))))
 
   (testing "time"
     (let [val1 (LocalTime/now)
           buf (pg/encode-bin val1 oid/time)
           val2 (pg/decode-bin buf oid/time)]
-      (is (= val1 val2))))
+      (is (= (trunc-micros-local-time val1)
+             (trunc-micros-local-time val2)))))
 
   (testing "timetz"
     (let [val1 (LocalTime/parse "12:41:00.005652")
@@ -383,16 +392,16 @@
           buf (pg/encode-bin val1)
           val2 ^OffsetDateTime (pg/decode-bin buf oid/timestamptz)]
       (is (instance? OffsetDateTime val2))
-      (is (= (.atZoneSameInstant val1 ZoneOffset/UTC)
-             (.atZoneSameInstant val2 ZoneOffset/UTC)))))
+      (is (= (.truncatedTo (.toInstant val1) ChronoUnit/MICROS)
+             (.truncatedTo (.toInstant val2) ChronoUnit/MICROS)))))
 
   (testing "timestamptz"
     (let [val1 (OffsetDateTime/now)
           buf (pg/encode-bin val1 oid/timestamptz)
           val2 ^OffsetDateTime (pg/decode-bin buf oid/timestamptz)]
       (is (instance? OffsetDateTime val2))
-      (is (= (.atZoneSameInstant val1 ZoneOffset/UTC)
-             (.atZoneSameInstant val2 ZoneOffset/UTC)))))
+      (is (= (.truncatedTo (.toInstant val1) ChronoUnit/MICROS)
+             (.truncatedTo (.toInstant val2) ChronoUnit/MICROS)))))
 
   (testing "timestamp"
     (let [val1 (OffsetDateTime/parse "2023-07-27T12:44:20.611698+03:00")
