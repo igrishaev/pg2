@@ -1,4 +1,4 @@
-(defproject com.github.igrishaev/pg2-component "0.1.50"
+(defproject com.github.igrishaev/pg2-component "0.1.51-SNAPSHOT"
 
   :description
   "Component wrapper for PG2"
