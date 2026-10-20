@@ -1,9 +1,25 @@
 
-## 0.1.50-SNAPSHOT
+## 0.1.53-SNAPSHOT
 
 - ?
 - ?
 - ?
+
+## 0.1.52-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.51-SNAPSHOT
+
+- ?
+- ?
+- ?
+
+## 0.1.50-SNAPSHOT
+
+- ErrorResponse supports Serializable @jlesquembre
 
 ## 0.1.49
 
