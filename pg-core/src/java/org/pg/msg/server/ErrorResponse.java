@@ -6,11 +6,16 @@ import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import org.pg.clojure.IClojure;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-public record ErrorResponse (Map<String, String> fields) implements IClojure, IServerMessage {
+public record ErrorResponse (Map<String, String> fields) implements IClojure, IServerMessage, Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 2026_10_20L;
 
     public static ErrorResponse fromByteBuffer(final ByteBuffer buf, final Charset charset) {
         final Map<String, String> fields = FieldParser.parseFields(buf, charset);
