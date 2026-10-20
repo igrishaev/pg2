@@ -17,7 +17,7 @@
 - ?
 - ?
 
-## 0.1.50-SNAPSHOT
+## 0.1.50
 
 - ErrorResponse supports Serializable @jlesquembre
 
