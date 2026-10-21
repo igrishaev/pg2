@@ -13,13 +13,13 @@
 
 ## 0.1.51-SNAPSHOT
 
-- ?
-- ?
-- ?
+- Compare microseconds @jlesquembre #64
+- Bump 3rd-party deps @jlesquembre #65
+- Remove unused cheshire dep @jlesquembre #66
 
 ## 0.1.50
 
-- ErrorResponse supports Serializable @jlesquembre
+- ErrorResponse supports Serializable @jlesquembre #62
 
 ## 0.1.49
 
