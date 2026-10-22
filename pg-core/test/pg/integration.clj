@@ -3,7 +3,6 @@
    [clojure.test :refer [testing]]))
 
 
-(def P11 10110)
 (def P12 10120)
 (def P13 10130)
 (def P14 10140)
@@ -12,7 +11,7 @@
 
 
 (def PORTS
-  [#_P11 P12 P13 P14 P15 P16])
+  [P12 P13 P14 P15 P16])
 
 
 (def HOST "127.0.0.1")
@@ -71,9 +70,6 @@
       (testing (format "PORT %s" port)
         (t)))))
 
-
-(defn is11? []
-  (= *PORT* P11))
 
 (defn is12? []
   (= *PORT* P12))
