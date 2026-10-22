@@ -21,9 +21,7 @@
 
 ## 0.1.52-SNAPSHOT
 
-- ?
-- ?
-- ?
+- update docker images #67
 
 ## 0.1.51
 
