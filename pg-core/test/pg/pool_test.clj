@@ -15,7 +15,7 @@
 (def USER "test")
 (def PASS "test")
 (def HOST "127.0.0.1")
-(def PORT 10130)
+(def PORT 10140)
 (def DATABASE "test")
 
 

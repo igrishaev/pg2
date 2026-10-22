@@ -1,4 +1,7 @@
-FROM postgis/postgis:13-3.4
+FROM postgres:13
 
 RUN apt-get update
-RUN apt install -y postgresql-13-pgvector
+RUN apt-get install -y --no-install-recommends \
+    postgresql-13-postgis-3 \
+    postgresql-13-pgvector
+RUN rm -rf /var/lib/apt/lists/*
