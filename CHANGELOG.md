@@ -15,7 +15,8 @@
 
 ## 0.1.53-SNAPSHOT
 
-- ?
+- Default `:so-timeout` to 0 (no read timeout). Since 0.1.34, TCP queries
+  running longer than 15s failed and closed the connection @jgdavey
 - ?
 - ?
 

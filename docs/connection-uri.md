@@ -93,7 +93,7 @@ Before you read, here is a brief description of types and parsing agreements.
 | `read-only`                    | bool      | True if make connection always read only                                    |
 | `so-keep-alive`                | bool      | Enable the standard "keep alive" socket option                              |
 | `so-tcp-no-delay`              | bool      | Enable the standard "no delay" socket option                                |
-| `so-timeout`                   | long      | Long value for the standard "timeout" socket option                         |
+| `so-timeout`                   | long      | Socket read timeout in ms (0 means no timeout)                              |
 | `so-recv-buf-size`             | long      | Socket receive buffer size                                                  |
 | `so-send-buf-size`             | long      | Socket send buffer size                                                     |
 | `binary-encode`                | bool      | Whether to use binary encoding                                              |
