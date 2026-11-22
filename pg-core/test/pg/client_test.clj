@@ -18,7 +18,9 @@
    (java.util.concurrent Executors
                          ExecutionException)
    (org.pg.clojure RowMap)
-   (java.net SocketTimeoutException)
+   (java.net ServerSocket
+             Socket
+             SocketTimeoutException)
    (org.pg.error PGError
                  PGErrorIO
                  PGErrorResponse))
@@ -344,6 +346,53 @@ from
           (is (instance? SocketTimeoutException (ex-cause e)))))
 
       (is (pg/closed? conn)))))
+
+
+(defn- caused-by-timeout? [^Throwable e]
+  (boolean (some #(instance? SocketTimeoutException %)
+                 (take-while some? (iterate ex-cause e)))))
+
+
+(deftest test-client-connect-timeout-silent-server
+
+  ;; A server that accepts TCP connections but never says anything.
+  (with-open [server (ServerSocket. 0)]
+    (let [accepted (atom [])
+          acceptor (future
+                     (try
+                       (while true
+                         (swap! accepted conj (.accept server)))
+                       (catch Exception _)))
+          config (assoc *CONFIG-TXT*
+                        :host "127.0.0.1"
+                        :port (.getLocalPort server)
+                        :connect-timeout 300)]
+      (try
+        (doseq [[label config] [["startup" config]
+                                ["ssl request" (assoc config :ssl? true)]]]
+          (testing (str "connect-timeout bounds reads during " label)
+            (let [t0 (System/nanoTime)
+                  e (try
+                      (pg/connect config)
+                      nil
+                      (catch Exception e e))
+                  elapsed-ms (quot (- (System/nanoTime) t0) 1000000)]
+              (is (some? e))
+              (is (caused-by-timeout? e) (str "unexpected error: " e))
+              (is (< elapsed-ms 2000) (str "elapsed " elapsed-ms "ms")))))
+        (finally
+          (future-cancel acceptor)
+          (run! #(.close ^Socket %) @accepted))))))
+
+
+(deftest test-client-connect-timeout-not-a-read-timeout
+
+  (testing "once connected, so-timeout applies instead of connect-timeout"
+    (pg/with-connection [conn (assoc *CONFIG-TXT*
+                                     :connect-timeout 200
+                                     :so-timeout 0)]
+      (is (= 1 (count (pg/query conn "select pg_sleep(1)"))))
+      (is (not (pg/closed? conn))))))
 
 
 (deftest test-client-socket-opt

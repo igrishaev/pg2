@@ -51,6 +51,37 @@
     (is (= {:SOTimeout 0}
            (options->map {:user "testuser" :database "testdb"} [:SOTimeout])))))
 
+(deftest test-config-connect-timeout
+
+  (testing "default"
+    (is (= {:connectTimeout 10000}
+           (options->map {:user "testuser" :database "testdb"} [:connectTimeout]))))
+
+  (testing "direct option"
+    (is (= {:connectTimeout 1234 :SOTimeout 0}
+           (options->map {:user "testuser" :database "testdb" :connect-timeout 1234}
+                         [:connectTimeout :SOTimeout]))))
+
+  (testing "pg2 URI params are in ms"
+    (is (= {:connectTimeout 212 :SOTimeout 313}
+           (options->map {:connection-uri "jdbc:postgresql://localhost/test?user=fred&connect-timeout=212&so-timeout=313"}
+                         [:connectTimeout :SOTimeout]))))
+
+  (testing "JDBC URI params are in seconds; connectTimeout no longer sets a read timeout"
+    (is (= {:connectTimeout 3000 :SOTimeout 0}
+           (options->map {:connection-uri "jdbc:postgresql://localhost/test?user=fred&connectTimeout=3"}
+                         [:connectTimeout :SOTimeout])))
+    (is (= {:connectTimeout 10000 :SOTimeout 7000}
+           (options->map {:connection-uri "jdbc:postgresql://localhost/test?user=fred&socketTimeout=7"}
+                         [:connectTimeout :SOTimeout]))))
+
+  (testing "pg2 URI params win over JDBC ones"
+    (is (= {:connectTimeout 212 :SOTimeout 313}
+           (options->map {:connection-uri (str "jdbc:postgresql://localhost/test?user=fred"
+                                               "&connect-timeout=212&connectTimeout=3"
+                                               "&so-timeout=313&socketTimeout=7")}
+                         [:connectTimeout :SOTimeout])))))
+
 (deftest test-config-connection-uri
   (is (= {:database "test"
           :user "fred"

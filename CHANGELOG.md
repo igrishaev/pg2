@@ -17,7 +17,10 @@
 
 - Default `:so-timeout` to 0 (no read timeout). Since 0.1.34, TCP queries
   running longer than 15s failed and closed the connection @jgdavey
-- ?
+- Add `:connect-timeout` (default 10s) for opening the socket and for reads
+  during the TLS handshake and authentication. In connection URIs, the JDBC
+  `connectTimeout` now maps to it (converted from seconds), and JDBC
+  `socketTimeout` maps to `:so-timeout` (converted from seconds) @jgdavey
 - ?
 
 ## 0.1.52

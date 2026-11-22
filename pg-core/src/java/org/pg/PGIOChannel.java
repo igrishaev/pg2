@@ -20,4 +20,10 @@ public interface PGIOChannel extends Channel, AutoCloseable {
     OutputStream getOutputStream() throws IOException;
     PGIOChannel upgradeToSSL(SSLContext sslContext);
     Certificate getPeerCertificate();
+
+    /*
+    Set the read timeout in ms (0 means no timeout). Backends
+    that cannot time out a read may ignore it.
+     */
+    void setReadTimeout(int timeoutMs);
 }

@@ -126,6 +126,7 @@ rest have predefined values.
 | `:so-keep-alive?`      | bool         | true               | Socket KeepAlive value                                                              |
 | `:so-tcp-no-delay?`    | bool         | true               | Socket TcpNoDelay value                                                             |
 | `:so-timeout`          | integer      | 0                  | Socket read timeout, in ms (0 means no timeout)                                     |
+| `:connect-timeout`     | integer      | 10.000             | Connect timeout, in ms; also bounds each read during TLS handshake and auth         |
 | `:so-recv-buf-size`    | integer      | 0xFFFF             | Socket receive buffer size                                                          |
 | `:so-send-buf-size`    | integer      | 0xFFFF             | Socket send buffer size                                                             |
 | `:cancel-timeout-ms`   | integer      | 5.000              | Default value for the `with-timeout` macro, in ms                                   |

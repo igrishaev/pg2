@@ -50,6 +50,12 @@ public class PGDomainSocketChannel implements PGIOChannel {
     }
 
     @Override
+    public void setReadTimeout(final int timeoutMs) {
+        // Streams over a SocketChannel ignore SO_TIMEOUT, so reads
+        // on a Unix domain socket never time out.
+    }
+
+    @Override
     public Certificate getPeerCertificate() {
         return null;
     }
