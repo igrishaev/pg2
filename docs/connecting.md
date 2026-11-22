@@ -125,7 +125,7 @@ rest have predefined values.
 | `:unix-socket-path`    | string       | null               | A custom path to Unix domain socket                                                 |
 | `:so-keep-alive?`      | bool         | true               | Socket KeepAlive value                                                              |
 | `:so-tcp-no-delay?`    | bool         | true               | Socket TcpNoDelay value                                                             |
-| `:so-timeout`          | integer      | 15.000             | Socket timeout value, in ms                                                         |
+| `:so-timeout`          | integer      | 0                  | Socket read timeout, in ms (0 means no timeout)                                     |
 | `:so-recv-buf-size`    | integer      | 0xFFFF             | Socket receive buffer size                                                          |
 | `:so-send-buf-size`    | integer      | 0xFFFF             | Socket send buffer size                                                             |
 | `:cancel-timeout-ms`   | integer      | 5.000              | Default value for the `with-timeout` macro, in ms                                   |

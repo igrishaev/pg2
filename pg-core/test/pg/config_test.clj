@@ -46,6 +46,11 @@
           :password ""}
          (options->map {:user "testuser" :database "testdb"}))))
 
+(deftest test-config-so-timeout-default
+  (testing "no read timeout by default"
+    (is (= {:SOTimeout 0}
+           (options->map {:user "testuser" :database "testdb"} [:SOTimeout])))))
+
 (deftest test-config-connection-uri
   (is (= {:database "test"
           :user "fred"

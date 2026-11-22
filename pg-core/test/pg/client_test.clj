@@ -18,7 +18,9 @@
    (java.util.concurrent Executors
                          ExecutionException)
    (org.pg.clojure RowMap)
+   (java.net SocketTimeoutException)
    (org.pg.error PGError
+                 PGErrorIO
                  PGErrorResponse))
   (:require
    [clojure.data.csv :as csv]
@@ -326,6 +328,22 @@ from
       (is (= [42 "test"] (pop row1)))
       (is (= 43 (peek row1)))
       (is (= (list 42 "test" 43) (seq row1))))))
+
+
+(deftest test-client-so-timeout-explicit
+
+  (testing "an explicit so-timeout still applies to reads"
+    (pg/with-connection [conn (assoc *CONFIG-TXT* :so-timeout 500)]
+
+      (is (= [{:one 1}] (pg/query conn "select 1 as one")))
+
+      (try
+        (pg/query conn "select pg_sleep(2)")
+        (is false "should have timed out")
+        (catch PGErrorIO e
+          (is (instance? SocketTimeoutException (ex-cause e)))))
+
+      (is (pg/closed? conn)))))
 
 
 (deftest test-client-socket-opt
