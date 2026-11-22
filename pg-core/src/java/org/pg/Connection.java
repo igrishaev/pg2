@@ -107,6 +107,9 @@ public final class Connection implements AutoCloseable {
         if (sendStartup) {
             conn.authenticate();
         }
+        // Setup reads were bounded by the connect timeout; from
+        // now on, use the regular read timeout.
+        conn.ioChannel.setReadTimeout(config.SOTimeout());
         return conn;
     }
 

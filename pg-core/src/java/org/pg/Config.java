@@ -28,6 +28,7 @@ public record Config(
         boolean SOKeepAlive,
         boolean SOTCPnoDelay,
         int SOTimeout,
+        int connectTimeout,
         int SOReceiveBufSize,
         int SOSendBufSize,
         int inStreamBufSize,
@@ -85,6 +86,7 @@ public record Config(
         private boolean SOKeepAlive = Const.SO_KEEP_ALIVE;
         private boolean SOTCPnoDelay = Const.SO_TCP_NO_DELAY;
         private int SOTimeout = Const.SO_TIMEOUT;
+        private int connectTimeout = Const.CONNECT_TIMEOUT;
         int SOReceiveBufSize = Const.SO_RECV_BUF_SIZE;
         int SOSendBufSize = Const.SO_SEND_BUF_SIZE;
         private int inStreamBufSize = Const.IN_STREAM_BUF_SIZE;
@@ -233,6 +235,12 @@ public record Config(
         }
 
         @SuppressWarnings("unused")
+        public Builder connectTimeout(final int connectTimeout) {
+            this.connectTimeout = connectTimeout;
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         public Builder SOReceiveBufSize(final int SOReceiveBufSize) {
             this.SOReceiveBufSize = SOReceiveBufSize;
             return this;
@@ -359,6 +367,7 @@ public record Config(
                     this.SOKeepAlive,
                     this.SOTCPnoDelay,
                     this.SOTimeout,
+                    this.connectTimeout,
                     this.SOReceiveBufSize,
                     this.SOSendBufSize,
                     this.inStreamBufSize,

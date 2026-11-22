@@ -94,6 +94,7 @@ Before you read, here is a brief description of types and parsing agreements.
 | `so-keep-alive`                | bool      | Enable the standard "keep alive" socket option                              |
 | `so-tcp-no-delay`              | bool      | Enable the standard "no delay" socket option                                |
 | `so-timeout`                   | long      | Socket read timeout in ms (0 means no timeout)                              |
+| `connect-timeout`              | long      | Connection setup timeout in ms (see `:connect-timeout`)                     |
 | `so-recv-buf-size`             | long      | Socket receive buffer size                                                  |
 | `so-send-buf-size`             | long      | Socket send buffer size                                                     |
 | `binary-encode`                | bool      | Whether to use binary encoding                                              |
@@ -132,7 +133,8 @@ specification][jdbc-uri] and act like aliases:
 | JDBC Parameter        | Alias for                                        |
 |-----------------------|--------------------------------------------------|
 | `readOnly`            | `read-only`                                      |
-| `connectTimeout`      | `so-timeout`                                     |
+| `connectTimeout`      | `connect-timeout` (seconds, converted to ms)     |
+| `socketTimeout`       | `so-timeout` (seconds, converted to ms)          |
 | `ApplicationName`     | `pg-params.application_name`                     |
 | `cancelSignalTimeout` | `cancel-timeout-ms`                              |
 | `binaryTransfer`      | Enables both `binary-encode` and `binary-decode` |

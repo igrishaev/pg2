@@ -32,7 +32,10 @@ public class PGSocketChannel implements PGIOChannel {
     private static void setSocketOptions(final Socket socket, final Config config) {
         try {
             socket.setTcpNoDelay(config.SOTCPnoDelay());
-            socket.setSoTimeout(config.SOTimeout());
+            // Reads during connection setup (SSL request, TLS handshake,
+            // authentication) are bounded by the connect timeout. The
+            // connection switches to SOTimeout once it is established.
+            socket.setSoTimeout(config.connectTimeout());
             socket.setKeepAlive(config.SOKeepAlive());
             socket.setReceiveBufferSize(config.SOReceiveBufSize());
             socket.setSendBufferSize(config.SOSendBufSize());
@@ -46,13 +49,31 @@ public class PGSocketChannel implements PGIOChannel {
         final int port = config.port();
         final String host = config.host();
         final InetSocketAddress address = new InetSocketAddress(host, port);
+        SocketChannel channel = null;
         try {
-             SocketChannel channel = SocketChannel.open(address);
-             Socket socket = channel.socket();
-             setSocketOptions(socket, config);
+            channel = SocketChannel.open();
+            final Socket socket = channel.socket();
+            setSocketOptions(socket, config);
+            socket.connect(address, config.connectTimeout());
             return new PGSocketChannel(address, socket);
         } catch (final IOException e) {
+            if (channel != null) {
+                try {
+                    channel.close();
+                } catch (final IOException ignored) {
+                    // keep the original error
+                }
+            }
             throw new PGErrorIO(e, "cannot open socket, address: %s, cause: %s", address, e.getMessage());
+        }
+    }
+
+    @Override
+    public void setReadTimeout(final int timeoutMs) {
+        try {
+            socket.setSoTimeout(timeoutMs);
+        } catch (final IOException e) {
+            throw new PGErrorIO(e, "couldn't set socket read timeout");
         }
     }
 

@@ -97,6 +97,7 @@
                 so-keep-alive?
                 so-tcp-no-delay?
                 so-timeout
+                connect-timeout
                 so-recv-buf-size
                 so-send-buf-size
 
@@ -194,6 +195,9 @@
 
       so-timeout
       (.SOTimeout so-timeout)
+
+      connect-timeout
+      (.connectTimeout connect-timeout)
 
       so-recv-buf-size
       (.SOReceiveBufSize so-recv-buf-size)

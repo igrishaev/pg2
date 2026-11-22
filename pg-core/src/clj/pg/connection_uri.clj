@@ -130,6 +130,7 @@
                 so-keep-alive
                 so-tcp-no-delay
                 so-timeout
+                connect-timeout
                 so-recv-buf-size
                 so-send-buf-size
 
@@ -177,6 +178,7 @@
                 ;; JDBC camelCase options
                 readOnly
                 connectTimeout
+                socketTimeout
                 ApplicationName
                 cancelSignalTimeout
                 binaryTransfer
@@ -245,8 +247,14 @@
      :so-tcp-no-delay?
      (some-> (or so-tcp-no-delay tcpNoDelay) parse-bool)
 
+     ;; JDBC timeouts are in seconds; pg2 timeouts are in ms
      :so-timeout
-     (some-> (or so-timeout connectTimeout) parse-long)
+     (or (some-> so-timeout parse-long)
+         (some-> socketTimeout parse-long (* 1000)))
+
+     :connect-timeout
+     (or (some-> connect-timeout parse-long)
+         (some-> connectTimeout parse-long (* 1000)))
 
      :so-recv-buf-size
      (some-> so-recv-buf-size parse-long)

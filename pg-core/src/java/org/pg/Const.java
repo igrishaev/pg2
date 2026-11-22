@@ -21,6 +21,9 @@ public final class Const {
     public static final boolean BIN_DECODE = false;
     // Socket read timeout; 0 means no timeout (wait for the server indefinitely).
     public static final int SO_TIMEOUT = 0;
+    // Timeout for opening the socket and for each read while the
+    // connection is being established (TLS handshake, authentication).
+    public static final int CONNECT_TIMEOUT = 10 * 1000;
     public static final int SO_RECV_BUF_SIZE = 0xFFFF;
     public static final int SO_SEND_BUF_SIZE = 0xFFFF;
     public static final String PG_HOST = "127.0.0.1";
