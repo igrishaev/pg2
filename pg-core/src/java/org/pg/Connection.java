@@ -190,7 +190,7 @@ public final class Connection implements AutoCloseable {
             throw new PGError("unix socket doesn't exist: %s", path);
         }
         this.unixSocketPath = path;
-        this.ioChannel = PGDomainSocketChannel.connect(UnixDomainSocketAddress.of(path));
+        this.ioChannel = PGDomainSocketChannel.connect(UnixDomainSocketAddress.of(path), config);
         connectStreams();
     }
 
