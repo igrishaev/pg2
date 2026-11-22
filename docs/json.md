@@ -31,7 +31,7 @@ Let's prepare a connection and a test table with a jsonb column:
 ~~~clojure
 (def config
   {:host "127.0.0.1"
-   :port 10140
+   :port 10150
    :user "test"
    :password "test"
    :dbname "test"})
@@ -169,7 +169,7 @@ Now that you have a mapper, pass it into a config:
 ~~~clojure
 (def config
   {:host "127.0.0.1"
-   :port 10140
+   :port 10150
    :user "test"
    :password "test"
    :dbname "test"
