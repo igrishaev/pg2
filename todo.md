@@ -77,10 +77,6 @@ config & uri: rename pg-params to params?
 
 - rename Result.Node to Subresult?
 
-- fix pg11
-- add pg17
-- add pg18
-
 - to-json: coerce output with io ns
 - to-edn: coerce output with io ns
 

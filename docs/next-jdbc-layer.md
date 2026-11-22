@@ -21,7 +21,7 @@ Import the namespace and declare a config:
 
 (def config
   {:host "127.0.0.1"
-   :port 10140
+   :port 10150
    :user "test"
    :password "test"
    :dbname "test"})

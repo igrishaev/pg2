@@ -36,6 +36,7 @@
    [pg.integration :refer [*CONFIG-TXT*
                            *CONFIG-BIN*
                            *PORT*
+                           version
                            fix-multi-port]]
    [pg.jdbc :as jdbc]
    [pg.json :as json]
@@ -481,7 +482,7 @@ from
   (pg/with-connection [conn *CONFIG-TXT*]
 
     (let [result
-          (pg/execute conn "explain analyze select 42")
+          (pg/execute conn "explain (analyze, buffers off) select 42")
 
           lines
           (mapv (keyword "QUERY PLAN") result)
@@ -1319,7 +1320,7 @@ from
 
         config
         (assoc *CONFIG-TXT*
-               :protocol-version 196609
+               :protocol-version 196639 ;; 3.31, unsupported by any server
                :fn-protocol-version
                (fn [msg]
                  (swap! capture! conj msg)))]
@@ -1331,7 +1332,8 @@ from
     (is (= {:msg :NegotiateProtocolVersion
             :params []
             :param-count 0
-            :version 196608}
+            ;; PG 18 added protocol 3.2
+            :version (if (>= (version) 18) 196610 196608)}
            (-> capture! deref first)))))
 
 

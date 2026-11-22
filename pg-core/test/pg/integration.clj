@@ -3,15 +3,15 @@
    [clojure.test :refer [testing]]))
 
 
-(def P12 10120)
-(def P13 10130)
-(def P14 10140)
 (def P15 10150)
 (def P16 10160)
+(def P17 10170)
+(def P18 10180)
+(def P19 10190)
 
 
 (def PORTS
-  [P12 P13 P14 P15 P16])
+  [P15 P16 P17 P18 P19])
 
 
 (def HOST "127.0.0.1")
@@ -71,17 +71,23 @@
         (t)))))
 
 
-(defn is12? []
-  (= *PORT* P12))
-
-(defn is13? []
-  (= *PORT* P13))
-
-(defn is14? []
-  (= *PORT* P14))
-
 (defn is15? []
   (= *PORT* P15))
 
 (defn is16? []
   (= *PORT* P16))
+
+(defn is17? []
+  (= *PORT* P17))
+
+(defn is18? []
+  (= *PORT* P18))
+
+(defn is19? []
+  (= *PORT* P19))
+
+
+(defn version
+  "Major Postgres version of the server under *PORT*."
+  []
+  (get {P15 15 P16 16 P17 17 P18 18 P19 19} *PORT*))

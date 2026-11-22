@@ -103,7 +103,7 @@ Now that we have functions, let's call them. Establish a connection first:
 ~~~clojure
 (def config
   {:host "127.0.0.1"
-   :port 10140
+   :port 10150
    :user "test"
    :password "test"
    :dbname "test"})

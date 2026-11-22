@@ -15,9 +15,7 @@
 
 ## 0.1.53-SNAPSHOT
 
-- ?
-- ?
-- ?
+- test against Postgres 15 through 19; drop EOL versions 12, 13 and 14
 
 ## 0.1.52
 

@@ -1,7 +1,7 @@
-FROM postgres:14
+FROM postgres:17
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
-    postgresql-14-postgis-3 \
-    postgresql-14-pgvector
+    postgresql-17-postgis-3 \
+    postgresql-17-pgvector
 RUN rm -rf /var/lib/apt/lists/*

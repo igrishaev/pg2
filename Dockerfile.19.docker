@@ -1,7 +1,7 @@
-FROM postgres:12
+FROM postgres:19
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
-    postgresql-12-postgis-3 \
-    postgresql-12-pgvector
+    postgresql-19-postgis-3 \
+    postgresql-19-pgvector
 RUN rm -rf /var/lib/apt/lists/*

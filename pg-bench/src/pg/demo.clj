@@ -40,7 +40,7 @@
 
   (def config
     {:host "127.0.0.1"
-     :port 10140
+     :port 10150
      :user "test"
      :password "test"
      :dbname "test"})
@@ -445,7 +445,7 @@
 
   (def config
     {:host "127.0.0.1"
-     :port 10140
+     :port 10150
      :user "test"
      :password "test"
      :dbname "test"
@@ -468,7 +468,7 @@
 
   ;; end json
 
-  ;; <PG connection test@127.0.0.1:10140/test>
+  ;; <PG connection test@127.0.0.1:10150/test>
 
   (def pool (pool/pool config))
 
@@ -616,7 +616,7 @@
 
   (def config
     {:host "127.0.0.1"
-     :port 10140
+     :port 10150
      :user "test"
      :password "test"
      :database "test"})
