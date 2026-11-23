@@ -22,8 +22,8 @@ public interface PGIOChannel extends Channel, AutoCloseable {
     Certificate getPeerCertificate();
 
     /*
-    Set the read timeout in ms (0 means no timeout). Backends
-    that cannot time out a read may ignore it.
+    Set the read timeout in ms (0 means no timeout). A read that
+    times out throws java.net.SocketTimeoutException.
      */
     void setReadTimeout(int timeoutMs);
 }

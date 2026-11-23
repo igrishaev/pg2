@@ -21,6 +21,8 @@
   during the TLS handshake and authentication. In connection URIs, the JDBC
   `connectTimeout` now maps to it (converted from seconds), and JDBC
   `socketTimeout` maps to `:so-timeout` (converted from seconds) @jgdavey
+- Unix domain sockets honor `:so-timeout` and `:connect-timeout`; reads wait
+  on a selector instead of blocking forever @jgdavey
 - ?
 
 ## 0.1.52
