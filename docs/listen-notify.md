@@ -357,6 +357,38 @@ executor that schedules tasks as well:
 Since the `Connection` object is thread-save (it uses `ReentrantLock` under the
 hood), it's OK to share the same connection across multiple threads.
 
+## Waiting for Notifications
+
+Polling on a timer means a delay between a notification and its processing.
+For a connection dedicated to listening, the `await-notifications` function
+blocks until the server sends something or a timeout (in milliseconds)
+expires. Then it processes all available messages like `poll-notifications`
+and returns the number of notifications it has got:
+
+~~~clojure
+(pg/await-notifications conn-A 5000)
+;; 0 after 5 seconds, or 1 as soon as conn-B notifies
+~~~
+
+A timeout does not close the connection. A zero timeout waits forever. The
+result may be zero when a message other than a notification arrives, so call
+it in a loop. The timeout also lets the loop stop cleanly:
+
+~~~clojure
+(def running? (atom true))
+
+(future
+  (while @running?
+    (pg/await-notifications conn-A 1000)
+    (doseq [n (pg/drain-notifications conn-A)]
+      (println n))))
+
+(reset! running? false) ;; the loop exits within a second
+~~~
+
+The connection is locked while waiting, so other threads using it wait as
+well. Use a separate connection for listening.
+
 ## Unlistening (unsubscribing)
 
 To stop listening a certain channel, call the `unlisten` function:

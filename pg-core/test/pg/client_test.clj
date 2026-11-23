@@ -1084,6 +1084,82 @@ from
     (is (= 3 @counter!))))
 
 
+(defn- elapsed-ms [t0]
+  (quot (- (System/nanoTime) t0) 1000000))
+
+
+(deftest test-client-await-notifications-timeout
+
+  (pg/with-connection [conn (assoc *CONFIG-TXT* :so-timeout 0)]
+    (pg/listen conn (str (gensym "channel")))
+
+    (testing "returns 0 after the timeout"
+      (let [t0 (System/nanoTime)]
+        (is (= 0 (pg/await-notifications conn 300)))
+        (is (<= 250 (elapsed-ms t0) 2000))))
+
+    (testing "the connection survives the timeout"
+      (is (not (pg/closed? conn)))
+      (is (= [{:one 1}] (pg/query conn "select 1 as one"))))
+
+    (testing "so-timeout is restored afterwards"
+      (is (= 1 (count (pg/query conn "select pg_sleep(1)"))))
+      (is (not (pg/closed? conn))))
+
+    (testing "negative timeout"
+      (is (thrown-with-msg? PGError #"timeout must be zero or positive"
+                            (pg/await-notifications conn -1))))))
+
+
+(deftest test-client-await-notifications-wakes-up
+
+  (let [channel (str (gensym "channel"))]
+    (pg/with-connection [conn1 *CONFIG-TXT*]
+      (pg/with-connection [conn2 *CONFIG-TXT*]
+        (pg/listen conn2 channel)
+
+        (testing "a notification ends the wait early"
+          (let [sender (future
+                         (Thread/sleep 300)
+                         (pg/notify conn1 channel "hello"))
+                t0 (System/nanoTime)
+                amount (pg/await-notifications conn2 10000)]
+            @sender
+            (is (= 1 amount))
+            (is (< (elapsed-ms t0) 5000))
+            (is (= ["hello"] (mapv :message (pg/drain-notifications conn2))))))
+
+        (testing "notifications that have already arrived"
+          (pg/notify conn1 channel "1")
+          (pg/notify conn1 channel "2")
+          (pg/notify conn1 channel "3")
+          (let [t0 (System/nanoTime)]
+            (loop [total 0]
+              (when (< total 3)
+                (recur (+ total (long (pg/await-notifications conn2 10000))))))
+            (is (< (elapsed-ms t0) 5000))
+            (is (= ["1" "2" "3"] (mapv :message (pg/drain-notifications conn2))))))
+
+        (testing "the listening connection is still usable"
+          (is (= [{:one 1}] (pg/query conn2 "select 1 as one"))))))))
+
+
+(deftest test-client-await-notifications-handler
+
+  (let [channel (str (gensym "channel"))
+        capture! (atom [])
+        config (assoc *CONFIG-TXT* :fn-notification #(swap! capture! conj %))]
+    (pg/with-connection [conn1 config]
+      (pg/with-connection [conn2 config]
+        (pg/listen conn2 channel)
+        (future
+          (Thread/sleep 200)
+          (pg/notify conn1 channel "via handler"))
+        (is (= 1 (pg/await-notifications conn2 10000)))
+        (Thread/sleep 100) ;; let executor finish
+        (is (= ["via handler"] (mapv :message @capture!)))))))
+
+
 (deftest test-client-listen-notify-exception
 
   (let [capture!

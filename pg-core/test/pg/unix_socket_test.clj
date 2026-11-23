@@ -187,3 +187,35 @@
           (is (pg/closed? conn) "polling should notice the server has gone")
           (is (some #(re-find #"has closed the connection" %) errors)
               (str "errors: " errors)))))))
+
+
+(deftest test-unix-await-notifications
+
+  (when-let [config (unix-config)]
+    (let [channel (str (gensym "channel"))]
+      (pg/with-connection [conn1 config]
+        (pg/with-connection [conn2 (assoc config :so-timeout 0)]
+          (pg/listen conn2 channel)
+
+          (testing "returns 0 after the timeout; the connection survives"
+            (let [t0 (System/nanoTime)]
+              (is (= 0 (pg/await-notifications conn2 300)))
+              (is (<= 250 (elapsed-ms t0) 2000)))
+            (is (not (pg/closed? conn2)))
+            (is (= [{:one 1}] (pg/query conn2 "select 1 as one"))))
+
+          (testing "so-timeout is restored afterwards"
+            (is (= 1 (count (pg/query conn2 "select pg_sleep(1)"))))
+            (is (not (pg/closed? conn2))))
+
+          (testing "a notification ends the wait early"
+            (doseq [timeout-ms [10000 0]]
+              (let [sender (future
+                             (Thread/sleep 300)
+                             (pg/notify conn1 channel (str timeout-ms)))
+                    t0 (System/nanoTime)]
+                (is (= 1 (pg/await-notifications conn2 timeout-ms)))
+                @sender
+                (is (< (elapsed-ms t0) 5000))
+                (is (= [(str timeout-ms)]
+                       (mapv :message (pg/drain-notifications conn2))))))))))))

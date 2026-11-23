@@ -771,13 +771,28 @@
 
 (defn poll-notifications
   "
-  Perform an empty query so that pending notifications
-  get flushed to the client. Doesn't guarantee though they
-  will be sent for sure due to their async nature. The
-  result is a number of notifications got and processed.
+  Process messages that have already arrived from the server
+  without sending a query or blocking. The result is a number
+  of notifications got and processed.
   "
   ^Integer [^Connection conn]
   (.pollNotifications conn))
+
+
+(defn await-notifications
+  "
+  Block until the server sends something or `timeout-ms`
+  expires, then process all available messages. Zero means
+  wait forever. The result is a number of notifications got
+  and processed: 0 on timeout, and possibly 0 when a message
+  other than a notification arrives. A timeout does not close
+  the connection.
+
+  The connection is locked while waiting, so use it on a
+  connection dedicated to listening.
+  "
+  ^Integer [^Connection conn timeout-ms]
+  (.awaitNotifications conn (int timeout-ms)))
 
 
 (defn has-notifications?
