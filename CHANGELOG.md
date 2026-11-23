@@ -23,6 +23,8 @@
   `socketTimeout` maps to `:so-timeout` (converted from seconds) @jgdavey
 - Unix domain sockets honor `:so-timeout` and `:connect-timeout`; reads wait
   on a selector instead of blocking forever @jgdavey
+- Add `await-notifications` (`Connection.awaitNotifications`): block until
+  notifications arrive or a timeout expires, without polling @jgdavey
 - ?
 
 ## 0.1.52

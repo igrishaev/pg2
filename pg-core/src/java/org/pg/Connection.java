@@ -20,6 +20,7 @@ import org.pg.type.PGType;
 import org.pg.util.*;
 
 import javax.net.ssl.SSLContext;
+import java.net.SocketTimeoutException;
 import java.net.UnixDomainSocketAddress;
 import java.security.MessageDigest;
 import java.io.*;
@@ -1642,6 +1643,61 @@ public final class Connection implements AutoCloseable {
         } catch (IOException e) {
             onIOException(e, "pollNotifications");
             return 0;
+        }
+    }
+
+    /*
+    Block until the server sends something or the timeout expires,
+    then process all available messages like pollNotifications.
+    Returns the number of notifications processed; it is 0 on timeout,
+    and may be 0 when a message other than a notification arrives.
+    A timeout of 0 waits indefinitely. A timeout does not close the
+    connection. The connection lock is held while waiting, so this
+    is meant for a connection dedicated to listening.
+     */
+    @SuppressWarnings("unused")
+    public int awaitNotifications(final int timeoutMs) {
+        if (timeoutMs < 0) {
+            throw new PGError("timeout must be zero or positive, got: %s", timeoutMs);
+        }
+        try (final TryLock ignored = lock.get()) {
+            if (awaitInput(timeoutMs)) {
+                return pollNotifications();
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    /*
+    Wait up to timeoutMs (0 means forever) for at least one byte
+    from the server without consuming it. Returns false on timeout.
+     */
+    private boolean awaitInput(final int timeoutMs) {
+        try {
+            if (inStream.available() > 0) {
+                return true;
+            }
+            ioChannel.setReadTimeout(timeoutMs);
+            final int b;
+            try {
+                inStream.mark(1);
+                b = inStream.read();
+            } catch (final SocketTimeoutException e) {
+                // Nothing has been read, so the connection is still in sync.
+                ioChannel.setReadTimeout(config.SOTimeout());
+                return false;
+            }
+            if (b == -1) {
+                closeIO();
+                throw new PGError("server %s has closed the connection", ioChannel.represent());
+            }
+            inStream.reset();
+            ioChannel.setReadTimeout(config.SOTimeout());
+            return true;
+        } catch (final IOException e) {
+            onIOException(e, "awaitNotifications");
+            return false;
         }
     }
 
