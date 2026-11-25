@@ -1,6 +1,7 @@
 package org.pg.processor;
 
 import org.pg.codec.CodecParams;
+import org.pg.util.BBTool;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -22,14 +23,18 @@ public class Record extends AProcessor {
     public List<Object> decodeBin(final ByteBuffer bb, final CodecParams codecParams) {
         int count = bb.getInt();
         int oid;
+        int len;
         IProcessor processor;
+        ByteBuffer bbEl;
         List<Object> result = new ArrayList<>(count);
         Object value;
         for (int i = 0; i < count; i++) {
             oid = bb.getInt();
-            bb.getInt(); // len
-            processor = Processors.getProcessor(oid);
-            value = processor.decodeBin(bb.slice(), codecParams);
+            len = bb.getInt();
+            bbEl = BBTool.slice(bb, len);
+            processor = codecParams.getProcessor(oid);
+            value = processor.decodeBin(bbEl, codecParams);
+            BBTool.skip(bb, len);
             result.add(value);
         }
         return result;

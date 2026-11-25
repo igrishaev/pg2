@@ -96,6 +96,10 @@ public final class BBTool {
         return bytes;
     }
 
+    public static ByteBuffer slice(final ByteBuffer bb, final int size) {
+        return bb.slice(bb.position(), size);
+    }
+
     /*
     Alter the current position in a relative way. Can be negative to
     rewind, if needed.
