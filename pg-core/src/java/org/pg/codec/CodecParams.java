@@ -137,6 +137,8 @@ public class CodecParams {
 
         if (pgType.isEnum()) {
             oidMap.put(oid, Processors.defaultEnum);
+        } else if (pgType.isRecord()) {
+            oidMap.put(oid, Processors.record);
         } else if (signature.equals(Const.TYPE_SIG_VECTOR)) {
             oidMap.put(oid, Processors.vector);
         } else if (signature.equals(Const.TYPE_SIG_SPARSEVEC)) {

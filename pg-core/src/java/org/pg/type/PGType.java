@@ -23,6 +23,10 @@ public record PGType(
         return typtype == 'e';
     }
 
+    public boolean isRecord() {
+        return typname.equals("record");
+    }
+
     public boolean isArray() {
         return typelem != 0;
     }

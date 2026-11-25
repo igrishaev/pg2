@@ -7,11 +7,12 @@ import org.pg.processor.pgvector.Vector;
 
 public class Processors {
 
-    public static IProcessor unsupported = new Unsupported();
-    public static IProcessor defaultEnum = new Enum();
-    public static IProcessor vector = new Vector();
-    public static IProcessor sparsevec = new Sparsevec();
-    public static IProcessor hstore = new Hstore();
+    public static final IProcessor unsupported = new Unsupported();
+    public static final IProcessor defaultEnum = new Enum();
+    public static final IProcessor vector = new Vector();
+    public static final IProcessor sparsevec = new Sparsevec();
+    public static final IProcessor hstore = new Hstore();
+    public static final IProcessor record = new Record();
 
     public static boolean isKnownOid(final int oid) {
         return getProcessor(oid) != null;
@@ -40,8 +41,7 @@ public class Processors {
                 }
             }
             if (j == list.length) {
-                throw new PGError("The node list is full, oid: %s, space: %s",
-                        oid, SPACE);
+                throw new PGError("The node list is full, oid: %s, space: %s", oid, SPACE);
             }
             list[j] = new Node(oid, processor);
         }

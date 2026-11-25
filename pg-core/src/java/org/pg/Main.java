@@ -28,6 +28,11 @@ public final class Main {
                 .binaryDecode(true)
                 .build();
 
+        Connection conn = Connection.connect(config);
+        Object res = conn.execute("select (1, 2, 3) as rec", ExecuteParams.builder().binaryDecode(true).binaryEncode(true).build());
+        System.out.println(res);
+        conn.close();
+
 //        Config config = Config.builder("test_owner", "test")
 //                .port(5432)
 //                .host("ep-fancy-queen-a2kw7zqr.eu-central-1.aws.neon.tech")
@@ -50,12 +55,12 @@ public final class Main {
 //                .build();
 
         // Connection conn = new Connection("127.0.0.1", 15432, user, user, user);
-        Connection conn1 = Connection.connect(config);
-        Connection conn2 = Connection.connect(config);
+//        Connection conn1 = Connection.connect(config);
+//        Connection conn2 = Connection.connect(config);
 
 //        conn2.notify("test", "aaa1");
 //        conn2.notify("test", "aaa2");
-        conn1.listen("test");
+//        conn1.listen("test");
         // conn2.notify("test", "msg1");
         // conn2.notify("test", "msg2");
 
